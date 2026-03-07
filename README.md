@@ -96,31 +96,85 @@ Cada carta vale entre 0-6 puntos.
 ```
 compile-project/
 ├── src/                    # Código fuente
-│   ├── index.html         # Interfaz HTML
-│   ├── logic.js           # Motor de juego
-│   ├── abilities-engine.js # Motor de habilidades
-│   └── style.css          # Estilos
+│   ├── index.html         # Interfaz HTML visual
+│   ├── logic.js           # Motor de juego (1150+ líneas)
+│   ├── abilities-engine.js # Motor de habilidades (700+ líneas)
+│   └── style.css          # Estilos CSS modernos (915+ líneas)
 ├── data/
-│   └── cards.json         # Base de datos de cartas
+│   └── cards.json         # Base de datos de 72 cartas
 ├── docs/                  # Documentación
+│   └── GUIA_GIT.md        # Guía completa de Git y flujos
+├── .git/                  # Repositorio Git (historial)
 └── package.json           # Configuración del proyecto
 ```
 
 ### Ejecución en Desarrollo
 
+**Opción 1: Archivo Local**
 ```bash
-# Para ver cambios en tiempo real
+# Simplemente abre en navegador
+open src/index.html
+# O haz doble click en src/index.html
+```
+
+**Opción 2: Servidor Local**
+```bash
+# Con Python 3
+python -m http.server 8000 --directory .
+
+# Luego abre: http://localhost:8000/src/
+```
+
+**Opción 3: Con npm**
+```bash
 npm run dev
+# Abre src/index.html en navegador
+```
 
-# O ejecutar servidor
-npm start
+### Editar y Crear Commits
 
-# Luego abre src/index.html en navegador
+**Ejemplo: Cambiar color del jugador**
+
+1. Abre `src/style.css`
+2. Busca: `--accent: #00d4ff;` (línea ~12)
+3. Cambia a: `--accent: #00ff00;`
+4. Guarda el archivo
+5. Comitea:
+```bash
+git add src/style.css
+git commit -m "style: cambiar color de jugador a verde"
+```
+
+**Ejemplo: Agregar nueva funcionalidad**
+
+1. Edita `src/logic.js`
+2. Haz cambios lógicos
+3. Verifica en navegador (Ctrl+F5 para recargar sin caché)
+4. Comitea:
+```bash
+git add src/logic.js
+git commit -m "feat: nueva funcionalidad describiendo qué hace"
+```
+
+### Ver Cambios Antes de Commitear
+
+```bash
+# Ver qué cambió
+git diff
+
+# Ver cambios de un archivo específico
+git diff src/style.css
+
+# Ver cambios que no se han agregado
+git status
+
+# Ver cambios que ya se agregaron
+git diff --staged
 ```
 
 ### Editar Cartas
 
-Todas las 72 cartas están en `data/cards.json`:
+Todas las cartas están en `data/cards.json`:
 
 ```json
 {
@@ -128,32 +182,27 @@ Todas las 72 cartas están en `data/cards.json`:
     {
       "valor": 0,
       "nombre": "Espíritu 0",
-      "h_inicio": "...",
-      "h_accion": "...",
-      "h_final": "..."
+      "h_inicio": "Efecto persistente",
+      "h_accion": "Efecto al jugar",
+      "h_final": "Efecto auxiliar"
     }
   ]
 }
 ```
 
-### Editar Estilos
+Cambiar una carta:
 
-Los estilos están en `src/style.css`:
+```bash
+# 1. Edita data/cards.json
+nano data/cards.json
 
-```css
-:root {
-  --accent: #00d4ff;        /* Color principal */
-  --accent-red: #ff1744;    /* Color oponente */
-  /* ... más variables ... */
-}
+# 2. Verifica cambios
+git diff data/cards.json
+
+# 3. Comitea
+git add data/cards.json
+git commit -m "balance: ajustar stats de Espíritu 2"
 ```
-
-### Editar Lógica
-
-El motor está dividido en:
-
-- **`logic.js`** - Motor del juego (turnos, compilación)
-- **`abilities-engine.js`** - Sistema de habilidades
 
 ## 🏗️ Arquitectura
 
