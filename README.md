@@ -33,11 +33,18 @@ Una versión digital del juego de cartas **COMPILE**, donde compites contra una 
   - Compilación automática
   - Puntuación con modificadores
 
-### ⏳ En Desarrollo
+### ✅ Completado / ⏳ En Desarrollo
 
-- **Fase 2:** IA Inteligente (estrategia, minimax)
-- **Fase 3:** Reglas Complejas (Control Component)
-- **Fase 4:** Polish Final (guardado, historial)
+**Fase 2: IA Inteligente** ✅ **COMPLETADA**
+- Evaluador de tablero con 5 métricas (compilación, líneas, mano, amenaza, oportunidades)
+- Minimax con alpha-beta pruning (profundidad 2-3)
+- Decisiones estratégicas que evalúan 2-3 turnos adelante
+- IA busca compilaciones y defiende amenazas
+- Ver rama: `feature/phase-2-ai`
+
+**Fase 3:** Reglas Complejas (Control Component) - próximo
+
+**Fase 4:** Polish Final (guardado, historial) - después
 
 ## 🚀 Instalación
 

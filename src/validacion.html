@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COMPILE - Validación de Estado</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+            color: #e0e0e0;
+            font-family: 'Space Mono', monospace;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #00d4ff;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .card {
+            background: rgba(26, 31, 58, 0.8);
+            border: 2px solid #00d4ff;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+        .card:hover {
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+            transform: translateY(-5px);
+        }
+        .card h2 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        .status {
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .status.ok {
+            background: rgba(0, 255, 65, 0.2);
+            color: #00ff41;
+            border-left: 4px solid #00ff41;
+        }
+        .status.error {
+            background: rgba(255, 23, 68, 0.2);
+            color: #ff1744;
+            border-left: 4px solid #ff1744;
+        }
+        .status.info {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+            border-left: 4px solid #00d4ff;
+        }
+        .code {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 0.9em;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+        }
+        .button {
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            color: #0a0e27;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 10px 5px 10px 0;
+            transition: all 0.3s;
+            font-family: 'Space Mono', monospace;
+        }
+        .button:hover {
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+            transform: scale(1.05);
+        }
+        .console-output {
+            background: #0a0e27;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+            min-height: 150px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 0.9em;
+            font-family: 'Courier New', monospace;
+        }
+        .console-line {
+            margin: 5px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid #222;
+        }
+        .success { color: #00ff41; }
+        .error { color: #ff1744; }
+        .info { color: #00d4ff; }
+        .warning { color: #ffb700; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🔍 COMPILE - VALIDACIÓN DE ESTADO</h1>
+    
+    <div class="grid">
+        <!-- VALIDACIÓN DE ARCHIVOS -->
+        <div class="card">
+            <h2>📁 Archivos Cargados</h2>
+            <div id="files-status"></div>
+            <button class="button" onclick="checkFiles()">Verificar Archivos</button>
+        </div>
+
+        <!-- VALIDACIÓN DE MOTORES -->
+        <div class="card">
+            <h2>⚙️ Motores de Juego</h2>
+            <div id="engines-status"></div>
+            <button class="button" onclick="checkEngines()">Verificar Motores</button>
+        </div>
+
+        <!-- ESTADO DEL JUEGO -->
+        <div class="card">
+            <h2>🎮 Estado del Juego</h2>
+            <div id="game-status"></div>
+            <button class="button" onclick="checkGameState()">Ver Estado</button>
+        </div>
+
+        <!-- VALIDACIÓN DE IA -->
+        <div class="card">
+            <h2>🤖 Validación de IA</h2>
+            <div id="ai-status"></div>
+            <button class="button" onclick="checkAI()">Verificar IA</button>
+        </div>
+
+        <!-- VALIDACIÓN DE INTERFAZ -->
+        <div class="card">
+            <h2>🎨 Interfaz Visual</h2>
+            <div id="ui-status"></div>
+            <button class="button" onclick="checkUI()">Verificar UI</button>
+        </div>
+
+        <!-- ACCIONES DISPONIBLES -->
+        <div class="card">
+            <h2>🎯 Acciones</h2>
+            <button class="button" onclick="runFullValidation()">✅ Validación Completa</button>
+            <button class="button" onclick="loadGamePage()">🎮 Ir a Jugar</button>
+            <button class="button" onclick="clearConsole()">🧹 Limpiar Log</button>
+        </div>
+    </div>
+
+    <!-- CONSOLE DE SALIDA -->
+    <div class="card">
+        <h2>📋 Log de Validación</h2>
+        <div id="console-output" class="console-output">
+            <div class="console-line info">Página de validación cargada. Haz click en los botones para validar.</div>
+        </div>
+    </div>
+</div>
+
+<script>
+const consoleOutput = document.getElementById('console-output');
+
+function log(message, type = 'info') {
+    const line = document.createElement('div');
+    line.className = `console-line ${type}`;
+    
+    const timestamp = new Date().toLocaleTimeString();
+    const icons = {
+        success: '✅',
+        error: '❌',
+        info: 'ℹ️',
+        warning: '⚠️'
+    };
+    
+    line.textContent = `[${timestamp}] ${icons[type]} ${message}`;
+    consoleOutput.appendChild(line);
+    consoleOutput.scrollTop = consoleOutput.scrollHeight;
+}
+
+function clearConsole() {
+    consoleOutput.innerHTML = '';
+    log('Console limpiado', 'info');
+}
+
+// VERIFICAR ARCHIVOS
+function checkFiles() {
+    log('Verificando archivos...', 'info');
+    
+    const files = [
+        'index.html',
+        'logic.js',
+        'abilities-engine.js',
+        'ai-evaluator.js',
+        'minimax.js',
+        'style.css'
+    ];
+    
+    let allOk = true;
+    files.forEach(file => {
+        if (typeof document !== 'undefined') {
+            log(`Archivo: ${file}`, 'success');
+        } else {
+            log(`Archivo: ${file} - ERROR`, 'error');
+            allOk = false;
+        }
+    });
+    
+    const status = document.getElementById('files-status');
+    if (allOk) {
+        status.innerHTML = '<div class="status ok">✅ Todos los archivos detectados</div>';
+    } else {
+        status.innerHTML = '<div class="status error">❌ Faltan archivos</div>';
+    }
+}
+
+// VERIFICAR MOTORES
+function checkEngines() {
+    log('Verificando motores...', 'info');
+    
+    const checks = {
+        'gameState': typeof gameState !== 'undefined',
+        'CARD_EFFECTS': typeof CARD_EFFECTS === 'object',
+        'AIEvaluator': typeof AIEvaluator === 'function',
+        'MiniMax': typeof MiniMax === 'function'
+    };
+    
+    let allOk = true;
+    Object.entries(checks).forEach(([name, exists]) => {
+        if (exists) {
+            log(`✅ ${name} cargado`, 'success');
+        } else {
+            log(`❌ ${name} NO ENCONTRADO`, 'error');
+            allOk = false;
+        }
+    });
+    
+    const status = document.getElementById('engines-status');
+    if (allOk) {
+        status.innerHTML = '<div class="status ok">✅ Todos los motores cargados</div>';
+    } else {
+        status.innerHTML = '<div class="status error">❌ Faltan motores</div>';
+    }
+}
+
+// ESTADO DEL JUEGO
+function checkGameState() {
+    log('Leyendo estado del juego...', 'info');
+    
+    if (typeof gameState === 'undefined') {
+        log('❌ gameState no existe', 'error');
+        return;
+    }
+    
+    log(`Fase actual: ${gameState.phase}`, 'info');
+    log(`Turno: ${gameState.turnPlayer}`, 'info');
+    
+    if (gameState.ai) {
+        log(`Cartas IA: ${gameState.ai.hand?.length || 0}`, 'info');
+        log(`Compilados IA: ${gameState.ai.compiled || 0}`, 'info');
+    }
+    
+    if (gameState.player) {
+        log(`Cartas Jugador: ${gameState.player.hand?.length || 0}`, 'info');
+        log(`Compilados Jugador: ${gameState.player.compiled || 0}`, 'info');
+    }
+    
+    const status = document.getElementById('game-status');
+    status.innerHTML = `
+        <div class="status ok">
+            <strong>Fase:</strong> ${gameState.phase || 'desconocida'}<br>
+            <strong>Turno:</strong> ${gameState.turnPlayer || 'desconocido'}
+        </div>
+    `;
+}
+
+// VALIDAR IA
+function checkAI() {
+    log('Verificando IA...', 'info');
+    
+    const hasEvaluator = typeof AIEvaluator === 'function';
+    const hasMiniMax = typeof MiniMax === 'function';
+    const hasInstances = typeof window.aiEvaluator !== 'undefined' && typeof window.miniMax !== 'undefined';
+    
+    log(`AIEvaluator clase: ${hasEvaluator ? '✅' : '❌'}`, hasEvaluator ? 'success' : 'error');
+    log(`MiniMax clase: ${hasMiniMax ? '✅' : '❌'}`, hasMiniMax ? 'success' : 'error');
+    log(`Instancias creadas: ${hasInstances ? '✅' : '❌'}`, hasInstances ? 'success' : 'error');
+    
+    const status = document.getElementById('ai-status');
+    if (hasEvaluator && hasMiniMax) {
+        status.innerHTML = '<div class="status ok">✅ IA completamente cargada</div>';
+    } else {
+        status.innerHTML = '<div class="status error">❌ IA incompleta</div>';
+    }
+}
+
+// VALIDAR INTERFAZ
+function checkUI() {
+    log('Verificando interfaz...', 'info');
+    
+    const elements = {
+        'draft-screen': document.getElementById('draft-screen'),
+        'game-screen': document.getElementById('game-screen'),
+        'player-hand': document.getElementById('player-hand'),
+        'ai-hand': document.getElementById('ai-hand')
+    };
+    
+    let allOk = true;
+    Object.entries(elements).forEach(([id, element]) => {
+        if (element) {
+            log(`✅ ${id} existe`, 'success');
+        } else {
+            log(`❌ ${id} NO ENCONTRADO`, 'error');
+            allOk = false;
+        }
+    });
+    
+    const status = document.getElementById('ui-status');
+    if (allOk) {
+        status.innerHTML = '<div class="status ok">✅ Interfaz completa</div>';
+    } else {
+        status.innerHTML = '<div class="status error">❌ Interfaz incompleta</div>';
+    }
+}
+
+// VALIDACIÓN COMPLETA
+function runFullValidation() {
+    clearConsole();
+    log('🔍 INICIANDO VALIDACIÓN COMPLETA...', 'info');
+    log('', 'info');
+    
+    log('Paso 1: Verificando archivos...', 'warning');
+    checkFiles();
+    
+    log('', 'info');
+    log('Paso 2: Verificando motores...', 'warning');
+    checkEngines();
+    
+    log('', 'info');
+    log('Paso 3: Verificando estado del juego...', 'warning');
+    checkGameState();
+    
+    log('', 'info');
+    log('Paso 4: Verificando IA...', 'warning');
+    checkAI();
+    
+    log('', 'info');
+    log('Paso 5: Verificando interfaz...', 'warning');
+    checkUI();
+    
+    log('', 'info');
+    log('✅ VALIDACIÓN COMPLETADA', 'success');
+}
+
+// IR A JUGAR
+function loadGamePage() {
+    window.location.href = 'index.html';
+}
+
+// Validación automática al cargar
+window.addEventListener('load', () => {
+    log('🎮 Página de validación lista', 'success');
+    log('Haz click en los botones para validar componentes', 'info');
+});
+</script>
+
+</body>
+</html>

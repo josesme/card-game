@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COMPILE - Launcher</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            width: 100%;
+            height: 100vh;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #0d1117 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Space Mono', monospace;
+            color: #e0e0e0;
+            overflow: hidden;
+        }
+        
+        .background-glow {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 0;
+        }
+        
+        .glow-cyan {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
+            top: -100px;
+            left: -100px;
+            animation: float 20s infinite ease-in-out;
+        }
+        
+        .glow-red {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 23, 68, 0.1) 0%, transparent 70%);
+            bottom: -100px;
+            right: -100px;
+            animation: float 25s infinite ease-in-out reverse;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(30px, 30px); }
+        }
+        
+        .container {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 40px;
+            max-width: 500px;
+        }
+        
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 4em;
+            margin-bottom: 20px;
+            color: #00d4ff;
+            text-shadow: 0 0 30px rgba(0, 212, 255, 0.8);
+            letter-spacing: 3px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { text-shadow: 0 0 30px rgba(0, 212, 255, 0.8); }
+            50% { text-shadow: 0 0 60px rgba(0, 212, 255, 1); }
+        }
+        
+        .subtitle {
+            font-size: 1.2em;
+            color: #888;
+            margin-bottom: 40px;
+            letter-spacing: 1px;
+        }
+        
+        .version {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 30px;
+        }
+        
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+        
+        .button {
+            padding: 16px 32px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: 2px solid;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Space Mono', monospace;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .button-primary {
+            background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+            border-color: #00d4ff;
+            color: #0a0e27;
+        }
+        
+        .button-primary:hover {
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.6);
+            transform: translateY(-3px);
+        }
+        
+        .button-secondary {
+            background: transparent;
+            border-color: #666;
+            color: #aaa;
+        }
+        
+        .button-secondary:hover {
+            border-color: #00d4ff;
+            color: #00d4ff;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+        
+        .info-box {
+            background: rgba(26, 31, 58, 0.8);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 40px;
+            text-align: left;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        .info-box h3 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+        }
+        
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 8px 0;
+        }
+        
+        .status-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+        }
+        
+        .status-ok {
+            background: rgba(0, 255, 65, 0.3);
+            color: #00ff41;
+        }
+        
+        .footer {
+            position: fixed;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            color: #666;
+            font-size: 0.8em;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 212, 255, 0.3);
+            border-top-color: #00d4ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="background-glow">
+    <div class="glow-cyan"></div>
+    <div class="glow-red"></div>
+</div>
+
+<div class="container">
+    <div class="logo">⚡ COMPILE ⚡</div>
+    <p class="subtitle">Juego de Cartas Digital</p>
+    <p class="version">Versión 2.1.0 | Fase 2 IA Inteligente</p>
+    
+    <div class="button-group">
+        <button class="button button-primary" onclick="playGame()">
+            🎮 JUGAR AHORA
+        </button>
+        <button class="button button-secondary" onclick="toggleInfo()">
+            ℹ️ Información
+        </button>
+    </div>
+    
+    <div id="info-section" class="info-box hidden">
+        <h3>🎮 Estado del Juego</h3>
+        <div class="status">
+            <div class="status-icon status-ok">✓</div>
+            <span>Motor de Juego: OK</span>
+        </div>
+        <div class="status">
+            <div class="status-icon status-ok">✓</div>
+            <span>Motor de Habilidades: OK</span>
+        </div>
+        <div class="status">
+            <div class="status-icon status-ok">✓</div>
+            <span>IA Inteligente (Minimax): OK</span>
+        </div>
+        <div class="status">
+            <div class="status-icon status-ok">✓</div>
+            <span>Interfaz Visual: OK</span>
+        </div>
+        
+        <h3 style="margin-top: 20px;">📋 Cómo Jugar</h3>
+        <p>1. Selecciona 3 protocolos en el draft</p>
+        <p>2. Juega cartas estratégicamente</p>
+        <p>3. Compila 3 líneas para ganar</p>
+        <p>4. Gana contra la IA inteligente</p>
+        
+        <h3 style="margin-top: 20px;">💡 Tips</h3>
+        <p>• Abre F12 para ver decisiones de IA</p>
+        <p>• La IA usa minimax (2-3 turnos adelante)</p>
+        <p>• Busca compilaciones defensivas</p>
+    </div>
+</div>
+
+<div class="footer">
+    <p>© 2026 COMPILE Project | Desarrollado con ❤️</p>
+</div>
+
+<script>
+function toggleInfo() {
+    const infoSection = document.getElementById('info-section');
+    infoSection.classList.toggle('hidden');
+}
+
+function playGame() {
+    // Abre el juego en la misma pestaña
+    window.location.href = 'src/index.html';
+}
+
+// Si accedes a este archivo desde src/, redirige a raíz
+if (window.location.pathname.includes('/src/')) {
+    // Estamos en src/, ir a raíz
+    window.location.href = '../launcher.html';
+}
+</script>
+
+</body>
+</html>

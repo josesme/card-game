@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>COMPILE - Iniciador</title>
+</head>
+<body style="margin:0; padding:20px; background:#0a0e27; color:#fff; font-family:Arial">
+<h1>⚡ COMPILE ⚡</h1>
+<p>El juego se abrirá automáticamente en 2 segundos...</p>
+<p style="margin-top:30px; color:#888">
+    Si no se abre, haz click aquí:<br>
+    <a href="src/index.html" style="color:#00d4ff; font-size:1.2em">🎮 JUGAR AHORA</a>
+</p>
+
+<script>
+// Intenta abrir con servidor, sino abre directamente
+setTimeout(function() {
+    // Intenta localhost:8000 primero
+    fetch('http://localhost:8000/src/index.html')
+        .then(response => {
+            if (response.ok) {
+                window.location.href = 'http://localhost:8000/src/index.html';
+            } else {
+                // Si no funciona, abre directamente
+                window.location.href = 'src/index.html';
+            }
+        })
+        .catch(function() {
+            // Sin servidor, abre directamente
+            window.location.href = 'src/index.html';
+        });
+}, 1000);
+</script>
+</body>
+</html>

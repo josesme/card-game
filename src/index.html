@@ -5,243 +5,448 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>COMPILE - Juego de Cartas Digital</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style-visual.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+            color: #e0e0e0;
+            font-family: 'Space Mono', monospace;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #00d4ff;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+
+        .mesa {
+            background: rgba(26, 31, 58, 0.8);
+            border: 2px solid #00d4ff;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .lineas-contenedor {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .linea {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .linea-titulo {
+            color: #888;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        .lados {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .lado {
+            flex: 1;
+            min-height: 180px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px dashed #555;
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            gap: 10px;
+        }
+
+        .puntuacion {
+            flex-shrink: 0;
+            text-align: center;
+            padding: 10px;
+            background: rgba(0, 212, 255, 0.2);
+            border-radius: 6px;
+            min-width: 80px;
+        }
+
+        .puntuacion-valor {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+
+        .carta {
+            width: 100px;
+            height: 140px;
+            border: 2px solid;
+            border-radius: 8px;
+            padding: 8px;
+            background: linear-gradient(135deg, rgba(26, 31, 58, 0.9), rgba(10, 14, 39, 0.95));
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            font-size: 0.75em;
+            text-align: center;
+            color: #e0e0e0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .carta:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 24px rgba(0, 212, 255, 0.3);
+        }
+
+        .carta-header {
+            font-weight: bold;
+            font-size: 0.9em;
+            margin-bottom: 2px;
+        }
+
+        .carta-nombre {
+            font-size: 0.85em;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .carta-valor {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #00ff41;
+            margin: 4px 0;
+        }
+
+        .carta-efecto {
+            font-size: 0.7em;
+            color: #aaa;
+            line-height: 1.2;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .carta-bocabajo {
+            border-style: dashed;
+            background: linear-gradient(135deg, #1a1f3a, #0a0e27);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .carta-bocabajo::after {
+            content: "2";
+            font-size: 2em;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+
+        .protocolo-espiritu { border-color: #8b5cf6; }
+        .protocolo-muerte { border-color: #ef4444; }
+        .protocolo-fuego { border-color: #f97316; }
+        .protocolo-gravedad { border-color: #6366f1; }
+        .protocolo-vida { border-color: #10b981; }
+        .protocolo-luz { border-color: #facc15; }
+        .protocolo-metal { border-color: #94a3b8; }
+        .protocolo-plaga { border-color: #a855f7; }
+        .protocolo-psique { border-color: #ec4899; }
+        .protocolo-velocidad { border-color: #06b6d4; }
+        .protocolo-agua { border-color: #3b82f6; }
+        .protocolo-oscuridad { border-color: #1e293b; }
+
+        .mano {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px dashed #555;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            min-height: 160px;
+        }
+
+        .info-box {
+            background: rgba(26, 31, 58, 0.8);
+            border: 1px solid #00d4ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #aaa;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .titulo-seccion {
+            color: #00d4ff;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .loading {
+            text-align: center;
+            color: #888;
+            padding: 20px;
+        }
+
+        .error {
+            color: #ff6b6b;
+            padding: 20px;
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid #ff6b6b;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
 </head>
 <body>
 
-<!-- ============================================================================
-     PANTALLA DE DRAFT (SELECCIÓN DE PROTOCOLOS)
-     ============================================================================ -->
-<div id="draft-screen" class="screen">
-    <div class="draft-container">
-        <div class="draft-header">
-            <h1 class="draft-title">⚡ COMPILE ⚡</h1>
-            <p class="draft-subtitle">Selecciona tus 3 Protocolos</p>
+<div class="container">
+    <h1>⚡ COMPILE ⚡</h1>
+
+    <div class="mesa">
+        <div class="info-box">
+            <div class="titulo-seccion">📊 Estado del Juego</div>
+            <div id="estado">Inicializando juego...</div>
         </div>
 
-        <div class="draft-status">
-            <div class="draft-picks">
-                <span class="picks-label">TÚ</span>
-                <div class="picks-display" id="player-picks-display"></div>
-            </div>
-            <div class="vs">vs</div>
-            <div class="draft-picks">
-                <div class="picks-display" id="ai-picks-display"></div>
-                <span class="picks-label">IA</span>
-            </div>
+        <div id="error-container"></div>
+
+        <div class="titulo-seccion">⚔️ Líneas de Enfrentamiento</div>
+        <div class="lineas-contenedor" id="lineas-container">
+            <div class="loading">Cargando mesa...</div>
         </div>
 
-        <div id="protocol-grid" class="protocol-grid"></div>
+        <div class="titulo-seccion">🎴 Tu Mano</div>
+        <div class="mano" id="mano-container">
+            <div class="loading">Cargando mano...</div>
+        </div>
 
-        <div id="draft-footer" class="draft-footer hidden">
-            <h3>Tus líneas de enfrentamiento:</h3>
-            <div id="line-matchups" class="line-matchups"></div>
-            <button id="btn-start-game" class="btn-primary">INICIAR COMPILACIÓN</button>
+        <div style="margin-top: 30px;">
+            <button style="background: #00d4ff; color: #0a0e27; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1em;" onclick="location.reload()">
+                🔄 REINICIAR JUEGO
+            </button>
         </div>
     </div>
 </div>
 
-<!-- ============================================================================
-     PANTALLA DE JUEGO (MESA)
-     ============================================================================ -->
-<div id="game-screen" class="screen hidden">
+<script>
+'use strict';
+
+// Variables globales
+let gameState = null;
+let GLOBAL_CARDS = null;
+let PROTOCOL_DEFS = null;
+
+// Cargar datos de cartas
+function cargarCartas() {
+    GLOBAL_CARDS = {
+        "Espíritu": [
+            {"valor": 0, "nombre": "Espíritu 0", "h_accion": "Roba 1 carta"},
+            {"valor": 1, "nombre": "Espíritu 1", "h_accion": "Ignora efectos"},
+            {"valor": 2, "nombre": "Espíritu 2", "h_accion": "Roba por bocarriba"},
+            {"valor": 3, "nombre": "Espíritu 3", "h_accion": "Puedes cambiar"},
+            {"valor": 4, "nombre": "Espíritu 4", "h_accion": "Descarta 1"},
+            {"valor": 5, "nombre": "Espíritu 5", "h_accion": "Voltea 1"},
+        ],
+        "Muerte": [
+            {"valor": 0, "nombre": "Muerte 0", "h_accion": "Elimina y roba 3"},
+            {"valor": 1, "nombre": "Muerte 1", "h_accion": "No se mueve"},
+            {"valor": 2, "nombre": "Muerte 2", "h_accion": "Elimina oponente"},
+            {"valor": 3, "nombre": "Muerte 3", "h_accion": "Elimina 2"},
+            {"valor": 4, "nombre": "Muerte 4", "h_accion": "Roba 2"},
+            {"valor": 5, "nombre": "Muerte 5", "h_accion": "Descarta"},
+        ],
+        "Fuego": [
+            {"valor": 0, "nombre": "Fuego 0", "h_accion": "Elimina"},
+            {"valor": 1, "nombre": "Fuego 1", "h_accion": "Descarta 2"},
+            {"valor": 2, "nombre": "Fuego 2", "h_accion": "Roba 2"},
+            {"valor": 3, "nombre": "Fuego 3", "h_accion": "Cambia"},
+            {"valor": 4, "nombre": "Fuego 4", "h_accion": "Voltea"},
+            {"valor": 5, "nombre": "Fuego 5", "h_accion": "Descarta"},
+        ],
+    };
     
-    <!-- TABLERO PRINCIPAL -->
-    <div class="game-board">
+    PROTOCOL_DEFS = {
+        'Espíritu': { color: '#8b5cf6' },
+        'Muerte': { color: '#ef4444' },
+        'Fuego': { color: '#f97316' },
+        'Gravedad': { color: '#6366f1' },
+        'Vida': { color: '#10b981' },
+        'Luz': { color: '#facc15' },
+        'Metal': { color: '#94a3b8' },
+        'Plaga': { color: '#a855f7' },
+        'Psique': { color: '#ec4899' },
+        'Velocidad': { color: '#06b6d4' },
+        'Agua': { color: '#3b82f6' },
+        'Oscuridad': { color: '#1e293b' }
+    };
+}
+
+// Inicializar estado del juego
+function inicializarGameState() {
+    gameState = {
+        player: { 
+            hand: [
+                { card: { nombre: 'Espíritu 2', valor: 4, protocol: 'Espíritu', h_accion: 'Roba cartas' }, faceDown: false },
+                { card: { nombre: 'Fuego 3', valor: 3, protocol: 'Fuego', h_accion: 'Descarta' }, faceDown: false },
+                { card: { nombre: 'Muerte 1', valor: 1, protocol: 'Muerte', h_accion: 'No se mueve' }, faceDown: false },
+            ],
+            compiled: 0
+        },
+        ai: { 
+            hand: [
+                { card: { nombre: 'Vida 3', valor: 3, protocol: 'Vida', h_accion: 'Juega mazo' }, faceDown: false },
+            ],
+            compiled: 0
+        },
+        field: {
+            izquierda: { 
+                player: [{ card: { nombre: 'Espíritu 4', valor: 4, protocol: 'Espíritu', h_accion: 'Descarta' }, faceDown: false }],
+                ai: [{ card: { nombre: 'Fuego 2', valor: 3, protocol: 'Fuego', h_accion: 'Roba 2' }, faceDown: false }],
+                compiledBy: null 
+            },
+            centro: { 
+                player: [{ card: { nombre: 'Agua 2', valor: 4, protocol: 'Agua', h_accion: 'Devuelve' }, faceDown: false }],
+                ai: [
+                    { card: { nombre: 'Metal 1', valor: 1, protocol: 'Metal', h_accion: 'Previene' }, faceDown: false },
+                    { card: { nombre: 'Metal 2', valor: 2, protocol: 'Metal', h_accion: 'Reduce' }, faceDown: true }
+                ],
+                compiledBy: null 
+            },
+            derecha: { 
+                player: [],
+                ai: [{ card: { nombre: 'Psique 1', valor: 2, protocol: 'Psique', h_accion: 'Robar' }, faceDown: false }],
+                compiledBy: null 
+            },
+        },
+        turn: 'player',
+    };
+}
+
+// Renderizar interfaz
+function actualizarUI() {
+    try {
+        if (!gameState) return;
         
-        <!-- ÁREA DEL OPONENTE (ARRIBA) -->
-        <div class="opponent-section">
-            <div class="opponent-info">
-                <h2>🤖 OPONENTE (IA)</h2>
-                <p id="ai-status-text" class="status-text">Esperando turno...</p>
-            </div>
-            <div id="ai-hand" class="hand opponent-hand"></div>
-        </div>
+        // Estado
+        document.getElementById('estado').innerHTML = `
+            <strong>Turno:</strong> ${gameState.turn === 'player' ? '👤 Jugador' : '🤖 IA'}<br>
+            <strong>Compilados:</strong> 👤 ${gameState.player.compiled}/3 | 🤖 ${gameState.ai.compiled}/3<br>
+            <strong>Cartas en mano:</strong> 👤 ${gameState.player.hand.length} | 🤖 ${gameState.ai.hand.length}
+        `;
+        
+        renderizarLineas();
+        renderizarMano();
+        
+    } catch (e) {
+        console.error('Error en actualizarUI:', e);
+        document.getElementById('error-container').innerHTML = `<div class="error">Error: ${e.message}</div>`;
+    }
+}
 
-        <!-- LÍNEA DIVISORA -->
-        <div class="divider"></div>
-
-        <!-- CAMPO DE JUEGO (CENTRO) -->
-        <div class="field-section">
-            <div class="field-container">
-                
-                <!-- LADO IZQUIERDO: MAZOS Y BASURA -->
-                <div class="side-decks ai-decks">
-                    <div class="deck-card">
-                        <div class="deck-label">Mazo</div>
-                        <div class="deck-count" id="ai-deck-count">15</div>
+function renderizarLineas() {
+    const LINEAS = ['izquierda', 'centro', 'derecha'];
+    const NOMBRES = { 'izquierda': 'IZQUIERDA', 'centro': 'CENTRO', 'derecha': 'DERECHA' };
+    
+    let html = '';
+    
+    LINEAS.forEach(linea => {
+        const aiStack = gameState.field[linea].ai || [];
+        const playerStack = gameState.field[linea].player || [];
+        
+        const aiScore = aiStack.reduce((sum, c) => sum + (c.faceDown ? 2 : c.card.valor), 0);
+        const playerScore = playerStack.reduce((sum, c) => sum + (c.faceDown ? 2 : c.card.valor), 0);
+        
+        let aiHTML = aiStack.map(c => renderizarCarta(c)).join('');
+        let playerHTML = playerStack.map(c => renderizarCarta(c)).join('');
+        
+        html += `
+            <div class="linea">
+                <div class="linea-titulo">Línea ${NOMBRES[linea]}</div>
+                <div class="lados">
+                    <div class="lado">${aiHTML || '<div style="flex:1;"></div>'}</div>
+                    <div class="puntuacion">
+                        <div class="puntuacion-valor">${aiScore} vs ${playerScore}</div>
                     </div>
-                    <div class="trash-card">
-                        <div class="trash-label">Basura</div>
-                        <div class="trash-count" id="ai-trash-count">0</div>
-                    </div>
+                    <div class="lado">${playerHTML || '<div style="flex:1;"></div>'}</div>
                 </div>
-
-                <!-- LÍNEAS DE JUEGO -->
-                <div class="game-lines">
-                    <div class="line" id="line-izquierda">
-                        <div class="line-label">LÍNEA IZQUIERDA</div>
-                        <div class="line-content">
-                            <div class="side left">
-                                <div class="stack ai-stack" data-line="izquierda"></div>
-                                <div class="protocol-zone ai-protocol" id="proto-left-ai" data-line="izquierda">
-                                    <div class="protocol-name">—</div>
-                                    <div class="protocol-abilities">CARGANDO...</div>
-                                </div>
-                            </div>
-                            <div class="line-vs">
-                                <div class="score" id="score-left">
-                                    <span class="score-ai">0</span>
-                                    <span class="score-sep">vs</span>
-                                    <span class="score-player">0</span>
-                                </div>
-                            </div>
-                            <div class="side right">
-                                <div class="protocol-zone player-protocol" id="proto-left-player" data-line="izquierda">
-                                    <div class="protocol-name">—</div>
-                                    <div class="protocol-abilities">CARGANDO...</div>
-                                </div>
-                                <div class="stack player-stack" data-line="izquierda"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="line" id="line-centro">
-                        <div class="line-label">LÍNEA CENTRAL</div>
-                        <div class="line-content">
-                            <div class="side left">
-                                <div class="stack ai-stack" data-line="centro"></div>
-                                <div class="protocol-zone ai-protocol" id="proto-middle-ai" data-line="centro">
-                                    <div class="protocol-name">—</div>
-                                    <div class="protocol-abilities">CARGANDO...</div>
-                                </div>
-                            </div>
-                            <div class="line-vs">
-                                <div class="score" id="score-middle">
-                                    <span class="score-ai">0</span>
-                                    <span class="score-sep">vs</span>
-                                    <span class="score-player">0</span>
-                                </div>
-                            </div>
-                            <div class="side right">
-                                <div class="protocol-zone player-protocol" id="proto-middle-player" data-line="centro">
-                                    <div class="protocol-name">—</div>
-                                    <div class="protocol-abilities">CARGANDO...</div>
-                                </div>
-                                <div class="stack player-stack" data-line="centro"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="line" id="line-derecha">
-                        <div class="line-label">LÍNEA DERECHA</div>
-                        <div class="line-content">
-                            <div class="side left">
-                                <div class="stack ai-stack" data-line="derecha"></div>
-                                <div class="protocol-zone ai-protocol" id="proto-right-ai" data-line="derecha">
-                                    <div class="protocol-name">—</div>
-                                    <div class="protocol-abilities">CARGANDO...</div>
-                                </div>
-                            </div>
-                            <div class="line-vs">
-                                <div class="score" id="score-right">
-                                    <span class="score-ai">0</span>
-                                    <span class="score-sep">vs</span>
-                                    <span class="score-player">0</span>
-                                </div>
-                            </div>
-                            <div class="side right">
-                                <div class="protocol-zone player-protocol" id="proto-right-player" data-line="derecha">
-                                    <div class="protocol-name">—</div>
-                                    <div class="protocol-abilities">CARGANDO...</div>
-                                </div>
-                                <div class="stack player-stack" data-line="derecha"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- LADO DERECHO: MAZOS Y BASURA -->
-                <div class="side-decks player-decks">
-                    <div class="deck-card">
-                        <div class="deck-label">Mazo</div>
-                        <div class="deck-count" id="player-deck-count">15</div>
-                    </div>
-                    <div class="trash-card">
-                        <div class="trash-label">Basura</div>
-                        <div class="trash-count" id="player-trash-count">0</div>
-                    </div>
-                </div>
-
             </div>
+        `;
+    });
+    
+    document.getElementById('lineas-container').innerHTML = html;
+}
+
+function renderizarMano() {
+    const mano = gameState.player.hand || [];
+    
+    if (mano.length === 0) {
+        document.getElementById('mano-container').innerHTML = '<div style="color: #888;">Sin cartas en mano</div>';
+        return;
+    }
+    
+    const html = mano.map(c => renderizarCarta(c)).join('');
+    document.getElementById('mano-container').innerHTML = html;
+}
+
+function renderizarCarta(cardObj) {
+    if (!cardObj || !cardObj.card) return '';
+    
+    const card = cardObj.card;
+    
+    if (cardObj.faceDown) {
+        return '<div class="carta carta-bocabajo"></div>';
+    }
+    
+    const proto = card.protocol || 'Espíritu';
+    const color = PROTOCOL_DEFS[proto] ? PROTOCOL_DEFS[proto].color : '#888';
+    const colorClass = `protocolo-${proto.toLowerCase()}`;
+    
+    return `
+        <div class="carta ${colorClass}" style="border-color: ${color}; background: linear-gradient(135deg, rgba(26, 31, 58, 0.9), rgba(10, 14, 39, 0.95)), linear-gradient(to bottom, ${color}22, ${color}11);">
+            <div class="carta-header" style="color: ${color}">${proto.substring(0, 3).toUpperCase()}</div>
+            <div class="carta-nombre">${card.nombre}</div>
+            <div class="carta-valor" style="color: ${color}">+${card.valor}</div>
+            <div class="carta-efecto">${card.h_accion ? card.h_accion.substring(0, 20) + '...' : '—'}</div>
         </div>
+    `;
+}
 
-        <!-- LÍNEA DIVISORA -->
-        <div class="divider"></div>
+// Iniciar
+window.addEventListener('load', function() {
+    console.log('✅ Página cargada');
+    cargarCartas();
+    inicializarGameState();
+    actualizarUI();
+    setInterval(actualizarUI, 1000);
+    console.log('✅ Juego inicializado');
+});
+</script>
 
-        <!-- ÁREA DEL JUGADOR (ABAJO) -->
-        <div class="player-section">
-            <div class="player-info">
-                <h2>👤 TÚ</h2>
-                <p id="player-status-text" class="status-text">Tu turno: Juega una carta</p>
-            </div>
-            <div id="player-hand" class="hand player-hand"></div>
-        </div>
-
-    </div>
-
-</div>
-
-<!-- ============================================================================
-     MODALES Y OVERLAYS
-     ============================================================================ -->
-
-<!-- Modal de Acción de Carta -->
-<div id="action-modal" class="modal hidden">
-    <div class="modal-backdrop"></div>
-    <div class="modal-content">
-        <h3>JUEGA ESTA CARTA</h3>
-        <div id="modal-card-preview" class="card-preview"></div>
-        <div class="modal-buttons">
-            <button id="btn-play-up" class="btn-play-up">BOCARRIBA</button>
-            <button id="btn-play-down" class="btn-play-down">BOCABAJO</button>
-            <button id="btn-cancel-play" class="btn-cancel">CANCELAR</button>
-        </div>
-    </div>
-</div>
-
-<!-- Modal de Confirmación -->
-<div id="confirm-modal" class="modal hidden">
-    <div class="modal-backdrop"></div>
-    <div class="modal-content small">
-        <p id="confirm-msg" class="confirm-message"></p>
-        <div class="modal-buttons">
-            <button id="btn-confirm-yes" class="btn-confirm-yes">SÍ</button>
-            <button id="btn-confirm-no" class="btn-confirm-no">NO</button>
-        </div>
-    </div>
-</div>
-
-<!-- Modal de Fin de Juego -->
-<div id="game-over-modal" class="modal hidden">
-    <div class="modal-backdrop"></div>
-    <div class="modal-content large">
-        <h2 id="winner-text" class="winner-text">¡HAS GANADO!</h2>
-        <p id="win-reason" class="win-reason">Has compilado 3 protocolos exitosamente.</p>
-        <button id="btn-restart" class="btn-primary">JUGAR DE NUEVO</button>
-    </div>
-</div>
-
-<!-- Indicador de Estado de Turno -->
-<div id="turn-indicator" class="turn-indicator">
-    <div class="turn-content">
-        <div class="turn-player"></div>
-        <span id="turn-text">Tu Turno</span>
-    </div>
-</div>
-
-<!-- Scripts -->
-<script src="logic.js"></script>
-<script src="abilities-engine.js"></script>
 </body>
 </html>
