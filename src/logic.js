@@ -393,7 +393,36 @@ function renderStack(line, target) {
     const stack = gameState.field[line][target];
     stack.forEach((cardObj, idx) => {
         const cEl = document.createElement('div');
-        cEl.innerHTML = createCardHTML(cardObj.card, cardObj.faceDown);
+        
+        if (cardObj.faceDown) {
+            // Carta bocabajo - mostrar solo valor
+            cEl.innerHTML = `
+                <div class="card-in-field face-down" data-value="2" title="Cara oculta">
+                </div>
+            `;
+        } else {
+            // Carta bocarriba - mostrar completa
+            const color = PROTOCOL_DEFS[cardObj.card.protocol] ? 
+                PROTOCOL_DEFS[cardObj.card.protocol].color : '#888';
+            
+            cEl.innerHTML = `
+                <div class="card-in-field" style="border-color: ${color}; background: linear-gradient(135deg, rgba(26, 31, 58, 0.9), rgba(10, 14, 39, 0.95)), linear-gradient(to bottom, ${color}22, ${color}11);">
+                    <div class="card-header" style="color: ${color}">
+                        ${cardObj.card.protocol.toUpperCase().substring(0, 3)}
+                    </div>
+                    <div class="card-name" title="${cardObj.card.nombre}">
+                        ${cardObj.card.nombre}
+                    </div>
+                    <div class="card-value" style="color: ${color}">
+                        +${cardObj.card.valor}
+                    </div>
+                    <div class="card-effect">
+                        ${cardObj.card.h_accion ? cardObj.card.h_accion.substring(0, 30) + '...' : '—'}
+                    </div>
+                </div>
+            `;
+        }
+        
         const domCard = cEl.firstElementChild;
         
         const isUncovered = idx === stack.length - 1;
@@ -417,6 +446,7 @@ function renderStack(line, target) {
             domCard.style.top = `${idx * 20}px`;
         }
         domCard.style.zIndex = idx;
+        
         
         if (isUncovered) domCard.classList.add('uncovered');
         
