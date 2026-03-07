@@ -871,43 +871,166 @@ ui.btnRefresh.onclick = () => {
 }
 
 function playAITurn() {
+    // FASE 2: IA INTELIGENTE - Minimax + Evaluación Estratégica
+    
     if (gameState.ai.hand.length === 0) {
         while(gameState.ai.hand.length < 5) drawCard('ai');
+        console.log('🤖 IA: Recarga (mano vacía)');
         updateStatus("IA hizo Recarga");
-    } else {
-        const cardIdx = Math.floor(Math.random() * gameState.ai.hand.length);
-        const card = gameState.ai.hand.splice(cardIdx, 1)[0];
-        
-        // AI logic: check if the card matches any of the AI's protocols
-        const lineIndex = gameState.ai.protocols.indexOf(card.protocol);
-        let targetLine = lineIndex !== -1 ? LINES[lineIndex] : null;
-        
-        let isFaceDown = true;
-        
-        if (targetLine && !gameState.field[targetLine].compiledBy) {
-            // Matching protocol line is free, play face-up
-            isFaceDown = false;
-        } else {
-            // No matching line free, play face-down on any free line
-            targetLine = LINES.find(l => !gameState.field[l].compiledBy);
-            isFaceDown = true;
+        return;
+    }
+
+    try {
+        // Inicializar motores de IA (primera vez)
+        if (!window.aiEvaluator) {
+            window.aiEvaluator = new AIEvaluator(gameState);
+            console.log('✅ Motor de Evaluación inicializado');
         }
+        if (!window.miniMax) {
+            window.miniMax = new MiniMax(window.aiEvaluator, 2);
+            console.log('✅ Minimax inicializado (depth=2)');
+        }
+
+        // Generar todos los movimientos posibles
+        const possibleMoves = generateAIPossibleMoves();
         
-        if (targetLine) {
-            gameState.field[targetLine].ai.push({ card: card, faceDown: isFaceDown });
-            updateStatus(`IA jugó ${card.nombre} ${isFaceDown ? 'bocabajo' : 'bocarriba'} en el ${targetLine}`);
-            
-            if (!isFaceDown) {
-                executeEffect(card, 'ai');
-            }
-        } else {
-            // Handled as recharge if no lines available (fallback)
-            gameState.ai.hand.push(card);
+        if (possibleMoves.length === 0) {
+            // Sin movimientos disponibles, recargar
             while(gameState.ai.hand.length < 5) drawCard('ai');
-            updateStatus("IA hizo Recarga (sin líneas)");
+            updateStatus("IA hizo Recarga (sin movimientos)");
+            return;
+        }
+
+        // Usar minimax para encontrar el mejor movimiento
+        const bestMoveResult = window.miniMax.findBestMove(gameState, possibleMoves);
+        
+        if (!bestMoveResult || !bestMoveResult.bestMove) {
+            throw new Error('Minimax no encontró movimiento válido');
+        }
+
+        const move = bestMoveResult.bestMove;
+        
+        // Log de decisión de IA
+        console.log('🤖 IA Decision (Minimax):', {
+            line: move.line,
+            cardName: move.card.nombre,
+            faceUp: move.faceUp,
+            score: Math.round(bestMoveResult.score),
+            stats: bestMoveResult.statistics,
+        });
+
+        // Ejecutar el movimiento elegido
+        executeAIMove(move);
+
+    } catch (error) {
+        // Fallback: Si IA falla, juega aleatorio
+        console.error('❌ IA Error:', error.message);
+        playAITurnRandom();
+    }
+}
+
+/**
+ * 🎲 Respuesta aleatoria (fallback)
+ */
+function playAITurnRandom() {
+    const cardIdx = Math.floor(Math.random() * gameState.ai.hand.length);
+    const card = gameState.ai.hand[cardIdx];
+    const lineIndex = gameState.ai.protocols.indexOf(card.protocol);
+    let targetLine = lineIndex !== -1 ? LINES[lineIndex] : null;
+    
+    let isFaceDown = true;
+    
+    if (targetLine && !gameState.field[targetLine].compiledBy) {
+        isFaceDown = false;
+    } else {
+        targetLine = LINES.find(l => !gameState.field[l].compiledBy);
+        isFaceDown = true;
+    }
+    
+    if (targetLine) {
+        const movedCard = gameState.ai.hand.splice(cardIdx, 1)[0];
+        gameState.field[targetLine].ai.push({ card: movedCard, faceDown: isFaceDown });
+        updateStatus(`IA jugó ${movedCard.nombre} ${isFaceDown ? 'bocabajo' : 'bocarriba'} en ${targetLine}`);
+        
+        if (!isFaceDown) {
+            executeEffect(movedCard, 'ai');
         }
     }
-    setTimeout(() => endTurn('ai'), 1000);
+}
+
+/**
+ * 🎯 Generar todos los movimientos posibles de IA
+ */
+function generateAIPossibleMoves() {
+    const moves = [];
+    
+    gameState.ai.hand.forEach((card, cardIndex) => {
+        LINES.forEach(line => {
+            if (!gameState.field[line].compiledBy) {
+                // Movimiento bocarriba (si coincide protocolo)
+                const lineIndex = gameState.ai.protocols.indexOf(card.protocol);
+                const lineMatchesProtocol = lineIndex !== -1 && LINES[lineIndex] === line;
+                
+                if (lineMatchesProtocol) {
+                    moves.push({
+                        cardIndex,
+                        line,
+                        faceUp: true,
+                        card,
+                        type: 'face-up',
+                    });
+                }
+                
+                // Movimiento bocabajo (siempre posible)
+                moves.push({
+                    cardIndex,
+                    line,
+                    faceUp: false,
+                    card,
+                    type: 'face-down',
+                });
+            }
+        });
+    });
+
+    // Opción: Recargar si mazo tiene cartas
+    if (gameState.ai.deck.length > 0) {
+        moves.push({
+            action: 'refresh',
+            type: 'refresh',
+        });
+    }
+
+    return moves;
+}
+
+/**
+ * ⚙️ Ejecutar movimiento de IA elegido por minimax
+ */
+function executeAIMove(move) {
+    if (move.action === 'refresh') {
+        while(gameState.ai.hand.length < 5 && gameState.ai.deck.length > 0) {
+            drawCard('ai');
+        }
+        updateStatus('IA hizo Recarga');
+        return;
+    }
+
+    const card = gameState.ai.hand[move.cardIndex];
+    const movedCard = gameState.ai.hand.splice(move.cardIndex, 1)[0];
+    
+    gameState.field[move.line].ai.push({ 
+        card: movedCard, 
+        faceDown: !move.faceUp 
+    });
+    
+    const faceText = move.faceUp ? 'bocarriba' : 'bocabajo';
+    updateStatus(`IA jugó ${movedCard.nombre} ${faceText} en ${move.line}`);
+    
+    // Ejecutar efectos si es bocarriba
+    if (move.faceUp) {
+        executeEffect(movedCard, 'ai');
+    }
 }
 
 function endTurn(who) {
