@@ -1,6 +1,19 @@
 /* ============================================================================
    COMPILE - ESTILOS VISUALES MODERNOS
-   ============================================================================ */
+   ============================================================================ 
+   
+   Versión: 2.0.0
+   Última actualización: 2026-03-07
+   
+   Sistema de diseño completo:
+   - Paleta de 12 colores de protocolo
+   - Animaciones suaves (shimmer, pulse, hover)
+   - Diseño responsivo (desktop optimizado)
+   - Tema oscuro futurista
+   - Glassmorphism effects
+   
+   Personalización fácil mediante variables CSS en :root
+ ============================================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap');
 
