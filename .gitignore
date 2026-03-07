@@ -1,0 +1,35 @@
+# Dependencias
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE y Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Compilados
+dist/
+build/
+
+# Logs
+*.log
+logs/
+
+# Backups
+backup*/
+*.bak
+*.tmp
+
+# Archivos de OS
+.DS_Store
+Thumbs.db
+
+# Archivos locales personalizados
+personal/
+my-changes/
+local-customizations/

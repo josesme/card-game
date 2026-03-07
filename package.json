@@ -1,0 +1,33 @@
+{
+  "name": "compile-card-game",
+  "version": "2.0.0",
+  "description": "COMPILE - Digital Card Game with AI",
+  "main": "src/logic.js",
+  "scripts": {
+    "dev": "echo 'Open src/index.html in your browser'",
+    "build": "echo 'No build required for this project'",
+    "test": "echo 'Tests coming in Phase 2'",
+    "start": "python -m http.server 8000 --directory ."
+  },
+  "keywords": [
+    "card-game",
+    "ai",
+    "compile",
+    "digital-board-game"
+  ],
+  "author": "Compile Development Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/compile-card-game.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/compile-card-game/issues"
+  },
+  "homepage": "https://github.com/your-username/compile-card-game#readme",
+  "devDependencies": {},
+  "dependencies": {}
+}

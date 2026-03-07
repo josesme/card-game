@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COMPILE - Juego de Cartas Digital</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style-visual.css">
+</head>
+<body>
+
+<!-- ============================================================================
+     PANTALLA DE DRAFT (SELECCIÓN DE PROTOCOLOS)
+     ============================================================================ -->
+<div id="draft-screen" class="screen">
+    <div class="draft-container">
+        <div class="draft-header">
+            <h1 class="draft-title">⚡ COMPILE ⚡</h1>
+            <p class="draft-subtitle">Selecciona tus 3 Protocolos</p>
+        </div>
+
+        <div class="draft-status">
+            <div class="draft-picks">
+                <span class="picks-label">TÚ</span>
+                <div class="picks-display" id="player-picks-display"></div>
+            </div>
+            <div class="vs">vs</div>
+            <div class="draft-picks">
+                <div class="picks-display" id="ai-picks-display"></div>
+                <span class="picks-label">IA</span>
+            </div>
+        </div>
+
+        <div id="protocol-grid" class="protocol-grid"></div>
+
+        <div id="draft-footer" class="draft-footer hidden">
+            <h3>Tus líneas de enfrentamiento:</h3>
+            <div id="line-matchups" class="line-matchups"></div>
+            <button id="btn-start-game" class="btn-primary">INICIAR COMPILACIÓN</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================================
+     PANTALLA DE JUEGO (MESA)
+     ============================================================================ -->
+<div id="game-screen" class="screen hidden">
+    
+    <!-- TABLERO PRINCIPAL -->
+    <div class="game-board">
+        
+        <!-- ÁREA DEL OPONENTE (ARRIBA) -->
+        <div class="opponent-section">
+            <div class="opponent-info">
+                <h2>🤖 OPONENTE (IA)</h2>
+                <p id="ai-status-text" class="status-text">Esperando turno...</p>
+            </div>
+            <div id="ai-hand" class="hand opponent-hand"></div>
+        </div>
+
+        <!-- LÍNEA DIVISORA -->
+        <div class="divider"></div>
+
+        <!-- CAMPO DE JUEGO (CENTRO) -->
+        <div class="field-section">
+            <div class="field-container">
+                
+                <!-- LADO IZQUIERDO: MAZOS Y BASURA -->
+                <div class="side-decks ai-decks">
+                    <div class="deck-card">
+                        <div class="deck-label">Mazo</div>
+                        <div class="deck-count" id="ai-deck-count">15</div>
+                    </div>
+                    <div class="trash-card">
+                        <div class="trash-label">Basura</div>
+                        <div class="trash-count" id="ai-trash-count">0</div>
+                    </div>
+                </div>
+
+                <!-- LÍNEAS DE JUEGO -->
+                <div class="game-lines">
+                    <div class="line" id="line-izquierda">
+                        <div class="line-label">LÍNEA IZQUIERDA</div>
+                        <div class="line-content">
+                            <div class="side left">
+                                <div class="stack ai-stack" data-line="izquierda"></div>
+                                <div class="protocol-zone ai-protocol" id="proto-left-ai" data-line="izquierda">
+                                    <div class="protocol-name">—</div>
+                                    <div class="protocol-abilities">CARGANDO...</div>
+                                </div>
+                            </div>
+                            <div class="line-vs">
+                                <div class="score" id="score-left">
+                                    <span class="score-ai">0</span>
+                                    <span class="score-sep">vs</span>
+                                    <span class="score-player">0</span>
+                                </div>
+                            </div>
+                            <div class="side right">
+                                <div class="protocol-zone player-protocol" id="proto-left-player" data-line="izquierda">
+                                    <div class="protocol-name">—</div>
+                                    <div class="protocol-abilities">CARGANDO...</div>
+                                </div>
+                                <div class="stack player-stack" data-line="izquierda"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="line" id="line-centro">
+                        <div class="line-label">LÍNEA CENTRAL</div>
+                        <div class="line-content">
+                            <div class="side left">
+                                <div class="stack ai-stack" data-line="centro"></div>
+                                <div class="protocol-zone ai-protocol" id="proto-middle-ai" data-line="centro">
+                                    <div class="protocol-name">—</div>
+                                    <div class="protocol-abilities">CARGANDO...</div>
+                                </div>
+                            </div>
+                            <div class="line-vs">
+                                <div class="score" id="score-middle">
+                                    <span class="score-ai">0</span>
+                                    <span class="score-sep">vs</span>
+                                    <span class="score-player">0</span>
+                                </div>
+                            </div>
+                            <div class="side right">
+                                <div class="protocol-zone player-protocol" id="proto-middle-player" data-line="centro">
+                                    <div class="protocol-name">—</div>
+                                    <div class="protocol-abilities">CARGANDO...</div>
+                                </div>
+                                <div class="stack player-stack" data-line="centro"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="line" id="line-derecha">
+                        <div class="line-label">LÍNEA DERECHA</div>
+                        <div class="line-content">
+                            <div class="side left">
+                                <div class="stack ai-stack" data-line="derecha"></div>
+                                <div class="protocol-zone ai-protocol" id="proto-right-ai" data-line="derecha">
+                                    <div class="protocol-name">—</div>
+                                    <div class="protocol-abilities">CARGANDO...</div>
+                                </div>
+                            </div>
+                            <div class="line-vs">
+                                <div class="score" id="score-right">
+                                    <span class="score-ai">0</span>
+                                    <span class="score-sep">vs</span>
+                                    <span class="score-player">0</span>
+                                </div>
+                            </div>
+                            <div class="side right">
+                                <div class="protocol-zone player-protocol" id="proto-right-player" data-line="derecha">
+                                    <div class="protocol-name">—</div>
+                                    <div class="protocol-abilities">CARGANDO...</div>
+                                </div>
+                                <div class="stack player-stack" data-line="derecha"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LADO DERECHO: MAZOS Y BASURA -->
+                <div class="side-decks player-decks">
+                    <div class="deck-card">
+                        <div class="deck-label">Mazo</div>
+                        <div class="deck-count" id="player-deck-count">15</div>
+                    </div>
+                    <div class="trash-card">
+                        <div class="trash-label">Basura</div>
+                        <div class="trash-count" id="player-trash-count">0</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- LÍNEA DIVISORA -->
+        <div class="divider"></div>
+
+        <!-- ÁREA DEL JUGADOR (ABAJO) -->
+        <div class="player-section">
+            <div class="player-info">
+                <h2>👤 TÚ</h2>
+                <p id="player-status-text" class="status-text">Tu turno: Juega una carta</p>
+            </div>
+            <div id="player-hand" class="hand player-hand"></div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ============================================================================
+     MODALES Y OVERLAYS
+     ============================================================================ -->
+
+<!-- Modal de Acción de Carta -->
+<div id="action-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+        <h3>JUEGA ESTA CARTA</h3>
+        <div id="modal-card-preview" class="card-preview"></div>
+        <div class="modal-buttons">
+            <button id="btn-play-up" class="btn-play-up">BOCARRIBA</button>
+            <button id="btn-play-down" class="btn-play-down">BOCABAJO</button>
+            <button id="btn-cancel-play" class="btn-cancel">CANCELAR</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación -->
+<div id="confirm-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content small">
+        <p id="confirm-msg" class="confirm-message"></p>
+        <div class="modal-buttons">
+            <button id="btn-confirm-yes" class="btn-confirm-yes">SÍ</button>
+            <button id="btn-confirm-no" class="btn-confirm-no">NO</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Fin de Juego -->
+<div id="game-over-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content large">
+        <h2 id="winner-text" class="winner-text">¡HAS GANADO!</h2>
+        <p id="win-reason" class="win-reason">Has compilado 3 protocolos exitosamente.</p>
+        <button id="btn-restart" class="btn-primary">JUGAR DE NUEVO</button>
+    </div>
+</div>
+
+<!-- Indicador de Estado de Turno -->
+<div id="turn-indicator" class="turn-indicator">
+    <div class="turn-content">
+        <div class="turn-player"></div>
+        <span id="turn-text">Tu Turno</span>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="logic.js"></script>
+<script src="abilities-engine.js"></script>
+</body>
+</html>
