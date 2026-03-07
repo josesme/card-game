@@ -1,3 +1,15 @@
+/**
+ * ⚡ COMPILE - Digital Card Game Engine
+ * Version: 2.0.0
+ * Last Updated: 2026-03-07
+ * 
+ * Core Game Logic - Motor de Juego Principal
+ * - Sistema de turnos completo
+ * - Lógica de compilación automática
+ * - Integración con abilities-engine.js
+ * - Efectos persistentes y modificadores
+ */
+
 // Core Game Logic for Compile - Official Rules Updated
 const ui = {
     playerDeckCount: document.getElementById('player-deck-count'),
