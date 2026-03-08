@@ -234,6 +234,10 @@ function initGame() {
         initLineListeners();
         console.log('  ✅ Line listeners initialized');
         
+        console.log('🎛️ Initializing modal buttons...');
+        initializeModalButtons();
+        console.log('  ✅ Modal buttons initialized');
+        
         console.log('🖼️ Updating UI...');
         updateUI();
         console.log('  ✅ UI updated');
@@ -665,6 +669,40 @@ ui.btnCancel.onclick = () => {
     gameState.selectedCardIndex = null;
 };
 
+// Initialize modal button handlers with error checking
+function initializeModalButtons() {
+    if (ui.btnPlayUp) {
+        ui.btnPlayUp.onclick = () => {
+            console.log('🔘 btnPlayUp clicked');
+            playSelectedCard(false);
+        };
+        console.log('✅ btnPlayUp handler attached');
+    } else {
+        console.error('❌ btnPlayUp not found');
+    }
+    
+    if (ui.btnPlayDown) {
+        ui.btnPlayDown.onclick = () => {
+            console.log('🔘 btnPlayDown clicked');
+            playSelectedCard(true);
+        };
+        console.log('✅ btnPlayDown handler attached');
+    } else {
+        console.error('❌ btnPlayDown not found');
+    }
+    
+    if (ui.btnCancel) {
+        ui.btnCancel.onclick = () => {
+            console.log('🔘 btnCancel clicked');
+            ui.actionModal.classList.add('hidden');
+            gameState.selectedCardIndex = null;
+        };
+        console.log('✅ btnCancel handler attached');
+    } else {
+        console.error('❌ btnCancel not found');
+    }
+}
+
 // --- Motor de Habilidades ---
 function executeEffect(card, targetPlayer) {
     // NUEVO MOTOR DE HABILIDADES: Intenta usar el sistema moderno
@@ -1037,14 +1075,21 @@ function finalizePlay(targetLine, isFaceDown) {
 }
 
 ui.btnRefresh.onclick = () => {
-    if (gameState.turn !== 'player' || gameState.phase !== 'action') return;
+    console.log('🔘 btnRefresh clicked - checking conditions...');
+    if (gameState.turn !== 'player' || gameState.phase !== 'action') {
+        console.warn('❌ Cannot refresh - not player action phase');
+        return;
+    }
     if (gameState.player.hand.length >= 5) {
+        console.warn('❌ Cannot refresh - hand too full');
         alert("No puedes recargar si tienes 5 o más cartas.");
         return;
     }
+    console.log('✅ Refreshing hand...');
     while(gameState.player.hand.length < 5) {
         if(!drawCard('player')) break;
     }
+    console.log('🔄 Hand refreshed, ending turn');
     endTurn('player');
 }
 
