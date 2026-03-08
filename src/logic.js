@@ -1373,8 +1373,9 @@ function startGameFromDraft() {
     
     // En game.html, obtener protocolos del sessionStorage
     // En draft.html, usarlos del draftState
-    if (draftState && draftState.playerPicks) {
-        // Viene del draft
+    // IMPORTANTE: Verificar que draftState.playerPicks NO esté vacío (length > 0)
+    if (draftState && draftState.playerPicks && draftState.playerPicks.length > 0) {
+        // Viene del draft (tiene cartas seleccionadas)
         gameState.player.protocols = [...draftState.playerPicks];
         gameState.ai.protocols = [...draftState.aiPicks].reverse();
         console.log('✅ Loaded from draftState:', { 
