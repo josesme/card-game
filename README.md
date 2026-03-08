@@ -28,10 +28,10 @@ Una versión digital del juego de cartas **COMPILE**, donde compites contra una 
   - Colores por protocolo
 
 - **Lógica de Juego Core**
-  - Draft de protocolos
-  - Sistema de turnos completo
-  - Compilación automática
-  - Puntuación con modificadores
+  - ✅ Motor de turos
+  - ✅ Compilación automática
+  - ✅ Puntuación con modificadores
+  - 📋 **Draft de Protocolos** (Selección alternada de 3 de 12)
 
 ### ✅ Completado / ⏳ En Desarrollo
 
@@ -42,7 +42,18 @@ Una versión digital del juego de cartas **COMPILE**, donde compites contra una 
 - IA busca compilaciones y defiende amenazas
 - Ver rama: `feature/phase-2-ai`
 
-**Fase 3:** Reglas Complejas (Control Component) - próximo
+**Fase 3: Control Component** 📋 **DOCUMENTADA** | ⏳ SIN COMENZAR
+- Efectos persistentes (duran múltiples turnos)
+- Restricciones de acción (bloqueo de compilación, etc.)
+- Stack de efectos (orden de resolución)
+- Validaciones complejas
+- Ver: [docs/FASE-3-CONTROL.md](docs/FASE-3-CONTROL.md)
+
+**Draft System** 📋 **DOCUMENTADO** | 🔨 EN IMPLEMENTACIÓN
+- Selección alternada de 3 protocolos de 12 disponibles
+- IA usa evaluador estratégico (Minimax)
+- Panel visual como en el prototipo
+- Ver: [docs/DRAFT-SYSTEM.md](docs/DRAFT-SYSTEM.md)
 
 **Fase 4:** Polish Final (guardado, historial) - después
 

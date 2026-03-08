@@ -156,12 +156,12 @@ const GLOBAL_CARDS = {  "Espíritu": [
 let gameState = {
     player: { 
         deck: [], trash: [], hand: [], 
-        protocols: ['Espíritu', 'Muerte', 'Fuego'],
+        protocols: JSON.parse(sessionStorage.getItem('playerProtocols') || '["Espíritu", "Muerte", "Fuego"]'),
         compiled: [] 
     },
     ai: { 
         deck: [], trash: [], hand: [], 
-        protocols: ['Vida', 'Luz', 'Oscuridad'],
+        protocols: JSON.parse(sessionStorage.getItem('aiProtocols') || '["Vida", "Luz", "Oscuridad"]'),
         compiled: [] 
     },
     field: {
@@ -1100,7 +1100,10 @@ function showGameOver(title, reason = "Has compilado 3 protocolos.") {
     ui.gameOverModal.classList.remove('hidden');
 }
 
-ui.btnRestart.onclick = () => initDraft();
+// Set restart button only if it exists (game mode)
+if (ui.btnRestart) {
+    ui.btnRestart.onclick = () => initDraft();
+}
 
 // ========================== DRAFT LOGIC ==========================
 
@@ -1270,9 +1273,15 @@ function showDraftResult() {
         matchupsEl.appendChild(row);
     }
 
-    document.getElementById('draft-footer').classList.remove('hidden');
+    const draftFooter = document.getElementById('draft-footer');
+    if (draftFooter) {
+        draftFooter.classList.remove('hidden');
+    }
 
-    document.getElementById('btn-start-game').onclick = startGameFromDraft;
+    const btnStartGame = document.getElementById('btn-start-game');
+    if (btnStartGame) {
+        btnStartGame.onclick = startGameFromDraft;
+    }
 }
 
 function startGameFromDraft() {
@@ -1295,9 +1304,16 @@ function startGameFromDraft() {
         derecha: { player: [], ai: [], compiledBy: null },
     };
 
-    // Show game, hide draft
-    document.getElementById('draft-screen').classList.add('hidden');
-    document.getElementById('game-container').classList.remove('hidden');
+    // Show game, hide draft (si existen en el DOM)
+    const draftScreen = document.getElementById('draft-screen');
+    if (draftScreen) {
+        draftScreen.classList.add('hidden');
+    }
+    
+    const gameContainer = document.getElementById('game-container');
+    if (gameContainer) {
+        gameContainer.classList.remove('hidden');
+    }
 
     initGame();
 }
@@ -1310,5 +1326,15 @@ function swapProtocols(lineA, lineB) {
 }
 
 // ========================== START ==========================
-// Begin with the draft screen
-initDraft();
+// Detectar si estamos en draft.html o game.html
+const isDraft = document.getElementById('draft-screen') !== null;
+const isGame = document.getElementById('game-container') !== null;
+
+if (isDraft) {
+    // En draft.html: iniciar draft
+    initDraft();
+} else if (isGame) {
+    // En game.html: iniciar juego con protocolos del sessionStorage
+    console.log('Iniciando juego...');
+    startGameFromDraft();
+}
