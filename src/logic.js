@@ -180,41 +180,85 @@ let gameState = {
 function createDeckForPlayer(target) {
     let deck = [];
     const protocols = gameState[target].protocols;
+    
+    console.log(`🎴 Building deck for ${target}. Protocols:`, protocols);
+    
     protocols.forEach(proto => {
         // Encontrar el nombre real en GLOBAL_CARDS
         if (GLOBAL_CARDS[proto]) {
-            GLOBAL_CARDS[proto].forEach(cardData => {
+            const cardsForProto = GLOBAL_CARDS[proto];
+            console.log(`  ✅ Found ${proto}: ${cardsForProto.length} cards`);
+            cardsForProto.forEach(cardData => {
                 deck.push({
                     id: Math.random().toString(36).substr(2, 9),
                     ...cardData,
                     protocol: proto
                 });
             });
+        } else {
+            console.warn(`  ⚠️ Protocol not found in GLOBAL_CARDS: ${proto}`);
         }
     });
-    return deck.sort(() => Math.random() - 0.5);
+    
+    console.log(`  📊 Total cards in deck before shuffle: ${deck.length}`);
+    const shuffled = deck.sort(() => Math.random() - 0.5);
+    console.log(`  📊 Deck ready: ${shuffled.length} cards`);
+    
+    return shuffled;
+}
 }
 
 function initGame() {
-    gameState.player.deck = createDeckForPlayer('player');
-    gameState.ai.deck = createDeckForPlayer('ai');
+    console.log('=== initGame() START ===');
     
-    // Draw 5 cards
-    for(let i=0; i<5; i++) {
-        drawCard('player');
-        drawCard('ai');
+    try {
+        console.log('📦 Creating decks...');
+        gameState.player.deck = createDeckForPlayer('player');
+        console.log(`  ✅ Player deck created: ${gameState.player.deck.length} cards`);
+        
+        gameState.ai.deck = createDeckForPlayer('ai');
+        console.log(`  ✅ AI deck created: ${gameState.ai.deck.length} cards`);
+        
+        console.log('🃏 Drawing 5 cards for each player...');
+        for(let i=0; i<5; i++) {
+            drawCard('player');
+            drawCard('ai');
+        }
+        console.log(`  ✅ Player hand: ${gameState.player.hand.length} cards`);
+        console.log(`  ✅ AI hand: ${gameState.ai.hand.length} cards`);
+        
+        console.log('🎨 Initializing protocol display...');
+        initProtocolDisplay();
+        console.log('  ✅ Protocol display initialized');
+        
+        console.log('🔗 Initializing line listeners...');
+        initLineListeners();
+        console.log('  ✅ Line listeners initialized');
+        
+        console.log('🖼️ Updating UI...');
+        updateUI();
+        console.log('  ✅ UI updated');
+        
+        console.log('🎬 Starting player turn...');
+        startTurn('player');
+        console.log('  ✅ Turn started');
+        
+        console.log('=== initGame() END - SUCCESS ===');
+    } catch (error) {
+        console.error('❌ Error in initGame():', error);
+        console.error('Error message:', error.message);
+        console.error('Stack trace:', error.stack);
+        throw error;
     }
-    
-    initProtocolDisplay();
-    initLineListeners();
-    updateUI();
-    startTurn('player');
 }
 
 function initLineListeners() {
     LINES.forEach(line => {
-        const lineKey = line === 'izquierda' ? 'left' : line === 'centro' ? 'middle' : 'right';
-        const lineEl = document.getElementById(`line-${lineKey}`);
+        const lineEl = document.getElementById(`line-${line}`);
+        if (!lineEl) {
+            console.warn(`Line element not found: line-${line}`);
+            return;
+        }
         lineEl.onclick = () => {
             if (gameState.selectionMode) {
                 finalizePlay(line, true);
@@ -247,26 +291,33 @@ function initProtocolDisplay() {
     LINES.forEach((line, idx) => {
         const pProto = gameState.player.protocols[idx];
         const aProto = gameState.ai.protocols[idx];
-        const lineKey = line === 'izquierda' ? 'left' : line === 'centro' ? 'middle' : 'right';
 
         const pColor = PROTOCOL_DEFS[pProto] ? PROTOCOL_DEFS[pProto].color : 'var(--accent-glow)';
         const aColor = PROTOCOL_DEFS[aProto] ? PROTOCOL_DEFS[aProto].color : 'var(--accent-red)';
 
-        // Player protocol card (bottom)
-        const pCard = document.getElementById(`proto-${lineKey}-player`);
-        pCard.querySelector('.proto-card-name').textContent = pProto;
-        pCard.querySelector('.proto-card-name').style.color = pColor;
-        pCard.querySelector('.proto-card-status').textContent = PROTOCOL_DEFS[pProto].abilities;
-        pCard.style.borderColor = pColor;
-        pCard.style.boxShadow = `0 0 18px ${pColor}44`;
+        // Player protocol card (bottom) - check if exists
+        const pCard = document.getElementById(`proto-${line}-player`);
+        if (pCard) {
+            const nameEl = pCard.querySelector('.proto-card-name');
+            if (nameEl) nameEl.textContent = pProto;
+            if (nameEl) nameEl.style.color = pColor;
+            const statusEl = pCard.querySelector('.proto-card-status');
+            if (statusEl) statusEl.textContent = PROTOCOL_DEFS[pProto].abilities;
+            pCard.style.borderColor = pColor;
+            pCard.style.boxShadow = `0 0 18px ${pColor}44`;
+        }
 
-        // AI protocol card (top)
-        const aCard = document.getElementById(`proto-${lineKey}-ai`);
-        aCard.querySelector('.proto-card-name').textContent = aProto;
-        aCard.querySelector('.proto-card-name').style.color = aColor;
-        aCard.querySelector('.proto-card-status').textContent = PROTOCOL_DEFS[aProto].abilities;
-        aCard.style.borderColor = aColor;
-        aCard.style.boxShadow = `0 0 18px ${aColor}44`;
+        // AI protocol card (top) - check if exists
+        const aCard = document.getElementById(`proto-${line}-ai`);
+        if (aCard) {
+            const nameEl = aCard.querySelector('.proto-card-name');
+            if (nameEl) nameEl.textContent = aProto;
+            if (nameEl) nameEl.style.color = aColor;
+            const statusEl = aCard.querySelector('.proto-card-status');
+            if (statusEl) statusEl.textContent = PROTOCOL_DEFS[aProto].abilities;
+            aCard.style.borderColor = aColor;
+            aCard.style.boxShadow = `0 0 18px ${aColor}44`;
+        }
     });
 }
 
@@ -326,13 +377,15 @@ function createCardHTML(card, faceDown = false) {
 function updateUI() {
     if (!GLOBAL_CARDS) return; // Esperar a que carguen las cartas
 
-    ui.playerDeckCount.innerText = gameState.player.deck.length;
-    ui.playerTrashCount.innerText = gameState.player.trash.length;
-    ui.aiDeckCount.innerText = gameState.ai.deck.length;
-    ui.aiTrashCount.innerText = gameState.ai.trash.length;
+    // Update deck/trash counts (with null checks)
+    if (ui.playerDeckCount) ui.playerDeckCount.innerText = gameState.player.deck.length;
+    if (ui.playerTrashCount) ui.playerTrashCount.innerText = gameState.player.trash.length;
+    if (ui.aiDeckCount) ui.aiDeckCount.innerText = gameState.ai.deck.length;
+    if (ui.aiTrashCount) ui.aiTrashCount.innerText = gameState.ai.trash.length;
 
-    ui.playerHand.innerHTML = gameState.player.hand.map(c => createCardHTML(c)).join('');
-    ui.aiHand.innerHTML = gameState.ai.hand.map(c => createCardHTML(c, true)).join('');
+    // Update hands
+    if (ui.playerHand) ui.playerHand.innerHTML = gameState.player.hand.map(c => createCardHTML(c)).join('');
+    if (ui.aiHand) ui.aiHand.innerHTML = gameState.ai.hand.map(c => createCardHTML(c, true)).join('');
     
     // Attach events to player hand
     document.querySelectorAll('#player-hand .card').forEach((cardEl, index) => {
@@ -345,25 +398,37 @@ function updateUI() {
         };
     });
 
+    // Update field lines and scores
     LINES.forEach(line => {
         renderStack(line, 'player');
         renderStack(line, 'ai');
         
         const pScore = calculateScore(line, 'player');
         const aiScore = calculateScore(line, 'ai');
-        const lineKey = line === 'izquierda' ? 'left' : line === 'centro' ? 'middle' : 'right';
-        const scoreEl = document.getElementById(`score-${lineKey}`);
-        scoreEl.querySelector('.player-score').innerText = pScore;
-        scoreEl.querySelector('.ai-score').innerText = aiScore;
+        
+        // Try to update score display if it exists
+        const scoreEl = document.getElementById(`score-${line}`);
+        if (scoreEl) {
+            const pScoreEl = scoreEl.querySelector('.player-score');
+            const aiScoreEl = scoreEl.querySelector('.ai-score');
+            if (pScoreEl) pScoreEl.innerText = pScore;
+            if (aiScoreEl) aiScoreEl.innerText = aiScore;
+        }
 
+        // Mark compiled protocols if they exist
         if (gameState.field[line].compiledBy) {
             const compiledBy = gameState.field[line].compiledBy;
-            const pCard = document.getElementById(`proto-${lineKey}-player`);
-            const aCard = document.getElementById(`proto-${lineKey}-ai`);
+            const pCard = document.getElementById(`proto-${line}-player`);
+            const aCard = document.getElementById(`proto-${line}-ai`);
             const cardToMark = compiledBy === 'player' ? pCard : aCard;
-            cardToMark.classList.add('compiled');
-            const winner = compiledBy === 'player' ? 'COMPILADO ✓' : 'COMPILADO ✗';
-            cardToMark.querySelector('.proto-card-status').textContent = winner;
+            if (cardToMark) {
+                cardToMark.classList.add('compiled');
+                const statusEl = cardToMark.querySelector('.proto-card-status');
+                if (statusEl) {
+                    const winner = compiledBy === 'player' ? 'COMPILADO ✓' : 'COMPILADO ✗';
+                    statusEl.textContent = winner;
+                }
+            }
         }
     });
 
@@ -386,8 +451,28 @@ function calculateScore(line, target) {
 }
 
 function renderStack(line, target) {
-    const lineKey = line === 'izquierda' ? 'left' : line === 'centro' ? 'middle' : 'right';
-    const stackEl = document.querySelector(`.line#line-${lineKey} .${target}-stack`);
+    const lineEl = document.getElementById(`line-${line}`);
+    if (!lineEl) {
+        console.warn(`Line element not found: line-${line}`);
+        return;
+    }
+    
+    // Try to find a stack container, or use the line element itself
+    let stackEl = lineEl.querySelector(`.${target}-stack`);
+    if (!stackEl) {
+        // Create structure if it doesn't exist
+        // For game.html, we'll append directly to the line
+        if (!lineEl.dataset[`${target}StackReady`]) {
+            const stackDiv = document.createElement('div');
+            stackDiv.className = `${target}-stack`;
+            stackDiv.style.minHeight = '100px';
+            stackDiv.style.position = 'relative';
+            lineEl.appendChild(stackDiv);
+            lineEl.dataset[`${target}StackReady`] = 'true';
+        }
+        stackEl = lineEl.querySelector(`.${target}-stack`);
+    }
+    
     stackEl.innerHTML = '';
     
     const stack = gameState.field[line][target];
@@ -1285,9 +1370,31 @@ function showDraftResult() {
 }
 
 function startGameFromDraft() {
-    // Assign protocols: player in pick order, AI reversed for mirrored line matching
-    gameState.player.protocols = [...draftState.playerPicks];
-    gameState.ai.protocols = [...draftState.aiPicks].reverse();
+    console.log('=== startGameFromDraft() START ===');
+    
+    // En game.html, obtener protocolos del sessionStorage
+    // En draft.html, usarlos del draftState
+    if (draftState && draftState.playerPicks) {
+        // Viene del draft
+        gameState.player.protocols = [...draftState.playerPicks];
+        gameState.ai.protocols = [...draftState.aiPicks].reverse();
+        console.log('✅ Loaded from draftState:', { 
+            player: gameState.player.protocols,
+            ai: gameState.ai.protocols 
+        });
+    } else {
+        // Viene del sessionStorage (game.html path)
+        const playerProtos = JSON.parse(sessionStorage.getItem('playerProtocols') || '["Espíritu", "Muerte", "Fuego"]');
+        const aiProtos = JSON.parse(sessionStorage.getItem('aiProtocols') || '["Vida", "Luz", "Oscuridad"]');
+        gameState.player.protocols = playerProtos;
+        gameState.ai.protocols = aiProtos;
+        console.log('✅ Loaded from sessionStorage:', { 
+            player: gameState.player.protocols,
+            ai: gameState.ai.protocols,
+            rawPlayer: sessionStorage.getItem('playerProtocols'),
+            rawAI: sessionStorage.getItem('aiProtocols')
+        });
+    }
 
     // Reset game state
     gameState.player.deck = [];
@@ -1304,18 +1411,34 @@ function startGameFromDraft() {
         derecha: { player: [], ai: [], compiledBy: null },
     };
 
+    console.log('✅ Game state initialized');
+
     // Show game, hide draft (si existen en el DOM)
     const draftScreen = document.getElementById('draft-screen');
     if (draftScreen) {
         draftScreen.classList.add('hidden');
+        console.log('✅ Hid draft-screen');
     }
     
     const gameContainer = document.getElementById('game-container');
     if (gameContainer) {
         gameContainer.classList.remove('hidden');
+        console.log('✅ Showed game-container');
+    } else {
+        console.error('❌ game-container not found in DOM');
     }
 
-    initGame();
+    console.log('📞 Calling initGame()...');
+    try {
+        initGame();
+        console.log('✅ initGame() completed successfully');
+    } catch (error) {
+        console.error('❌ Error in initGame():', error);
+        console.error('Stack:', error.stack);
+        throw error;
+    }
+    
+    console.log('=== startGameFromDraft() END ===');
 }
 
 function swapProtocols(lineA, lineB) {
@@ -1330,11 +1453,22 @@ function swapProtocols(lineA, lineB) {
 const isDraft = document.getElementById('draft-screen') !== null;
 const isGame = document.getElementById('game-container') !== null;
 
+console.log('🔍 Auto-detection:', { isDraft, isGame });
+console.log('🎮 GLOBAL_CARDS loaded:', !!GLOBAL_CARDS, 'Keys:', Object.keys(GLOBAL_CARDS || {}).length);
+
 if (isDraft) {
     // En draft.html: iniciar draft
+    console.log('📋 Draft mode detected - calling initDraft()');
     initDraft();
 } else if (isGame) {
     // En game.html: iniciar juego con protocolos del sessionStorage
-    console.log('Iniciando juego...');
-    startGameFromDraft();
+    console.log('🎮 Game mode detected - calling startGameFromDraft()');
+    try {
+        startGameFromDraft();
+    } catch (error) {
+        console.error('❌ Error initializing game:', error);
+        console.error('Stack:', error.stack);
+    }
+} else {
+    console.warn('⚠️ Neither draft nor game mode detected. isDraft=%s, isGame=%s', isDraft, isGame);
 }
