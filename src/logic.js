@@ -156,12 +156,12 @@ const GLOBAL_CARDS = {  "Espíritu": [
 let gameState = {
     player: { 
         deck: [], trash: [], hand: [], 
-        protocols: ['Espíritu', 'Muerte', 'Fuego'],
+        protocols: JSON.parse(sessionStorage.getItem('playerProtocols') || '["Espíritu", "Muerte", "Fuego"]'),
         compiled: [] 
     },
     ai: { 
         deck: [], trash: [], hand: [], 
-        protocols: ['Vida', 'Luz', 'Oscuridad'],
+        protocols: JSON.parse(sessionStorage.getItem('aiProtocols') || '["Vida", "Luz", "Oscuridad"]'),
         compiled: [] 
     },
     field: {
