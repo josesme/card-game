@@ -389,9 +389,12 @@ function updateUI() {
     // Attach events to player hand
     document.querySelectorAll('#player-hand .card').forEach((cardEl, index) => {
         cardEl.onclick = () => {
+            console.log(`🖱️ Card clicked at index ${index}. gameState.turn=${gameState.turn}, phase=${gameState.phase}, effectContext=${gameState.effectContext ? gameState.effectContext.type : 'none'}`);
             if (gameState.effectContext && gameState.effectContext.type === 'discard') {
+                console.log(`   → Handling discard choice`);
                 handleDiscardChoice(index);
             } else {
+                console.log(`   → Showing action modal`);
                 showActionModal(index);
             }
         };
@@ -555,6 +558,7 @@ function startTurn(who) {
 
 function checkCompilePhase(who) {
     gameState.phase = 'check_compile';
+    console.log(`📋 Checking compile phase for ${who}`);
     updateStatus(`Fase: Comprobar Compilación`);
     
     let compiledAny = false;
@@ -564,7 +568,10 @@ function checkCompilePhase(who) {
         const myScore = calculateScore(line, who);
         const oppScore = calculateScore(line, who === 'player' ? 'ai' : 'player');
         
+        console.log(`  Line ${line}: ${who}=${myScore} vs opp=${oppScore}`);
+        
         if (myScore >= 10 && myScore > oppScore) {
+            console.log(`  ✅ Compiled: ${line}`);
             compileLine(line, who);
             compiledAny = true;
             break; // Max 1 compile per turn as per rules
@@ -575,12 +582,14 @@ function checkCompilePhase(who) {
         updateUI();
         setTimeout(() => endTurn(who), 2000);
     } else {
+        console.log(`✅ No compilations, moving to action phase`);
         actionPhase(who);
     }
 }
 
 function actionPhase(who) {
     gameState.phase = 'action';
+    console.log(`🎮 ACTION PHASE for ${who} - game is now playable`);
     updateStatus(who === 'player' ? 'Tu Turno: Juega una carta o Recarga' : 'IA pensando...');
     
     if (who === 'ai') {
@@ -603,9 +612,28 @@ function compileLine(line, who) {
 }
 
 function showActionModal(handIndex) {
-    if (gameState.turn !== 'player' || gameState.phase !== 'action') return;
+    console.log(`📋 showActionModal called. Check: turn=${gameState.turn}, phase=${gameState.phase}`);
+    
+    if (gameState.turn !== 'player') {
+        console.warn(`❌ Not player's turn: ${gameState.turn}`);
+        return;
+    }
+    
+    if (gameState.phase !== 'action') {
+        console.warn(`❌ Wrong phase: ${gameState.phase} (need 'action')`);
+        return;
+    }
+    
     gameState.selectedCardIndex = handIndex;
     const card = gameState.player.hand[handIndex];
+    
+    console.log(`✅ Showing modal for: ${card.nombre}`);
+    
+    if (!ui.modalCardPreview) {
+        console.error('❌ modalCardPreview not found in DOM');
+        return;
+    }
+    
     ui.modalCardPreview.innerHTML = createCardHTML(card);
     
     // Check if face-up play is legal: card protocol must match the line's protocol
@@ -614,11 +642,20 @@ function showActionModal(handIndex) {
     const targetLine = lineIndex !== -1 ? LINES[lineIndex] : null;
     const canPlayUp = targetLine && !gameState.field[targetLine].compiledBy;
     
-    ui.btnPlayUp.disabled = !canPlayUp;
-    ui.btnPlayUp.style.opacity = canPlayUp ? "1" : "0.5";
-    ui.btnPlayUp.style.cursor = canPlayUp ? "pointer" : "not-allowed";
+    console.log(`  Protocol: ${card.protocol}, Line: ${targetLine}, CanPlayUp: ${canPlayUp}`);
     
-    ui.actionModal.classList.remove('hidden');
+    if (ui.btnPlayUp) {
+        ui.btnPlayUp.disabled = !canPlayUp;
+        ui.btnPlayUp.style.opacity = canPlayUp ? "1" : "0.5";
+        ui.btnPlayUp.style.cursor = canPlayUp ? "pointer" : "not-allowed";
+    }
+    
+    if (ui.actionModal) {
+        ui.actionModal.classList.remove('hidden');
+        console.log(`✅ Modal displayed`);
+    } else {
+        console.error('❌ actionModal not found in DOM');
+    }
 }
 
 ui.btnPlayUp.onclick = () => playSelectedCard(false);
@@ -1175,6 +1212,7 @@ function executeAIMove(move) {
 }
 
 function endTurn(who) {
+    console.log(`⏸️ Ending turn for ${who}`);
     gameState.phase = 'check_cache';
     // Discard down to 5
     while(gameState[who].hand.length > 5) {
@@ -1189,6 +1227,7 @@ function endTurn(who) {
         onTurnEndEffects(who);
     }
     
+    console.log(`⏱️ Starting next turn...`);
     setTimeout(() => startTurn(who === 'player' ? 'ai' : 'player'), 1000);
 }
 
