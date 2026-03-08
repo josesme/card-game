@@ -206,7 +206,6 @@ function createDeckForPlayer(target) {
     
     return shuffled;
 }
-}
 
 function initGame() {
     console.log('=== initGame() START ===');

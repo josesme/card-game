@@ -89,10 +89,10 @@ class MiniMax {
 
       for (const move of aiMoves) {
         const nextState = this.simulateMove(gameState, move);
-        const eval = this.minimaxAlpha(nextState, depth + 1, false, alpha, beta);
+        const evalScore = this.minimaxAlpha(nextState, depth + 1, false, alpha, beta);
         
-        maxEval = Math.max(maxEval, eval);
-        alpha = Math.max(alpha, eval);
+        maxEval = Math.max(maxEval, evalScore);
+        alpha = Math.max(alpha, evalScore);
 
         // Beta cutoff: prune this branch
         if (beta <= alpha) {
@@ -109,10 +109,10 @@ class MiniMax {
 
       for (const move of playerMoves) {
         const nextState = this.simulateMove(gameState, move);
-        const eval = this.minimaxAlpha(nextState, depth + 1, true, alpha, beta);
+        const evalScore = this.minimaxAlpha(nextState, depth + 1, true, alpha, beta);
         
-        minEval = Math.min(minEval, eval);
-        beta = Math.min(beta, eval);
+        minEval = Math.min(minEval, evalScore);
+        beta = Math.min(beta, evalScore);
 
         // Alpha cutoff: prune this branch
         if (beta <= alpha) {
@@ -306,8 +306,8 @@ class MiniMax {
       const moves = this.generateAIMoves(gameState);
       for (const move of moves) {
         const nextState = this.simulateMove(gameState, move);
-        const eval = this.quiescenceSearch(nextState, depth - 1, false, alpha, beta);
-        alpha = Math.max(alpha, eval);
+        const evalScore = this.quiescenceSearch(nextState, depth - 1, false, alpha, beta);
+        alpha = Math.max(alpha, evalScore);
         if (alpha >= beta) break;
       }
       return alpha;
@@ -315,8 +315,8 @@ class MiniMax {
       const moves = this.generatePlayerMoves(gameState);
       for (const move of moves) {
         const nextState = this.simulateMove(gameState, move);
-        const eval = this.quiescenceSearch(nextState, depth - 1, true, alpha, beta);
-        beta = Math.min(beta, eval);
+        const evalScore = this.quiescenceSearch(nextState, depth - 1, true, alpha, beta);
+        beta = Math.min(beta, evalScore);
         if (alpha >= beta) break;
       }
       return beta;
