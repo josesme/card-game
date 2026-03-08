@@ -796,17 +796,15 @@ function handleFieldCardClick(line, target, cardIdx) {
         gameState[target].hand.push(cardObj.card);
         ctx.selected.push(cardObj);
     } else if (ctx.type === 'rearrange') {
-        const lineKey = line === 'izquierda' ? 'left' : line === 'centro' ? 'middle' : 'right';
         if (!ctx.firstProtocol) {
             ctx.firstProtocol = line;
             updateStatus(`Seleccionado protocolo ${line}. Elige el segundo para intercambiar.`);
-            const lineEl = document.getElementById(`line-${lineKey}`);
+            const lineEl = document.getElementById(`line-${line}`);
             if (lineEl) lineEl.classList.add('selected');
         } else {
             const first = ctx.firstProtocol;
             const second = line;
-            const firstKey = first === 'izquierda' ? 'left' : first === 'centro' ? 'middle' : 'right';
-            const firstEl = document.getElementById(`line-${firstKey}`);
+            const firstEl = document.getElementById(`line-${first}`);
             if (firstEl) firstEl.classList.remove('selected');
             if (first !== second) {
                 swapProtocols(first, second);
@@ -919,10 +917,13 @@ function playSelectedCard(isFaceDown) {
     const card = gameState.player.hand[gameState.selectedCardIndex];
     ui.actionModal.classList.add('hidden');
     
+    console.log(`🎮 playSelectedCard: ${card.nombre} - Face${isFaceDown ? 'Down' : 'Up'}`);
+    
     if (isFaceDown) {
         // Enter selection mode for any non-compiled line
         gameState.selectionMode = true;
         updateStatus("Elige una línea para jugar bocabajo...");
+        console.log('📍 Selection mode ON - choose line for face-down play');
         highlightSelectableLines();
         return;
     }
@@ -930,18 +931,31 @@ function playSelectedCard(isFaceDown) {
     // Face-up play logic remains largely same but uses finalizePlay
     const idx = gameState.player.protocols.indexOf(card.protocol);
     if (idx !== -1 && !gameState.field[LINES[idx]].compiledBy) {
+        console.log(`✅ Playing face-up: ${card.nombre} on line ${LINES[idx]}`);
         finalizePlay(LINES[idx], false);
     } else {
-        console.error("Illegal face-up play attempt");
+        console.error("❌ Illegal face-up play attempt:", {
+            protocol: card.protocol,
+            protocolIndex: idx,
+            lineFound: idx !== -1 ? LINES[idx] : 'none',
+            isCompiled: idx !== -1 ? gameState.field[LINES[idx]].compiledBy : 'N/A'
+        });
     }
 }
 
 function highlightSelectableLines() {
+    console.log('🎯 Highlighting selectable lines for face-down play');
     LINES.forEach(line => {
-        const lineKey = line === 'izquierda' ? 'left' : line === 'centro' ? 'middle' : 'right';
-        const lineEl = document.getElementById(`line-${lineKey}`);
+        const lineEl = document.getElementById(`line-${line}`);
+        if (!lineEl) {
+            console.warn(`  ⚠️ Line element not found: line-${line}`);
+            return;
+        }
         if (!gameState.field[line].compiledBy) {
             lineEl.classList.add('selectable-line');
+            console.log(`  ✅ Highlighted: ${line}`);
+        } else {
+            console.log(`  🔒 Skipped (compiled): ${line}`);
         }
     });
 }
@@ -953,7 +967,12 @@ function clearSelectionHighlights() {
 }
 
 function finalizePlay(targetLine, isFaceDown) {
-    if (gameState.field[targetLine].compiledBy) return;
+    console.log(`🎲 finalizePlay: line=${targetLine}, faceDown=${isFaceDown}`);
+    
+    if (gameState.field[targetLine].compiledBy) {
+        console.warn(`❌ Cannot play on compiled line: ${targetLine}`);
+        return;
+    }
     
     gameState.selectionMode = false;
     clearSelectionHighlights();
@@ -965,10 +984,18 @@ function finalizePlay(targetLine, isFaceDown) {
     gameState.player.hand.splice(gameState.selectedCardIndex, 1);
     gameState.selectedCardIndex = null;
     
+    console.log(`✅ Card played: ${card.nombre} on ${targetLine} (${isFaceDown ? 'face-down' : 'face-up'})`);
+    
     if (!isFaceDown) {
+        console.log(`🔧 Executing card effect...`);
         executeEffect(card, 'player');
+    } else {
+        // Face-down play has no immediate effects, just update UI
+        console.log(`💤 Face-down play - no effects, updating UI`);
+        updateUI();
     }
     
+    console.log(`⏱️ Ending player turn...`);
     endTurn('player');
 }
 
