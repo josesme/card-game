@@ -33,7 +33,9 @@ const CARD_EFFECTS = {
   'Espíritu 1': {
     persistent: { allowAnyProtocol: true },
     onPlay: [
-      { action: 'draw', target: 'self', count: 2 },
+      { action: 'draw', target: 'self', count: 2 }
+    ],
+    onTurnStart: [
       { action: 'optionalDiscardOrFlipSelf', target: 'self' }
     ]
   },
@@ -127,14 +129,14 @@ const CARD_EFFECTS = {
   // "Descarta 1 carta. Si lo haces, elimina 1 carta."
   'Fuego 1': {
     onPlay: [
-      { action: 'optionalDiscard', target: 'self', count: 1, ifThenAction: 'delete', ifThenTarget: 'opponent', ifThenCount: 1 }
+      { action: 'discardThen', target: 'self', count: 1, ifThenAction: 'delete', ifThenTarget: 'opponent', ifThenCount: 1 }
     ]
   },
 
   // "Descarta 1 carta. Si lo haces, devuelve 1 carta."
   'Fuego 2': {
     onPlay: [
-      { action: 'optionalDiscard', target: 'self', count: 1, ifThenAction: 'return', ifThenTarget: 'any', ifThenCount: 1 }
+      { action: 'discardThen', target: 'self', count: 1, ifThenAction: 'return', ifThenTarget: 'any', ifThenCount: 1 }
     ]
   },
 
@@ -240,7 +242,7 @@ const CARD_EFFECTS = {
 
   // "Si esta carta está cubriendo otra carta, roba 1 carta."
   'Vida 4': {
-    onTurnStart: [
+    onPlay: [
       { action: 'drawIfCovering', target: 'self', count: 1 }
     ]
   },
@@ -330,7 +332,7 @@ const CARD_EFFECTS = {
   'Metal 3': {
     onPlay: [
       { action: 'draw', target: 'self', count: 1 },
-      { action: 'deleteLineIfOver', target: 'other', threshold: 6 }
+      { action: 'deleteLineIfOver', target: 'other', threshold: 8 }
     ]
   },
 
@@ -380,10 +382,10 @@ const CARD_EFFECTS = {
     ]
   },
 
-  // "Voltea cada otra carta que esté bocabajo."
+  // "Voltea cada otra carta bocarriba."
   'Plaga 3': {
     onPlay: [
-      { action: 'flipAllFaceDown', target: 'other' }
+      { action: 'flipAllFaceUp', target: 'other' }
     ]
   },
 
@@ -417,7 +419,7 @@ const CARD_EFFECTS = {
     persistent: {
       effect: 'forceOpponentFaceDown'
     },
-    onPlay: [
+    onTurnStart: [
       { action: 'flip', target: 'self', count: 1 }
     ]
   },
@@ -430,11 +432,11 @@ const CARD_EFFECTS = {
     ]
   },
 
-  // "Tu oponente descarta 1 carta. Cambia 1 de tus cartas."
+  // "Tu oponente descarta 1 carta. Cambia 1 de sus cartas."
   'Psique 3': {
     onPlay: [
       { action: 'discard', target: 'opponent', count: 1 },
-      { action: 'swap', target: 'self', count: 1 }
+      { action: 'shift', target: 'opponent', count: 1 }
     ]
   },
 
@@ -532,7 +534,7 @@ const CARD_EFFECTS = {
   // "Devuelve 1 de tus cartas."
   'Agua 4': {
     onPlay: [
-      { action: 'mayReturn', target: 'self', count: 1 }
+      { action: 'return', target: 'self', count: 1 }
     ]
   },
 
@@ -544,10 +546,10 @@ const CARD_EFFECTS = {
   },
 
   // ========== OSCURIDAD ==========
-  // "Roba 5 cartas. Cambia 1 de las cartas cubiertas de tu oponente."
+  // "Roba 3 cartas. Cambia 1 de las cartas cubiertas de tu oponente."
   'Oscuridad 0': {
     onPlay: [
-      { action: 'draw', target: 'self', count: 5 },
+      { action: 'draw', target: 'self', count: 3 },
       { action: 'shiftCovered', target: 'opponent', count: 1 }
     ]
   },
@@ -888,6 +890,24 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       }
       processAbilityEffect();
       break;
+
+    case 'discardThen': {
+      // Descarte obligatorio (sin "puedes"). El efecto secundario se activa siempre.
+      if (resolvedTarget === 'player' || resolvedTarget === 'any') {
+        if (ifThenAction) {
+          gameState.effectQueue.unshift({ effect: { action: ifThenAction, target: ifThenTarget, count: ifThenCount }, targetPlayer });
+        }
+        startEffect('discard', 'player', count || 1);
+      } else {
+        discard('ai', count || 1);
+        if (ifThenAction) {
+          resolveAbilityAction({ action: ifThenAction, target: ifThenTarget, count: ifThenCount }, targetPlayer);
+        } else {
+          processAbilityEffect();
+        }
+      }
+      break;
+    }
 
     case 'optionalDiscard': {
       if (targetPlayer === 'player') {
@@ -1730,15 +1750,17 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       break;
     }
 
-    case 'flipAllFaceDown': {
-      // Plaga 3: voltea TODAS las cartas bocabajo en las otras líneas (no solo las descubiertas)
+    case 'flipAllFaceUp': {
+      // Plaga 3: voltea cada carta bocarriba descubierta fuera de esta línea (face-up → face-down)
       const currentLine = gameState.currentEffectLine;
       LINES.forEach(l => {
         if (l === currentLine) return;
         ['player', 'ai'].forEach(p => {
-          gameState.field[l][p].forEach(c => {
-            if (c.faceDown) c.faceDown = false;
-          });
+          const stack = gameState.field[l][p];
+          if (stack.length > 0) {
+            const top = stack[stack.length - 1];
+            if (!top.faceDown) top.faceDown = true;
+          }
         });
       });
       processAbilityEffect();
@@ -1964,13 +1986,13 @@ function getPersistentModifiers(card, line) {
 /**
  * Aplica modificadores persistentes al cálculo de valor
  */
-function applyPersistentValueModifiers(line, player) {
+function applyPersistentValueModifiers(state, line, player) {
   let totalReduction = 0;
 
   LINES.forEach(currentLine => {
     if (currentLine === line) {
       const opponent = player === 'player' ? 'ai' : 'player';
-      gameState.field[currentLine][opponent].forEach(cardObj => {
+      state.field[currentLine][opponent].forEach(cardObj => {
         const modifiers = getPersistentModifiers(cardObj.card, currentLine);
         if (modifiers.valueReduction) {
           totalReduction += modifiers.valueReduction;
@@ -2049,12 +2071,12 @@ function onTurnEndEffects(player) {
 /**
  * Versión mejorada de calculateScore() que considera modificadores persistentes
  */
-function calculateScoreWithModifiers(line, player) {
+function calculateScoreWithModifiers(state, line, player) {
   const opponent = player === 'player' ? 'ai' : 'player';
   let score = 0;
 
   // Sumar valores base
-  gameState.field[line][player].forEach(cardObj => {
+  state.field[line][player].forEach(cardObj => {
     if (!cardObj.faceDown) {
       score += cardObj.card.valor;
     } else {
@@ -2063,7 +2085,7 @@ function calculateScoreWithModifiers(line, player) {
   });
 
   // Aplicar modificadores persistentes del oponente
-  const reduction = applyPersistentValueModifiers(line, player);
+  const reduction = applyPersistentValueModifiers(state, line, player);
   score = Math.max(0, score - reduction); // No puede ser negativo
 
   return score;
