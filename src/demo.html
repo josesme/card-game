@@ -208,6 +208,26 @@
             min-height: 160px;
         }
 
+        /* Secciones IA y Jugador con mano e información */
+        .ia-section,
+        .player-section {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .ia-mano,
+        .jugador-mano {
+            flex: 1;
+        }
+
+        .ia-info,
+        .player-info {
+            min-width: 180px;
+            background: rgba(19, 26, 44, 0.9);
+        }
+
         .info-box {
             background: rgba(26, 31, 58, 0.8);
             border: 1px solid #00d4ff;
@@ -250,6 +270,26 @@
                 <strong>Turno:</strong> Jugador<br>
                 <strong>Cartas en juego:</strong> 6 cartas en mesa<br>
                 <strong>Compilados:</strong> Jugador: 0 | IA: 0
+            </div>
+        </div>
+
+        <!-- MANO IA Y INFO -->
+        <div class="seccion">
+            <div class="seccion-titulo">🤖 Mano IA + Datos</div>
+            <div class="ia-section">
+                <div class="mano ia-mano">
+                    <!-- Ejemplo de cartas IA -->
+                    <div class="carta protocolo-fuego">
+                        <div class="carta-header">FUE</div>
+                        <div class="carta-nombre">Fuego X</div>
+                        <div class="carta-valor">+?</div>
+                        <div class="carta-efecto">...</div>
+                    </div>
+                </div>
+                <div class="info-box ia-info">
+                    <strong>Mazo IA:</strong> 20 cartas<br>
+                    <strong>Descartes IA:</strong> 3 cartas
+                </div>
             </div>
         </div>
 
@@ -351,39 +391,45 @@
             </div>
         </div>
 
-        <!-- MANO DEL JUGADOR -->
+        <!-- MANO DEL JUGADOR + INFO -->
         <div class="seccion">
-            <div class="seccion-titulo">🎴 Tu Mano (5 cartas)</div>
-            <div class="mano">
-                <div class="carta protocolo-psique">
-                    <div class="carta-header">PSI</div>
-                    <div class="carta-nombre">Psique 1</div>
-                    <div class="carta-valor">+2</div>
-                    <div class="carta-efecto">Robar...</div>
+            <div class="seccion-titulo">🎴 Tu Mano + Datos</div>
+            <div class="player-section">
+                <div class="mano jugador-mano">
+                    <div class="carta protocolo-psique">
+                        <div class="carta-header">PSI</div>
+                        <div class="carta-nombre">Psique 1</div>
+                        <div class="carta-valor">+2</div>
+                        <div class="carta-efecto">Robar...</div>
+                    </div>
+                    <div class="carta protocolo-velocidad">
+                        <div class="carta-header">VEL</div>
+                        <div class="carta-nombre">Velocidad 4</div>
+                        <div class="carta-valor">+4</div>
+                        <div class="carta-efecto">Juega...</div>
+                    </div>
+                    <div class="carta protocolo-gravedad">
+                        <div class="carta-header">GRA</div>
+                        <div class="carta-nombre">Gravedad 2</div>
+                        <div class="carta-valor">+2</div>
+                        <div class="carta-efecto">Desplaza...</div>
+                    </div>
+                    <div class="carta protocolo-luz">
+                        <div class="carta-header">LUZ</div>
+                        <div class="carta-nombre">Luz 5</div>
+                        <div class="carta-valor">+5</div>
+                        <div class="carta-efecto">Voltea...</div>
+                    </div>
+                    <div class="carta protocolo-plaga">
+                        <div class="carta-header">PLA</div>
+                        <div class="carta-nombre">Plaga 2</div>
+                        <div class="carta-valor">+2</div>
+                        <div class="carta-efecto">Previene...</div>
+                    </div>
                 </div>
-                <div class="carta protocolo-velocidad">
-                    <div class="carta-header">VEL</div>
-                    <div class="carta-nombre">Velocidad 4</div>
-                    <div class="carta-valor">+4</div>
-                    <div class="carta-efecto">Juega...</div>
-                </div>
-                <div class="carta protocolo-gravedad">
-                    <div class="carta-header">GRA</div>
-                    <div class="carta-nombre">Gravedad 2</div>
-                    <div class="carta-valor">+2</div>
-                    <div class="carta-efecto">Desplaza...</div>
-                </div>
-                <div class="carta protocolo-luz">
-                    <div class="carta-header">LUZ</div>
-                    <div class="carta-nombre">Luz 5</div>
-                    <div class="carta-valor">+5</div>
-                    <div class="carta-efecto">Voltea...</div>
-                </div>
-                <div class="carta protocolo-plaga">
-                    <div class="carta-header">PLA</div>
-                    <div class="carta-nombre">Plaga 2</div>
-                    <div class="carta-valor">+2</div>
-                    <div class="carta-efecto">Previene...</div>
+                <div class="info-box player-info">
+                    <strong>Mazo Jugador:</strong> 18 cartas<br>
+                    <strong>Descartes Jugador:</strong> 2 cartas
                 </div>
             </div>
         </div>

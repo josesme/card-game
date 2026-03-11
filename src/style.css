@@ -299,10 +299,22 @@ body::before {
     background: rgba(26, 31, 58, 0.6);
     border-radius: var(--radius-lg);
     border: 1px solid rgba(0, 212, 255, 0.2);
+    margin-bottom: var(--gap-lg);
 }
 
 .opponent-section {
     border-color: rgba(255, 23, 68, 0.2);
+}
+
+.hand-section {
+    margin-bottom: var(--gap-lg);
+}
+
+.deck-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--gap-md);
+    margin-bottom: var(--gap-lg);
 }
 
 .opponent-info,

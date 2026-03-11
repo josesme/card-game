@@ -277,7 +277,6 @@ function handleShiftTargetLine(destinationLine) {
     const { line, target, cardIdx } = ctx.selectedCard;
     
     if (line === destinationLine) return; // Must move to a different line
-    if (gameState.field[destinationLine].compiledBy) return;
 
     const cardObj = gameState.field[line][target].splice(cardIdx, 1)[0];
     gameState.field[destinationLine][target].push(cardObj);
@@ -380,11 +379,15 @@ function createCardHTML(card, faceDown = false) {
 function updateUI() {
     if (!GLOBAL_CARDS) return; // Esperar a que carguen las cartas
 
-    // Update deck/trash counts (with null checks)
-    if (ui.playerDeckCount) ui.playerDeckCount.innerText = gameState.player.deck.length;
-    if (ui.playerTrashCount) ui.playerTrashCount.innerText = gameState.player.trash.length;
-    if (ui.aiDeckCount) ui.aiDeckCount.innerText = gameState.ai.deck.length;
-    if (ui.aiTrashCount) ui.aiTrashCount.innerText = gameState.ai.trash.length;
+    // Update deck/trash counts (query fresh to avoid stale references)
+    const playerDeckEl = document.getElementById('player-deck-count');
+    const playerTrashEl = document.getElementById('player-trash-count');
+    const aiDeckEl = document.getElementById('ai-deck-count');
+    const aiTrashEl = document.getElementById('ai-trash-count');
+    if (playerDeckEl) playerDeckEl.innerText = gameState.player.deck.length;
+    if (playerTrashEl) playerTrashEl.innerText = gameState.player.trash.length;
+    if (aiDeckEl) aiDeckEl.innerText = gameState.ai.deck.length;
+    if (aiTrashEl) aiTrashEl.innerText = gameState.ai.trash.length;
 
     // Update hands
     if (ui.playerHand) ui.playerHand.innerHTML = gameState.player.hand.map(c => createCardHTML(c)).join('');
@@ -567,13 +570,11 @@ function checkCompilePhase(who) {
     
     let compiledAny = false;
     for (const line of LINES) {
-        if (gameState.field[line].compiledBy) continue;
-        
         const myScore = calculateScore(line, who);
         const oppScore = calculateScore(line, who === 'player' ? 'ai' : 'player');
-        
+
         console.log(`  Line ${line}: ${who}=${myScore} vs opp=${oppScore}`);
-        
+
         if (myScore >= 10 && myScore > oppScore) {
             console.log(`  ✅ Compiled: ${line}`);
             compileLine(line, who);
@@ -602,17 +603,34 @@ function actionPhase(who) {
 }
 
 function compileLine(line, who) {
-    gameState.field[line].compiledBy = who;
-    gameState[who].compiled.push(line);
-    
-    // rules: delete all cards in line on BOTH sides
+    const rival = who === 'player' ? 'ai' : 'player';
+    const isFirstCompile = gameState.field[line].compiledBy === null;
+
+    if (isFirstCompile) {
+        // Primera compilación de la línea: crédito normal
+        gameState.field[line].compiledBy = who;
+        updateStatus(`¡${who === 'player' ? 'Has' : 'IA ha'} compilado ${line}!`);
+    } else {
+        // Compilaciones sucesivas: robar carta superior del mazo rival
+        if (gameState[rival].deck.length > 0) {
+            const stolenCard = gameState[rival].deck.pop();
+            gameState[who].hand.push(stolenCard);
+            updateStatus(`¡${who === 'player' ? 'Compilaste' : 'IA compiló'} ${line} y robó una carta rival!`);
+        } else {
+            updateStatus(`¡${who === 'player' ? 'Compilaste' : 'IA compiló'} ${line}! (mazo rival vacío)`);
+        }
+    }
+
+    // Crédito de victoria: solo se cuenta una vez por línea por jugador
+    if (!gameState[who].compiled.includes(line)) {
+        gameState[who].compiled.push(line);
+    }
+
+    // Descartar todas las cartas de la línea en ambos lados
     gameState.field[line].player.forEach(c => gameState.player.trash.push(c.card));
     gameState.field[line].ai.forEach(c => gameState.ai.trash.push(c.card));
-    
     gameState.field[line].player = [];
     gameState.field[line].ai = [];
-    
-    updateStatus(`¡${who === 'player' ? 'Has' : 'IA ha'} compilado el protocolo del ${line}!`);
 }
 
 function showActionModal(handIndex) {
@@ -644,7 +662,7 @@ function showActionModal(handIndex) {
     // AND the line must not be compiled.
     const lineIndex = gameState.player.protocols.indexOf(card.protocol);
     const targetLine = lineIndex !== -1 ? LINES[lineIndex] : null;
-    const canPlayUp = targetLine && !gameState.field[targetLine].compiledBy;
+    const canPlayUp = targetLine !== null;
     
     console.log(`  Protocol: ${card.protocol}, Line: ${targetLine}, CanPlayUp: ${canPlayUp}`);
     
@@ -902,7 +920,12 @@ function handleFieldCardClick(line, target, cardIdx) {
 function finishEffect() {
     gameState.effectContext = null;
     clearEffectHighlights();
-    processNextEffect();
+    // Route to ability engine if queue items are in new format
+    if (gameState.effectQueue.length > 0 && gameState.effectQueue[0].effect !== undefined) {
+        processAbilityEffect();
+    } else {
+        processNextEffect();
+    }
 }
 
 function resolveEffectAI(type, target, count) {
@@ -1003,17 +1026,14 @@ function playSelectedCard(isFaceDown) {
         return;
     }
 
-    // Face-up play logic remains largely same but uses finalizePlay
+    // Face-up play: protocol must match the line (compiled lines allowed)
     const idx = gameState.player.protocols.indexOf(card.protocol);
-    if (idx !== -1 && !gameState.field[LINES[idx]].compiledBy) {
+    if (idx !== -1) {
         console.log(`✅ Playing face-up: ${card.nombre} on line ${LINES[idx]}`);
         finalizePlay(LINES[idx], false);
     } else {
-        console.error("❌ Illegal face-up play attempt:", {
+        console.error("❌ Illegal face-up play: protocol has no matching line", {
             protocol: card.protocol,
-            protocolIndex: idx,
-            lineFound: idx !== -1 ? LINES[idx] : 'none',
-            isCompiled: idx !== -1 ? gameState.field[LINES[idx]].compiledBy : 'N/A'
         });
     }
 }
@@ -1026,12 +1046,8 @@ function highlightSelectableLines() {
             console.warn(`  ⚠️ Line element not found: line-${line}`);
             return;
         }
-        if (!gameState.field[line].compiledBy) {
-            lineEl.classList.add('selectable-line');
-            console.log(`  ✅ Highlighted: ${line}`);
-        } else {
-            console.log(`  🔒 Skipped (compiled): ${line}`);
-        }
+        lineEl.classList.add('selectable-line');
+        console.log(`  ✅ Highlighted: ${line}`);
     });
 }
 
@@ -1044,10 +1060,7 @@ function clearSelectionHighlights() {
 function finalizePlay(targetLine, isFaceDown) {
     console.log(`🎲 finalizePlay: line=${targetLine}, faceDown=${isFaceDown}`);
     
-    if (gameState.field[targetLine].compiledBy) {
-        console.warn(`❌ Cannot play on compiled line: ${targetLine}`);
-        return;
-    }
+    // Compiled lines can still be played on (re-compile rules)
     
     gameState.selectionMode = false;
     clearSelectionHighlights();
@@ -1095,11 +1108,14 @@ ui.btnRefresh.onclick = () => {
 
 function playAITurn() {
     // FASE 2: IA INTELIGENTE - Minimax + Evaluación Estratégica
-    
+    console.log('🤖 IA Turno iniciado');
+    console.log('Estado inicial del juego:', JSON.stringify(gameState));
+
     if (gameState.ai.hand.length === 0) {
         while(gameState.ai.hand.length < 5) drawCard('ai');
         console.log('🤖 IA: Recarga (mano vacía)');
         updateStatus("IA hizo Recarga");
+        endTurn('ai');
         return;
     }
 
@@ -1116,23 +1132,26 @@ function playAITurn() {
 
         // Generar todos los movimientos posibles
         const possibleMoves = generateAIPossibleMoves();
-        
+        console.log('Movimientos posibles generados:', possibleMoves);
+
         if (possibleMoves.length === 0) {
             // Sin movimientos disponibles, recargar
             while(gameState.ai.hand.length < 5) drawCard('ai');
             updateStatus("IA hizo Recarga (sin movimientos)");
+            endTurn('ai');
             return;
         }
 
         // Usar minimax para encontrar el mejor movimiento
         const bestMoveResult = window.miniMax.findBestMove(gameState, possibleMoves);
-        
+        console.log('Resultado de Minimax:', bestMoveResult);
+
         if (!bestMoveResult || !bestMoveResult.bestMove) {
             throw new Error('Minimax no encontró movimiento válido');
         }
 
         const move = bestMoveResult.bestMove;
-        
+
         // Log de decisión de IA
         console.log('🤖 IA Decision (Minimax):', {
             line: move.line,
@@ -1142,43 +1161,45 @@ function playAITurn() {
             stats: bestMoveResult.statistics,
         });
 
-        // Ejecutar el movimiento elegido
+        // Ejecutar el movimiento elegido y terminar turno
         executeAIMove(move);
+        console.log('Estado final del juego tras movimiento de IA:', JSON.stringify(gameState));
+        endTurn('ai');
 
     } catch (error) {
-        // Fallback: Si IA falla, juega aleatorio
+        // Fallback: Si IA falla, juega aleatorio (playAITurnRandom llama endTurn)
         console.error('❌ IA Error:', error.message);
         playAITurnRandom();
     }
 }
 
-/**
- * 🎲 Respuesta aleatoria (fallback)
- */
 function playAITurnRandom() {
+    console.log('🤖 IA usando fallback aleatorio');
+    console.log('Estado inicial del juego (fallback):', JSON.stringify(gameState));
+
     const cardIdx = Math.floor(Math.random() * gameState.ai.hand.length);
     const card = gameState.ai.hand[cardIdx];
     const lineIndex = gameState.ai.protocols.indexOf(card.protocol);
     let targetLine = lineIndex !== -1 ? LINES[lineIndex] : null;
-    
+
     let isFaceDown = true;
-    
-    if (targetLine && !gameState.field[targetLine].compiledBy) {
+
+    if (targetLine) {
         isFaceDown = false;
     } else {
-        targetLine = LINES.find(l => !gameState.field[l].compiledBy);
+        targetLine = LINES[0]; // fallback: cualquier línea
         isFaceDown = true;
     }
-    
+
     if (targetLine) {
         const movedCard = gameState.ai.hand.splice(cardIdx, 1)[0];
         gameState.field[targetLine].ai.push({ card: movedCard, faceDown: isFaceDown });
         updateStatus(`IA jugó ${movedCard.nombre} ${isFaceDown ? 'bocabajo' : 'bocarriba'} en ${targetLine}`);
-        
-        if (!isFaceDown) {
-            executeEffect(movedCard, 'ai');
-        }
+        console.log('Estado final del juego tras fallback aleatorio:', JSON.stringify(gameState));
+    } else {
+        console.error('❌ Fallback aleatorio falló: No hay líneas disponibles');
     }
+    endTurn('ai');
 }
 
 /**
@@ -1189,8 +1210,8 @@ function generateAIPossibleMoves() {
     
     gameState.ai.hand.forEach((card, cardIndex) => {
         LINES.forEach(line => {
-            if (!gameState.field[line].compiledBy) {
-                // Movimiento bocarriba (si coincide protocolo)
+            {
+                // Movimiento bocarriba (si coincide protocolo, compiled lines allowed)
                 const lineIndex = gameState.ai.protocols.indexOf(card.protocol);
                 const lineMatchesProtocol = lineIndex !== -1 && LINES[lineIndex] === line;
                 
@@ -1236,7 +1257,7 @@ function executeAIMove(move) {
             drawCard('ai');
         }
         updateStatus('IA hizo Recarga');
-        return;
+        return; // endTurn se llama en el caller (playAITurn)
     }
 
     const card = gameState.ai.hand[move.cardIndex];
@@ -1283,16 +1304,35 @@ function updateStatus(msg) {
 
 function checkWinCondition() {
     if (gameState.player.compiled.length >= 3) {
-        showGameOver("¡Has Ganado!");
+        showGameOver(true);
     } else if (gameState.ai.compiled.length >= 3) {
-        showGameOver("Perdiste", "La IA compiló 3 protocolos primero.");
+        showGameOver(false);
     }
 }
 
-function showGameOver(title, reason = "Has compilado 3 protocolos.") {
-    ui.winnerText.innerText = title;
-    document.getElementById('win-reason').innerText = reason;
-    ui.gameOverModal.classList.remove('hidden');
+function showGameOver(playerWon) {
+    const modal = document.getElementById('game-over-modal');
+    const titleEl = document.getElementById('game-over-title');
+    const reasonEl = document.getElementById('win-reason');
+    const statsEl = document.getElementById('win-stats');
+
+    if (titleEl) titleEl.textContent = playerWon ? '¡VICTORIA!' : 'DERROTA';
+    if (titleEl) titleEl.style.color = playerWon ? '#00ff41' : '#ef4444';
+
+    if (reasonEl) reasonEl.textContent = playerWon
+        ? 'Compilaste los 3 protocolos. ¡Bien jugado!'
+        : 'La IA compiló sus 3 protocolos primero.';
+
+    if (statsEl) {
+        const pLines = gameState.player.compiled.join(', ') || '—';
+        const aLines = gameState.ai.compiled.join(', ') || '—';
+        statsEl.innerHTML = `
+            <div>Tus compilados: <strong style="color:#00d4ff">${pLines}</strong></div>
+            <div>Compilados IA: <strong style="color:#ef4444">${aLines}</strong></div>
+        `;
+    }
+
+    if (modal) modal.style.display = 'flex';
 }
 
 // Set restart button only if it exists (game mode)
