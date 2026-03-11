@@ -173,8 +173,15 @@ let gameState = {
     phase: 'start', // 'start', 'check_compile', 'action', 'check_cache', 'end'
     selectedCardIndex: null,
     selectionMode: false,
+    selectionModeFaceUp: false, // true when selectionMode is for a face-up play (Espíritu 1)
     effectContext: null, // { type: 'discard'|'eliminate'|'flip', count: 1, target: 'player'|'ai', ... }
     effectQueue: [],
+    currentEffectLine: null,
+    preventCompile: { player: 0, ai: 0 }, // turns remaining where compile is blocked
+    lastFlippedCard: null,   // last card flipped via interactive effect
+    pendingPlayCard: false,  // waiting for player to play a card mid-effect
+    ignoreEffectsLines: {},  // lines where effects are suppressed this turn
+    pendingEndTurnFor: null, // set when endTurn is waiting for interactive discard
 };
 
 function createDeckForPlayer(target) {
@@ -264,7 +271,8 @@ function initLineListeners() {
         }
         lineEl.onclick = () => {
             if (gameState.selectionMode) {
-                finalizePlay(line, true);
+                finalizePlay(line, !gameState.selectionModeFaceUp);
+                gameState.selectionModeFaceUp = false;
             } else if (gameState.effectContext && gameState.effectContext.waitingForLine) {
                 handleShiftTargetLine(line);
             }
@@ -274,13 +282,25 @@ function initLineListeners() {
 
 function handleShiftTargetLine(destinationLine) {
     const ctx = gameState.effectContext;
+
+    if (ctx.type === 'moveAllFaceDown') {
+        // Move all face-down cards from sourceLine to destinationLine
+        const { sourceLine, owner } = ctx;
+        if (sourceLine === destinationLine) return;
+        const toMove = gameState.field[sourceLine][owner].filter(c => c.faceDown);
+        gameState.field[sourceLine][owner] = gameState.field[sourceLine][owner].filter(c => !c.faceDown);
+        toMove.forEach(c => gameState.field[destinationLine][owner].push(c));
+        finishEffect();
+        return;
+    }
+
     const { line, target, cardIdx } = ctx.selectedCard;
-    
+
     if (line === destinationLine) return; // Must move to a different line
 
     const cardObj = gameState.field[line][target].splice(cardIdx, 1)[0];
     gameState.field[destinationLine][target].push(cardObj);
-    
+
     ctx.selected.push(cardObj);
     if (ctx.selected.length >= ctx.count) {
         finishEffect();
@@ -356,19 +376,16 @@ function createCardHTML(card, faceDown = false) {
         <div class="card" data-id="${card.id}" style="border-color: ${color}; box-shadow: 0 0 15px ${color}33;">
             <div class="card-header">
                 <span class="card-value" style="color: ${color}">${card.valor}</span>
-                <span class="card-title" style="color: ${color}">${card.nombre}</span>
+                <span class="card-title" style="color: ${color}">${card.nombre.replace(/\s+\d+$/, '')}</span>
             </div>
             <div class="card-body">
                 <div class="zone zone-start">
-                    <span class="zone-label">Inicio</span>
                     <div class="zone-content">${startText}</div>
                 </div>
                 <div class="zone zone-action">
-                    <span class="zone-label">Acción</span>
                     <div class="zone-content">${actionText}</div>
                 </div>
                 <div class="zone zone-end">
-                    <span class="zone-label">Final</span>
                     <div class="zone-content">${endText}</div>
                 </div>
             </div>
@@ -391,7 +408,13 @@ function updateUI() {
 
     // Update hands
     if (ui.playerHand) ui.playerHand.innerHTML = gameState.player.hand.map(c => createCardHTML(c)).join('');
-    if (ui.aiHand) ui.aiHand.innerHTML = gameState.ai.hand.map(c => createCardHTML(c, true)).join('');
+    // AI hand: just show count
+    const aiHandCountEl = document.getElementById('ai-hand-count');
+    if (aiHandCountEl) {
+        const n = gameState.ai.hand.length;
+        aiHandCountEl.textContent = n;
+        aiHandCountEl.style.color = n === 0 ? '#ef4444' : '#00ff41';
+    }
     
     // Attach events to player hand
     document.querySelectorAll('#player-hand .card').forEach((cardEl, index) => {
@@ -489,32 +512,9 @@ function renderStack(line, target) {
         const cEl = document.createElement('div');
         
         if (cardObj.faceDown) {
-            // Carta bocabajo - mostrar solo valor
-            cEl.innerHTML = `
-                <div class="card-in-field face-down" data-value="2" title="Cara oculta">
-                </div>
-            `;
+            cEl.innerHTML = `<div class="card face-down card-in-field" title="Cara oculta"></div>`;
         } else {
-            // Carta bocarriba - mostrar completa
-            const color = PROTOCOL_DEFS[cardObj.card.protocol] ? 
-                PROTOCOL_DEFS[cardObj.card.protocol].color : '#888';
-            
-            cEl.innerHTML = `
-                <div class="card-in-field" style="border-color: ${color}; background: linear-gradient(135deg, rgba(26, 31, 58, 0.9), rgba(10, 14, 39, 0.95)), linear-gradient(to bottom, ${color}22, ${color}11);">
-                    <div class="card-header" style="color: ${color}">
-                        ${cardObj.card.protocol.toUpperCase().substring(0, 3)}
-                    </div>
-                    <div class="card-name" title="${cardObj.card.nombre}">
-                        ${cardObj.card.nombre}
-                    </div>
-                    <div class="card-value" style="color: ${color}">
-                        +${cardObj.card.valor}
-                    </div>
-                    <div class="card-effect">
-                        ${cardObj.card.h_accion ? cardObj.card.h_accion.substring(0, 30) + '...' : '—'}
-                    </div>
-                </div>
-            `;
+            cEl.innerHTML = createCardHTML(cardObj.card);
         }
         
         const domCard = cEl.firstElementChild;
@@ -552,6 +552,7 @@ function renderStack(line, target) {
 function startTurn(who) {
     gameState.turn = who;
     gameState.phase = 'start';
+    gameState.ignoreEffectsLines = {};
     updateStatus(`${who === 'player' ? 'Tu' : 'IA'} Turno: Fase Inicio`);
     
     // NUEVO: Disparar efectos de inicio de turno
@@ -576,6 +577,11 @@ function checkCompilePhase(who) {
         console.log(`  Line ${line}: ${who}=${myScore} vs opp=${oppScore}`);
 
         if (myScore >= 10 && myScore > oppScore) {
+            if (gameState.preventCompile[who] > 0) {
+                console.log(`  🚫 Compile blocked for ${who} (${gameState.preventCompile[who]} turns left)`);
+                gameState.preventCompile[who]--;
+                continue;
+            }
             console.log(`  ✅ Compiled: ${line}`);
             compileLine(line, who);
             compiledAny = true;
@@ -659,10 +665,10 @@ function showActionModal(handIndex) {
     ui.modalCardPreview.innerHTML = createCardHTML(card);
     
     // Check if face-up play is legal: card protocol must match the line's protocol
-    // AND the line must not be compiled.
+    // ERRATA Espíritu 1: if allowAnyProtocol is active, any line is valid
     const lineIndex = gameState.player.protocols.indexOf(card.protocol);
     const targetLine = lineIndex !== -1 ? LINES[lineIndex] : null;
-    const canPlayUp = targetLine !== null;
+    const canPlayUp = targetLine !== null || (typeof hasAllowAnyProtocol === 'function' && hasAllowAnyProtocol('player'));
     
     console.log(`  Protocol: ${card.protocol}, Line: ${targetLine}, CanPlayUp: ${canPlayUp}`);
     
@@ -834,7 +840,14 @@ function highlightEffectTargets() {
     if (!ctx) return;
 
     if (ctx.type === 'discard') {
-        document.getElementById('player-hand').classList.add('targeting');
+        const hand = document.getElementById('player-hand');
+        hand.classList.add('targeting', 'discard-mode');
+        const remaining = ctx.count - ctx.selected.length;
+        const banner = document.getElementById('discard-banner');
+        if (banner) {
+            banner.textContent = `🗑 Descarta ${remaining} carta${remaining > 1 ? 's' : ''} — haz clic en la que quieres descartar`;
+            banner.classList.add('visible');
+        }
     } else if (ctx.type === 'eliminate' || ctx.type === 'flip') {
         // Add visual cues to relevant field stacks
         if (ctx.target === 'any' || ctx.target === 'player') document.querySelectorAll('.player-stack').forEach(s => s.classList.add('targeting'));
@@ -844,6 +857,9 @@ function highlightEffectTargets() {
 
 function clearEffectHighlights() {
     document.querySelectorAll('.targeting').forEach(el => el.classList.remove('targeting'));
+    document.getElementById('player-hand')?.classList.remove('discard-mode');
+    const banner = document.getElementById('discard-banner');
+    if (banner) banner.classList.remove('visible');
 }
 
 function handleDiscardChoice(handIndex) {
@@ -857,6 +873,10 @@ function handleDiscardChoice(handIndex) {
     if (ctx.selected.length >= ctx.count) {
         finishEffect();
     } else {
+        // Update banner counter
+        const remaining = ctx.count - ctx.selected.length;
+        const banner = document.getElementById('discard-banner');
+        if (banner) banner.textContent = `🗑 Descarta ${remaining} carta${remaining > 1 ? 's' : ''} — haz clic en la que quieres descartar`;
         updateUI(); // Keep choosing
     }
 }
@@ -875,6 +895,7 @@ function handleFieldCardClick(line, target, cardIdx) {
     } else if (ctx.type === 'flip') {
         const cardObj = gameState.field[line][target][cardIdx];
         cardObj.faceDown = !cardObj.faceDown;
+        gameState.lastFlippedCard = { cardObj, line };
         ctx.selected.push(cardObj);
     } else if (ctx.type === 'shift') {
         // Shift needs a second step: pick target line
@@ -920,6 +941,15 @@ function handleFieldCardClick(line, target, cardIdx) {
 function finishEffect() {
     gameState.effectContext = null;
     clearEffectHighlights();
+
+    // If this was the end-of-turn discard, resume end turn flow
+    if (gameState.pendingEndTurnFor) {
+        const who = gameState.pendingEndTurnFor;
+        gameState.pendingEndTurnFor = null;
+        continueEndTurn(who);
+        return;
+    }
+
     // Route to ability engine if queue items are in new format
     if (gameState.effectQueue.length > 0 && gameState.effectQueue[0].effect !== undefined) {
         processAbilityEffect();
@@ -1027,10 +1057,17 @@ function playSelectedCard(isFaceDown) {
     }
 
     // Face-up play: protocol must match the line (compiled lines allowed)
+    // ERRATA Espíritu 1: if allowAnyProtocol is active, any line is valid
     const idx = gameState.player.protocols.indexOf(card.protocol);
     if (idx !== -1) {
         console.log(`✅ Playing face-up: ${card.nombre} on line ${LINES[idx]}`);
         finalizePlay(LINES[idx], false);
+    } else if (typeof hasAllowAnyProtocol === 'function' && hasAllowAnyProtocol('player')) {
+        console.log(`✅ Playing face-up (any protocol allowed): ${card.nombre}`);
+        gameState.selectionMode = true;
+        gameState.selectionModeFaceUp = true;
+        updateStatus("Espíritu 1 activo — elige cualquier línea para jugar bocarriba...");
+        highlightSelectableLines();
     } else {
         console.error("❌ Illegal face-up play: protocol has no matching line", {
             protocol: card.protocol,
@@ -1067,7 +1104,17 @@ function finalizePlay(targetLine, isFaceDown) {
 
     const card = gameState.player.hand[gameState.selectedCardIndex];
     const playedCard = { card: card, faceDown: isFaceDown };
-    
+
+    // Disparar onCover en la carta que quedará cubierta (si existe)
+    const playerStack = gameState.field[targetLine].player;
+    if (playerStack.length > 0) {
+        const topCard = playerStack[playerStack.length - 1];
+        if (!topCard.faceDown) {
+            gameState.currentEffectLine = targetLine;
+            triggerCardEffect(topCard.card, 'onCover', 'player');
+        }
+    }
+
     gameState.field[targetLine].player.push(playedCard);
     gameState.player.hand.splice(gameState.selectedCardIndex, 1);
     gameState.selectedCardIndex = null;
@@ -1076,6 +1123,7 @@ function finalizePlay(targetLine, isFaceDown) {
     
     if (!isFaceDown) {
         console.log(`🔧 Executing card effect...`);
+        gameState.currentEffectLine = targetLine;
         executeEffect(card, 'player');
     } else {
         // Face-down play has no immediate effects, just update UI
@@ -1083,6 +1131,16 @@ function finalizePlay(targetLine, isFaceDown) {
         updateUI();
     }
     
+    if (gameState.pendingPlayCard) {
+        gameState.pendingPlayCard = false;
+        console.log(`🎴 playCard effect resolved — continuing effect queue`);
+        updateUI();
+        if (gameState.effectQueue.length > 0) {
+            processAbilityEffect();
+        }
+        return;
+    }
+
     console.log(`⏱️ Ending player turn...`);
     endTurn('player');
 }
@@ -1262,10 +1320,20 @@ function executeAIMove(move) {
 
     const card = gameState.ai.hand[move.cardIndex];
     const movedCard = gameState.ai.hand.splice(move.cardIndex, 1)[0];
-    
-    gameState.field[move.line].ai.push({ 
-        card: movedCard, 
-        faceDown: !move.faceUp 
+
+    // Disparar onCover en la carta que quedará cubierta (si existe)
+    const aiStack = gameState.field[move.line].ai;
+    if (aiStack.length > 0) {
+        const topCard = aiStack[aiStack.length - 1];
+        if (!topCard.faceDown) {
+            gameState.currentEffectLine = move.line;
+            triggerCardEffect(topCard.card, 'onCover', 'ai');
+        }
+    }
+
+    gameState.field[move.line].ai.push({
+        card: movedCard,
+        faceDown: !move.faceUp
     });
     
     const faceText = move.faceUp ? 'bocarriba' : 'bocabajo';
@@ -1273,6 +1341,7 @@ function executeAIMove(move) {
     
     // Ejecutar efectos si es bocarriba
     if (move.faceUp) {
+        gameState.currentEffectLine = move.line;
         executeEffect(movedCard, 'ai');
     }
 }
@@ -1280,19 +1349,34 @@ function executeAIMove(move) {
 function endTurn(who) {
     console.log(`⏸️ Ending turn for ${who}`);
     gameState.phase = 'check_cache';
-    // Discard down to 5
-    while(gameState[who].hand.length > 5) {
-        gameState[who].trash.push(gameState[who].hand.pop());
+
+    const excess = gameState[who].hand.length - 5;
+    if (excess > 0) {
+        if (who === 'player') {
+            // Interactive: player chooses which cards to discard
+            gameState.pendingEndTurnFor = who;
+            updateStatus(`Tienes ${gameState.player.hand.length} cartas — descarta ${excess}`);
+            startEffect('discard', 'player', excess);
+            return;
+        } else {
+            // AI discards randomly
+            while(gameState.ai.hand.length > 5) {
+                gameState.ai.trash.push(gameState.ai.hand.pop());
+            }
+        }
     }
-    
+
+    continueEndTurn(who);
+}
+
+function continueEndTurn(who) {
     updateUI();
     gameState.phase = 'end';
-    
-    // NUEVO: Disparar efectos de fin de turno
+
     if (typeof onTurnEndEffects === 'function') {
         onTurnEndEffects(who);
     }
-    
+
     console.log(`⏱️ Starting next turn...`);
     setTimeout(() => startTurn(who === 'player' ? 'ai' : 'player'), 1000);
 }

@@ -348,7 +348,7 @@ body::before {
 .hand {
     display: flex;
     gap: var(--gap-md);
-    overflow-x: auto;
+    overflow: visible;
     padding: var(--gap-md) 0;
     flex: 1;
     justify-content: flex-start;
@@ -369,7 +369,7 @@ body::before {
     height: 160px;
     border: 2px solid;
     border-radius: var(--radius-lg);
-    padding: var(--gap-md);
+    padding: 2px 6px 6px;
     background: linear-gradient(135deg, rgba(26, 31, 58, 0.95) 0%, rgba(30, 41, 59, 0.9) 100%);
     cursor: pointer;
     transition: all 0.3s ease;
@@ -398,8 +398,15 @@ body::before {
 }
 
 .card:hover {
-    transform: translateY(-10px) scale(1.1);
-    box-shadow: 0 10px 30px rgba(0, 212, 255, 0.5);
+    transform: translateY(-20px) scale(2);
+    box-shadow: 0 20px 60px rgba(0, 212, 255, 0.7);
+    z-index: 1000;
+}
+
+.card.card-in-field:hover {
+    transform: translateY(-8px) scale(1);
+    box-shadow: 0 8px 24px rgba(0, 212, 255, 0.3);
+    z-index: auto;
 }
 
 .card.face-down {
@@ -409,11 +416,13 @@ body::before {
 
 .card-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
-    margin-bottom: var(--gap-sm);
+    margin-bottom: 0;
     font-weight: bold;
     font-size: 0.9em;
+    color: #00d4ff;
+    gap: 4px;
 }
 
 .card-value {
@@ -426,9 +435,7 @@ body::before {
 
 .card-title {
     font-size: 0.75em;
-    text-align: right;
-    flex: 1;
-    margin-left: var(--gap-sm);
+    text-align: left;
 }
 
 .card-body {
@@ -442,9 +449,11 @@ body::before {
 
 .zone {
     background: rgba(0, 0, 0, 0.3);
-    padding: 4px;
+    padding: 3px 2px;
     border-radius: 3px;
     border-left: 2px solid;
+    flex: 1;
+    overflow: hidden;
 }
 
 .zone-label {
@@ -459,6 +468,7 @@ body::before {
 .zone-content {
     font-size: 0.65em;
     line-height: 1.2;
+    overflow: hidden;
 }
 
 .face-down .card-title {
@@ -636,12 +646,6 @@ body::before {
     color: #00d4ff;
 }
 
-.card-header {
-    font-weight: bold;
-    font-size: 0.9em;
-    color: #00d4ff;
-    margin-bottom: 2px;
-}
 
 .card-name {
     font-size: 0.85em;
@@ -1015,4 +1019,52 @@ body::before {
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--accent-red);
+}
+
+/* ============================================================================
+   MODO DESCARTE
+   ============================================================================ */
+
+#discard-banner {
+    display: none;
+    position: sticky;
+    bottom: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #8b0000, #cc2200);
+    color: #fff;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: bold;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 2px solid #ff4444;
+    box-shadow: 0 0 16px rgba(255, 68, 68, 0.6);
+    letter-spacing: 0.5px;
+    z-index: 500;
+    pointer-events: none;
+}
+
+#discard-banner.visible {
+    display: block;
+}
+
+.discard-mode .card {
+    cursor: pointer !important;
+    animation: discard-pulse 1s ease-in-out infinite alternate;
+}
+
+.discard-mode .card:hover {
+    box-shadow: 0 0 20px rgba(255, 80, 80, 0.9), 0 0 6px rgba(255, 80, 80, 0.5) !important;
+}
+
+@keyframes discard-pulse {
+    from {
+        box-shadow: 0 0 6px rgba(255, 80, 80, 0.4), 0 2px 4px rgba(0,0,0,0.3);
+        outline: 2px solid rgba(255, 80, 80, 0.5);
+    }
+    to {
+        box-shadow: 0 0 18px rgba(255, 80, 80, 0.9), 0 2px 8px rgba(0,0,0,0.5);
+        outline: 2px solid rgba(255, 80, 80, 1);
+    }
 }
