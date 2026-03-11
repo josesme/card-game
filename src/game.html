@@ -55,75 +55,149 @@
             </div>
         </div>
 
+        <!-- AI HAND AND RESOURCES -->
+        <div style="color: #00d4ff; font-size: 1.1em; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">
+            🎴 Mano - IA
+        </div>
+        <div style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 30px;">
+            <div id="ai-hand" style="flex: 1; min-width: 0; background: rgba(0, 0, 0, 0.3); border: 1px dashed #555; border-radius: 8px; padding: 15px 20px; display: flex; flex-wrap: nowrap; gap: 10px; min-height: 160px; overflow-x: auto;">
+                <!-- IA cards populated by logic.js -->
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px; flex-shrink: 0;">
+                <div style="background: rgba(26, 31, 58, 0.8); border: 1px solid #00d4ff; border-radius: 8px; padding: 10px 12px; text-align: center; min-width: 72px;">
+                    <div style="color: #888; font-size: 0.65em; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 1px;">Mazo</div>
+                    <div id="ai-deck-count" style="color: #00d4ff; font-size: 1.6em; font-weight: bold;">0</div>
+                    <div style="color: #555; font-size: 0.6em; margin-top: 4px;">IA</div>
+                </div>
+                <div style="background: rgba(26, 31, 58, 0.8); border: 1px solid #ef4444; border-radius: 8px; padding: 10px 12px; text-align: center; min-width: 72px;">
+                    <div style="color: #888; font-size: 0.65em; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 1px;">Desc.</div>
+                    <div id="ai-trash-count" style="color: #ef4444; font-size: 1.6em; font-weight: bold;">0</div>
+                    <div style="color: #555; font-size: 0.6em; margin-top: 4px;">IA</div>
+                </div>
+            </div>
+        </div>
+
         <!-- LINES (MESA) -->
         <div style="color: #00d4ff; font-size: 1.1em; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">
             ⚔️ Líneas de Enfrentamiento
         </div>
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px;">
+
             <!-- Line: IZQUIERDA -->
-            <div style="background: rgba(0, 0, 0, 0.3); border: 1px solid #333; border-radius: 8px; padding: 20px;">
-                <div style="color: #888; font-size: 0.9em; margin-bottom: 15px; text-transform: uppercase;">Línea Izquierda</div>
-                <div id="line-izquierda" style="min-height: 200px; display: flex; flex-direction: column; gap: 15px;">
-                    <!-- Populated by logic.js -->
+            <div style="background: rgba(0, 0, 0, 0.3); border: 1px solid #333; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="color: #888; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1px; text-align: center;">Línea Izquierda</div>
+
+                <!-- AI Protocol -->
+                <div id="proto-izquierda-ai" style="border: 2px solid #ef4444; border-radius: 8px; padding: 10px; background: linear-gradient(135deg, rgba(26,31,58,0.85), rgba(30,41,59,0.7)); text-align: center; box-shadow: 0 0 14px #ef444433;">
+                    <div style="color: #ef4444; font-size: 0.6em; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px;">IA</div>
+                    <div class="proto-card-name" style="font-family: 'Orbitron', monospace; font-weight: bold; font-size: 0.85em; color: #ef4444;">—</div>
+                    <div class="proto-card-status" style="font-size: 0.6em; color: #aaa; margin-top: 4px; line-height: 1.3;">...</div>
+                </div>
+
+                <!-- Stacks -->
+                <div id="line-izquierda" style="display: flex; flex-direction: column; gap: 8px;">
+                    <div class="ai-stack" style="min-height: 60px; position: relative; display: flex; flex-wrap: wrap; gap: 5px; align-items: flex-start;"></div>
+                    <div id="score-izquierda" style="display: flex; align-items: center; justify-content: center; gap: 10px; padding: 4px 8px; background: rgba(0,0,0,0.4); border-radius: 6px; font-family: 'Orbitron', monospace;">
+                        <span class="ai-score" style="color: #ef4444; font-size: 1.1em; font-weight: bold; min-width: 24px; text-align: right;">0</span>
+                        <span style="color: #444; font-size: 0.7em;">VS</span>
+                        <span class="player-score" style="color: #00d4ff; font-size: 1.1em; font-weight: bold; min-width: 24px; text-align: left;">0</span>
+                    </div>
+                    <div class="player-stack" style="min-height: 60px; position: relative; display: flex; flex-wrap: wrap; gap: 5px; align-items: flex-start;"></div>
+                </div>
+
+                <!-- Player Protocol -->
+                <div id="proto-izquierda-player" style="border: 2px solid #00d4ff; border-radius: 8px; padding: 10px; background: linear-gradient(135deg, rgba(26,31,58,0.85), rgba(30,41,59,0.7)); text-align: center; box-shadow: 0 0 14px #00d4ff33;">
+                    <div class="proto-card-name" style="font-family: 'Orbitron', monospace; font-weight: bold; font-size: 0.85em; color: #00d4ff;">—</div>
+                    <div class="proto-card-status" style="font-size: 0.6em; color: #aaa; margin-top: 4px; line-height: 1.3;">...</div>
+                    <div style="color: #00d4ff; font-size: 0.6em; text-transform: uppercase; letter-spacing: 1px; margin-top: 3px;">Jugador</div>
                 </div>
             </div>
 
             <!-- Line: CENTRO -->
-            <div style="background: rgba(0, 0, 0, 0.3); border: 1px solid #333; border-radius: 8px; padding: 20px;">
-                <div style="color: #888; font-size: 0.9em; margin-bottom: 15px; text-transform: uppercase;">Línea Centro</div>
-                <div id="line-centro" style="min-height: 200px; display: flex; flex-direction: column; gap: 15px;">
-                    <!-- Populated by logic.js -->
+            <div style="background: rgba(0, 0, 0, 0.3); border: 1px solid #333; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="color: #888; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1px; text-align: center;">Línea Centro</div>
+
+                <!-- AI Protocol -->
+                <div id="proto-centro-ai" style="border: 2px solid #ef4444; border-radius: 8px; padding: 10px; background: linear-gradient(135deg, rgba(26,31,58,0.85), rgba(30,41,59,0.7)); text-align: center; box-shadow: 0 0 14px #ef444433;">
+                    <div style="color: #ef4444; font-size: 0.6em; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px;">IA</div>
+                    <div class="proto-card-name" style="font-family: 'Orbitron', monospace; font-weight: bold; font-size: 0.85em; color: #ef4444;">—</div>
+                    <div class="proto-card-status" style="font-size: 0.6em; color: #aaa; margin-top: 4px; line-height: 1.3;">...</div>
+                </div>
+
+                <!-- Stacks -->
+                <div id="line-centro" style="display: flex; flex-direction: column; gap: 8px;">
+                    <div class="ai-stack" style="min-height: 60px; position: relative; display: flex; flex-wrap: wrap; gap: 5px; align-items: flex-start;"></div>
+                    <div id="score-centro" style="display: flex; align-items: center; justify-content: center; gap: 10px; padding: 4px 8px; background: rgba(0,0,0,0.4); border-radius: 6px; font-family: 'Orbitron', monospace;">
+                        <span class="ai-score" style="color: #ef4444; font-size: 1.1em; font-weight: bold; min-width: 24px; text-align: right;">0</span>
+                        <span style="color: #444; font-size: 0.7em;">VS</span>
+                        <span class="player-score" style="color: #00d4ff; font-size: 1.1em; font-weight: bold; min-width: 24px; text-align: left;">0</span>
+                    </div>
+                    <div class="player-stack" style="min-height: 60px; position: relative; display: flex; flex-wrap: wrap; gap: 5px; align-items: flex-start;"></div>
+                </div>
+
+                <!-- Player Protocol -->
+                <div id="proto-centro-player" style="border: 2px solid #00d4ff; border-radius: 8px; padding: 10px; background: linear-gradient(135deg, rgba(26,31,58,0.85), rgba(30,41,59,0.7)); text-align: center; box-shadow: 0 0 14px #00d4ff33;">
+                    <div class="proto-card-name" style="font-family: 'Orbitron', monospace; font-weight: bold; font-size: 0.85em; color: #00d4ff;">—</div>
+                    <div class="proto-card-status" style="font-size: 0.6em; color: #aaa; margin-top: 4px; line-height: 1.3;">...</div>
+                    <div style="color: #00d4ff; font-size: 0.6em; text-transform: uppercase; letter-spacing: 1px; margin-top: 3px;">Jugador</div>
                 </div>
             </div>
 
             <!-- Line: DERECHA -->
-            <div style="background: rgba(0, 0, 0, 0.3); border: 1px solid #333; border-radius: 8px; padding: 20px;">
-                <div style="color: #888; font-size: 0.9em; margin-bottom: 15px; text-transform: uppercase;">Línea Derecha</div>
-                <div id="line-derecha" style="min-height: 200px; display: flex; flex-direction: column; gap: 15px;">
-                    <!-- Populated by logic.js -->
+            <div style="background: rgba(0, 0, 0, 0.3); border: 1px solid #333; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="color: #888; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1px; text-align: center;">Línea Derecha</div>
+
+                <!-- AI Protocol -->
+                <div id="proto-derecha-ai" style="border: 2px solid #ef4444; border-radius: 8px; padding: 10px; background: linear-gradient(135deg, rgba(26,31,58,0.85), rgba(30,41,59,0.7)); text-align: center; box-shadow: 0 0 14px #ef444433;">
+                    <div style="color: #ef4444; font-size: 0.6em; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px;">IA</div>
+                    <div class="proto-card-name" style="font-family: 'Orbitron', monospace; font-weight: bold; font-size: 0.85em; color: #ef4444;">—</div>
+                    <div class="proto-card-status" style="font-size: 0.6em; color: #aaa; margin-top: 4px; line-height: 1.3;">...</div>
+                </div>
+
+                <!-- Stacks -->
+                <div id="line-derecha" style="display: flex; flex-direction: column; gap: 8px;">
+                    <div class="ai-stack" style="min-height: 60px; position: relative; display: flex; flex-wrap: wrap; gap: 5px; align-items: flex-start;"></div>
+                    <div id="score-derecha" style="display: flex; align-items: center; justify-content: center; gap: 10px; padding: 4px 8px; background: rgba(0,0,0,0.4); border-radius: 6px; font-family: 'Orbitron', monospace;">
+                        <span class="ai-score" style="color: #ef4444; font-size: 1.1em; font-weight: bold; min-width: 24px; text-align: right;">0</span>
+                        <span style="color: #444; font-size: 0.7em;">VS</span>
+                        <span class="player-score" style="color: #00d4ff; font-size: 1.1em; font-weight: bold; min-width: 24px; text-align: left;">0</span>
+                    </div>
+                    <div class="player-stack" style="min-height: 60px; position: relative; display: flex; flex-wrap: wrap; gap: 5px; align-items: flex-start;"></div>
+                </div>
+
+                <!-- Player Protocol -->
+                <div id="proto-derecha-player" style="border: 2px solid #00d4ff; border-radius: 8px; padding: 10px; background: linear-gradient(135deg, rgba(26,31,58,0.85), rgba(30,41,59,0.7)); text-align: center; box-shadow: 0 0 14px #00d4ff33;">
+                    <div class="proto-card-name" style="font-family: 'Orbitron', monospace; font-weight: bold; font-size: 0.85em; color: #00d4ff;">—</div>
+                    <div class="proto-card-status" style="font-size: 0.6em; color: #aaa; margin-top: 4px; line-height: 1.3;">...</div>
+                    <div style="color: #00d4ff; font-size: 0.6em; text-transform: uppercase; letter-spacing: 1px; margin-top: 3px;">Jugador</div>
                 </div>
             </div>
+
         </div>
 
-        <!-- RESOURCES (DECK, TRASH) -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; margin-bottom: 30px;">
-            <div style="background: rgba(26, 31, 58, 0.8); border: 1px solid #00d4ff; border-radius: 8px; padding: 15px; text-align: center;">
-                <div style="color: #888; font-size: 0.8em; text-transform: uppercase; margin-bottom: 8px;">Mazo Jugador</div>
-                <div id="player-deck-count" style="color: #00d4ff; font-size: 1.8em; font-weight: bold;">0</div>
-                <button id="player-deck-btn" style="background: #00d4ff; color: #0a0e27; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px; font-size: 0.8em;">
-                    🔄 Recargar
-                </button>
-            </div>
-
-            <div style="background: rgba(26, 31, 58, 0.8); border: 1px solid #ef4444; border-radius: 8px; padding: 15px; text-align: center;">
-                <div style="color: #888; font-size: 0.8em; text-transform: uppercase; margin-bottom: 8px;">Descartes Jugador</div>
-                <div id="player-trash-count" style="color: #ef4444; font-size: 1.8em; font-weight: bold;">0</div>
-            </div>
-
-            <div style="background: rgba(26, 31, 58, 0.8); border: 1px solid #00d4ff; border-radius: 8px; padding: 15px; text-align: center;">
-                <div style="color: #888; font-size: 0.8em; text-transform: uppercase; margin-bottom: 8px;">Mazo IA</div>
-                <div id="ai-deck-count" style="color: #00d4ff; font-size: 1.8em; font-weight: bold;">0</div>
-            </div>
-
-            <div style="background: rgba(26, 31, 58, 0.8); border: 1px solid #ef4444; border-radius: 8px; padding: 15px; text-align: center;">
-                <div style="color: #888; font-size: 0.8em; text-transform: uppercase; margin-bottom: 8px;">Descartes IA</div>
-                <div id="ai-trash-count" style="color: #ef4444; font-size: 1.8em; font-weight: bold;">0</div>
-            </div>
-        </div>
-
-        <!-- HANDS -->
-        <div style="color: #00d4ff; font-size: 1.1em; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">
-            🎴 Mano - IA
-        </div>
-        <div id="ai-hand" style="background: rgba(0, 0, 0, 0.3); border: 1px dashed #555; border-radius: 8px; padding: 20px; display: flex; flex-wrap: wrap; gap: 10px; min-height: 140px; margin-bottom: 30px;">
-            <!-- IA cards populated by logic.js -->
-        </div>
-
+        <!-- PLAYER HAND AND RESOURCES -->
         <div style="color: #00d4ff; font-size: 1.1em; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">
             🎴 Tu Mano
         </div>
-        <div id="player-hand" style="background: rgba(0, 0, 0, 0.3); border: 1px dashed #555; border-radius: 8px; padding: 20px; display: flex; flex-wrap: wrap; gap: 10px; min-height: 140px;">
-            <!-- Player cards populated by logic.js -->
+        <div style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px;">
+            <div id="player-hand" style="flex: 1; min-width: 0; background: rgba(0, 0, 0, 0.3); border: 1px dashed #555; border-radius: 8px; padding: 15px 20px; display: flex; flex-wrap: nowrap; gap: 10px; min-height: 160px; overflow-x: auto;">
+                <!-- Player cards populated by logic.js -->
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px; flex-shrink: 0;">
+                <div style="background: rgba(26, 31, 58, 0.8); border: 1px solid #00d4ff; border-radius: 8px; padding: 10px 12px; text-align: center; min-width: 72px;">
+                    <div style="color: #888; font-size: 0.65em; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 1px;">Mazo</div>
+                    <div id="player-deck-count" style="color: #00d4ff; font-size: 1.6em; font-weight: bold;">0</div>
+                </div>
+                <div style="background: rgba(26, 31, 58, 0.8); border: 1px solid #ef4444; border-radius: 8px; padding: 10px 12px; text-align: center; min-width: 72px;">
+                    <div style="color: #888; font-size: 0.65em; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 1px;">Desc.</div>
+                    <div id="player-trash-count" style="color: #ef4444; font-size: 1.6em; font-weight: bold;">0</div>
+                </div>
+            </div>
+        </div>
+        <div style="margin-bottom: 30px;">
+            <button id="player-deck-btn" style="background: linear-gradient(135deg, #00d4ff, #0099cc); color: #0a0e27; border: none; padding: 12px 28px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1em; font-family: 'Space Mono', monospace; letter-spacing: 1px;">
+                🔄 Recargar Mazo
+            </button>
         </div>
     </div>
 
@@ -135,18 +209,12 @@
         </div>
     </div>
 
-    <!-- RESTART BUTTON -->
-    <div style="text-align: center;">
-        <button id="btn-restart" onclick="location.href='draft.html'" style="background: linear-gradient(135deg, #00d4ff, #0099cc); color: #0a0e27; border: none; padding: 14px 32px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1.1em; font-family: 'Space Mono', monospace;">
-            🔄 NUEVO DRAFT
-        </button>
-    </div>
 </div>
 
 <!-- MODALS (Hidden, controlled by logic.js) -->
 
 <!-- ACTION MODAL: Card selection -->
-<div id="action-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 1000; align-items: center; justify-content: center;">
+<div id="action-modal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 1000; display: flex; align-items: center; justify-content: center;">
     <div style="background: rgba(26, 31, 58, 0.95); border: 2px solid #00d4ff; border-radius: 12px; padding: 30px; max-width: 400px; width: 90%;">
         <h2 style="color: #00d4ff; margin-bottom: 20px; text-align: center;">Selecciona Acción</h2>
         
@@ -190,15 +258,23 @@
 </div>
 
 <!-- GAME OVER MODAL -->
-<div id="game-over-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 1002; align-items: center; justify-content: center;">
-    <div style="background: linear-gradient(135deg, rgba(26, 31, 58, 0.95), rgba(10, 14, 39, 0.95)); border: 3px solid #facc15; border-radius: 12px; padding: 40px; max-width: 500px; width: 90%; text-align: center;">
-        <h1 style="color: #facc15; margin-bottom: 20px; font-size: 2.5em;">🎮 GAME OVER 🎮</h1>
-        
-        <div id="winner-text" style="color: #00d4ff; font-size: 1.3em; margin-bottom: 30px;">
-            <!-- Winner populated by logic.js -->
+<div id="game-over-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 1002; align-items: center; justify-content: center;">
+    <div style="background: linear-gradient(135deg, rgba(26, 31, 58, 0.97), rgba(10, 14, 39, 0.97)); border: 3px solid #facc15; border-radius: 16px; padding: 48px 40px; max-width: 480px; width: 90%; text-align: center; box-shadow: 0 0 60px rgba(250, 204, 21, 0.3);">
+
+        <div style="font-size: 3em; margin-bottom: 12px;">⚡</div>
+
+        <h1 id="game-over-title" style="font-family: 'Orbitron', monospace; font-size: 2.4em; margin-bottom: 16px; letter-spacing: 3px;">
+            ¡VICTORIA!
+        </h1>
+
+        <p id="win-reason" style="color: #ccc; font-size: 1em; margin-bottom: 24px; line-height: 1.6;">
+            —
+        </p>
+
+        <div id="win-stats" style="background: rgba(0,0,0,0.3); border: 1px solid #333; border-radius: 8px; padding: 14px; margin-bottom: 32px; font-size: 0.85em; color: #aaa; line-height: 2;">
         </div>
 
-        <button id="btn-restart-game" onclick="location.href='draft.html'" style="background: linear-gradient(135deg, #00d4ff, #0099cc); color: #0a0e27; border: none; padding: 16px 32px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1.1em; font-family: 'Space Mono', monospace;">
+        <button onclick="location.href='draft.html'" style="background: linear-gradient(135deg, #00d4ff, #0099cc); color: #0a0e27; border: none; padding: 16px 40px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1.1em; font-family: 'Orbitron', monospace; letter-spacing: 1px; box-shadow: 0 0 20px rgba(0,212,255,0.4);">
             🔄 NUEVO DRAFT
         </button>
     </div>
