@@ -50,7 +50,10 @@ const PROTOCOL_DEFS = {
     'Psique': { color: '#ec4899', abilities: 'ROBAR, MANIPULAR, DESPLAZAR' },
     'Velocidad': { color: '#06b6d4', abilities: 'ROBAR, JUGAR, DESPLAZAR' },
     'Agua': { color: '#3b82f6', abilities: 'DEVOLVER, ROBAR, VOLTEAR' },
-    'Oscuridad': { color: '#64748b', abilities: 'ROBAR, DESPLAZAR, MANIPULAR' }
+    'Oscuridad': { color: '#64748b', abilities: 'ROBAR, DESPLAZAR, MANIPULAR' },
+    'Apatía':    { color: '#6b7280', abilities: 'Voltear cartas bocabajo' },
+    'Odio':      { color: '#b91c1c', abilities: 'Eliminar tus cartas y cartas del oponente' },
+    'Amor':      { color: '#f43f5e', abilities: 'Robar, dar e intercambiar' }
 };
 
 // Base de Datos de Cartas Incrustada (para evitar errores de CORS local)
@@ -150,6 +153,30 @@ const GLOBAL_CARDS = {
     {"valor": 3, "nombre": "Oscuridad 3", "fase": "Action", "h_inicio": "", "h_accion": "Juega 1 carta bocabajo en otra línea.", "h_final": ""},
     {"valor": 4, "nombre": "Oscuridad 4", "fase": "Action", "h_inicio": "", "h_accion": "Cambia 1 carta bocabajo.", "h_final": ""},
     {"valor": 5, "nombre": "Oscuridad 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""}
+  ],
+  "Apatía": [
+    {"valor": 0, "nombre": "Apatía 0", "fase": "Start",  "h_inicio": "Tu Valor total en esta línea se incrementa en 1 por cada carta bocabajo en esta línea.", "h_accion": "", "h_final": ""},
+    {"valor": 1, "nombre": "Apatía 1", "fase": "Action", "h_inicio": "", "h_accion": "Voltea todas las demás cartas bocarriba en esta línea.", "h_final": ""},
+    {"valor": 2, "nombre": "Apatía 2", "fase": "Start",  "h_inicio": "Ignora todos los comandos de acción de las cartas en esta línea.", "h_accion": "", "h_final": "Si se cubre esta carta: Primero, voltea esta carta."},
+    {"valor": 3, "nombre": "Apatía 3", "fase": "Action", "h_inicio": "", "h_accion": "Voltea 1 de las cartas bocarriba de tu oponente.", "h_final": ""},
+    {"valor": 4, "nombre": "Apatía 4", "fase": "Action", "h_inicio": "", "h_accion": "Puedes voltear 1 de tus cartas bocarriba cubiertas.", "h_final": ""},
+    {"valor": 5, "nombre": "Apatía 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""}
+  ],
+  "Odio": [
+    {"valor": 0, "nombre": "Odio 0", "fase": "Action", "h_inicio": "", "h_accion": "Elimina 1 carta.", "h_final": ""},
+    {"valor": 1, "nombre": "Odio 1", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 3 cartas. Elimina 1 carta. Elimina 1 carta.", "h_final": ""},
+    {"valor": 2, "nombre": "Odio 2", "fase": "Action", "h_inicio": "", "h_accion": "Elimina tu carta de mayor valor. Elimina la carta de mayor valor de tu oponente.", "h_final": ""},
+    {"valor": 3, "nombre": "Odio 3", "fase": "Start",  "h_inicio": "Después de que elimines cartas: Roba 1 carta.", "h_accion": "", "h_final": ""},
+    {"valor": 4, "nombre": "Odio 4", "fase": "End",    "h_inicio": "", "h_accion": "", "h_final": "Si se cubre esta carta: Primero, elimina la carta cubierta de menor valor en esta línea."},
+    {"valor": 5, "nombre": "Odio 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""}
+  ],
+  "Amor": [
+    {"valor": 1, "nombre": "Amor 1", "fase": "End",    "h_inicio": "", "h_accion": "Roba la carta superior del mazo de tu oponente.", "h_final": "Final: Puedes dar 1 carta de tu mano a tu oponente. Si lo haces, roba 2 cartas."},
+    {"valor": 2, "nombre": "Amor 2", "fase": "Action", "h_inicio": "", "h_accion": "Tu oponente roba 1 carta. Actualiza.", "h_final": ""},
+    {"valor": 3, "nombre": "Amor 3", "fase": "Action", "h_inicio": "", "h_accion": "Toma 1 carta aleatoria de la mano de tu oponente. Da 1 carta de tu mano a tu oponente.", "h_final": ""},
+    {"valor": 4, "nombre": "Amor 4", "fase": "Action", "h_inicio": "", "h_accion": "Revela 1 carta de tu mano. Voltea 1 carta.", "h_final": ""},
+    {"valor": 5, "nombre": "Amor 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""},
+    {"valor": 6, "nombre": "Amor 6", "fase": "Action", "h_inicio": "", "h_accion": "Tu oponente roba 2 cartas.", "h_final": ""}
   ]
 };
 
@@ -360,9 +387,8 @@ function createCardHTML(card, faceDown = false) {
     
     if (faceDown) {
         return `<div class="card face-down">
-            <div class="card-header">
-                <span class="card-value">2</span>
-            </div>
+            <div class="card-back-title">COMPILE</div>
+            <div class="card-back-value">2</div>
         </div>`;
     }
     
@@ -474,10 +500,11 @@ function calculateScore(state, line, target) {
         return sum + (cardObj.faceDown ? 2 : cardObj.card.valor);
     }, 0);
     
-    // NUEVO: Aplicar modificadores persistentes si está disponible el motor de habilidades
+    // Aplicar modificadores persistentes (Metal 0 reduce, Apatía 0 suma bono)
     if (typeof applyPersistentValueModifiers === 'function') {
-        const reduction = applyPersistentValueModifiers(state, line, target);
-        score = Math.max(0, score - reduction);
+        const netModifier = applyPersistentValueModifiers(state, line, target);
+        // netModifier positivo = reducción; negativo = bono al score
+        score = Math.max(0, score - netModifier);
     }
     
     return score;
@@ -516,8 +543,12 @@ function renderStack(line, target) {
         const cEl = document.createElement('div');
         
         if (cardObj.faceDown) {
-            cEl.innerHTML = `<div class="card face-down card-in-field" title="Cara oculta"></div>`;
-        } else {
+            cEl.innerHTML = `<div class="card face-down card-in-field" title="Cara oculta">
+                <div class="card-back-title">COMPILE</div>
+                <div class="card-back-value">2</div>
+            </div>`;
+        }
+ else {
             cEl.innerHTML = createCardHTML(cardObj.card);
         }
         
@@ -819,8 +850,8 @@ function startEffect(type, target, count) {
     // Determine if this should be interactive or automatic
     let isAIResolving = false;
     
-    if (type === 'discard') {
-        // En "descartar", el dueño de la zona (target) elige.
+    if (type === 'discard' || type === 'give') {
+        // En "descartar/dar", el dueño de la mano (target) elige.
         isAIResolving = (target === 'ai');
     } else {
         // En "eliminar/voltear" (tablero), el jugador del turno elige el objetivo en la zona permitida.
@@ -833,7 +864,7 @@ function startEffect(type, target, count) {
     }
 
     gameState.effectContext = { type, target, count, selected: [] };
-    const actionVerb = type === 'discard' ? 'DESCARTAR' : type === 'eliminate' ? 'ELIMINAR' : 'VOLTEAR';
+    const actionVerb = type === 'discard' ? 'DESCARTAR' : type === 'give' ? 'DAR AL OPONENTE' : type === 'eliminate' ? 'ELIMINAR' : 'VOLTEAR';
     const targetDesc = target === 'ai' ? ' del OPONENTE' : target === 'player' ? ' TUYAS' : '';
     updateStatus(`COMANDO: Elige ${count} carta(s)${targetDesc} para ${actionVerb}`);
     highlightEffectTargets();
@@ -843,19 +874,36 @@ function highlightEffectTargets() {
     const ctx = gameState.effectContext;
     if (!ctx) return;
 
-    if (ctx.type === 'discard') {
+    if (ctx.type === 'discard' || ctx.type === 'give') {
         const hand = document.getElementById('player-hand');
         hand.classList.add('targeting', 'discard-mode');
         const remaining = ctx.count - ctx.selected.length;
         const banner = document.getElementById('discard-banner');
         if (banner) {
-            banner.textContent = `🗑 Descarta ${remaining} carta${remaining > 1 ? 's' : ''} — haz clic en la que quieres descartar`;
+            const msg = ctx.type === 'give'
+                ? `🤝 Da ${remaining} carta${remaining > 1 ? 's' : ''} al oponente — haz clic en la que quieres dar`
+                : `🗑 Descarta ${remaining} carta${remaining > 1 ? 's' : ''} — haz clic en la que quieres descartar`;
+            banner.textContent = msg;
             banner.classList.add('visible');
         }
     } else if (ctx.type === 'eliminate' || ctx.type === 'flip') {
         // Add visual cues to relevant field stacks
         if (ctx.target === 'any' || ctx.target === 'player') document.querySelectorAll('.player-stack').forEach(s => s.classList.add('targeting'));
         if (ctx.target === 'any' || ctx.target === 'ai') document.querySelectorAll('.ai-stack').forEach(s => s.classList.add('targeting'));
+    } else if (ctx.type === 'rearrange') {
+        const owner = (ctx.target === 'opponent' || ctx.target === 'ai') ? 'ai' : 'player';
+        const suffix = owner === 'player' ? 'player' : 'ai';
+        LINES.forEach(l => {
+            const protoEl = document.getElementById(`proto-${l}-${suffix}`);
+            if (protoEl) protoEl.classList.add('targeting');
+        });
+        const banner = document.getElementById('discard-banner');
+        if (banner) {
+            banner.textContent = ctx.firstProtocol
+                ? `🔀 Protocolo seleccionado: ${ctx.firstProtocol} — elige el segundo para intercambiar`
+                : `🔀 Elige el primer protocolo a intercambiar`;
+            banner.classList.add('visible');
+        }
     }
 }
 
@@ -868,20 +916,28 @@ function clearEffectHighlights() {
 
 function handleDiscardChoice(handIndex) {
     const ctx = gameState.effectContext;
-    if (!ctx || ctx.type !== 'discard') return;
+    if (!ctx || (ctx.type !== 'discard' && ctx.type !== 'give')) return;
 
     const card = gameState.player.hand.splice(handIndex, 1)[0];
-    gameState.player.trash.push(card);
+    if (ctx.type === 'give') {
+        gameState.ai.hand.push(card); // dar: va a la mano del rival
+    } else {
+        gameState.player.trash.push(card); // descartar: va al descarte
+    }
     ctx.selected.push(card);
 
     if (ctx.selected.length >= ctx.count) {
         finishEffect();
     } else {
-        // Update banner counter
         const remaining = ctx.count - ctx.selected.length;
         const banner = document.getElementById('discard-banner');
-        if (banner) banner.textContent = `🗑 Descarta ${remaining} carta${remaining > 1 ? 's' : ''} — haz clic en la que quieres descartar`;
-        updateUI(); // Keep choosing
+        if (banner) {
+            const msg = ctx.type === 'give'
+                ? `🤝 Da ${remaining} carta${remaining > 1 ? 's' : ''} al oponente — haz clic en la que quieres dar`
+                : `🗑 Descarta ${remaining} carta${remaining > 1 ? 's' : ''} — haz clic en la que quieres descartar`;
+            banner.textContent = msg;
+        }
+        updateUI();
     }
 }
 
@@ -916,7 +972,7 @@ function handleFieldCardClick(line, target, cardIdx) {
     } else if (ctx.type === 'rearrange') {
         if (!ctx.firstProtocol) {
             ctx.firstProtocol = line;
-            updateStatus(`Seleccionado protocolo ${line}. Elige el segundo para intercambiar.`);
+            highlightEffectTargets(); // actualiza banner con el protocolo seleccionado
             const lineEl = document.getElementById(`line-${line}`);
             if (lineEl) lineEl.classList.add('selected');
         } else {
@@ -925,7 +981,8 @@ function handleFieldCardClick(line, target, cardIdx) {
             const firstEl = document.getElementById(`line-${first}`);
             if (firstEl) firstEl.classList.remove('selected');
             if (first !== second) {
-                swapProtocols(first, second);
+                const owner = (ctx.target === 'opponent' || ctx.target === 'ai') ? 'ai' : 'player';
+                swapProtocols(first, second, owner);
                 ctx.selected.push({ first, second });
             } else {
                 ctx.firstProtocol = null;
@@ -1354,6 +1411,13 @@ function endTurn(who) {
     console.log(`⏸️ Ending turn for ${who}`);
     gameState.phase = 'check_cache';
 
+    if (gameState[who].skipNextCacheCheck) {
+        console.log(`⏭️ ${who} salta Fase de Comprobar Caché (Espíritu 0)`);
+        gameState[who].skipNextCacheCheck = false;
+        continueEndTurn(who);
+        return;
+    }
+
     const excess = gameState[who].hand.length - 5;
     if (excess > 0) {
         if (who === 'player') {
@@ -1680,11 +1744,12 @@ function startGameFromDraft() {
     console.log('=== startGameFromDraft() END ===');
 }
 
-function swapProtocols(lineA, lineB) {
-    const p = gameState.player.protocols;
+function swapProtocols(lineA, lineB, owner = 'player') {
+    const p = gameState[owner].protocols;
     const idxA = LINES.indexOf(lineA);
     const idxB = LINES.indexOf(lineB);
     [p[idxA], p[idxB]] = [p[idxB], p[idxA]];
+    initProtocolDisplay();
 }
 
 // ========================== START ==========================

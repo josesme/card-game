@@ -412,6 +412,30 @@ body::before {
 .card.face-down {
     background: linear-gradient(135deg, #1a1f3a 0%, #0d1117 100%);
     border-color: #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.card-back-title {
+    font-family: var(--font-title);
+    font-size: 0.7em;
+    letter-spacing: 2px;
+    opacity: 0.5;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+    color: var(--accent);
+}
+
+.card-back-value {
+    font-family: var(--font-title);
+    font-size: 2.5em;
+    font-weight: 900;
+    color: var(--accent);
+    line-height: 1;
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.4);
 }
 
 .card-header {
@@ -635,15 +659,14 @@ body::before {
     border-style: dashed;
     background: linear-gradient(135deg, #1a1f3a, #0a0e27);
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    text-align: center;
 }
 
 .card-in-field.face-down::after {
-    content: attr(data-value);
-    font-size: 2em;
-    font-weight: bold;
-    color: #00d4ff;
+    display: none;
 }
 
 
