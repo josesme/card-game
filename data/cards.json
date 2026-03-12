@@ -88,7 +88,7 @@
     {"valor": 5, "nombre": "Agua 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""}
   ],
   "Oscuridad": [
-    {"valor": 0, "nombre": "Oscuridad 0", "fase": "Action", "h_inicio": "", "h_accion": "Voltea 1 carta. Roba 1 carta para cada carta bocabajo en esta línea.", "h_final": ""},
+    {"valor": 0, "nombre": "Oscuridad 0", "fase": "Action", "h_inicio": "", "h_accion": "Roba 3 cartas. Cambia 1 de las cartas cubiertas de tu oponente.", "h_final": ""},
     {"valor": 1, "nombre": "Oscuridad 1", "fase": "End", "h_inicio": "", "h_accion": "", "h_final": "Final: Roba 1 carta."},
     {"valor": 2, "nombre": "Oscuridad 2", "fase": "Action", "h_inicio": "", "h_accion": "Cambia 1 de tus cartas por 1 de las cartas de tu oponente.", "h_final": ""},
     {"valor": 3, "nombre": "Oscuridad 3", "fase": "Action", "h_inicio": "", "h_accion": "Cambia 1 de tus cartas. Puedes voltearla.", "h_final": ""},
