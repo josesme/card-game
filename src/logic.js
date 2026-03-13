@@ -329,6 +329,8 @@ function updateUI() {
             if (gameState.effectContext && gameState.effectContext.type === 'discard') {
                 console.log(`   → Handling discard choice`);
                 handleDiscardChoice(index);
+            } else if (gameState.effectContext) {
+                console.log(`   → Blocked: effectContext=${gameState.effectContext.type}`);
             } else {
                 console.log(`   → Showing action modal`);
                 showActionModal(index);
@@ -768,7 +770,8 @@ function startEffect(type, target, count, opts = {}) {
     }
 
     gameState.effectContext = { type, target, count, selected: [], ...opts };
-    
+    console.log(`🎯 startEffect: type=${type}, target=${target}, count=${count}`);
+
     let actionVerb = 'VOLTEAR';
     if (type === 'discard') actionVerb = 'DESCARTAR';
     else if (type === 'give') actionVerb = 'DAR AL OPONENTE';
@@ -799,7 +802,7 @@ function highlightEffectTargets() {
             banner.textContent = msg;
             banner.classList.add('visible');
         }
-    } else if (ctx.type === 'eliminate' || ctx.type === 'flip') {
+    } else if (ctx.type === 'eliminate' || ctx.type === 'flip' || ctx.type === 'return') {
         const linesToCheck = ctx.forceLine ? [ctx.forceLine] : LINES;
         linesToCheck.forEach(l => {
             ['player', 'ai'].forEach(p => {
@@ -813,6 +816,13 @@ function highlightEffectTargets() {
                 }
             });
         });
+        const banner = document.getElementById('discard-banner');
+        if (banner) {
+            const verb = ctx.type === 'flip' ? 'VOLTEAR' : ctx.type === 'return' ? 'DEVOLVER a mano' : 'ELIMINAR';
+            const targetDesc = ctx.target === 'any' ? '' : ctx.target === 'ai' ? ' del oponente' : ' tuya';
+            banner.textContent = `⚡ Elige ${ctx.count} carta${ctx.count > 1 ? 's' : ''}${targetDesc} para ${verb} — haz clic en la carta del campo`;
+            banner.classList.add('visible');
+        }
     } else if (ctx.type === 'rearrange') {
         const owner = (ctx.target === 'opponent' || ctx.target === 'ai') ? 'ai' : 'player';
         const suffix = owner === 'player' ? 'player' : 'ai';
@@ -975,6 +985,7 @@ function handleFieldCardClick(line, target, cardIdx) {
 function finishEffect() {
     gameState.effectContext = null;
     clearEffectHighlights();
+    updateUI();
 
     // If this was the end-of-turn discard, resume end turn flow
     if (gameState.pendingEndTurnFor) {
@@ -987,6 +998,10 @@ function finishEffect() {
     // Route to ability engine if queue items are in new format
     if (gameState.effectQueue.length > 0 && gameState.effectQueue[0].effect !== undefined) {
         processAbilityEffect();
+    } else if (gameState.effectQueue.length === 0 && gameState.pendingStartTurn) {
+        const next = gameState.pendingStartTurn;
+        gameState.pendingStartTurn = null;
+        setTimeout(() => startTurn(next), 500);
     } else if (gameState.effectQueue.length === 0 && gameState.pendingTurnEnd) {
         const who = gameState.pendingTurnEnd;
         gameState.pendingTurnEnd = null;
@@ -1173,6 +1188,7 @@ function finalizePlay(targetLine, isFaceDown) {
         console.log(`🔧 Executing card effect...`);
         gameState.currentEffectLine = targetLine;
         executeEffect(card, 'player');
+        console.log(`🔍 tras executeEffect: effectContext=${gameState.effectContext ? gameState.effectContext.type : 'null'}, queueLen=${gameState.effectQueue.length}`);
     } else {
         // Face-down play has no immediate effects, just update UI
         console.log(`💤 Face-down play - no effects, updating UI`);
@@ -1437,6 +1453,13 @@ function continueEndTurn(who) {
 
     if (typeof onTurnEndEffects === 'function') {
         onTurnEndEffects(who);
+    }
+
+    // Si onTurnEnd dejó efectos interactivos pendientes, esperar a que se resuelvan
+    if (gameState.effectContext || gameState.effectQueue.length > 0) {
+        gameState.pendingStartTurn = (who === 'player' ? 'ai' : 'player');
+        console.log(`⏳ onTurnEnd pendiente — inicio de turno pausado`);
+        return;
     }
 
     console.log(`⏱️ Starting next turn...`);

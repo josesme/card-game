@@ -114,7 +114,7 @@ const CARD_EFFECTS = {
 
   'Fuego 1': {
     onPlay: [
-      { action: 'discardThen', target: 'self', count: 1, ifThenAction: 'delete', ifThenTarget: 'opponent', ifThenCount: 1 }
+      { action: 'discardThen', target: 'self', count: 1, ifThenAction: 'delete', ifThenTarget: 'any', ifThenCount: 1 }
     ]
   },
 
@@ -600,8 +600,10 @@ const CARD_EFFECTS = {
 
   // ========== AMOR (Expansión) ==========
   'Amor 1': {
+    onPlay: [
+      { action: 'drawFromOpponentDeck', target: 'self', count: 1 }
+    ],
     onTurnEnd: [
-      { action: 'drawFromOpponentDeck', target: 'self', count: 1 },
       { action: 'mayGiveCardForDraw', target: 'self', count: 2 }
     ]
   },
@@ -859,7 +861,11 @@ function triggerCardEffect(card, trigger, targetPlayer) {
 function processAbilityEffect() {
   if (!gameState.effectQueue || gameState.effectQueue.length === 0) {
     updateUI();
-    if (gameState.pendingTurnEnd && !gameState.effectContext) {
+    if (gameState.pendingStartTurn && !gameState.effectContext) {
+      const next = gameState.pendingStartTurn;
+      gameState.pendingStartTurn = null;
+      setTimeout(() => startTurn(next), 500);
+    } else if (gameState.pendingTurnEnd && !gameState.effectContext) {
       const who = gameState.pendingTurnEnd;
       gameState.pendingTurnEnd = null;
       endTurn(who);
@@ -941,12 +947,15 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
     case 'discardThen': {
       // Descarte obligatorio (sin "puedes"). El efecto secundario se activa SI se pudo descartar.
       const handSize = gameState[targetPlayer].hand.length;
+      console.log(`🔥 discardThen: targetPlayer=${targetPlayer}, resolvedTarget=${resolvedTarget}, handSize=${handSize}, effectContext=${gameState.effectContext ? gameState.effectContext.type : 'null'}`);
       if (resolvedTarget === 'player' || resolvedTarget === 'any') {
         if (handSize > 0) {
           if (ifThenAction) {
             gameState.effectQueue.unshift({ effect: { action: ifThenAction, target: ifThenTarget, count: ifThenCount }, targetPlayer });
           }
+          console.log(`🔥 discardThen: llamando startEffect('discard','player',${count || 1})`);
           startEffect('discard', 'player', count || 1);
+          console.log(`🔥 discardThen: tras startEffect, effectContext=${gameState.effectContext ? gameState.effectContext.type : 'null'}`);
         } else {
           console.log(`⏭️ Descarte omitido — mano vacía para discardThen`);
           processAbilityEffect();
@@ -980,10 +989,12 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
         const btnYes = document.getElementById('btn-confirm-yes');
         const btnNo = document.getElementById('btn-confirm-no');
         if (confirmArea && btnYes && btnNo) {
+          gameState.effectContext = { type: 'confirm', selected: [], count: 0 };
           confirmArea.classList.remove('hidden');
           confirmMsg.textContent = '¿Descartas 1 carta para activar el efecto?';
           btnYes.onclick = () => {
             confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
             // Queue the ifThen action, then do the interactive discard
             if (ifThenAction) {
               gameState.effectQueue.unshift({ effect: { action: ifThenAction, target: ifThenTarget, count: ifThenCount }, targetPlayer });
@@ -992,6 +1003,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
           };
           btnNo.onclick = () => {
             confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
             processAbilityEffect();
           };
         } else {
