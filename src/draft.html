@@ -71,7 +71,7 @@
 
         .protocols-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 15px;
             margin-bottom: 40px;
             width: 100%;
@@ -275,7 +275,10 @@ const ALL_PROTOCOLS = [
     'Psique',
     'Velocidad',
     'Agua',
-    'Oscuridad'
+    'Oscuridad',
+    'Apatía',
+    'Odio',
+    'Amor'
 ];
 
 const PROTOCOL_DEFS = {
@@ -290,7 +293,10 @@ const PROTOCOL_DEFS = {
     'Psique': { color: '#ec4899', abilities: 'ROBAR. MANIPULAR. CAMBIAR' },
     'Velocidad': { color: '#06b6d4', abilities: 'ROBAR. JUGAR. CAMBIAR' },
     'Agua': { color: '#3b82f6', abilities: 'DEVOLVER. ROBAR. VOLTEAR' },
-    'Oscuridad': { color: '#64748b', abilities: 'ROBAR. CAMBIAR. MANIPULAR' }
+    'Oscuridad': { color: '#64748b', abilities: 'ROBAR. CAMBIAR. MANIPULAR' },
+    'Apatía':    { color: '#6b7280', abilities: 'Voltear cartas bocabajo' },
+    'Odio':      { color: '#b91c1c', abilities: 'Eliminar tus cartas y cartas del oponente' },
+    'Amor':      { color: '#f43f5e', abilities: 'Robar, dar e intercambiar' }
 };
 
 let draftState = {

@@ -596,12 +596,140 @@ const CARD_EFFECTS = {
     ]
   },
 
-  // ========== ODIO ==========
+  // ========== APATÍA (Expansión) ==========
+  // "Tu Valor total en esta línea se incrementa en 1 por cada carta bocabajo en esta línea."
+  'Apatía 0': {
+    persistent: { valueBonusPerFaceDown: 1, scope: 'thisLine' } // TODO: implementar en cálculo de score
+  },
+
+  // "Voltea todas las demás cartas bocarriba en esta línea."
+  'Apatía 1': {
+    onPlay: [
+      { action: 'flipAllFaceUpInLine', target: 'self' }
+    ]
+  },
+
+  // "Ignora todos los comandos de acción de las cartas en esta línea."
+  // "Si se cubre esta carta: Primero, voltea esta carta."
+  'Apatía 2': {
+    persistent: { ignoreMiddleCommands: true, scope: 'thisLine' }, // TODO: implementar en triggerCardEffect
+    onCover: [
+      { action: 'flipSelf', target: 'self' }
+    ]
+  },
+
+  // "Voltea 1 de las cartas bocarriba de tu oponente."
+  'Apatía 3': {
+    onPlay: [
+      { action: 'flip', target: 'opponent', count: 1 }
+    ]
+  },
+
+  // "Puedes voltear 1 de tus cartas bocarriba cubiertas."
+  'Apatía 4': {
+    onPlay: [
+      { action: 'mayFlipCovered', target: 'self', count: 1 }
+    ]
+  },
+
+  // "Descarta 1 carta."
+  'Apatía 5': {
+    onPlay: [
+      { action: 'discard', target: 'self', count: 1 }
+    ]
+  },
+
+  // ========== ODIO (Expansión) ==========
   // ERRATA (10/2024): "Elimina tu carta descubierta de mayor valor. Elimina la del oponente de mayor valor."
   // ACLARACION: Si Odio 2 es tu carta de mayor valor, se elimina a sí misma y el segundo efecto no se activa.
   'Odio 2': {
     onPlay: [
       { action: 'deleteHighestUncovered', target: 'self', thenOpponent: true }
+    ]
+  },
+
+  // "Elimina 1 carta." (libre: cualquier carta del campo)
+  'Odio 0': {
+    onPlay: [
+      { action: 'delete', target: 'any', count: 1 }
+    ]
+  },
+
+  // "Descarta 3 cartas. Elimina 1 carta. Elimina 1 carta."
+  'Odio 1': {
+    onPlay: [
+      { action: 'discard', target: 'self', count: 3 },
+      { action: 'delete', target: 'any', count: 1 },
+      { action: 'delete', target: 'any', count: 1 }
+    ]
+  },
+
+  // "Después de que elimines cartas: Roba 1 carta." (persistent trigger)
+  'Odio 3': {
+    persistent: { drawOnOwnDelete: 1 } // TODO: disparar en executeEliminate cuando Odio 3 está en campo
+  },
+
+  // "Si se cubre esta carta: Primero, elimina la carta cubierta de menor valor en esta línea."
+  'Odio 4': {
+    onCover: [
+      { action: 'deleteLowestCoveredInLine', target: 'self' }
+    ]
+  },
+
+  // "Descarta 1 carta."
+  'Odio 5': {
+    onPlay: [
+      { action: 'discard', target: 'self', count: 1 }
+    ]
+  },
+
+  // ========== AMOR (Expansión) ==========
+  // "Roba la carta superior del mazo de tu oponente."
+  // "Final: Puedes dar 1 carta de tu mano a tu oponente. Si lo haces, roba 2 cartas."
+  'Amor 1': {
+    onPlay: [
+      { action: 'drawFromOpponentDeck', target: 'self', count: 1 }
+    ],
+    onTurnEnd: [
+      { action: 'mayGiveCardForDraw', target: 'self', count: 2 }
+    ]
+  },
+
+  // "Tu oponente roba 1 carta. Actualiza."
+  'Amor 2': {
+    onPlay: [
+      { action: 'draw', target: 'opponent', count: 1 },
+      { action: 'refresh', target: 'self' }
+    ]
+  },
+
+  // "Toma 1 carta aleatoria de la mano de tu oponente. Da 1 carta de tu mano a tu oponente."
+  'Amor 3': {
+    onPlay: [
+      { action: 'takeRandomFromOpponent', target: 'self', count: 1 },
+      { action: 'giveCardToOpponent', target: 'self', count: 1 }
+    ]
+  },
+
+  // "Revela 1 carta de tu mano. Voltea 1 carta."
+  'Amor 4': {
+    onPlay: [
+      { action: 'revealFromHand', target: 'self', count: 1 },
+      { action: 'flip', target: 'any', count: 1 }
+    ]
+  },
+
+  // "Descarta 1 carta."
+  'Amor 5': {
+    onPlay: [
+      { action: 'discard', target: 'self', count: 1 }
+    ]
+  },
+
+  // "Tu oponente roba 2 cartas."
+  'Amor 6': {
+    onPlay: [
+      { action: 'draw', target: 'opponent', count: 2 }
     ]
   }
 };
@@ -968,7 +1096,12 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       break;
 
     case 'skipPhase':
-      gameState.skipPhase = actionDef.phase;
+      if (actionDef.phase === 'checkCache') {
+        // Marca al jugador para saltarse su próximo caché (aplica en endTurn del siguiente turno)
+        gameState[resolvedTarget].skipNextCacheCheck = true;
+      } else {
+        gameState.skipPhase = actionDef.phase;
+      }
       processAbilityEffect();
       break;
 
@@ -1932,6 +2065,138 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       break;
     }
 
+    case 'flipAllFaceUpInLine': {
+      // Apatía 1: voltea todas las demás cartas bocarriba en esta línea
+      const line = gameState.currentEffectLine;
+      if (line) {
+        ['player', 'ai'].forEach(p => {
+          const stack = gameState.field[line][p];
+          stack.forEach((cardObj, idx) => {
+            // "otras cartas" = todas excepto la última jugada (top actual si es el activador)
+            if (!cardObj.faceDown) cardObj.faceDown = true;
+          });
+          // La carta recién jugada (top) se deja bocarriba si fue jugada bocarriba
+          if (stack.length > 0 && p === targetPlayer) {
+            stack[stack.length - 1].faceDown = false;
+          }
+        });
+      }
+      processAbilityEffect();
+      break;
+    }
+
+    case 'flipSelf': {
+      // Apatía 2 onCover: voltea esta carta cuando se cubre
+      const line = gameState.currentEffectLine;
+      if (line) {
+        const stack = gameState.field[line][targetPlayer];
+        // La carta cubierta es la segunda desde arriba (justo se acaba de cubrir)
+        if (stack.length >= 2) {
+          const coveredCard = stack[stack.length - 2];
+          coveredCard.faceDown = !coveredCard.faceDown;
+        }
+      }
+      processAbilityEffect();
+      break;
+    }
+
+    case 'deleteLowestCoveredInLine': {
+      // Odio 4 onCover: elimina la carta cubierta de menor valor en esta línea
+      const line = gameState.currentEffectLine;
+      if (!line) { processAbilityEffect(); break; }
+      // Buscar en ambos lados la carta cubierta de menor valor
+      let lowest = null, lowestPlayer = null, lowestIdx = -1;
+      ['player', 'ai'].forEach(p => {
+        const stack = gameState.field[line][p];
+        // cartas cubiertas = todas excepto la última (top)
+        for (let i = 0; i < stack.length - 1; i++) {
+          if (!lowest || stack[i].card.valor < lowest.card.valor) {
+            lowest = stack[i]; lowestPlayer = p; lowestIdx = i;
+          }
+        }
+      });
+      if (lowest) {
+        gameState.field[line][lowestPlayer].splice(lowestIdx, 1);
+        gameState[lowestPlayer].trash.push(lowest.card);
+      }
+      processAbilityEffect();
+      break;
+    }
+
+    case 'drawFromOpponentDeck': {
+      // Amor 1: roba la carta superior del mazo del oponente (va a tu mano)
+      if (gameState[opponent].deck.length > 0) {
+        const top = gameState[opponent].deck.pop();
+        gameState[targetPlayer].hand.push(top);
+      }
+      processAbilityEffect();
+      break;
+    }
+
+    case 'mayGiveCardForDraw': {
+      // Amor 1 Final: puedes dar 1 carta de tu mano; si lo haces, roba N cartas
+      if (targetPlayer === 'player') {
+        if (gameState.player.hand.length === 0) { processAbilityEffect(); break; }
+        gameState.effectQueue.unshift({ effect: { action: '_drawAfterGive', count }, targetPlayer });
+        showConfirm('¿Das 1 carta a tu oponente para robar ' + (count || 2) + ' cartas?', () => {
+          startEffect('give', 'player', 1); // mano→mano del rival
+        }, () => {
+          gameState.effectQueue.shift(); // cancelar el draw
+          processAbilityEffect();
+        });
+      } else {
+        // IA: dar si tiene ventaja en mano
+        if (gameState.ai.hand.length > 3 && gameState.ai.hand.length > 0) {
+          const given = gameState.ai.hand.splice(Math.floor(Math.random() * gameState.ai.hand.length), 1)[0];
+          gameState.player.hand.push(given); // mano→mano del jugador
+          draw('ai', count || 2);
+        }
+        processAbilityEffect();
+      }
+      break;
+    }
+
+    case '_drawAfterGive': {
+      // Amor 1: tras dar carta, roba N
+      draw(targetPlayer, count || 2);
+      processAbilityEffect();
+      break;
+    }
+
+    case 'takeRandomFromOpponent': {
+      // Amor 3: toma 1 carta aleatoria de la mano del oponente
+      if (gameState[opponent].hand.length > 0) {
+        const idx = Math.floor(Math.random() * gameState[opponent].hand.length);
+        const [taken] = gameState[opponent].hand.splice(idx, 1);
+        gameState[targetPlayer].hand.push(taken);
+      }
+      processAbilityEffect();
+      break;
+    }
+
+    case 'giveCardToOpponent': {
+      // Amor 3: da 1 carta de tu mano al oponente (mano→mano)
+      if (targetPlayer === 'player') {
+        if (gameState.player.hand.length === 0) { processAbilityEffect(); break; }
+        startEffect('give', 'player', 1);
+      } else {
+        if (gameState.ai.hand.length > 0) {
+          const idx = Math.floor(Math.random() * gameState.ai.hand.length);
+          const [given] = gameState.ai.hand.splice(idx, 1);
+          gameState.player.hand.push(given);
+        }
+        processAbilityEffect();
+      }
+      break;
+    }
+
+    case 'revealFromHand': {
+      // Amor 4: revela 1 carta de tu mano (efecto informativo; sin impacto en estado)
+      // Para el jugador: mostrar confirmación; para la IA: no-op
+      processAbilityEffect();
+      break;
+    }
+
     // Agregar más casos según sea necesario
     default:
       console.warn(`Acción no implementada: ${action}`);
@@ -1984,24 +2249,38 @@ function getPersistentModifiers(card, line) {
 }
 
 /**
- * Aplica modificadores persistentes al cálculo de valor
+ * Aplica modificadores persistentes al cálculo de valor.
+ * Retorna el modificador neto: positivo = reducción, negativo = bono al score.
  */
 function applyPersistentValueModifiers(state, line, player) {
+  const opponent = player === 'player' ? 'ai' : 'player';
   let totalReduction = 0;
+  let totalBonus = 0;
 
-  LINES.forEach(currentLine => {
-    if (currentLine === line) {
-      const opponent = player === 'player' ? 'ai' : 'player';
-      state.field[currentLine][opponent].forEach(cardObj => {
-        const modifiers = getPersistentModifiers(cardObj.card, currentLine);
-        if (modifiers.valueReduction) {
-          totalReduction += modifiers.valueReduction;
-        }
-      });
+  // Reducciones: cartas del oponente en esta línea (ej: Metal 0)
+  state.field[line][opponent].forEach(cardObj => {
+    const modifiers = getPersistentModifiers(cardObj.card, line);
+    if (modifiers.valueReduction) {
+      totalReduction += modifiers.valueReduction;
     }
   });
 
-  return totalReduction;
+  // Bonos: cartas propias bocarriba en esta línea (ej: Apatía 0)
+  state.field[line][player].forEach(cardObj => {
+    if (!cardObj.faceDown) {
+      const effectDef = CARD_EFFECTS[cardObj.card.nombre];
+      if (effectDef && effectDef.persistent && effectDef.persistent.valueBonusPerFaceDown) {
+        // Contar cartas bocabajo en toda la línea (ambos lados)
+        const faceDownCount =
+          state.field[line].player.filter(c => c.faceDown).length +
+          state.field[line].ai.filter(c => c.faceDown).length;
+        totalBonus += effectDef.persistent.valueBonusPerFaceDown * faceDownCount;
+      }
+    }
+  });
+
+  // Retorna reducción neta; si es negativo, calculateScore lo interpreta como bono
+  return totalReduction - totalBonus;
 }
 
 // ============================================================================
@@ -2009,10 +2288,31 @@ function applyPersistentValueModifiers(state, line, player) {
 // ============================================================================
 
 /**
+ * Comprueba si alguna carta bocarriba en la línea tiene ignoreMiddleCommands activo (Apatía 2)
+ */
+function lineHasIgnoreMiddleCommands(line) {
+  if (!line) return false;
+  return ['player', 'ai'].some(p =>
+    gameState.field[line][p].some(cardObj => {
+      if (cardObj.faceDown) return false;
+      const ef = CARD_EFFECTS[cardObj.card.nombre];
+      return ef && ef.persistent && ef.persistent.ignoreMiddleCommands;
+    })
+  );
+}
+
+/**
  * Reemplaza executeEffect() en logic.js
  * Ahora usa el motor de habilidades en lugar de parsear texto
  */
 function executeNewEffect(card, targetPlayer) {
+  const line = gameState.currentEffectLine;
+  // Apatía 2: ignora comandos de acción (onPlay/middle zone) en esta línea
+  if (lineHasIgnoreMiddleCommands(line)) {
+    console.log(`⛔ Apatía 2 activa en ${line} — onPlay de ${card.nombre} ignorado`);
+    updateUI();
+    return;
+  }
   triggerCardEffect(card, 'onPlay', targetPlayer);
 }
 
