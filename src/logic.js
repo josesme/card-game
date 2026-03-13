@@ -38,147 +38,11 @@ const ui = {
 const LINES = ['izquierda', 'centro', 'derecha'];
 
 // Protocol Data from PDF - Traducido (12 Oficiales)
-const PROTOCOL_DEFS = {
-    'Espíritu': { color: '#8b5cf6', abilities: 'VOLTEAR, DESPLAZAR, ROBAR' },
-    'Muerte': { color: '#ef4444', abilities: 'ELIMINAR, ROBAR' },
-    'Fuego': { color: '#f97316', abilities: 'DESCARTAR POR EFECTO' },
-    'Gravedad': { color: '#6366f1', abilities: 'DESPLAZAR, VOLTEAR, ROBAR' },
-    'Vida': { color: '#10b981', abilities: 'VOLTEAR, JUGAR, ROBAR' },
-    'Luz': { color: '#facc15', abilities: 'ROBAR, VOLTEAR, DESPLAZAR' },
-    'Metal': { color: '#94a3b8', abilities: 'PREVENIR, ROBAR, VOLTEAR' },
-    'Plaga': { color: '#a855f7', abilities: 'DESCARTAR, VOLTEAR' },
-    'Psique': { color: '#ec4899', abilities: 'ROBAR, MANIPULAR, DESPLAZAR' },
-    'Velocidad': { color: '#06b6d4', abilities: 'ROBAR, JUGAR, DESPLAZAR' },
-    'Agua': { color: '#3b82f6', abilities: 'DEVOLVER, ROBAR, VOLTEAR' },
-    'Oscuridad': { color: '#64748b', abilities: 'ROBAR, DESPLAZAR, MANIPULAR' },
-    'Apatía':    { color: '#6b7280', abilities: 'Voltear cartas bocabajo' },
-    'Odio':      { color: '#b91c1c', abilities: 'Eliminar tus cartas y cartas del oponente' },
-    'Amor':      { color: '#f43f5e', abilities: 'Robar, dar e intercambiar' }
-};
+let PROTOCOL_DEFS = {}; // cargado desde data/cards.json al iniciar
 
 // Base de Datos de Cartas Incrustada (para evitar errores de CORS local)
-const GLOBAL_CARDS = {
-  "Espíritu": [
-    {"valor": 0, "nombre": "Espíritu 0", "fase": "Action", "h_inicio": "", "h_accion": "Actualiza. Roba 1 carta.", "h_final": "Sáltate tu Fase de Comprobar Caché."},
-    {"valor": 1, "nombre": "Espíritu 1", "fase": "Action", "h_inicio": "Cada vez que juegues una carta bocarriba, puedes colocarla sin que coincida con los Protocolos.", "h_accion": "Roba 2 cartas.", "h_final": "Inicial: Descarta 1 carta o bien voltea esta carta."},
-    {"valor": 2, "nombre": "Espíritu 2", "fase": "Action", "h_inicio": "", "h_accion": "Puedes voltear 1 carta.", "h_final": ""},
-    {"valor": 3, "nombre": "Espíritu 3", "fase": "Action", "h_inicio": "Después de robar cartas: Puedes cambiar esta carta, incluso si está cubierta.", "h_accion": "", "h_final": ""},
-    {"valor": 4, "nombre": "Espíritu 4", "fase": "Action", "h_inicio": "", "h_accion": "Reorganiza 2 de tus Protocolos.", "h_final": ""},
-    {"valor": 5, "nombre": "Espíritu 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""}
-  ],
-  "Muerte": [
-    {"valor": 0, "nombre": "Muerte 0", "fase": "Action", "h_inicio": "", "h_accion": "Elimina 1 carta de cada una de las otras líneas.", "h_final": ""},
-    {"valor": 1, "nombre": "Muerte 1", "fase": "Action", "h_inicio": "", "h_accion": "Inicial: Puedes robar 1 carta. Si lo haces, elimina otra carta y, luego, elimina esta carta.", "h_final": ""},
-    {"valor": 2, "nombre": "Muerte 2", "fase": "Action", "h_inicio": "", "h_accion": "Elimina todas las cartas con Valor 1 o 2 de una línea.", "h_final": ""},
-    {"valor": 3, "nombre": "Muerte 3", "fase": "Action", "h_inicio": "", "h_accion": "Elimina 1 carta bocabajo.", "h_final": ""},
-    {"valor": 4, "nombre": "Muerte 4", "fase": "Action", "h_inicio": "", "h_accion": "Elimina 1 carta con Valor 0 o 1.", "h_final": ""},
-    {"valor": 5, "nombre": "Muerte 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""}
-  ],
-  "Fuego": [
-    {"valor": 0, "nombre": "Fuego 0", "fase": "Action", "h_inicio": "", "h_accion": "Voltea otra carta. Roba 2 cartas.", "h_final": "Si se cubre esta carta: Primero, roba 1 carta y voltea otra carta."},
-    {"valor": 1, "nombre": "Fuego 1", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta. Si lo haces, elimina 1 carta.", "h_final": ""},
-    {"valor": 2, "nombre": "Fuego 2", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta. Si lo haces, devuelve 1 carta.", "h_final": ""},
-    {"valor": 3, "nombre": "Fuego 3", "fase": "End",    "h_inicio": "", "h_accion": "", "h_final": "Final: Puedes descartar 1 carta. Si lo haces, voltea 1 carta."},
-    {"valor": 4, "nombre": "Fuego 4", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 o más cartas. Roba tantas cartas como hayas descartado más 1.", "h_final": ""},
-    {"valor": 5, "nombre": "Fuego 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""}
-  ],
-  "Gravedad": [
-    {"valor": 0, "nombre": "Gravedad 0", "fase": "Action", "h_inicio": "", "h_accion": "Por cada 2 cartas en esta línea, juega bocabajo la carta superior de tu mazo debajo de esta carta.", "h_final": ""},
-    {"valor": 1, "nombre": "Gravedad 1", "fase": "Action", "h_inicio": "", "h_accion": "Roba 2 cartas. Cambia 1 carta a esta línea. O bien de esta línea.", "h_final": ""},
-    {"valor": 2, "nombre": "Gravedad 2", "fase": "Action", "h_inicio": "", "h_accion": "Voltea 1 carta. Cambia esa carta a esta línea.", "h_final": ""},
-    {"valor": 4, "nombre": "Gravedad 4", "fase": "Action", "h_inicio": "", "h_accion": "Cambia 1 carta bocabajo a esta línea.", "h_final": ""},
-    {"valor": 5, "nombre": "Gravedad 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""},
-    {"valor": 6, "nombre": "Gravedad 6", "fase": "Action", "h_inicio": "", "h_accion": "Tu oponente juega bocabajo la carta superior de su mazo en esta línea.", "h_final": ""}
-  ],
-  "Vida": [
-    {"valor": 0, "nombre": "Vida 0", "fase": "End",    "h_inicio": "", "h_accion": "En cada línea donde tengas al menos 1 carta, juega bocabajo la carta superior de tu mazo.", "h_final": "Final: Si esta carta está cubierta, elimina esta carta."},
-    {"valor": 1, "nombre": "Vida 1", "fase": "Action", "h_inicio": "", "h_accion": "Voltea 1 carta. Voltea 1 carta.", "h_final": ""},
-    {"valor": 2, "nombre": "Vida 2", "fase": "Action", "h_inicio": "", "h_accion": "Roba 1 carta. Puedes voltear 1 carta que esté bocabajo.", "h_final": ""},
-    {"valor": 3, "nombre": "Vida 3", "fase": "Action", "h_inicio": "", "h_accion": "", "h_final": "Si se cubre esta carta: Primero, juega bocabajo la carta superior de tu mazo en otra línea."},
-    {"valor": 4, "nombre": "Vida 4", "fase": "Action", "h_inicio": "", "h_accion": "Si esta carta está cubriendo otra carta, roba 1 carta.", "h_final": ""},
-    {"valor": 5, "nombre": "Vida 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""}
-  ],
-  "Luz": [
-    {"valor": 0, "nombre": "Luz 0", "fase": "Action", "h_inicio": "", "h_accion": "Voltea 1 carta. Roba tantas cartas como el Valor de la carta volteada.", "h_final": ""},
-    {"valor": 1, "nombre": "Luz 1", "fase": "End",    "h_inicio": "", "h_accion": "", "h_final": "Final: Roba 1 carta."},
-    {"valor": 2, "nombre": "Luz 2", "fase": "Action", "h_inicio": "", "h_accion": "Roba 2 cartas. Revela 1 carta bocabajo. Puedes cambiar o voltear esa carta.", "h_final": ""},
-    {"valor": 3, "nombre": "Luz 3", "fase": "Action", "h_inicio": "", "h_accion": "Cambia todas las cartas bocabajo de esta línea a otra línea.", "h_final": ""},
-    {"valor": 4, "nombre": "Luz 4", "fase": "Action", "h_inicio": "", "h_accion": "Tu oponente te revela su mano.", "h_final": ""},
-    {"valor": 5, "nombre": "Luz 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""}
-  ],
-  "Metal": [
-    {"valor": 0, "nombre": "Metal 0", "fase": "Start",  "h_inicio": "El Valor total de tu oponente en esta línea se reduce en 2.", "h_accion": "Voltea 1 carta.", "h_final": ""},
-    {"valor": 1, "nombre": "Metal 1", "fase": "Action", "h_inicio": "", "h_accion": "Roba 2 cartas. Tu oponente no puede Compilar en el siguiente turno.", "h_final": ""},
-    {"valor": 2, "nombre": "Metal 2", "fase": "Start",  "h_inicio": "Tu oponente no puede jugar cartas bocabajo en esta línea.", "h_accion": "", "h_final": ""},
-    {"valor": 3, "nombre": "Metal 3", "fase": "Action", "h_inicio": "", "h_accion": "Roba 1 carta. Elimina todas las cartas de otra línea que tenga 8 o más cartas.", "h_final": ""},
-    {"valor": 5, "nombre": "Metal 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""},
-    {"valor": 6, "nombre": "Metal 6", "fase": "Start",  "h_inicio": "Si se cubre o se voltea esta carta: Primero, elimina esta carta.", "h_accion": "", "h_final": ""}
-  ],
-  "Plaga": [
-    {"valor": 0, "nombre": "Plaga 0", "fase": "Start",  "h_inicio": "Tu oponente no puede jugar cartas en esta línea.", "h_accion": "Tu oponente descarta 1 carta.", "h_final": ""},
-    {"valor": 1, "nombre": "Plaga 1", "fase": "Start",  "h_inicio": "Después de que tu oponente descarte cartas: Roba 1 carta.", "h_accion": "Tu oponente descarta 1 carta.", "h_final": ""},
-    {"valor": 2, "nombre": "Plaga 2", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 o más cartas. Tu oponente descarta tantas cartas como tú más 1.", "h_final": ""},
-    {"valor": 3, "nombre": "Plaga 3", "fase": "Action", "h_inicio": "", "h_accion": "Voltea cada otra carta bocarriba.", "h_final": ""},
-    {"valor": 4, "nombre": "Plaga 4", "fase": "End",    "h_inicio": "", "h_accion": "", "h_final": "Final: Tu oponente elimina 1 de sus cartas bocabajo. Puedes voltear esta carta."},
-    {"valor": 5, "nombre": "Plaga 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""}
-  ],
-  "Psique": [
-    {"valor": 0, "nombre": "Psique 0", "fase": "Action", "h_inicio": "", "h_accion": "Roba 2 cartas. Tu oponente descarta 2 cartas y, luego, revela su mano.", "h_final": ""},
-    {"valor": 1, "nombre": "Psique 1", "fase": "Start",  "h_inicio": "Tu oponente solo puede jugar cartas bocabajo.", "h_accion": "", "h_final": "Inicial: Voltea esta carta."},
-    {"valor": 2, "nombre": "Psique 2", "fase": "Action", "h_inicio": "", "h_accion": "Tu oponente descarta 2 cartas. Reorganiza sus Protocolos.", "h_final": ""},
-    {"valor": 3, "nombre": "Psique 3", "fase": "Action", "h_inicio": "", "h_accion": "Tu oponente descarta 1 carta. Cambia 1 de sus cartas.", "h_final": ""},
-    {"valor": 4, "nombre": "Psique 4", "fase": "End",    "h_inicio": "", "h_accion": "", "h_final": "Final: Puedes devolver 1 de las cartas de tu oponente. Si lo haces, voltea esta carta."},
-    {"valor": 5, "nombre": "Psique 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""}
-  ],
-  "Velocidad": [
-    {"valor": 0, "nombre": "Velocidad 0", "fase": "Action", "h_inicio": "", "h_accion": "Juega 1 carta.", "h_final": ""},
-    {"valor": 1, "nombre": "Velocidad 1", "fase": "Action", "h_inicio": "Después de Borrar la Caché: Roba 1 carta.", "h_accion": "Roba 2 cartas.", "h_final": ""},
-    {"valor": 2, "nombre": "Velocidad 2", "fase": "Action", "h_inicio": "", "h_accion": "Si esta carta se elimina Compilando: En su lugar, cambia esta carta, incluso si está cubierta.", "h_final": ""},
-    {"valor": 3, "nombre": "Velocidad 3", "fase": "End",    "h_inicio": "", "h_accion": "Cambia 1 de tus otras cartas.", "h_final": "Final: Puedes cambiar 1 de tus cartas. Si lo haces, voltea esta carta."},
-    {"valor": 4, "nombre": "Velocidad 4", "fase": "Action", "h_inicio": "", "h_accion": "Cambia 1 de las cartas bocabajo de tu oponente.", "h_final": ""},
-    {"valor": 5, "nombre": "Velocidad 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""}
-  ],
-  "Agua": [
-    {"valor": 0, "nombre": "Agua 0", "fase": "Action", "h_inicio": "", "h_accion": "Voltea otra carta. Voltea esta carta.", "h_final": ""},
-    {"valor": 1, "nombre": "Agua 1", "fase": "Action", "h_inicio": "", "h_accion": "En cada una de tus otras líneas, juega bocabajo la carta superior de tu mazo.", "h_final": ""},
-    {"valor": 2, "nombre": "Agua 2", "fase": "Action", "h_inicio": "", "h_accion": "Roba 2 cartas. Reorganiza tus Protocolos.", "h_final": ""},
-    {"valor": 3, "nombre": "Agua 3", "fase": "Action", "h_inicio": "", "h_accion": "Devuelve todas las cartas con Valor 2 de 1 línea.", "h_final": ""},
-    {"valor": 4, "nombre": "Agua 4", "fase": "Action", "h_inicio": "", "h_accion": "Devuelve 1 de tus cartas.", "h_final": ""},
-    {"valor": 5, "nombre": "Agua 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""}
-  ],
-  "Oscuridad": [
-    {"valor": 0, "nombre": "Oscuridad 0", "fase": "Action", "h_inicio": "", "h_accion": "Roba 3 cartas. Cambia 1 de las cartas cubiertas de tu oponente.", "h_final": ""},
-    {"valor": 1, "nombre": "Oscuridad 1", "fase": "Action", "h_inicio": "", "h_accion": "Voltea 1 de las cartas de tu oponente. Puedes cambiar esa carta.", "h_final": ""},
-    {"valor": 2, "nombre": "Oscuridad 2", "fase": "Start",  "h_inicio": "Cada carta bocabajo en esta pila tiene un Valor de 4.", "h_accion": "Puedes voltear 1 carta cubierta de esta línea.", "h_final": ""},
-    {"valor": 3, "nombre": "Oscuridad 3", "fase": "Action", "h_inicio": "", "h_accion": "Juega 1 carta bocabajo en otra línea.", "h_final": ""},
-    {"valor": 4, "nombre": "Oscuridad 4", "fase": "Action", "h_inicio": "", "h_accion": "Cambia 1 carta bocabajo.", "h_final": ""},
-    {"valor": 5, "nombre": "Oscuridad 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""}
-  ],
-  "Apatía": [
-    {"valor": 0, "nombre": "Apatía 0", "fase": "Start",  "h_inicio": "Tu Valor total en esta línea se incrementa en 1 por cada carta bocabajo en esta línea.", "h_accion": "", "h_final": ""},
-    {"valor": 1, "nombre": "Apatía 1", "fase": "Action", "h_inicio": "", "h_accion": "Voltea todas las demás cartas bocarriba en esta línea.", "h_final": ""},
-    {"valor": 2, "nombre": "Apatía 2", "fase": "Start",  "h_inicio": "Ignora todos los comandos de acción de las cartas en esta línea.", "h_accion": "", "h_final": "Si se cubre esta carta: Primero, voltea esta carta."},
-    {"valor": 3, "nombre": "Apatía 3", "fase": "Action", "h_inicio": "", "h_accion": "Voltea 1 de las cartas bocarriba de tu oponente.", "h_final": ""},
-    {"valor": 4, "nombre": "Apatía 4", "fase": "Action", "h_inicio": "", "h_accion": "Puedes voltear 1 de tus cartas bocarriba cubiertas.", "h_final": ""},
-    {"valor": 5, "nombre": "Apatía 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""}
-  ],
-  "Odio": [
-    {"valor": 0, "nombre": "Odio 0", "fase": "Action", "h_inicio": "", "h_accion": "Elimina 1 carta.", "h_final": ""},
-    {"valor": 1, "nombre": "Odio 1", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 3 cartas. Elimina 1 carta. Elimina 1 carta.", "h_final": ""},
-    {"valor": 2, "nombre": "Odio 2", "fase": "Action", "h_inicio": "", "h_accion": "Elimina tu carta de mayor valor. Elimina la carta de mayor valor de tu oponente.", "h_final": ""},
-    {"valor": 3, "nombre": "Odio 3", "fase": "Start",  "h_inicio": "Después de que elimines cartas: Roba 1 carta.", "h_accion": "", "h_final": ""},
-    {"valor": 4, "nombre": "Odio 4", "fase": "End",    "h_inicio": "", "h_accion": "", "h_final": "Si se cubre esta carta: Primero, elimina la carta cubierta de menor valor en esta línea."},
-    {"valor": 5, "nombre": "Odio 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""}
-  ],
-  "Amor": [
-    {"valor": 1, "nombre": "Amor 1", "fase": "End",    "h_inicio": "", "h_accion": "Roba la carta superior del mazo de tu oponente.", "h_final": "Final: Puedes dar 1 carta de tu mano a tu oponente. Si lo haces, roba 2 cartas."},
-    {"valor": 2, "nombre": "Amor 2", "fase": "Action", "h_inicio": "", "h_accion": "Tu oponente roba 1 carta. Actualiza.", "h_final": ""},
-    {"valor": 3, "nombre": "Amor 3", "fase": "Action", "h_inicio": "", "h_accion": "Toma 1 carta aleatoria de la mano de tu oponente. Da 1 carta de tu mano a tu oponente.", "h_final": ""},
-    {"valor": 4, "nombre": "Amor 4", "fase": "Action", "h_inicio": "", "h_accion": "Revela 1 carta de tu mano. Voltea 1 carta.", "h_final": ""},
-    {"valor": 5, "nombre": "Amor 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""},
-    {"valor": 6, "nombre": "Amor 6", "fase": "Action", "h_inicio": "", "h_accion": "Tu oponente roba 2 cartas.", "h_final": ""}
-  ]
-};
+let GLOBAL_CARDS = null; // cargado desde data/cards.json al iniciar
+
 
 // Game State
 let gameState = {
@@ -210,6 +74,7 @@ let gameState = {
     pendingPlayCard: false,  // waiting for player to play a card mid-effect
     ignoreEffectsLines: {},  // lines where effects are suppressed this turn
     pendingEndTurnFor: null, // set when endTurn is waiting for interactive discard
+    pendingTurnEnd: null,    // set when finalizePlay is waiting for effects to resolve
 };
 
 function createDeckForPlayer(target) {
@@ -318,6 +183,20 @@ function handleShiftTargetLine(destinationLine) {
         const toMove = gameState.field[sourceLine][owner].filter(c => c.faceDown);
         gameState.field[sourceLine][owner] = gameState.field[sourceLine][owner].filter(c => !c.faceDown);
         toMove.forEach(c => gameState.field[destinationLine][owner].push(c));
+        finishEffect();
+        return;
+    }
+
+    if (ctx.type === 'shiftSelf') {
+        // Espíritu 3: mover la carta desde sourceLine a destinationLine (cancelar si misma línea)
+        if (ctx.sourceLine !== destinationLine) {
+            const stack = gameState.field[ctx.sourceLine][ctx.target];
+            const idx = stack.findIndex(c => c.card.nombre === 'Espíritu 3');
+            if (idx !== -1) {
+                const [cardObj] = stack.splice(idx, 1);
+                gameState.field[destinationLine][ctx.target].push(cardObj);
+            }
+        }
         finishEffect();
         return;
     }
@@ -846,7 +725,7 @@ function resolveSentence(text, targetPlayer, opponent) {
     }
 }
 
-function startEffect(type, target, count) {
+function startEffect(type, target, count, opts = {}) {
     // Determine if this should be interactive or automatic
     let isAIResolving = false;
     
@@ -859,12 +738,46 @@ function startEffect(type, target, count) {
     }
 
     if (isAIResolving) {
-        resolveEffectAI(type, target, count);
+        resolveEffectAI(type, target, count, opts);
         return;
     }
 
-    gameState.effectContext = { type, target, count, selected: [] };
-    const actionVerb = type === 'discard' ? 'DESCARTAR' : type === 'give' ? 'DAR AL OPONENTE' : type === 'eliminate' ? 'ELIMINAR' : 'VOLTEAR';
+    // Si es descarte/dar del jugador y no tiene cartas, saltar efecto
+    if ((type === 'discard' || type === 'give') && target === 'player' && gameState.player.hand.length === 0) {
+        console.log(`⏭️ Descarte omitido — mano vacía`);
+        if (typeof processAbilityEffect === 'function') processAbilityEffect();
+        return;
+    }
+
+    // Si es eliminate/flip/return/shift y no hay cartas válidas en campo, saltar efecto
+    if (type === 'eliminate' || type === 'flip' || type === 'return' || type === 'shift') {
+        const filterCtx = { filter: opts.filter, maxVal: opts.maxVal, minVal: opts.minVal };
+        const linesToCheck = opts.forceLine ? [opts.forceLine] : LINES;
+        const targets = target === 'any' ? ['player', 'ai'] : [target];
+        const hasValid = linesToCheck.some(l =>
+            targets.some(p => {
+                const stack = gameState.field[l][p];
+                return stack.length > 0 && cardMatchesFilter(stack[stack.length - 1], filterCtx);
+            })
+        );
+        if (!hasValid) {
+            console.log(`⏭️ ${type} omitido — sin cartas válidas`);
+            if (typeof processAbilityEffect === 'function') processAbilityEffect();
+            return;
+        }
+    }
+
+    gameState.effectContext = { type, target, count, selected: [], ...opts };
+    
+    let actionVerb = 'VOLTEAR';
+    if (type === 'discard') actionVerb = 'DESCARTAR';
+    else if (type === 'give') actionVerb = 'DAR AL OPONENTE';
+    else if (type === 'eliminate') actionVerb = 'ELIMINAR';
+    else if (type === 'return') actionVerb = 'DEVOLVER';
+    else if (type === 'shift') actionVerb = 'DESPLAZAR';
+    else if (type === 'swap') actionVerb = 'INTERCAMBIAR';
+    else if (type === 'rearrange') actionVerb = 'REORGANIZAR';
+    
     const targetDesc = target === 'ai' ? ' del OPONENTE' : target === 'player' ? ' TUYAS' : '';
     updateStatus(`COMANDO: Elige ${count} carta(s)${targetDesc} para ${actionVerb}`);
     highlightEffectTargets();
@@ -887,15 +800,29 @@ function highlightEffectTargets() {
             banner.classList.add('visible');
         }
     } else if (ctx.type === 'eliminate' || ctx.type === 'flip') {
-        // Add visual cues to relevant field stacks
-        if (ctx.target === 'any' || ctx.target === 'player') document.querySelectorAll('.player-stack').forEach(s => s.classList.add('targeting'));
-        if (ctx.target === 'any' || ctx.target === 'ai') document.querySelectorAll('.ai-stack').forEach(s => s.classList.add('targeting'));
+        const linesToCheck = ctx.forceLine ? [ctx.forceLine] : LINES;
+        linesToCheck.forEach(l => {
+            ['player', 'ai'].forEach(p => {
+                if (ctx.target !== 'any' && ctx.target !== p) return;
+                const stack = gameState.field[l][p];
+                if (stack.length === 0) return;
+                const topCard = stack[stack.length - 1];
+                if (cardMatchesFilter(topCard, ctx)) {
+                    const stackEl = document.querySelector(`#line-${l} .${p}-stack`);
+                    if (stackEl) stackEl.classList.add('targeting');
+                }
+            });
+        });
     } else if (ctx.type === 'rearrange') {
         const owner = (ctx.target === 'opponent' || ctx.target === 'ai') ? 'ai' : 'player';
         const suffix = owner === 'player' ? 'player' : 'ai';
         LINES.forEach(l => {
             const protoEl = document.getElementById(`proto-${l}-${suffix}`);
-            if (protoEl) protoEl.classList.add('targeting');
+            if (protoEl) {
+                protoEl.classList.add('targeting');
+                protoEl.style.cursor = 'pointer';
+                protoEl.onclick = () => handleFieldCardClick(l, owner, 0);
+            }
         });
         const banner = document.getElementById('discard-banner');
         if (banner) {
@@ -904,11 +831,53 @@ function highlightEffectTargets() {
                 : `🔀 Elige el primer protocolo a intercambiar`;
             banner.classList.add('visible');
         }
+    } else if (ctx.type === 'massDeleteByValueRange') {
+        LINES.forEach(l => {
+            const lineEl = document.getElementById(`line-${l}`);
+            if (lineEl) {
+                lineEl.classList.add('targeting');
+                lineEl.style.cursor = 'pointer';
+                lineEl.onclick = () => executeMassDeleteByValueRange(l);
+            }
+        });
+        const banner = document.getElementById('discard-banner');
+        if (banner) {
+            banner.textContent = `💀 Elige una línea — se eliminarán todas las cartas con valor ${ctx.minVal}-${ctx.maxVal} (incluye bocabajos)`;
+            banner.classList.add('visible');
+        }
     }
 }
 
+function executeMassDeleteByValueRange(line) {
+    const ctx = gameState.effectContext;
+    if (!ctx || ctx.type !== 'massDeleteByValueRange') return;
+    const { minVal, maxVal } = ctx;
+    ['player', 'ai'].forEach(p => {
+        const toKeep = [];
+        gameState.field[line][p].forEach(c => {
+            if (c.faceDown || (c.card.valor >= minVal && c.card.valor <= maxVal)) {
+                gameState[p].trash.push(c.card);
+            } else { toKeep.push(c); }
+        });
+        gameState.field[line][p] = toKeep;
+    });
+    finishEffect();
+}
+
+function cardMatchesFilter(cardObj, ctx) {
+    if (!ctx.filter) return true;
+    if (ctx.filter === 'faceDown') return cardObj.faceDown;
+    if (ctx.filter === 'maxValue') return !cardObj.faceDown && cardObj.card.valor <= (ctx.maxVal ?? 99);
+    if (ctx.filter === 'minValue') return !cardObj.faceDown && cardObj.card.valor >= (ctx.minVal ?? 0);
+    return true;
+}
+
 function clearEffectHighlights() {
-    document.querySelectorAll('.targeting').forEach(el => el.classList.remove('targeting'));
+    document.querySelectorAll('.targeting').forEach(el => {
+        el.classList.remove('targeting');
+        el.style.cursor = '';
+        if (el.id && (el.id.startsWith('proto-') || el.id.startsWith('line-'))) el.onclick = null;
+    });
     document.getElementById('player-hand')?.classList.remove('discard-mode');
     const banner = document.getElementById('discard-banner');
     if (banner) banner.classList.remove('visible');
@@ -949,11 +918,15 @@ function handleFieldCardClick(line, target, cardIdx) {
     if (ctx.target !== 'any' && ctx.target !== target) return;
 
     if (ctx.type === 'eliminate') {
-        const cardObj = gameState.field[line][target].splice(cardIdx, 1)[0];
+        if (ctx.forceLine && line !== ctx.forceLine) return;
+        const cardObj = gameState.field[line][target][cardIdx];
+        if (!cardMatchesFilter(cardObj, ctx)) return;
+        gameState.field[line][target].splice(cardIdx, 1);
         gameState[target].trash.push(cardObj.card);
         ctx.selected.push(cardObj);
     } else if (ctx.type === 'flip') {
         const cardObj = gameState.field[line][target][cardIdx];
+        if (ctx.excludeCardName && cardObj.card.nombre === ctx.excludeCardName) return;
         cardObj.faceDown = !cardObj.faceDown;
         gameState.lastFlippedCard = { cardObj, line };
         ctx.selected.push(cardObj);
@@ -1014,14 +987,18 @@ function finishEffect() {
     // Route to ability engine if queue items are in new format
     if (gameState.effectQueue.length > 0 && gameState.effectQueue[0].effect !== undefined) {
         processAbilityEffect();
+    } else if (gameState.effectQueue.length === 0 && gameState.pendingTurnEnd) {
+        const who = gameState.pendingTurnEnd;
+        gameState.pendingTurnEnd = null;
+        endTurn(who);
     } else {
         processNextEffect();
     }
 }
 
-function resolveEffectAI(type, target, count) {
+function resolveEffectAI(type, target, count, opts = {}) {
     const actualTarget = (target === 'any') ? (type === 'discard' ? 'ai' : 'player') : target;
-    
+
     if (type === 'discard') {
         for (let i = 0; i < count; i++) {
             if (gameState[actualTarget].hand.length > 0) {
@@ -1030,7 +1007,14 @@ function resolveEffectAI(type, target, count) {
         }
     } else if (type === 'eliminate') {
         for (let i = 0; i < count; i++) {
-            const validLines = LINES.filter(l => gameState.field[l][actualTarget].length > 0);
+            // Construir contexto de filtro temporal para reutilizar cardMatchesFilter
+            const filterCtx = { filter: opts.filter, maxVal: opts.maxVal, minVal: opts.minVal };
+            const linesToCheck = opts.forceLine ? [opts.forceLine] : LINES;
+            const validLines = linesToCheck.filter(l => {
+                const stack = gameState.field[l][actualTarget];
+                if (stack.length === 0) return false;
+                return cardMatchesFilter(stack[stack.length - 1], filterCtx);
+            });
             if (validLines.length > 0) {
                 const line = validLines[Math.floor(Math.random() * validLines.length)];
                 const cardObj = gameState.field[line][actualTarget].pop();
@@ -1077,6 +1061,7 @@ function draw(target, count) {
         drawCard(target);
     }
     updateStatus(`${target === 'player' ? 'Has' : 'IA ha'} robado ${count} carta(s)`);
+    if (typeof onDrawEffects === 'function') onDrawEffects(target);
 }
 
 function discard(target, count) {
@@ -1166,22 +1151,24 @@ function finalizePlay(targetLine, isFaceDown) {
     const card = gameState.player.hand[gameState.selectedCardIndex];
     const playedCard = { card: card, faceDown: isFaceDown };
 
-    // Disparar onCover en la carta que quedará cubierta (si existe)
+    // Mover carta a campo y quitar de mano antes de disparar cualquier efecto
     const playerStack = gameState.field[targetLine].player;
-    if (playerStack.length > 0) {
-        const topCard = playerStack[playerStack.length - 1];
-        if (!topCard.faceDown) {
-            gameState.currentEffectLine = targetLine;
-            triggerCardEffect(topCard.card, 'onCover', 'player');
-        }
-    }
+    const topCardBeforePush = (playerStack.length > 0 && !playerStack[playerStack.length - 1].faceDown)
+        ? playerStack[playerStack.length - 1] : null;
 
     gameState.field[targetLine].player.push(playedCard);
     gameState.player.hand.splice(gameState.selectedCardIndex, 1);
     gameState.selectedCardIndex = null;
-    
+    updateUI(); // asegurar que la carta jugada desaparece de la mano antes de cualquier prompt
+
+    // Disparar onCover ahora que la mano ya está actualizada
+    if (topCardBeforePush) {
+        gameState.currentEffectLine = targetLine;
+        triggerCardEffect(topCardBeforePush.card, 'onCover', 'player');
+    }
+
     console.log(`✅ Card played: ${card.nombre} on ${targetLine} (${isFaceDown ? 'face-down' : 'face-up'})`);
-    
+
     if (!isFaceDown) {
         console.log(`🔧 Executing card effect...`);
         gameState.currentEffectLine = targetLine;
@@ -1199,6 +1186,13 @@ function finalizePlay(targetLine, isFaceDown) {
         if (gameState.effectQueue.length > 0) {
             processAbilityEffect();
         }
+        return;
+    }
+
+    // Si hay efectos interactivos pendientes, esperar a que se resuelvan
+    if (gameState.effectContext || gameState.effectQueue.length > 0) {
+        gameState.pendingTurnEnd = 'player';
+        console.log(`⏳ Efectos pendientes — turno del jugador pausado`);
         return;
     }
 
@@ -1757,22 +1751,23 @@ function swapProtocols(lineA, lineB, owner = 'player') {
 const isDraft = document.getElementById('draft-screen') !== null;
 const isGame = document.getElementById('game-container') !== null;
 
-console.log('🔍 Auto-detection:', { isDraft, isGame });
-console.log('🎮 GLOBAL_CARDS loaded:', !!GLOBAL_CARDS, 'Keys:', Object.keys(GLOBAL_CARDS || {}).length);
-
-if (isDraft) {
-    // En draft.html: iniciar draft
-    console.log('📋 Draft mode detected - calling initDraft()');
-    initDraft();
-} else if (isGame) {
-    // En game.html: iniciar juego con protocolos del sessionStorage
-    console.log('🎮 Game mode detected - calling startGameFromDraft()');
-    try {
-        startGameFromDraft();
-    } catch (error) {
-        console.error('❌ Error initializing game:', error);
-        console.error('Stack:', error.stack);
+// Cargar datos directamente desde cards-data.js (variable CARDS_DATA)
+if (typeof CARDS_DATA !== 'undefined') {
+    PROTOCOL_DEFS = CARDS_DATA._protocolMeta || {};
+    const { _protocolMeta, ...cards } = CARDS_DATA;
+    GLOBAL_CARDS = cards;
+    console.log('🎮 GLOBAL_CARDS cargados directamente:', Object.keys(GLOBAL_CARDS).length, 'protocolos');
+    
+    if (isDraft) {
+        initDraft();
+    } else if (isGame) {
+        try {
+            startGameFromDraft();
+        } catch (error) {
+            console.error('❌ Error initializing game:', error);
+            console.error('Stack:', error.stack);
+        }
     }
 } else {
-    console.warn('⚠️ Neither draft nor game mode detected. isDraft=%s, isGame=%s', isDraft, isGame);
+    console.error('❌ Error: CARDS_DATA no está definido. Asegúrate de cargar cards-data.js antes de logic.js');
 }

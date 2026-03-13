@@ -17,7 +17,6 @@
 
 const CARD_EFFECTS = {
   // ========== ESPÍRITU ==========
-  // "Actualiza. Roba 1 carta. / Sáltate tu Fase de Comprobar Caché."
   'Espíritu 0': {
     onPlay: [
       { action: 'refresh', target: 'self' },
@@ -28,8 +27,6 @@ const CARD_EFFECTS = {
     ]
   },
 
-  // "Cada vez que juegues una carta bocarriba, puedes colocarla sin coincidir con los Protocolos.
-  //  / Roba 2 cartas. / Inicial: Descarta 1 carta o bien voltea esta carta."
   'Espíritu 1': {
     persistent: { allowAnyProtocol: true },
     onPlay: [
@@ -40,29 +37,24 @@ const CARD_EFFECTS = {
     ]
   },
 
-  // "Puedes voltear 1 carta."
   'Espíritu 2': {
     onPlay: [
       { action: 'mayFlip', target: 'any', count: 1 }
     ]
   },
 
-  // "Después de robar cartas: Puedes cambiar esta carta, incluso si está cubierta."
-  // TODO: necesita hook onDraw; por ahora aproximado como onPlay
   'Espíritu 3': {
-    onPlay: [
-      { action: 'maySwap', target: 'self', cards: 1 }
+    onDraw: [
+      { action: 'mayShiftSelf' }
     ]
   },
 
-  // "Reorganiza 2 de tus Protocolos."
   'Espíritu 4': {
     onPlay: [
       { action: 'rearrangeProtocols', target: 'self' }
     ]
   },
 
-  // "Descarta 1 carta."
   'Espíritu 5': {
     onPlay: [
       { action: 'discard', target: 'self', count: 1 }
@@ -70,7 +62,6 @@ const CARD_EFFECTS = {
   },
 
   // ========== MUERTE ==========
-  // "Elimina 1 carta de cada una de las otras líneas."
   'Muerte 0': {
     onPlay: [
       { action: 'deleteFromEachOtherLine', target: 'any', count: 1 }
@@ -81,32 +72,28 @@ const CARD_EFFECTS = {
   'Muerte 1': {
     persistent: { immobile: true },
     onTurnStart: [
-      { action: 'optionalDrawThenDelete', target: 'self', ifThenAction: 'delete', ifThenTarget: 'opponent', ifThenCount: 1, thenSelf: true }
+      { action: 'optionalDrawThenDelete', target: 'self', ifThenAction: 'delete', ifThenTarget: 'any', ifThenCount: 1, thenSelf: true }
     ]
   },
 
-  // "Elimina todas las cartas con Valor 1 o 2 de una línea."
   'Muerte 2': {
     onPlay: [
       { action: 'deleteAllValueRange', target: 'any', minVal: 1, maxVal: 2 }
     ]
   },
 
-  // "Elimina 1 carta bocabajo."
   'Muerte 3': {
     onPlay: [
       { action: 'delete', target: 'any', count: 1, filter: 'faceDown' }
     ]
   },
 
-  // "Elimina 1 carta con Valor 0 o 1."
   'Muerte 4': {
     onPlay: [
       { action: 'delete', target: 'any', count: 1, filter: 'maxValue', maxVal: 1 }
     ]
   },
 
-  // "Descarta 1 carta."
   'Muerte 5': {
     onPlay: [
       { action: 'discard', target: 'self', count: 1 }
@@ -114,47 +101,41 @@ const CARD_EFFECTS = {
   },
 
   // ========== FUEGO ==========
-  // "Voltea otra carta. Roba 2 cartas. / Si se cubre esta carta: Primero, roba 1 carta y voltea otra carta."
   'Fuego 0': {
     onPlay: [
-      { action: 'flip', target: 'any', count: 1 },
+      { action: 'flip', target: 'any', count: 1, excludeSelf: true },
       { action: 'draw', target: 'self', count: 2 }
     ],
     onCover: [
       { action: 'draw', target: 'self', count: 1 },
-      { action: 'flip', target: 'any', count: 1 }
+      { action: 'flip', target: 'any', count: 1, excludeSelf: true }
     ]
   },
 
-  // "Descarta 1 carta. Si lo haces, elimina 1 carta."
   'Fuego 1': {
     onPlay: [
       { action: 'discardThen', target: 'self', count: 1, ifThenAction: 'delete', ifThenTarget: 'opponent', ifThenCount: 1 }
     ]
   },
 
-  // "Descarta 1 carta. Si lo haces, devuelve 1 carta."
   'Fuego 2': {
     onPlay: [
       { action: 'discardThen', target: 'self', count: 1, ifThenAction: 'return', ifThenTarget: 'any', ifThenCount: 1 }
     ]
   },
 
-  // "Final: Puedes descartar 1 carta. Si lo haces, voltea 1 carta."
   'Fuego 3': {
     onTurnEnd: [
       { action: 'optionalDiscard', target: 'self', count: 1, ifThenAction: 'flip', ifThenTarget: 'any', ifThenCount: 1 }
     ]
   },
 
-  // "Descarta 1 o más cartas. Roba tantas cartas como hayas descartado más 1."
   'Fuego 4': {
     onPlay: [
       { action: 'discardForDraw', target: 'self' }
     ]
   },
 
-  // "Descarta 1 carta."
   'Fuego 5': {
     onPlay: [
       { action: 'discard', target: 'self', count: 1 }
@@ -162,14 +143,12 @@ const CARD_EFFECTS = {
   },
 
   // ========== GRAVEDAD ==========
-  // "Por cada 2 cartas en esta línea, juega bocabajo la carta superior de tu mazo debajo de esta carta."
   'Gravedad 0': {
     onPlay: [
       { action: 'playTopDeckBelowPerPair', target: 'self' }
     ]
   },
 
-  // "Roba 2 cartas. Cambia 1 carta a esta línea. O bien de esta línea."
   'Gravedad 1': {
     onPlay: [
       { action: 'draw', target: 'self', count: 2 },
@@ -177,28 +156,24 @@ const CARD_EFFECTS = {
     ]
   },
 
-  // "Voltea 1 carta. Cambia esa carta a esta línea."
   'Gravedad 2': {
     onPlay: [
       { action: 'flipAndShiftToLine', target: 'any', count: 1 }
     ]
   },
 
-  // "Cambia 1 carta bocabajo a esta línea."
   'Gravedad 4': {
     onPlay: [
       { action: 'shiftFaceDownToLine', target: 'other' }
     ]
   },
 
-  // "Descarta 1 carta."
   'Gravedad 5': {
     onPlay: [
       { action: 'discard', target: 'self', count: 1 }
     ]
   },
 
-  // "Tu oponente juega bocabajo la carta superior de su mazo en esta línea."
   'Gravedad 6': {
     onPlay: [
       { action: 'forceOpponentPlayTopDeck', target: 'opponent', faceDown: true }
@@ -206,8 +181,6 @@ const CARD_EFFECTS = {
   },
 
   // ========== VIDA ==========
-  // "Final: Si esta carta está cubierta, elimina esta carta.
-  //  / En cada línea donde tengas al menos 1 carta, juega bocabajo la carta superior de tu mazo."
   'Vida 0': {
     onPlay: [
       { action: 'playTopDeckAllLines', target: 'self', faceDown: true }
@@ -217,7 +190,6 @@ const CARD_EFFECTS = {
     ]
   },
 
-  // "Voltea 1 carta. Voltea 1 carta."
   'Vida 1': {
     onPlay: [
       { action: 'flip', target: 'any', count: 1 },
@@ -225,7 +197,6 @@ const CARD_EFFECTS = {
     ]
   },
 
-  // "Roba 1 carta. Puedes voltear 1 carta que esté bocabajo."
   'Vida 2': {
     onPlay: [
       { action: 'draw', target: 'self', count: 1 },
@@ -233,21 +204,18 @@ const CARD_EFFECTS = {
     ]
   },
 
-  // "Si se cubre esta carta: Primero, juega bocabajo la carta superior de tu mazo en otra línea."
   'Vida 3': {
     onCover: [
       { action: 'playTopDeckFaceDownOtherLines', target: 'self' }
     ]
   },
 
-  // "Si esta carta está cubriendo otra carta, roba 1 carta."
   'Vida 4': {
     onPlay: [
       { action: 'drawIfCovering', target: 'self', count: 1 }
     ]
   },
 
-  // "Descarta 1 carta."
   'Vida 5': {
     onPlay: [
       { action: 'discard', target: 'self', count: 1 }
@@ -255,21 +223,18 @@ const CARD_EFFECTS = {
   },
 
   // ========== LUZ ==========
-  // "Voltea 1 carta. Roba tantas cartas como el Valor de la carta volteada."
   'Luz 0': {
     onPlay: [
       { action: 'flipAndDrawByValue', target: 'any', count: 1 }
     ]
   },
 
-  // "Final: Roba 1 carta."
   'Luz 1': {
     onTurnEnd: [
       { action: 'draw', target: 'self', count: 1 }
     ]
   },
 
-  // "Roba 2 cartas. Revela 1 carta bocabajo. Puedes cambiar o voltear esa carta."
   'Luz 2': {
     onPlay: [
       { action: 'draw', target: 'self', count: 2 },
@@ -277,21 +242,18 @@ const CARD_EFFECTS = {
     ]
   },
 
-  // "Cambia todas las cartas bocabajo de esta línea a otra línea."
   'Luz 3': {
     onPlay: [
       { action: 'moveAllFaceDownCards', target: 'self', toLine: 'any' }
     ]
   },
 
-  // "Tu oponente te revela su mano."
   'Luz 4': {
     onPlay: [
       { action: 'revealOpponentHand', target: 'opponent' }
     ]
   },
 
-  // "Descarta 1 carta."
   'Luz 5': {
     onPlay: [
       { action: 'discard', target: 'self', count: 1 }
@@ -299,19 +261,17 @@ const CARD_EFFECTS = {
   },
 
   // ========== METAL ==========
-  // "El Valor total de tu oponente en esta línea se reduce en 2. / Voltea 1 carta."
   'Metal 0': {
     persistent: {
       effect: 'reduceOpponentValue',
       value: 2,
       scope: 'line'
     },
-    onPlay: [
+    onTurnStart: [
       { action: 'flip', target: 'any', count: 1 }
     ]
   },
 
-  // "Roba 2 cartas. Tu oponente no puede Compilar en el siguiente turno."
   'Metal 1': {
     onPlay: [
       { action: 'draw', target: 'self', count: 2 },
@@ -319,7 +279,6 @@ const CARD_EFFECTS = {
     ]
   },
 
-  // "Tu oponente no puede jugar cartas bocabajo en esta línea."
   'Metal 2': {
     persistent: {
       effect: 'preventFaceDownPlays',
@@ -328,7 +287,6 @@ const CARD_EFFECTS = {
     }
   },
 
-  // "Roba 1 carta. Elimina todas las cartas de otra línea que tengan 6 o más cartas."
   'Metal 3': {
     onPlay: [
       { action: 'draw', target: 'self', count: 1 },
@@ -336,14 +294,12 @@ const CARD_EFFECTS = {
     ]
   },
 
-  // "Descarta 1 carta."
   'Metal 5': {
     onPlay: [
       { action: 'discard', target: 'self', count: 1 }
     ]
   },
 
-  // "Si se cubre o se voltea esta carta: Primero, elimina esta carta."
   'Metal 6': {
     persistent: {
       effect: 'deleteOnCoverOrFlip',
@@ -352,9 +308,8 @@ const CARD_EFFECTS = {
   },
 
   // ========== PLAGA ==========
-  // "Tu oponente descarta 1 carta. / Tu oponente no puede jugar cartas en esta línea."
   'Plaga 0': {
-    onPlay: [
+    onTurnStart: [
       { action: 'discard', target: 'opponent', count: 1 }
     ],
     persistent: {
@@ -363,33 +318,29 @@ const CARD_EFFECTS = {
     }
   },
 
-  // "Después de que tu oponente descarte cartas: Roba 1 carta. / Tu oponente descarta 1 carta."
   // TODO: trigger onOpponentDiscard no implementado aún; el draw reactivo se omite por ahora
   'Plaga 1': {
     persistent: {
       effect: 'drawOnOpponentDiscard',
       count: 1
     },
-    onPlay: [
+    onTurnStart: [
       { action: 'discard', target: 'opponent', count: 1 }
     ]
   },
 
-  // "Descarta 1 o más cartas. Tu oponente descarta tantas cartas como tú más 1."
   'Plaga 2': {
     onPlay: [
       { action: 'discardForOpponentMore', target: 'self' }
     ]
   },
 
-  // "Voltea cada otra carta bocarriba."
   'Plaga 3': {
     onPlay: [
       { action: 'flipAllFaceUp', target: 'other' }
     ]
   },
 
-  // "Final: Tu oponente elimina 1 de sus cartas bocabajo. Puedes voltear esta carta."
   'Plaga 4': {
     onTurnEnd: [
       { action: 'forceOpponentDeleteFaceDown', target: 'opponent', count: 1 },
@@ -397,7 +348,6 @@ const CARD_EFFECTS = {
     ]
   },
 
-  // "Descarta 1 carta."
   'Plaga 5': {
     onPlay: [
       { action: 'discard', target: 'self', count: 1 }
@@ -405,7 +355,6 @@ const CARD_EFFECTS = {
   },
 
   // ========== PSIQUE ==========
-  // "Roba 2 cartas. Tu oponente descarta 2 cartas. Y luego, revela su mano."
   'Psique 0': {
     onPlay: [
       { action: 'draw', target: 'self', count: 2 },
@@ -414,7 +363,6 @@ const CARD_EFFECTS = {
     ]
   },
 
-  // "Tu oponente solo puede jugar cartas bocabajo. / Inicial: Voltea esta carta."
   'Psique 1': {
     persistent: {
       effect: 'forceOpponentFaceDown'
@@ -424,7 +372,6 @@ const CARD_EFFECTS = {
     ]
   },
 
-  // "Tu oponente descarta 2 cartas. Reorganiza sus Protocolos."
   'Psique 2': {
     onPlay: [
       { action: 'discard', target: 'opponent', count: 2 },
@@ -432,7 +379,6 @@ const CARD_EFFECTS = {
     ]
   },
 
-  // "Tu oponente descarta 1 carta. Cambia 1 de sus cartas."
   'Psique 3': {
     onPlay: [
       { action: 'discard', target: 'opponent', count: 1 },
@@ -440,14 +386,12 @@ const CARD_EFFECTS = {
     ]
   },
 
-  // "Final: Puedes devolver 1 de las cartas de tu oponente. Si lo haces, voltea esta carta."
   'Psique 4': {
     onTurnEnd: [
       { action: 'mayReturnAndFlip', target: 'opponent', count: 1 }
     ]
   },
 
-  // "Descarta 1 carta."
   'Psique 5': {
     onPlay: [
       { action: 'discard', target: 'self', count: 1 }
@@ -455,14 +399,12 @@ const CARD_EFFECTS = {
   },
 
   // ========== VELOCIDAD ==========
-  // "Juega 1 carta."
   'Velocidad 0': {
     onPlay: [
       { action: 'playCard', target: 'self' }
     ]
   },
 
-  // "Después de Borrar la Caché: Roba 1 carta. / Roba 2 cartas."
   'Velocidad 1': {
     onPlay: [
       { action: 'draw', target: 'self', count: 2 }
@@ -472,11 +414,9 @@ const CARD_EFFECTS = {
     ]
   },
 
-  // "Si esta carta se elimina Compilando: En su lugar, cambia esta carta, incluso si está cubierta."
   // TODO: necesita hook onEliminate; no implementado aún
   'Velocidad 2': {},
 
-  // "Cambia 1 de tus otras cartas. / Final: Puedes cambiar 1 de tus cartas. Si lo haces, voltea esta carta."
   'Velocidad 3': {
     onPlay: [
       { action: 'swap', target: 'self', count: 1 }
@@ -486,14 +426,12 @@ const CARD_EFFECTS = {
     ]
   },
 
-  // "Cambia 1 de las cartas bocabajo de tu oponente."
   'Velocidad 4': {
     onPlay: [
       { action: 'moveOpponentFaceDown', target: 'opponent', count: 1 }
     ]
   },
 
-  // "Descarta 1 carta."
   'Velocidad 5': {
     onPlay: [
       { action: 'discard', target: 'self', count: 1 }
@@ -501,7 +439,6 @@ const CARD_EFFECTS = {
   },
 
   // ========== AGUA ==========
-  // "Voltea otra carta. Voltea esta carta."
   'Agua 0': {
     onPlay: [
       { action: 'flip', target: 'other', count: 1 },
@@ -509,14 +446,12 @@ const CARD_EFFECTS = {
     ]
   },
 
-  // "En cada una de tus otras líneas, juega bocabajo la carta superior de tu mazo."
   'Agua 1': {
     onPlay: [
       { action: 'playTopDeckFaceDownOtherLines', target: 'self' }
     ]
   },
 
-  // "Roba 2 cartas. Reorganiza tus Protocolos."
   'Agua 2': {
     onPlay: [
       { action: 'draw', target: 'self', count: 2 },
@@ -524,21 +459,18 @@ const CARD_EFFECTS = {
     ]
   },
 
-  // "Devuelve todas las cartas con Valor 2 de 1 línea."
   'Agua 3': {
     onPlay: [
       { action: 'returnCardsWithValue', target: 'self', value: 2, count: 'all' }
     ]
   },
 
-  // "Devuelve 1 de tus cartas."
   'Agua 4': {
     onPlay: [
       { action: 'return', target: 'self', count: 1 }
     ]
   },
 
-  // "Descarta 1 carta."
   'Agua 5': {
     onPlay: [
       { action: 'discard', target: 'self', count: 1 }
@@ -546,7 +478,6 @@ const CARD_EFFECTS = {
   },
 
   // ========== OSCURIDAD ==========
-  // "Roba 3 cartas. Cambia 1 de las cartas cubiertas de tu oponente."
   'Oscuridad 0': {
     onPlay: [
       { action: 'draw', target: 'self', count: 3 },
@@ -554,7 +485,6 @@ const CARD_EFFECTS = {
     ]
   },
 
-  // "Voltea 1 de las cartas de tu oponente. Puedes cambiar esa carta."
   'Oscuridad 1': {
     onPlay: [
       { action: 'flip', target: 'opponent', count: 1 },
@@ -562,8 +492,6 @@ const CARD_EFFECTS = {
     ]
   },
 
-  // "Cada carta bocabajo en esta pila tiene un Valor de 4.
-  //  / Puedes voltear 1 carta cubierta de esta línea."
   'Oscuridad 2': {
     persistent: {
       effect: 'faceDownValueOverride',
@@ -575,21 +503,18 @@ const CARD_EFFECTS = {
     ]
   },
 
-  // "Juega 1 carta bocabajo en otra línea."
   'Oscuridad 3': {
     onPlay: [
       { action: 'playHandFaceDown', target: 'self' }
     ]
   },
 
-  // "Cambia 1 carta bocabajo."
   'Oscuridad 4': {
     onPlay: [
       { action: 'shiftFaceDown', target: 'any', count: 1 }
     ]
   },
 
-  // "Descarta 1 carta."
   'Oscuridad 5': {
     onPlay: [
       { action: 'discard', target: 'self', count: 1 }
@@ -597,20 +522,16 @@ const CARD_EFFECTS = {
   },
 
   // ========== APATÍA (Expansión) ==========
-  // "Tu Valor total en esta línea se incrementa en 1 por cada carta bocabajo en esta línea."
   'Apatía 0': {
     persistent: { valueBonusPerFaceDown: 1, scope: 'thisLine' } // TODO: implementar en cálculo de score
   },
 
-  // "Voltea todas las demás cartas bocarriba en esta línea."
   'Apatía 1': {
     onPlay: [
       { action: 'flipAllFaceUpInLine', target: 'self' }
     ]
   },
 
-  // "Ignora todos los comandos de acción de las cartas en esta línea."
-  // "Si se cubre esta carta: Primero, voltea esta carta."
   'Apatía 2': {
     persistent: { ignoreMiddleCommands: true, scope: 'thisLine' }, // TODO: implementar en triggerCardEffect
     onCover: [
@@ -618,21 +539,18 @@ const CARD_EFFECTS = {
     ]
   },
 
-  // "Voltea 1 de las cartas bocarriba de tu oponente."
   'Apatía 3': {
     onPlay: [
       { action: 'flip', target: 'opponent', count: 1 }
     ]
   },
 
-  // "Puedes voltear 1 de tus cartas bocarriba cubiertas."
   'Apatía 4': {
     onPlay: [
       { action: 'mayFlipCovered', target: 'self', count: 1 }
     ]
   },
 
-  // "Descarta 1 carta."
   'Apatía 5': {
     onPlay: [
       { action: 'discard', target: 'self', count: 1 }
@@ -655,7 +573,6 @@ const CARD_EFFECTS = {
     ]
   },
 
-  // "Descarta 3 cartas. Elimina 1 carta. Elimina 1 carta."
   'Odio 1': {
     onPlay: [
       { action: 'discard', target: 'self', count: 3 },
@@ -669,14 +586,12 @@ const CARD_EFFECTS = {
     persistent: { drawOnOwnDelete: 1 } // TODO: disparar en executeEliminate cuando Odio 3 está en campo
   },
 
-  // "Si se cubre esta carta: Primero, elimina la carta cubierta de menor valor en esta línea."
   'Odio 4': {
     onCover: [
       { action: 'deleteLowestCoveredInLine', target: 'self' }
     ]
   },
 
-  // "Descarta 1 carta."
   'Odio 5': {
     onPlay: [
       { action: 'discard', target: 'self', count: 1 }
@@ -684,18 +599,13 @@ const CARD_EFFECTS = {
   },
 
   // ========== AMOR (Expansión) ==========
-  // "Roba la carta superior del mazo de tu oponente."
-  // "Final: Puedes dar 1 carta de tu mano a tu oponente. Si lo haces, roba 2 cartas."
   'Amor 1': {
-    onPlay: [
-      { action: 'drawFromOpponentDeck', target: 'self', count: 1 }
-    ],
     onTurnEnd: [
+      { action: 'drawFromOpponentDeck', target: 'self', count: 1 },
       { action: 'mayGiveCardForDraw', target: 'self', count: 2 }
     ]
   },
 
-  // "Tu oponente roba 1 carta. Actualiza."
   'Amor 2': {
     onPlay: [
       { action: 'draw', target: 'opponent', count: 1 },
@@ -703,7 +613,6 @@ const CARD_EFFECTS = {
     ]
   },
 
-  // "Toma 1 carta aleatoria de la mano de tu oponente. Da 1 carta de tu mano a tu oponente."
   'Amor 3': {
     onPlay: [
       { action: 'takeRandomFromOpponent', target: 'self', count: 1 },
@@ -711,7 +620,6 @@ const CARD_EFFECTS = {
     ]
   },
 
-  // "Revela 1 carta de tu mano. Voltea 1 carta."
   'Amor 4': {
     onPlay: [
       { action: 'revealFromHand', target: 'self', count: 1 },
@@ -719,14 +627,12 @@ const CARD_EFFECTS = {
     ]
   },
 
-  // "Descarta 1 carta."
   'Amor 5': {
     onPlay: [
       { action: 'discard', target: 'self', count: 1 }
     ]
   },
 
-  // "Tu oponente roba 2 cartas."
   'Amor 6': {
     onPlay: [
       { action: 'draw', target: 'opponent', count: 2 }
@@ -953,6 +859,11 @@ function triggerCardEffect(card, trigger, targetPlayer) {
 function processAbilityEffect() {
   if (!gameState.effectQueue || gameState.effectQueue.length === 0) {
     updateUI();
+    if (gameState.pendingTurnEnd && !gameState.effectContext) {
+      const who = gameState.pendingTurnEnd;
+      gameState.pendingTurnEnd = null;
+      endTurn(who);
+    }
     return;
   }
 
@@ -962,13 +873,13 @@ function processAbilityEffect() {
   console.log(`Resolviendo: ${effect.action} para ${cardName} (jugador: ${targetPlayer})`);
 
   // Resolver según el tipo de acción
-  resolveAbilityAction(effect, targetPlayer);
+  resolveAbilityAction(effect, targetPlayer, cardName);
 }
 
 /**
  * Resuelve una acción individual de efecto
  */
-function resolveAbilityAction(actionDef, targetPlayer) {
+function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
   const { action, target, count, ifThenAction, ifThenTarget, ifThenCount } = actionDef;
   const opponent = targetPlayer === 'player' ? 'ai' : 'player';
 
@@ -995,14 +906,21 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       }
       break;
 
-    case 'delete':
-      // Necesita interacción del usuario
-      startEffect('eliminate', resolvedTarget, count || 1);
+    case 'delete': {
+      const deleteOpts = {};
+      if (actionDef.forceLine) deleteOpts.forceLine = actionDef.forceLine;
+      if (actionDef.filter) deleteOpts.filter = actionDef.filter;
+      if (actionDef.maxVal !== undefined) deleteOpts.maxVal = actionDef.maxVal;
+      if (actionDef.minVal !== undefined) deleteOpts.minVal = actionDef.minVal;
+      startEffect('eliminate', resolvedTarget, count || 1, deleteOpts);
       break;
+    }
 
-    case 'flip':
-      startEffect('flip', resolvedTarget === 'any' ? 'any' : resolvedTarget, count || 1);
+    case 'flip': {
+      const flipOpts = actionDef.excludeSelf && triggerCardName ? { excludeCardName: triggerCardName } : {};
+      startEffect('flip', resolvedTarget === 'any' ? 'any' : resolvedTarget, count || 1, flipOpts);
       break;
+    }
 
     case 'shift':
       startEffect('shift', resolvedTarget, count || 1);
@@ -1016,21 +934,33 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       while (gameState[targetPlayer].hand.length < 5) {
         drawCard(targetPlayer);
       }
+      if (typeof onDrawEffects === 'function') onDrawEffects(targetPlayer);
       processAbilityEffect();
       break;
 
     case 'discardThen': {
-      // Descarte obligatorio (sin "puedes"). El efecto secundario se activa siempre.
+      // Descarte obligatorio (sin "puedes"). El efecto secundario se activa SI se pudo descartar.
+      const handSize = gameState[targetPlayer].hand.length;
       if (resolvedTarget === 'player' || resolvedTarget === 'any') {
-        if (ifThenAction) {
-          gameState.effectQueue.unshift({ effect: { action: ifThenAction, target: ifThenTarget, count: ifThenCount }, targetPlayer });
-        }
-        startEffect('discard', 'player', count || 1);
-      } else {
-        discard('ai', count || 1);
-        if (ifThenAction) {
-          resolveAbilityAction({ action: ifThenAction, target: ifThenTarget, count: ifThenCount }, targetPlayer);
+        if (handSize > 0) {
+          if (ifThenAction) {
+            gameState.effectQueue.unshift({ effect: { action: ifThenAction, target: ifThenTarget, count: ifThenCount }, targetPlayer });
+          }
+          startEffect('discard', 'player', count || 1);
         } else {
+          console.log(`⏭️ Descarte omitido — mano vacía para discardThen`);
+          processAbilityEffect();
+        }
+      } else {
+        if (handSize > 0) {
+          discard('ai', count || 1);
+          if (ifThenAction) {
+            resolveAbilityAction({ action: ifThenAction, target: ifThenTarget, count: ifThenCount }, targetPlayer);
+          } else {
+            processAbilityEffect();
+          }
+        } else {
+          console.log(`⏭️ AI Descarte omitido — mano vacía para discardThen`);
           processAbilityEffect();
         }
       }
@@ -1038,7 +968,13 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'optionalDiscard': {
+      const handSize = gameState[targetPlayer].hand.length;
       if (targetPlayer === 'player') {
+        if (handSize === 0) {
+          console.log(`⏭️ Descarte opcional omitido — mano vacía`);
+          processAbilityEffect();
+          break;
+        }
         const confirmArea = document.getElementById('command-confirm');
         const confirmMsg = document.getElementById('confirm-msg');
         const btnYes = document.getElementById('btn-confirm-yes');
@@ -1063,7 +999,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         }
       } else {
         // IA decide aleatoriamente
-        if (Math.random() > 0.5 && gameState.ai.hand.length > 0) {
+        if (handSize > 0 && Math.random() > 0.5) {
           discard('ai', 1);
           resolveAbilityAction({ action: ifThenAction, target: ifThenTarget, count: ifThenCount }, targetPlayer);
         } else {
@@ -1143,6 +1079,31 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     case 'swapCard':
       startEffect('swap', resolvedTarget === 'any' ? 'any' : resolvedTarget, count || 1);
       break;
+
+    case 'mayShiftSelf': {
+      // Espíritu 3: mover esta carta a otra línea (aunque esté cubierta)
+      const selfLine = gameState.currentEffectLine;
+      if (!selfLine) { processAbilityEffect(); break; }
+      if (targetPlayer === 'player') {
+        gameState.effectContext = { type: 'shiftSelf', sourceLine: selfLine, target: 'player', count: 1, selected: [] };
+        updateStatus('¿Quieres mover Espíritu 3? Elige línea destino (o la misma para cancelar)');
+        highlightSelectableLines();
+      } else {
+        // IA: mover a línea aleatoria distinta
+        const otherLines = LINES.filter(l => l !== selfLine);
+        if (otherLines.length > 0) {
+          const dest = otherLines[Math.floor(Math.random() * otherLines.length)];
+          const stack = gameState.field[selfLine][targetPlayer];
+          const idx = stack.findIndex(c => c.card.nombre === 'Espíritu 3');
+          if (idx !== -1) {
+            const [cardObj] = stack.splice(idx, 1);
+            gameState.field[dest][targetPlayer].push(cardObj);
+          }
+        }
+        processAbilityEffect();
+      }
+      break;
+    }
 
     case 'moveOpponentCard':
       startEffect('shift', opponent, count || 1);
@@ -1922,28 +1883,31 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'deleteFromEachOtherLine': {
-      // Muerte 0: elimina 1 carta de cada una de las otras líneas
+      // Muerte 0: elimina 1 carta de cada una de las otras líneas (obligatorio si hay cartas)
       const currentLine = gameState.currentEffectLine;
       const otherLines = LINES.filter(l => l !== currentLine);
       if (targetPlayer === 'player') {
-        // Encola una eliminación por cada línea distinta
-        otherLines.reverse().forEach(l => {
-          gameState.effectQueue.unshift({
-            effect: { action: 'delete', target: 'any', count: 1 },
-            targetPlayer,
-            cardName: 'Muerte 0',
-            _forceLine: l
-          });
+        // Encola una eliminación por cada línea distinta que tenga cartas
+        [...otherLines].reverse().forEach(l => {
+          const hasCards = gameState.field[l].player.length > 0 || gameState.field[l].ai.length > 0;
+          if (hasCards) {
+            gameState.effectQueue.unshift({
+              effect: { action: 'delete', target: 'any', count: 1, forceLine: l },
+              targetPlayer,
+              cardName: 'Muerte 0'
+            });
+          }
         });
         processAbilityEffect();
       } else {
         otherLines.forEach(l => {
-          ['player', 'ai'].forEach(p => {
-            if (gameState.field[l][p].length > 0) {
-              const removed = gameState.field[l][p].pop();
-              gameState[p].trash.push(removed.card);
-            }
-          });
+          // IA elimina la carta superior de cualquier pila en esa línea
+          const targets = ['player', 'ai'].filter(p => gameState.field[l][p].length > 0);
+          if (targets.length > 0) {
+            const p = targets[Math.floor(Math.random() * targets.length)];
+            const removed = gameState.field[l][p].pop();
+            gameState[p].trash.push(removed.card);
+          }
         });
         processAbilityEffect();
       }
@@ -1951,26 +1915,28 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'deleteAllValueRange': {
-      // Muerte 2: elimina todas las cartas con valor en [minVal, maxVal] de 1 línea
+      // Muerte 2: elige una línea, elimina TODAS las cartas (ambos lados) con valor 1-2 o bocabajo
+      const min = actionDef.minVal || 1;
+      const max = actionDef.maxVal || 2;
       if (targetPlayer === 'player') {
-        startEffect('eliminate', 'any', 99); // UI deja eliminar — mejora pendiente: filtrar por valor
+        startEffect('massDeleteByValueRange', 'any', 1, { minVal: min, maxVal: max });
       } else {
-        const min = actionDef.minVal || 1;
-        const max = actionDef.maxVal || 2;
-        const validLine = LINES.find(l =>
-          [...gameState.field[l].player, ...gameState.field[l].ai].some(c => !c.faceDown && c.card.valor >= min && c.card.valor <= max)
-        );
-        if (validLine) {
+        // IA: elige la línea donde elimina más cartas
+        let bestLine = null, bestCount = 0;
+        LINES.forEach(l => {
+          const count = ['player', 'ai'].reduce((acc, p) =>
+            acc + gameState.field[l][p].filter(c => c.faceDown || (c.card.valor >= min && c.card.valor <= max)).length, 0);
+          if (count > bestCount) { bestCount = count; bestLine = l; }
+        });
+        if (bestLine) {
           ['player', 'ai'].forEach(p => {
             const toKeep = [];
-            gameState.field[validLine][p].forEach(c => {
-              if (!c.faceDown && c.card.valor >= min && c.card.valor <= max) {
+            gameState.field[bestLine][p].forEach(c => {
+              if (c.faceDown || (c.card.valor >= min && c.card.valor <= max)) {
                 gameState[p].trash.push(c.card);
-              } else {
-                toKeep.push(c);
-              }
+              } else { toKeep.push(c); }
             });
-            gameState.field[validLine][p] = toKeep;
+            gameState.field[bestLine][p] = toKeep;
           });
         }
         processAbilityEffect();
@@ -2364,6 +2330,22 @@ function onTurnEndEffects(player) {
   });
 }
 
+/**
+ * Hook tras robar cartas (onDraw). Se dispara una vez por acción de robo, no por cada carta.
+ * Incluye cartas cubiertas (faceDown=false aunque no sean la carta superior).
+ */
+function onDrawEffects(player) {
+  LINES.forEach(line => {
+    if (gameState.ignoreEffectsLines && gameState.ignoreEffectsLines[line]) return;
+    gameState.currentEffectLine = line;
+    gameState.field[line][player].forEach(cardObj => {
+      if (!cardObj.faceDown) {
+        triggerCardEffect(cardObj.card, 'onDraw', player);
+      }
+    });
+  });
+}
+
 // ============================================================================
 // 6. INTEGRACIÓN CON CÁLCULO DE VALOR
 // ============================================================================
@@ -2404,6 +2386,7 @@ if (typeof window !== 'undefined') {
   window.onCardFlipped = onCardFlipped;
   window.onTurnStartEffects = onTurnStartEffects;
   window.onTurnEndEffects = onTurnEndEffects;
+  window.onDrawEffects = onDrawEffects;
   window.calculateScoreWithModifiers = calculateScoreWithModifiers;
   window.getPersistentModifiers = getPersistentModifiers;
   window.hasAllowAnyProtocol = hasAllowAnyProtocol;

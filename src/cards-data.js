@@ -1,4 +1,5 @@
-{
+// Datos de cartas y protocolos integrados para evitar errores de fetch/CORS
+const CARDS_DATA = {
   "_protocolMeta": {
     "Espíritu":   { "color": "#8b5cf6", "abilities": "VOLTEAR. CAMBIAR. ROBAR" },
     "Muerte":     { "color": "#ef4444", "abilities": "ELIMINAR. ROBAR" },
@@ -12,9 +13,9 @@
     "Velocidad":  { "color": "#06b6d4", "abilities": "ROBAR. JUGAR. CAMBIAR" },
     "Agua":       { "color": "#3b82f6", "abilities": "DEVOLVER. ROBAR. VOLTEAR" },
     "Oscuridad":  { "color": "#64748b", "abilities": "ROBAR. CAMBIAR. MANIPULAR" },
-    "Apatía":     { "color": "#6b7280", "abilities": "VOLTEAR BOCABAJOS" },
-    "Odio":       { "color": "#b91c1c", "abilities": "ELIMINAR PROPIAS Y RIVALES" },
-    "Amor":       { "color": "#f43f5e", "abilities": "ROBAR. DAR. INTERCAMBIAR" }
+    "Apatía":     { "color": "#6b7280", "abilities": "Voltear cartas bocabajo" },
+    "Odio":       { "color": "#b91c1c", "abilities": "Eliminar tus cartas y cartas del oponente" },
+    "Amor":       { "color": "#f43f5e", "abilities": "Robar, dar e intercambiar" }
   },
   "Espíritu": [
     {"valor": 0, "nombre": "Espíritu 0", "fase": "Action", "h_inicio": "", "h_accion": "Actualiza. Roba 1 carta.", "h_final": "Sáltate tu Fase de Comprobar Caché."},
@@ -65,7 +66,7 @@
     {"valor": 5, "nombre": "Luz 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""}
   ],
   "Metal": [
-    {"valor": 0, "nombre": "Metal 0", "fase": "Start",  "h_inicio": "Inicial: Voltea 1 carta. El Valor total de tu oponente en esta línea se reduce en 2.", "h_accion": "", "h_final": ""},
+    {"valor": 0, "nombre": "Metal 0", "fase": "Start",  "h_inicio": "El Valor total de tu oponente en esta línea se reduce en 2.", "h_accion": "Voltea 1 carta.", "h_final": ""},
     {"valor": 1, "nombre": "Metal 1", "fase": "Action", "h_inicio": "", "h_accion": "Roba 2 cartas. Tu oponente no puede Compilar en el siguiente turno.", "h_final": ""},
     {"valor": 2, "nombre": "Metal 2", "fase": "Start",  "h_inicio": "Tu oponente no puede jugar cartas bocabajo en esta línea.", "h_accion": "", "h_final": ""},
     {"valor": 3, "nombre": "Metal 3", "fase": "Action", "h_inicio": "", "h_accion": "Roba 1 carta. Elimina todas las cartas de otra línea que tenga 8 o más cartas.", "h_final": ""},
@@ -73,8 +74,8 @@
     {"valor": 6, "nombre": "Metal 6", "fase": "Start",  "h_inicio": "Si se cubre o se voltea esta carta: Primero, elimina esta carta.", "h_accion": "", "h_final": ""}
   ],
   "Plaga": [
-    {"valor": 0, "nombre": "Plaga 0", "fase": "Start",  "h_inicio": "Inicial: Tu oponente descarta 1 carta. Tu oponente no puede jugar cartas en esta línea.", "h_accion": "", "h_final": ""},
-    {"valor": 1, "nombre": "Plaga 1", "fase": "Start",  "h_inicio": "Inicial: Tu oponente descarta 1 carta. Después de que tu oponente descarte cartas: Roba 1 carta.", "h_accion": "", "h_final": ""},
+    {"valor": 0, "nombre": "Plaga 0", "fase": "Start",  "h_inicio": "Tu oponente no puede jugar cartas en esta línea.", "h_accion": "Tu oponente descarta 1 carta.", "h_final": ""},
+    {"valor": 1, "nombre": "Plaga 1", "fase": "Start",  "h_inicio": "Después de que tu oponente descarte cartas: Roba 1 carta.", "h_accion": "Tu oponente descarta 1 carta.", "h_final": ""},
     {"valor": 2, "nombre": "Plaga 2", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 o más cartas. Tu oponente descarta tantas cartas como tú más 1.", "h_final": ""},
     {"valor": 3, "nombre": "Plaga 3", "fase": "Action", "h_inicio": "", "h_accion": "Voltea cada otra carta bocarriba.", "h_final": ""},
     {"valor": 4, "nombre": "Plaga 4", "fase": "End",    "h_inicio": "", "h_accion": "", "h_final": "Final: Tu oponente elimina 1 de sus cartas bocabajo. Puedes voltear esta carta."},
@@ -108,7 +109,7 @@
     {"valor": 0, "nombre": "Oscuridad 0", "fase": "Action", "h_inicio": "", "h_accion": "Roba 3 cartas. Cambia 1 de las cartas cubiertas de tu oponente.", "h_final": ""},
     {"valor": 1, "nombre": "Oscuridad 1", "fase": "Action", "h_inicio": "", "h_accion": "Voltea 1 de las cartas de tu oponente. Puedes cambiar esa carta.", "h_final": ""},
     {"valor": 2, "nombre": "Oscuridad 2", "fase": "Start",  "h_inicio": "Cada carta bocabajo en esta pila tiene un Valor de 4.", "h_accion": "Puedes voltear 1 carta cubierta de esta línea.", "h_final": ""},
-    {"valor": 3, "nombre": "Oscuridad 3", "fase": "Action", "h_inicio": "", "h_accion": "Juega 1 carta bocabajo in otra línea.", "h_final": ""},
+    {"valor": 3, "nombre": "Oscuridad 3", "fase": "Action", "h_inicio": "", "h_accion": "Juega 1 carta bocabajo en otra línea.", "h_final": ""},
     {"valor": 4, "nombre": "Oscuridad 4", "fase": "Action", "h_inicio": "", "h_accion": "Cambia 1 carta bocabajo.", "h_final": ""},
     {"valor": 5, "nombre": "Oscuridad 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""}
   ],
@@ -136,4 +137,4 @@
     {"valor": 5, "nombre": "Amor 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""},
     {"valor": 6, "nombre": "Amor 6", "fase": "Action", "h_inicio": "", "h_accion": "Tu oponente roba 2 cartas.", "h_final": ""}
   ]
-}
+};

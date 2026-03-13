@@ -115,13 +115,14 @@
         }
 
         .protocol-name {
-            font-size: 1.2em;
+            font-size: 1.5em;
             font-weight: bold;
             margin-bottom: 8px;
+            font-family: 'Orbitron', monospace;
         }
 
         .protocol-abilities {
-            font-size: 0.75em;
+            font-size: 0.9em;
             color: #aaa;
             line-height: 1.4;
             flex: 1;
@@ -256,6 +257,7 @@
 </div>
 
 <!-- Scripts -->
+<script src="cards-data.js"></script>
 <script src="ai-evaluator.js"></script>
 <script src="minimax.js"></script>
 <script src="abilities-engine.js"></script>
@@ -263,41 +265,8 @@
 <script>
 'use strict';
 
-const ALL_PROTOCOLS = [
-    'Espíritu',
-    'Muerte',
-    'Fuego',
-    'Gravedad',
-    'Vida',
-    'Luz',
-    'Metal',
-    'Plaga',
-    'Psique',
-    'Velocidad',
-    'Agua',
-    'Oscuridad',
-    'Apatía',
-    'Odio',
-    'Amor'
-];
-
-const PROTOCOL_DEFS = {
-    'Espíritu': { color: '#8b5cf6', abilities: 'VOLTEAR. CAMBIAR. ROBAR' },
-    'Muerte': { color: '#ef4444', abilities: 'ELIMINAR. ROBAR' },
-    'Fuego': { color: '#f97316', abilities: 'DESCARTAR PARA RESOLVER EFECTO' },
-    'Gravedad': { color: '#6366f1', abilities: 'CAMBIAR. VOLTEAR. ROBAR' },
-    'Vida': { color: '#10b981', abilities: 'VOLTEAR. JUGAR CARTA SUPERIOR DEL MAZO. ROBAR' },
-    'Luz': { color: '#facc15', abilities: 'ROBAR. VOLTEAR. CAMBIAR' },
-    'Metal': { color: '#94a3b8', abilities: 'PREVENIR. ROBAR. VOLTEAR' },
-    'Plaga': { color: '#a855f7', abilities: 'FORZAR DESCARTAR. VOLTEAR' },
-    'Psique': { color: '#ec4899', abilities: 'ROBAR. MANIPULAR. CAMBIAR' },
-    'Velocidad': { color: '#06b6d4', abilities: 'ROBAR. JUGAR. CAMBIAR' },
-    'Agua': { color: '#3b82f6', abilities: 'DEVOLVER. ROBAR. VOLTEAR' },
-    'Oscuridad': { color: '#64748b', abilities: 'ROBAR. CAMBIAR. MANIPULAR' },
-    'Apatía':    { color: '#6b7280', abilities: 'Voltear cartas bocabajo' },
-    'Odio':      { color: '#b91c1c', abilities: 'Eliminar tus cartas y cartas del oponente' },
-    'Amor':      { color: '#f43f5e', abilities: 'Robar, dar e intercambiar' }
-};
+let ALL_PROTOCOLS = [];
+let PROTOCOL_DEFS = {};
 
 let draftState = {
     available: [...ALL_PROTOCOLS],
@@ -507,8 +476,20 @@ document.getElementById('start-game-btn').addEventListener('click', function() {
     }
 });
 
-// Iniciar cuando documento esté listo
-document.addEventListener('DOMContentLoaded', initDraft);
+// Cargar datos directamente e iniciar draft
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('🎮 Iniciando con CARDS_DATA integrado');
+    try {
+        PROTOCOL_DEFS = CARDS_DATA._protocolMeta || {};
+        ALL_PROTOCOLS = Object.keys(PROTOCOL_DEFS);
+        draftState.available = [...ALL_PROTOCOLS];
+        console.log('✅ Protocolos cargados:', ALL_PROTOCOLS.length);
+        initDraft();
+    } catch(e) {
+        console.error('❌ Error iniciando draft:', e);
+        document.getElementById('current-turn').textContent = '❌ Error: ' + e.message;
+    }
+});
 </script>
 
 </body>
