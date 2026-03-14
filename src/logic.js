@@ -71,8 +71,12 @@ let gameState = {
     lastFlippedCard: null,   // last card flipped via interactive effect
     pendingPlayCard: false,  // waiting for player to play a card mid-effect
     ignoreEffectsLines: {},  // lines where effects are suppressed this turn
-    pendingEndTurnFor: null, // set when endTurn is waiting for interactive discard
-    pendingTurnEnd: null,    // set when finalizePlay is waiting for effects to resolve
+    pendingEndTurnFor: null,    // set when endTurn is waiting for interactive discard
+    pendingTurnEnd: null,       // set when finalizePlay is waiting for effects to resolve
+    pendingCompileShift: null,  // Velocidad 2: card to move after compile
+    discardedSinceLastCheck: { player: false, ai: false },  // flag consumido por Plaga 1 al robar
+    drawnSinceLastCheck: { player: false, ai: false },      // flag consumido por Espíritu 3 al cambiar
+    uncoveredThisTurn: new Set(),                           // IDs de cartas ya activadas por onUncovered este turno
 };
 
 function createDeckForPlayer(target) {
@@ -174,6 +178,20 @@ function initLineListeners() {
 function handleShiftTargetLine(destinationLine) {
     const ctx = gameState.effectContext;
     console.log(`🔀 handleShiftTargetLine: dest=${destinationLine}, selectedCard=${JSON.stringify(ctx?.selectedCard)}, currentEffectLine=${gameState.currentEffectLine}`);
+
+    if (ctx.type === 'compileShift') {
+        if (destinationLine === ctx.sourceLine) {
+            updateStatus('Elige una línea diferente a la compilada');
+            return;
+        }
+        ctx.cards.forEach(c => gameState.field[destinationLine].player.push(c));
+        gameState.pendingCompileShift = null;
+        gameState.effectContext = null;
+        clearEffectHighlights();
+        updateUI();
+        setTimeout(() => endTurn(ctx.resumeFor), 2000);
+        return;
+    }
 
     if (ctx.type === 'playTopDeckFaceDownChooseLine') {
         console.log(`  → playTopDeckFaceDownChooseLine: sourceLine=${ctx.sourceLine}, dest=${destinationLine}`);
@@ -339,7 +357,7 @@ function updateUI() {
     document.querySelectorAll('#player-hand .card').forEach((cardEl, index) => {
         cardEl.onclick = () => {
             console.log(`🖱️ Card clicked at index ${index}. gameState.turn=${gameState.turn}, phase=${gameState.phase}, effectContext=${gameState.effectContext ? gameState.effectContext.type : 'none'}`);
-            if (gameState.effectContext && gameState.effectContext.type === 'discard') {
+            if (gameState.effectContext && (gameState.effectContext.type === 'discard' || gameState.effectContext.type === 'discardVariable')) {
                 console.log(`   → Handling discard choice`);
                 handleDiscardChoice(index);
             } else if (gameState.effectContext) {
@@ -482,6 +500,7 @@ function startTurn(who) {
     gameState.turn = who;
     gameState.phase = 'start';
     gameState.ignoreEffectsLines = {};
+    gameState.uncoveredThisTurn = new Set();
     updateStatus(`--- Turno de ${who === 'player' ? 'Jugador' : 'IA'} ---`);
     
     // NUEVO: Disparar efectos de inicio de turno
@@ -520,7 +539,14 @@ function checkCompilePhase(who) {
 
     if (compiledAny) {
         updateUI();
-        setTimeout(() => endTurn(who), 2000);
+        if (gameState.pendingCompileShift) {
+            const { cards, sourceLine } = gameState.pendingCompileShift;
+            gameState.effectContext = { type: 'compileShift', cards, sourceLine, resumeFor: who, waitingForLine: true };
+            updateStatus('Velocidad 2: elige línea donde desplazar la carta');
+            highlightSelectableLines(sourceLine);
+        } else {
+            setTimeout(() => endTurn(who), 2000);
+        }
     } else {
         console.log(`✅ No compilations, moving to action phase`);
         actionPhase(who);
@@ -563,11 +589,30 @@ function compileLine(line, who) {
         gameState[who].compiled.push(line);
     }
 
-    // Descartar todas las cartas de la línea en ambos lados
+    // Velocidad 2: extraer antes de descartar para mover a otra línea
+    const otherLines = LINES.filter(l => l !== line);
+    const v2Player = gameState.field[line].player.filter(c => c.card.nombre === 'Velocidad 2');
+    const v2AI     = gameState.field[line].ai.filter(c => c.card.nombre === 'Velocidad 2');
+    gameState.field[line].player = gameState.field[line].player.filter(c => c.card.nombre !== 'Velocidad 2');
+    gameState.field[line].ai     = gameState.field[line].ai.filter(c => c.card.nombre !== 'Velocidad 2');
+
+    // Descartar todas las cartas restantes de la línea en ambos lados
     gameState.field[line].player.forEach(c => gameState.player.trash.push(c.card));
     gameState.field[line].ai.forEach(c => gameState.ai.trash.push(c.card));
     gameState.field[line].player = [];
     gameState.field[line].ai = [];
+
+    // IA: mover Velocidad 2 a línea aleatoria
+    v2AI.forEach(c => {
+        const dest = otherLines[Math.floor(Math.random() * otherLines.length)];
+        gameState.field[dest].ai.push(c);
+        updateStatus(`IA desplaza Velocidad 2 a ${dest}`);
+    });
+
+    // Jugador: marcar pendiente para selección interactiva
+    if (v2Player.length > 0) {
+        gameState.pendingCompileShift = { cards: v2Player, sourceLine: line };
+    }
 }
 
 function showActionModal(handIndex) {
@@ -660,18 +705,7 @@ function initializeModalButtons() {
 
 // --- Motor de Habilidades ---
 function executeEffect(card, targetPlayer) {
-    // NUEVO MOTOR DE HABILIDADES: Intenta usar el sistema moderno
-    if (typeof executeNewEffect === 'function') {
-        executeNewEffect(card, targetPlayer);
-        return;
-    }
-    
-    // FALLBACK: Si abilities-engine.js no está cargado, usar texto plano (legacy)
-    const combinedText = ((card.h_inicio || "") + ". " + (card.h_accion || "") + ". " + (card.h_final || "")).toLowerCase();
-    const sentences = combinedText.split('.').map(s => s.trim()).filter(s => s.length > 0);
-    
-    gameState.effectQueue = sentences.map(s => ({ text: s, targetPlayer }));
-    processNextEffect();
+    executeNewEffect(card, targetPlayer);
 }
 
 function processNextEffect() {
@@ -805,7 +839,17 @@ function highlightEffectTargets() {
     const ctx = gameState.effectContext;
     if (!ctx) return;
 
-    if (ctx.type === 'discard' || ctx.type === 'give') {
+    if (ctx.type === 'discardVariable') {
+        const hand = document.getElementById('player-hand');
+        hand.classList.add('targeting', 'discard-mode');
+        const banner = document.getElementById('discard-banner');
+        if (banner) {
+            banner.textContent = `🗑 Plaga 2: lleva ${ctx.selected.length} descartada${ctx.selected.length !== 1 ? 's' : ''} — haz clic para descartar otra`;
+            banner.classList.add('visible');
+        }
+        const stopBtn = document.getElementById('btn-stop-discard');
+        if (stopBtn) stopBtn.classList.toggle('hidden', ctx.selected.length < 1);
+    } else if (ctx.type === 'discard' || ctx.type === 'give') {
         const hand = document.getElementById('player-hand');
         hand.classList.add('targeting', 'discard-mode');
         const remaining = ctx.count - ctx.selected.length;
@@ -880,7 +924,12 @@ function highlightEffectTargets() {
     } else if (ctx.type === 'confirm') {
         // No highlighting needed, just the confirm dialog
     } else if (ctx.type === 'massDeleteByValueRange') {
+        const { minVal, maxVal } = ctx;
         LINES.forEach(l => {
+            const hasEligible = ['player', 'ai'].some(p =>
+                gameState.field[l][p].some(c => c.faceDown || (c.card.valor >= minVal && c.card.valor <= maxVal))
+            );
+            if (!hasEligible) return;
             const lineEl = document.getElementById(`line-${l}`);
             if (lineEl) {
                 lineEl.classList.add('targeting');
@@ -926,22 +975,36 @@ function clearEffectHighlights() {
         el.style.cursor = '';
         if (el.id && (el.id.startsWith('proto-') || el.id.startsWith('line-'))) el.onclick = null;
     });
+    document.querySelectorAll('.selectable-line').forEach(el => el.classList.remove('selectable-line'));
     document.getElementById('player-hand')?.classList.remove('discard-mode');
     const banner = document.getElementById('discard-banner');
     if (banner) banner.classList.remove('visible');
+    const stopBtn = document.getElementById('btn-stop-discard');
+    if (stopBtn) stopBtn.classList.add('hidden');
 }
 
 function handleDiscardChoice(handIndex) {
     const ctx = gameState.effectContext;
-    if (!ctx || (ctx.type !== 'discard' && ctx.type !== 'give')) return;
+    if (!ctx || (ctx.type !== 'discard' && ctx.type !== 'give' && ctx.type !== 'discardVariable')) return;
 
     const card = gameState.player.hand.splice(handIndex, 1)[0];
     if (ctx.type === 'give') {
-        gameState.ai.hand.push(card); // dar: va a la mano del rival
+        gameState.ai.hand.push(card);
     } else {
-        gameState.player.trash.push(card); // descartar: va al descarte
+        gameState.player.trash.push(card);
+        gameState.discardedSinceLastCheck.player = true;
     }
     ctx.selected.push(card);
+
+    if (ctx.type === 'discardVariable') {
+        if (gameState.player.hand.length === 0) {
+            finalizeDiscardVariable();
+        } else {
+            highlightEffectTargets();
+            updateUI();
+        }
+        return;
+    }
 
     if (ctx.selected.length >= ctx.count) {
         finishEffect();
@@ -958,6 +1021,15 @@ function handleDiscardChoice(handIndex) {
     }
 }
 
+function finalizeDiscardVariable() {
+    const ctx = gameState.effectContext;
+    if (!ctx || ctx.type !== 'discardVariable') return;
+    const n = ctx.selected.length;
+    finishEffect();
+    discard('ai', n + 1);
+    updateStatus(`Plaga 2: descartaste ${n}, la IA descarta ${n + 1}`);
+}
+
 function handleFieldCardClick(line, target, cardIdx) {
     const ctx = gameState.effectContext;
     if (!ctx) return;
@@ -972,6 +1044,7 @@ function handleFieldCardClick(line, target, cardIdx) {
         gameState.field[line][target].splice(cardIdx, 1);
         gameState[target].trash.push(cardObj.card);
         ctx.selected.push(cardObj);
+        triggerUncovered(line, target);
     } else if (ctx.type === 'flip') {
         const cardObj = gameState.field[line][target][cardIdx];
         if (ctx.excludeLine && line === ctx.excludeLine) return;
@@ -1002,6 +1075,7 @@ function handleFieldCardClick(line, target, cardIdx) {
         const cardObj = gameState.field[line][target].splice(cardIdx, 1)[0];
         gameState[target].hand.push(cardObj.card);
         ctx.selected.push(cardObj);
+        triggerUncovered(line, target);
     } else if (ctx.type === 'rearrange') {
         if (!ctx.firstProtocol) {
             ctx.firstProtocol = line;
@@ -1084,6 +1158,7 @@ function resolveEffectAI(type, target, count, opts = {}) {
                 const line = validLines[Math.floor(Math.random() * validLines.length)];
                 const cardObj = gameState.field[line][actualTarget].pop();
                 gameState[actualTarget].trash.push(cardObj.card);
+                triggerUncovered(line, actualTarget);
             }
         }
     } else if (type === 'flip') {
@@ -1115,6 +1190,7 @@ function resolveEffectAI(type, target, count, opts = {}) {
                 const line = validLines[Math.floor(Math.random() * validLines.length)];
                 const cardObj = gameState.field[line][actualTarget].pop();
                 gameState[actualTarget].hand.push(cardObj.card);
+                triggerUncovered(line, actualTarget);
             }
         }
     }
@@ -1128,19 +1204,38 @@ function draw(target, count) {
     for (let i = 0; i < count; i++) {
         drawCard(target);
     }
+    if (count > 0) gameState.drawnSinceLastCheck[target] = true;
     updateStatus(`${target === 'player' ? 'Robas' : 'IA roba'} ${count} carta${count !== 1 ? 's' : ''}`);
-    if (typeof onDrawEffects === 'function') onDrawEffects(target);
 }
 
 function discard(target, count) {
+    let discarded = 0;
     for (let i = 0; i < count; i++) {
         if (gameState[target].hand.length > 0) {
             const idx = Math.floor(Math.random() * gameState[target].hand.length);
             const card = gameState[target].hand.splice(idx, 1)[0];
             gameState[target].trash.push(card);
+            gameState.discardedSinceLastCheck[target] = true;
+            discarded++;
         }
     }
-    updateStatus(`${target === 'player' ? 'Descartas' : 'IA descarta'} ${count} carta${count !== 1 ? 's' : ''}`);
+    if (discarded > 0) {
+        updateStatus(`${target === 'player' ? 'Descartas' : 'IA descarta'} ${discarded} carta${discarded !== 1 ? 's' : ''}`);
+        updateUI();
+    }
+}
+
+function triggerUncovered(line, owner) {
+    const stack = gameState.field[line][owner];
+    if (stack.length === 0) return;
+    const top = stack[stack.length - 1];
+    if (!top.faceDown && typeof triggerCardEffect === 'function') {
+        const cardId = top.card.id;
+        if (gameState.uncoveredThisTurn.has(cardId)) return;
+        gameState.uncoveredThisTurn.add(cardId);
+        gameState.currentEffectLine = line;
+        triggerCardEffect(top.card, 'onPlay', owner);
+    }
 }
 
 function flipCardInField(cardId) {
@@ -1205,9 +1300,15 @@ function clearSelectionHighlights() {
 
 function finalizePlay(targetLine, isFaceDown) {
     console.log(`🎲 finalizePlay: line=${targetLine}, faceDown=${isFaceDown}`);
-    
+
+    // Comprobar si Plaga 0 del rival bloquea esta línea
+    if (typeof isPlayBlockedByPersistent === 'function' && isPlayBlockedByPersistent(targetLine, 'player')) {
+        updateStatus('La IA tiene Plaga 0 en esa línea — no puedes jugar ahí');
+        return;
+    }
+
     // Compiled lines can still be played on (re-compile rules)
-    
+
     gameState.selectionMode = false;
     clearSelectionHighlights();
 
@@ -1263,6 +1364,9 @@ function finalizePlay(targetLine, isFaceDown) {
     console.log(`⏱️ Ending player turn...`);
     endTurn('player');
 }
+
+const btnStopDiscard = document.getElementById('btn-stop-discard');
+if (btnStopDiscard) btnStopDiscard.onclick = () => finalizeDiscardVariable();
 
 ui.btnRefresh.onclick = () => {
     console.log('🔘 btnRefresh clicked - checking conditions...');
@@ -1361,10 +1465,11 @@ function playAITurnRandom() {
 
     let isFaceDown = true;
 
-    if (targetLine) {
+    if (targetLine && !(typeof isPlayBlockedByPersistent === 'function' && isPlayBlockedByPersistent(targetLine, 'ai'))) {
         isFaceDown = false;
     } else {
-        targetLine = LINES[0]; // fallback: cualquier línea
+        const freeLine = LINES.find(l => !(typeof isPlayBlockedByPersistent === 'function' && isPlayBlockedByPersistent(l, 'ai')));
+        targetLine = freeLine || LINES[0];
         isFaceDown = true;
     }
 
@@ -1387,11 +1492,14 @@ function generateAIPossibleMoves() {
     
     gameState.ai.hand.forEach((card, cardIndex) => {
         LINES.forEach(line => {
+            // Saltar líneas bloqueadas por Plaga 0 del jugador
+            if (typeof isPlayBlockedByPersistent === 'function' && isPlayBlockedByPersistent(line, 'ai')) return;
+
             {
                 // Movimiento bocarriba (si coincide protocolo, compiled lines allowed)
                 const lineIndex = gameState.ai.protocols.indexOf(card.protocol);
                 const lineMatchesProtocol = lineIndex !== -1 && LINES[lineIndex] === line;
-                
+
                 if (lineMatchesProtocol) {
                     moves.push({
                         cardIndex,
@@ -1401,7 +1509,7 @@ function generateAIPossibleMoves() {
                         type: 'face-up',
                     });
                 }
-                
+
                 // Movimiento bocabajo (siempre posible)
                 moves.push({
                     cardIndex,
@@ -1437,7 +1545,6 @@ function executeAIMove(move) {
         return; // endTurn se llama en el caller (playAITurn)
     }
 
-    const card = gameState.ai.hand[move.cardIndex];
     const movedCard = gameState.ai.hand.splice(move.cardIndex, 1)[0];
 
     // Disparar onCover en la carta que quedará cubierta (si existe)
@@ -1488,6 +1595,7 @@ function endTurn(who) {
             // AI discards randomly
             while(gameState.ai.hand.length > 5) {
                 gameState.ai.trash.push(gameState.ai.hand.pop());
+                gameState.discardedSinceLastCheck.ai = true;
             }
         }
     }
@@ -1498,7 +1606,6 @@ function endTurn(who) {
 function continueEndTurn(who) {
     updateUI();
     gameState.phase = 'end';
-
     if (typeof onTurnEndEffects === 'function') {
         onTurnEndEffects(who);
     }
