@@ -50,7 +50,7 @@ const CARDS_DATA = {
     {"valor": 6, "nombre": "Gravedad 6", "fase": "Action", "h_inicio": "", "h_accion": "Tu oponente juega bocabajo la carta superior de su mazo en esta línea.", "h_final": ""}
   ],
   "Vida": [
-    {"valor": 0, "nombre": "Vida 0", "fase": "End",    "h_inicio": "", "h_accion": "En cada línea donde tengas al menos 1 carta, juega bocabajo la carta superior de tu mazo.", "h_final": "Final: Si esta carta está cubierta, elimina esta carta."},
+    {"valor": 0, "nombre": "Vida 0", "fase": "Action", "h_inicio": "Final: Si esta carta está cubierta, elimina esta carta.", "h_accion": "En cada línea donde tengas al menos 1 carta, juega bocabajo la carta superior de tu mazo.", "h_final": ""},
     {"valor": 1, "nombre": "Vida 1", "fase": "Action", "h_inicio": "", "h_accion": "Voltea 1 carta. Voltea 1 carta.", "h_final": ""},
     {"valor": 2, "nombre": "Vida 2", "fase": "Action", "h_inicio": "", "h_accion": "Roba 1 carta. Puedes voltear 1 carta que esté bocabajo.", "h_final": ""},
     {"valor": 3, "nombre": "Vida 3", "fase": "Action", "h_inicio": "", "h_accion": "", "h_final": "Si se cubre esta carta: Primero, juega bocabajo la carta superior de tu mazo en otra línea."},

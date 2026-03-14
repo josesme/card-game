@@ -152,7 +152,7 @@ const CARD_EFFECTS = {
   'Gravedad 1': {
     onPlay: [
       { action: 'draw', target: 'self', count: 2 },
-      { action: 'shift', target: 'any', count: 1 }
+      { action: 'shift', target: 'any', count: 1, gravityConstraint: true }
     ]
   },
 
@@ -185,8 +185,11 @@ const CARD_EFFECTS = {
     onPlay: [
       { action: 'playTopDeckAllLines', target: 'self', faceDown: true }
     ],
+    onTurnStart: [
+      { action: 'warnIfCovered', target: 'self' }
+    ],
     onTurnEnd: [
-      { action: 'deleteSelfIfCovered', target: 'self' }
+      { action: 'deleteSelfIfCoveredAndWarned', target: 'self' }
     ]
   },
 
@@ -206,7 +209,7 @@ const CARD_EFFECTS = {
 
   'Vida 3': {
     onCover: [
-      { action: 'playTopDeckFaceDownOtherLines', target: 'self' }
+      { action: 'playTopDeckFaceDownChooseLine', target: 'self' }
     ]
   },
 
@@ -929,7 +932,10 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
     }
 
     case 'shift':
-      startEffect('shift', resolvedTarget, count || 1);
+      startEffect('shift', resolvedTarget, count || 1, {
+        gravityConstraint: actionDef.gravityConstraint || false,
+        effectLine: gameState.currentEffectLine  // capturado ahora, no en el click
+      });
       break;
 
     case 'return':
@@ -1066,9 +1072,9 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
 
     case 'mayFlip':
       if (targetPlayer === 'player') {
-        startEffect('flip', resolvedTarget === 'any' ? 'any' : resolvedTarget, count || 1);
+        startEffect('flip', resolvedTarget === 'any' ? 'any' : resolvedTarget, count || 1, { filter: 'faceDown' });
       } else {
-        resolveAbilityAction({ action: 'flip', target, count }, targetPlayer);
+        resolveAbilityAction({ action: 'flip', target, count, filter: 'faceDown' }, targetPlayer);
       }
       break;
 
@@ -1098,7 +1104,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       if (!selfLine) { processAbilityEffect(); break; }
       if (targetPlayer === 'player') {
         gameState.effectContext = { type: 'shiftSelf', sourceLine: selfLine, target: 'player', count: 1, selected: [] };
-        updateStatus('¿Quieres mover Espíritu 3? Elige línea destino (o la misma para cancelar)');
+        updateStatus('Espíritu 3: elige línea destino para desplazarse (misma línea = cancelar)');
         highlightSelectableLines();
       } else {
         // IA: mover a línea aleatoria distinta
@@ -1247,7 +1253,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       // Let the current player play one more card immediately
       if (targetPlayer === 'player') {
         gameState.pendingPlayCard = true;
-        updateStatus('¡JUEGA otra carta ahora!');
+        updateStatus('Juega una carta adicional este turno');
       } else {
         // AI plays a random card from hand if available
         if (gameState.ai.hand.length > 0) {
@@ -1298,12 +1304,31 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       break;
     }
 
+    case 'playTopDeckFaceDownChooseLine': {
+      // Vida 3: elige una línea diferente y coloca bocabajo la carta superior del mazo
+      const sourceLine = gameState.currentEffectLine;
+      if (gameState[targetPlayer].deck.length === 0) { processAbilityEffect(); break; }
+      if (targetPlayer === 'player') {
+        gameState.effectContext = { type: 'playTopDeckFaceDownChooseLine', sourceLine, owner: 'player', selected: [], count: 1 };
+        gameState.effectContext.waitingForLine = true;
+        updateStatus('Vida 3: elige una línea donde colocar una carta bocabajo');
+        highlightSelectableLines(sourceLine);
+      } else {
+        const others = LINES.filter(l => l !== sourceLine);
+        const dest = others[Math.floor(Math.random() * others.length)];
+        const topCard = gameState[targetPlayer].deck.pop();
+        gameState.field[dest][targetPlayer].push({ card: topCard, faceDown: true });
+        processAbilityEffect();
+      }
+      break;
+    }
+
     case 'revealOpponentHand': {
       // Show opponent hand to the player
       if (targetPlayer === 'player') {
         const hand = gameState.ai.hand;
         const names = hand.map(c => `${c.nombre} (${c.valor})`).join(', ');
-        updateStatus(`Mano rival: ${names || '(vacía)'}`);
+        updateStatus(`Mano del oponente: ${names || '(vacía)'}`);
         // Keep message for 4 seconds then continue
         setTimeout(() => processAbilityEffect(), 4000);
       } else {
@@ -1321,9 +1346,9 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
         // Draw it
         gameState[targetPlayer].deck.pop();
         gameState[targetPlayer].hand.push(topCard);
-        updateStatus(`¡Carta revelada del mazo: ${topCard.nombre} — robada!`);
+        updateStatus(`Carta del mazo revelada: ${topCard.nombre} — añadida a mano`);
       } else {
-        updateStatus(`Carta revelada del mazo: ${topCard.nombre} — devuelta.`);
+        updateStatus(`Carta del mazo revelada: ${topCard.nombre} — devuelta al mazo`);
       }
       processAbilityEffect();
       break;
@@ -1402,7 +1427,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
         // Let player pick destination line
         gameState.effectContext = { type: 'moveAllFaceDown', sourceLine, owner: 'player', selected: [], count: 1 };
         gameState.effectContext.waitingForLine = true;
-        updateStatus('Elige la línea destino para mover tus cartas bocabajo');
+        updateStatus('Elige línea destino para desplazar todas tus cartas bocabajo');
         highlightSelectableLines();
       } else {
         // AI picks a random other line
@@ -1477,18 +1502,44 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       break;
     }
 
-    case 'deleteSelfIfCovered': {
-      // Vida 0 errata: at end of turn, if this card is covered (not the top of its stack), eliminate it
+    case 'warnIfCovered': {
+      // Vida 0: al inicio del turno, si está cubierta activa el aviso
       const line = gameState.currentEffectLine;
       if (line) {
         const stack = gameState.field[line][targetPlayer];
-        // Eliminate any Vida 0 cards that are covered (not at the top of the stack)
         for (let i = stack.length - 2; i >= 0; i--) {
           if (stack[i].card.nombre === 'Vida 0' && !stack[i].faceDown) {
-            const [removed] = stack.splice(i, 1);
-            gameState[targetPlayer].trash.push(removed.card);
+            stack[i].coveredWarning = true;
+            updateStatus('Vida 0 cubierta — si sigue cubierta al final del turno, se elimina');
           }
         }
+      }
+      processAbilityEffect();
+      break;
+    }
+
+    case 'deleteSelfIfCoveredAndWarned': {
+      // Vida 0: al final del turno, si tiene el aviso activo y sigue cubierta, se elimina
+      const line = gameState.currentEffectLine;
+      if (line) {
+        const stack = gameState.field[line][targetPlayer];
+        for (let i = stack.length - 2; i >= 0; i--) {
+          if (stack[i].card.nombre === 'Vida 0' && !stack[i].faceDown) {
+            if (stack[i].coveredWarning) {
+              const [removed] = stack.splice(i, 1);
+              gameState[targetPlayer].trash.push(removed.card);
+              updateStatus('Vida 0 eliminada por seguir cubierta');
+            } else {
+              // Cubierta pero sin aviso previo: no se elimina este turno
+              stack[i].coveredWarning = false;
+            }
+          } else if (stack[i].card.nombre === 'Vida 0') {
+            stack[i].coveredWarning = false; // descubierta: resetear flag
+          }
+        }
+        // Si Vida 0 está en cima (no cubierta), resetear flag
+        const top = stack[stack.length - 1];
+        if (top && top.card.nombre === 'Vida 0') top.coveredWarning = false;
       }
       processAbilityEffect();
       break;
@@ -1672,29 +1723,16 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
     }
 
     case 'discardForDraw': {
-      // Fuego 4: descarta N cartas (a elección), luego roba N+1
+      // Fuego 4: descarta 1+ cartas obligatorio, luego roba N+1
       if (targetPlayer === 'player') {
-        const confirmArea = document.getElementById('command-confirm');
-        const confirmMsg = document.getElementById('confirm-msg');
-        const btnYes = document.getElementById('btn-confirm-yes');
-        const btnNo = document.getElementById('btn-confirm-no');
-        if (confirmArea && btnYes && btnNo) {
-          confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = '¿Cuántas cartas descartas? SÍ = 1 carta · NO = todas las de tu mano';
-          btnYes.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectQueue.unshift({ effect: { action: '_drawAfterDiscard', discarded: 1 }, targetPlayer });
-            startEffect('discard', 'player', 1);
-          };
-          btnNo.onclick = () => {
-            confirmArea.classList.add('hidden');
-            const n = gameState.player.hand.length;
-            gameState.effectQueue.unshift({ effect: { action: '_drawAfterDiscard', discarded: n }, targetPlayer });
-            startEffect('discard', 'player', n);
-          };
-        } else {
+        if (gameState.player.hand.length === 0) {
+          draw('player', 1);
           processAbilityEffect();
+          break;
         }
+        // Primera descarta es obligatoria; el loop continúa con _discardForDrawLoop
+        gameState.effectQueue.unshift({ effect: { action: '_discardForDrawLoop', discardedSoFar: 1 }, targetPlayer });
+        startEffect('discard', 'player', 1);
       } else {
         const n = Math.max(1, Math.floor(gameState.ai.hand.length / 2));
         discard('ai', n);
@@ -1704,10 +1742,35 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       break;
     }
 
-    case '_drawAfterDiscard': {
-      const n = actionDef.discarded || 0;
-      draw(targetPlayer, n + 1);
-      processAbilityEffect();
+    case '_discardForDrawLoop': {
+      // Continúa el loop de descarte de Fuego 4
+      const n = actionDef.discardedSoFar || 0;
+      const handSize = gameState.player.hand.length;
+      if (handSize === 0 || targetPlayer !== 'player') {
+        draw(targetPlayer, n + 1);
+        processAbilityEffect();
+        break;
+      }
+      const confirmArea = document.getElementById('command-confirm');
+      const confirmMsg = document.getElementById('confirm-msg');
+      const btnYes = document.getElementById('btn-confirm-yes');
+      const btnNo = document.getElementById('btn-confirm-no');
+      if (!confirmArea) { draw('player', n + 1); processAbilityEffect(); break; }
+      gameState.effectContext = { type: 'confirm', selected: [] };
+      confirmArea.classList.remove('hidden');
+      confirmMsg.textContent = `¿Descartas otra carta? Robas ${n + 1} si paras ahora.`;
+      btnYes.onclick = () => {
+        confirmArea.classList.add('hidden');
+        gameState.effectContext = null;
+        gameState.effectQueue.unshift({ effect: { action: '_discardForDrawLoop', discardedSoFar: n + 1 }, targetPlayer });
+        startEffect('discard', 'player', 1);
+      };
+      btnNo.onclick = () => {
+        confirmArea.classList.add('hidden');
+        gameState.effectContext = null;
+        draw('player', n + 1);
+        processAbilityEffect();
+      };
       break;
     }
 
@@ -1795,7 +1858,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       if (targetPlayer === 'player') {
         gameState.pendingPlayCard = true;
         gameState.selectionModeFaceUp = false; // fuerza bocabajo
-        updateStatus('Elige una carta y una línea diferente para jugarla bocabajo');
+        updateStatus('Oscuridad 3: coloca una carta bocabajo en otra línea');
       } else {
         if (gameState.ai.hand.length > 0) {
           const cardIdx = Math.floor(Math.random() * gameState.ai.hand.length);
@@ -1961,7 +2024,8 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       const line = gameState.currentEffectLine;
       if (!line) { processAbilityEffect(); break; }
       const stack = gameState.field[line][targetPlayer];
-      const pairs = Math.floor(stack.length / 2);
+      const totalInLine = gameState.field[line].player.length + gameState.field[line].ai.length;
+      const pairs = Math.floor(totalInLine / 2);
       for (let i = 0; i < pairs; i++) {
         if (gameState[targetPlayer].deck.length > 0) {
           const top = gameState[targetPlayer].deck.pop();
@@ -1978,7 +2042,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       const destLine = gameState.currentEffectLine;
       gameState.effectQueue.unshift({ effect: { action: '_shiftLastFlippedToLine', destLine }, targetPlayer });
       if (targetPlayer === 'player') {
-        startEffect('flip', resolvedTarget === 'any' ? 'any' : resolvedTarget, count || 1);
+        startEffect('flip', resolvedTarget === 'any' ? 'any' : resolvedTarget, count || 1, { excludeLine: destLine });
       } else {
         const validLines = LINES.filter(l => l !== destLine && gameState.field[l][opponent].length > 0);
         if (validLines.length > 0) {
@@ -2016,7 +2080,12 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       // Gravedad 4: mueve 1 carta bocabajo desde otra línea a esta
       const destLine = gameState.currentEffectLine;
       if (targetPlayer === 'player') {
-        startEffect('shift', 'any', 1);
+        startEffect('shift', 'any', 1, {
+          filter: 'faceDown',
+          gravityConstraint: true,
+          effectLine: destLine,
+          excludeLine: destLine  // fuente no puede ser esta misma línea
+        });
       } else {
         const srcLines = LINES.filter(l => l !== destLine && gameState.field[l].ai.some(c => c.faceDown));
         if (srcLines.length > 0) {
@@ -2347,6 +2416,7 @@ function onTurnEndEffects(player) {
  * Incluye cartas cubiertas (faceDown=false aunque no sean la carta superior).
  */
 function onDrawEffects(player) {
+  const savedLine = gameState.currentEffectLine;
   LINES.forEach(line => {
     if (gameState.ignoreEffectsLines && gameState.ignoreEffectsLines[line]) return;
     gameState.currentEffectLine = line;
@@ -2356,6 +2426,7 @@ function onDrawEffects(player) {
       }
     });
   });
+  gameState.currentEffectLine = savedLine;
 }
 
 // ============================================================================

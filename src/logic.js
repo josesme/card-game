@@ -18,8 +18,6 @@ const ui = {
     aiTrashCount: document.getElementById('ai-trash-count'),
     playerHand: document.getElementById('player-hand'),
     aiHand: document.getElementById('ai-hand'),
-    playerStatus: document.getElementById('player-status'),
-    aiStatus: document.getElementById('ai-status'),
     actionModal: document.getElementById('action-modal'),
     modalCardPreview: document.getElementById('modal-card-preview'),
     btnPlayUp: document.getElementById('btn-play-up'),
@@ -175,6 +173,21 @@ function initLineListeners() {
 
 function handleShiftTargetLine(destinationLine) {
     const ctx = gameState.effectContext;
+    console.log(`🔀 handleShiftTargetLine: dest=${destinationLine}, selectedCard=${JSON.stringify(ctx?.selectedCard)}, currentEffectLine=${gameState.currentEffectLine}`);
+
+    if (ctx.type === 'playTopDeckFaceDownChooseLine') {
+        console.log(`  → playTopDeckFaceDownChooseLine: sourceLine=${ctx.sourceLine}, dest=${destinationLine}`);
+        if (destinationLine === ctx.sourceLine) {
+            updateStatus('Elige una línea diferente a la de Vida 3');
+            return;
+        }
+        if (gameState[ctx.owner].deck.length > 0) {
+            const topCard = gameState[ctx.owner].deck.pop();
+            gameState.field[destinationLine][ctx.owner].push({ card: topCard, faceDown: true });
+        }
+        finishEffect();
+        return;
+    }
 
     if (ctx.type === 'moveAllFaceDown') {
         // Move all face-down cards from sourceLine to destinationLine
@@ -469,7 +482,7 @@ function startTurn(who) {
     gameState.turn = who;
     gameState.phase = 'start';
     gameState.ignoreEffectsLines = {};
-    updateStatus(`${who === 'player' ? 'Tu' : 'IA'} Turno: Fase Inicio`);
+    updateStatus(`--- Turno de ${who === 'player' ? 'Jugador' : 'IA'} ---`);
     
     // NUEVO: Disparar efectos de inicio de turno
     if (typeof onTurnStartEffects === 'function') {
@@ -483,7 +496,7 @@ function startTurn(who) {
 function checkCompilePhase(who) {
     gameState.phase = 'check_compile';
     console.log(`📋 Checking compile phase for ${who}`);
-    updateStatus(`Fase: Comprobar Compilación`);
+    updateStatus(`Comprobando compilaciones...`);
     
     let compiledAny = false;
     for (const line of LINES) {
@@ -517,7 +530,7 @@ function checkCompilePhase(who) {
 function actionPhase(who) {
     gameState.phase = 'action';
     console.log(`🎮 ACTION PHASE for ${who} - game is now playable`);
-    updateStatus(who === 'player' ? 'Tu Turno: Juega una carta o Recarga' : 'IA pensando...');
+    updateStatus(who === 'player' ? 'Juega una carta o Recarga' : 'IA eligiendo acción...');
     
     if (who === 'ai') {
         setTimeout(playAITurn, 1500);
@@ -526,21 +539,23 @@ function actionPhase(who) {
 
 function compileLine(line, who) {
     const rival = who === 'player' ? 'ai' : 'player';
-    const isFirstCompile = gameState.field[line].compiledBy === null;
+    const previousOwner = gameState.field[line].compiledBy;
 
-    if (isFirstCompile) {
-        // Primera compilación de la línea: crédito normal
-        gameState.field[line].compiledBy = who;
-        updateStatus(`¡${who === 'player' ? 'Has' : 'IA ha'} compilado ${line}!`);
-    } else {
-        // Compilaciones sucesivas: robar carta superior del mazo rival
+    console.log(`📦 compileLine: line=${line}, who=${who}, previousOwner=${previousOwner}, player cards=${gameState.field[line].player.length}, ai cards=${gameState.field[line].ai.length}`);
+
+    if (previousOwner === who) {
+        // Mismo jugador re-compila su propia línea: roba carta superior del mazo rival
         if (gameState[rival].deck.length > 0) {
             const stolenCard = gameState[rival].deck.pop();
             gameState[who].hand.push(stolenCard);
-            updateStatus(`¡${who === 'player' ? 'Compilaste' : 'IA compiló'} ${line} y robó una carta rival!`);
+            updateStatus(`¡${who === 'player' ? 'Re-compilaste' : 'IA re-compiló'} ${line} y robó una carta rival!`);
         } else {
-            updateStatus(`¡${who === 'player' ? 'Compilaste' : 'IA compiló'} ${line}! (mazo rival vacío)`);
+            updateStatus(`¡${who === 'player' ? 'Re-compilaste' : 'IA re-compiló'} ${line}! (mazo rival vacío)`);
         }
+    } else {
+        // Primera compilación o rival toma la línea: crédito normal, cambiar dueño
+        gameState.field[line].compiledBy = who;
+        updateStatus(`¡${who === 'player' ? 'Has' : 'IA ha'} compilado ${line}!`);
     }
 
     // Crédito de victoria: solo se cuenta una vez por línea por jugador
@@ -754,7 +769,7 @@ function startEffect(type, target, count, opts = {}) {
     // Si es eliminate/flip/return/shift y no hay cartas válidas en campo, saltar efecto
     if (type === 'eliminate' || type === 'flip' || type === 'return' || type === 'shift') {
         const filterCtx = { filter: opts.filter, maxVal: opts.maxVal, minVal: opts.minVal };
-        const linesToCheck = opts.forceLine ? [opts.forceLine] : LINES;
+        const linesToCheck = (opts.forceLine ? [opts.forceLine] : LINES).filter(l => l !== opts.excludeLine);
         const targets = target === 'any' ? ['player', 'ai'] : [target];
         const hasValid = linesToCheck.some(l =>
             targets.some(p => {
@@ -782,7 +797,7 @@ function startEffect(type, target, count, opts = {}) {
     else if (type === 'rearrange') actionVerb = 'REORGANIZAR';
     
     const targetDesc = target === 'ai' ? ' del OPONENTE' : target === 'player' ? ' TUYAS' : '';
-    updateStatus(`COMANDO: Elige ${count} carta(s)${targetDesc} para ${actionVerb}`);
+    updateStatus(`Efecto: elige ${count} carta(s)${targetDesc} para ${actionVerb}`);
     highlightEffectTargets();
 }
 
@@ -805,6 +820,7 @@ function highlightEffectTargets() {
     } else if (ctx.type === 'eliminate' || ctx.type === 'flip' || ctx.type === 'return') {
         const linesToCheck = ctx.forceLine ? [ctx.forceLine] : LINES;
         linesToCheck.forEach(l => {
+            if (ctx.excludeLine && l === ctx.excludeLine) return;
             ['player', 'ai'].forEach(p => {
                 if (ctx.target !== 'any' && ctx.target !== p) return;
                 const stack = gameState.field[l][p];
@@ -841,6 +857,28 @@ function highlightEffectTargets() {
                 : `🔀 Elige el primer protocolo a intercambiar`;
             banner.classList.add('visible');
         }
+    } else if (ctx.type === 'shift') {
+        LINES.forEach(l => {
+            if (ctx.excludeLine && l === ctx.excludeLine) return;
+            ['player', 'ai'].forEach(p => {
+                if (ctx.target !== 'any' && ctx.target !== p) return;
+                const stack = gameState.field[l][p];
+                if (stack.length === 0) return;
+                const topCard = stack[stack.length - 1];
+                if (ctx.filter && !cardMatchesFilter(topCard, ctx)) return;
+                const stackEl = document.querySelector(`#line-${l} .${p}-stack`);
+                if (stackEl) stackEl.classList.add('targeting');
+            });
+        });
+        const banner = document.getElementById('discard-banner');
+        if (banner) {
+            const gravLine = ctx.effectLine;
+            const filterDesc = ctx.filter === 'faceDown' ? ' bocabajo' : '';
+            banner.textContent = `🔀 Elige una carta${filterDesc} para DESPLAZAR (de/hacia ${gravLine || 'esta línea'})`;
+            banner.classList.add('visible');
+        }
+    } else if (ctx.type === 'confirm') {
+        // No highlighting needed, just the confirm dialog
     } else if (ctx.type === 'massDeleteByValueRange') {
         LINES.forEach(l => {
             const lineEl = document.getElementById(`line-${l}`);
@@ -936,17 +974,29 @@ function handleFieldCardClick(line, target, cardIdx) {
         ctx.selected.push(cardObj);
     } else if (ctx.type === 'flip') {
         const cardObj = gameState.field[line][target][cardIdx];
+        if (ctx.excludeLine && line === ctx.excludeLine) return;
         if (ctx.excludeCardName && cardObj.card.nombre === ctx.excludeCardName) return;
+        if (ctx.filter && !cardMatchesFilter(cardObj, ctx)) return;
         cardObj.faceDown = !cardObj.faceDown;
         gameState.lastFlippedCard = { cardObj, line };
         ctx.selected.push(cardObj);
     } else if (ctx.type === 'shift') {
-        // Shift needs a second step: pick target line
+        const cardObj = gameState.field[line][target][cardIdx];
+        // Bloquear línea excluida (ej. Gravedad 4: fuente no puede ser la propia línea)
+        if (ctx.excludeLine && line === ctx.excludeLine) return;
+        // Bloquear si el filtro no pasa (ej. solo bocabajo)
+        if (ctx.filter && !cardMatchesFilter(cardObj, ctx)) return;
         ctx.selectedCard = { line, target, cardIdx };
         ctx.waitingForLine = true;
-        updateStatus("Ahora elige la línea de destino...");
         clearEffectHighlights();
-        highlightSelectableLines(); // Reuse existing line highlight logic
+        // Si la carta viene de OTRA línea con gravityConstraint, destino forzado a effectLine
+        if (ctx.gravityConstraint && ctx.effectLine && line !== ctx.effectLine) {
+            handleShiftTargetLine(ctx.effectLine);
+            return;
+        }
+        // Si viene de la línea actual (o no hay restricción), elegir línea destino
+        updateStatus("Elige la línea de destino para desplazar...");
+        highlightSelectableLines();
         return; 
     } else if (ctx.type === 'return') {
         const cardObj = gameState.field[line][target].splice(cardIdx, 1)[0];
@@ -969,7 +1019,7 @@ function handleFieldCardClick(line, target, cardIdx) {
                 ctx.selected.push({ first, second });
             } else {
                 ctx.firstProtocol = null;
-                updateStatus("Selección cancelada. Elige el primer protocolo.");
+                updateStatus("Intercambio cancelado. Elige la primera carta.");
                 return;
             }
         }
@@ -1068,14 +1118,17 @@ function resolveEffectAI(type, target, count, opts = {}) {
             }
         }
     }
-    updateStatus(`IA resolvió comando: ${type} sobre ${actualTarget}`);
+    const typeLabels = { discard: 'descartó', eliminate: 'eliminó', flip: 'volteó', shift: 'desplazó', return: 'devolvió a mano' };
+    const whoLabel = actualTarget === 'player' ? 'tu carta' : 'su carta';
+    updateStatus(`IA ${typeLabels[type] || type} ${whoLabel}`);
+    if (typeof processAbilityEffect === 'function') processAbilityEffect();
 }
 
 function draw(target, count) {
     for (let i = 0; i < count; i++) {
         drawCard(target);
     }
-    updateStatus(`${target === 'player' ? 'Has' : 'IA ha'} robado ${count} carta(s)`);
+    updateStatus(`${target === 'player' ? 'Robas' : 'IA roba'} ${count} carta${count !== 1 ? 's' : ''}`);
     if (typeof onDrawEffects === 'function') onDrawEffects(target);
 }
 
@@ -1087,7 +1140,7 @@ function discard(target, count) {
             gameState[target].trash.push(card);
         }
     }
-    updateStatus(`${target === 'player' ? 'Has' : 'IA ha'} descartado ${count} carta(s)`);
+    updateStatus(`${target === 'player' ? 'Descartas' : 'IA descarta'} ${count} carta${count !== 1 ? 's' : ''}`);
 }
 
 function flipCardInField(cardId) {
@@ -1111,7 +1164,7 @@ function playSelectedCard(isFaceDown) {
     if (isFaceDown) {
         // Enter selection mode for any non-compiled line
         gameState.selectionMode = true;
-        updateStatus("Elige una línea para jugar bocabajo...");
+        updateStatus("Elige línea para colocar la carta bocabajo...");
         console.log('📍 Selection mode ON - choose line for face-down play');
         highlightSelectableLines();
         return;
@@ -1127,7 +1180,7 @@ function playSelectedCard(isFaceDown) {
         console.log(`✅ Playing face-up (any protocol allowed): ${card.nombre}`);
         gameState.selectionMode = true;
         gameState.selectionModeFaceUp = true;
-        updateStatus("Espíritu 1 activo — elige cualquier línea para jugar bocarriba...");
+        updateStatus("Espíritu 1: elige línea para colocar la carta bocarriba...");
         highlightSelectableLines();
     } else {
         console.error("❌ Illegal face-up play: protocol has no matching line", {
@@ -1136,23 +1189,18 @@ function playSelectedCard(isFaceDown) {
     }
 }
 
-function highlightSelectableLines() {
-    console.log('🎯 Highlighting selectable lines for face-down play');
+function highlightSelectableLines(excludeLine) {
     LINES.forEach(line => {
+        if (excludeLine && line === excludeLine) return;
         const lineEl = document.getElementById(`line-${line}`);
-        if (!lineEl) {
-            console.warn(`  ⚠️ Line element not found: line-${line}`);
-            return;
-        }
-        lineEl.classList.add('selectable-line');
-        console.log(`  ✅ Highlighted: ${line}`);
+        // line-* tiene display:contents, aplicar al padre (grid row visible)
+        const target = lineEl ? lineEl.parentElement : null;
+        if (target) target.classList.add('selectable-line');
     });
 }
 
 function clearSelectionHighlights() {
-    document.querySelectorAll('.selectable-line').forEach(el => {
-        el.classList.remove('selectable-line');
-    });
+    document.querySelectorAll('.selectable-line').forEach(el => el.classList.remove('selectable-line'));
 }
 
 function finalizePlay(targetLine, isFaceDown) {
@@ -1243,7 +1291,7 @@ function playAITurn() {
     if (gameState.ai.hand.length === 0) {
         while(gameState.ai.hand.length < 5) drawCard('ai');
         console.log('🤖 IA: Recarga (mano vacía)');
-        updateStatus("IA hizo Recarga");
+        updateStatus("IA recarga su mazo");
         endTurn('ai');
         return;
     }
@@ -1266,7 +1314,7 @@ function playAITurn() {
         if (possibleMoves.length === 0) {
             // Sin movimientos disponibles, recargar
             while(gameState.ai.hand.length < 5) drawCard('ai');
-            updateStatus("IA hizo Recarga (sin movimientos)");
+            updateStatus("IA recarga su mazo (sin jugadas posibles)");
             endTurn('ai');
             return;
         }
@@ -1385,7 +1433,7 @@ function executeAIMove(move) {
         while(gameState.ai.hand.length < 5 && gameState.ai.deck.length > 0) {
             drawCard('ai');
         }
-        updateStatus('IA hizo Recarga');
+        updateStatus('IA recarga su mazo');
         return; // endTurn se llama en el caller (playAITurn)
     }
 
@@ -1433,7 +1481,7 @@ function endTurn(who) {
         if (who === 'player') {
             // Interactive: player chooses which cards to discard
             gameState.pendingEndTurnFor = who;
-            updateStatus(`Tienes ${gameState.player.hand.length} cartas — descarta ${excess}`);
+            updateStatus(`Borrar caché — descarta ${excess} carta${excess !== 1 ? 's' : ''}`);
             startEffect('discard', 'player', excess);
             return;
         } else {
@@ -1467,8 +1515,18 @@ function continueEndTurn(who) {
 }
 
 function updateStatus(msg) {
-    if (gameState.turn === 'player') ui.playerStatus.innerText = msg;
-    else ui.aiStatus.innerText = msg;
+    const log = document.getElementById('game-log');
+    if (!log) return;
+    const entry = document.createElement('div');
+    const isAI = gameState.turn === 'ai';
+    const prev = log.querySelector('.log-latest');
+    if (prev) prev.style.color = isAI ? '#ef9999' : '#aaddff';
+    if (prev) prev.classList.remove('log-latest');
+    entry.classList.add('log-latest');
+    entry.style.cssText = `color: #00ff41; font-size: 0.8em; line-height: 1.4; padding: 2px 4px; border-left: 2px solid ${isAI ? '#ef4444' : '#00d4ff'}; padding-left: 6px;`;
+    entry.textContent = msg;
+    log.appendChild(entry);
+    log.scrollTop = log.scrollHeight;
 }
 
 function checkWinCondition() {
