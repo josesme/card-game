@@ -410,7 +410,7 @@ const CARD_EFFECTS = {
     onPlay: [
       { action: 'draw', target: 'self', count: 2 }
     ],
-    onTurnEnd: [
+    onRefresh: [
       { action: 'draw', target: 'self', count: 1 }
     ]
   },
@@ -420,10 +420,10 @@ const CARD_EFFECTS = {
 
   'Velocidad 3': {
     onPlay: [
-      { action: 'swap', target: 'self', count: 1 }
+      { action: 'shift', target: 'self', count: 1 }
     ],
     onTurnEnd: [
-      { action: 'optionalSwapThenFlipSelf', target: 'self' }
+      { action: 'optionalShiftThenFlipSelf', target: 'self' }
     ]
   },
 
@@ -489,7 +489,7 @@ const CARD_EFFECTS = {
   'Oscuridad 1': {
     onPlay: [
       { action: 'flip', target: 'opponent', count: 1 },
-      { action: 'maySwap', target: 'opponent', count: 1 }
+      { action: 'mayShift', target: 'opponent', count: 1 }
     ]
   },
 
@@ -965,6 +965,64 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       }
       break;
 
+    case 'mayShift': {
+      // Oscuridad 1: opcionalmente mover la carta recién volteada a otra línea
+      if (targetPlayer === 'player') {
+        const confirmArea = document.getElementById('command-confirm');
+        const confirmMsg = document.getElementById('confirm-msg');
+        const btnYes = document.getElementById('btn-confirm-yes');
+        const btnNo = document.getElementById('btn-confirm-no');
+        const flipped = gameState.lastFlippedCard;
+        if (confirmArea && btnYes && btnNo && flipped) {
+          gameState.effectContext = { type: 'confirm' };
+          confirmArea.classList.remove('hidden');
+          confirmMsg.textContent = `¿Quieres cambiar de línea "${flipped.cardObj.card.nombre}"?`;
+          btnYes.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            // Shift forzado a esa carta específica
+            const { cardObj, line } = flipped;
+            const cardIdx = gameState.field[line][resolvedTarget].indexOf(cardObj);
+            if (cardIdx !== -1) {
+              gameState.effectContext = {
+                type: 'shift',
+                target: resolvedTarget,
+                count: 1,
+                selected: [],
+                selectedCard: { line, target: resolvedTarget, cardIdx },
+                waitingForLine: true
+              };
+              updateStatus(`Elige línea destino para "${cardObj.card.nombre}"`);
+              highlightSelectableLines(line);
+            } else {
+              processAbilityEffect();
+            }
+          };
+          btnNo.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            processAbilityEffect();
+          };
+        } else {
+          processAbilityEffect();
+        }
+      } else {
+        // IA: mover la carta recién volteada a línea aleatoria
+        const flipped = gameState.lastFlippedCard;
+        if (flipped) {
+          const { cardObj, line } = flipped;
+          const cardIdx = gameState.field[line][resolvedTarget]?.indexOf(cardObj);
+          if (cardIdx !== undefined && cardIdx !== -1) {
+            const dest = LINES.filter(l => l !== line)[Math.floor(Math.random() * 2)];
+            gameState.field[line][resolvedTarget].splice(cardIdx, 1);
+            gameState.field[dest][resolvedTarget].push(cardObj);
+          }
+        }
+        processAbilityEffect();
+      }
+      break;
+    }
+
     case 'swapCard':
       startEffect('swap', resolvedTarget === 'any' ? 'any' : resolvedTarget, count || 1);
       break;
@@ -1376,25 +1434,49 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
     }
 
     case 'mayReturnAndFlip': {
-      // Optionally return 1 opponent card, then flip 1 card
+      // "Puedes devolver 1 carta del oponente. Si lo haces, voltea esta carta."
       if (targetPlayer === 'player') {
-        // Push flip as next effect in queue, then do return
-        gameState.effectQueue.unshift({
-          effect: { action: 'flip', target: 'any', count: 1 },
-          targetPlayer
-        });
-        startEffect('return', resolvedTarget, count || 1);
-      } else {
-        // AI auto: return random opponent card, then flip random
-        if (gameState.field[gameState.currentEffectLine || 'centro'][resolvedTarget].length > 0) {
-          const l = gameState.currentEffectLine || LINES.find(l => gameState.field[l][resolvedTarget].length > 0);
-          if (l) {
-            const cardObj = gameState.field[l][resolvedTarget].pop();
-            gameState[resolvedTarget].hand.push(cardObj.card);
-          }
+        const confirmArea = document.getElementById('command-confirm');
+        const confirmMsg = document.getElementById('confirm-msg');
+        const btnYes = document.getElementById('btn-confirm-yes');
+        const btnNo = document.getElementById('btn-confirm-no');
+        if (confirmArea && btnYes && btnNo) {
+          gameState.effectContext = { type: 'confirm' };
+          confirmArea.classList.remove('hidden');
+          confirmMsg.textContent = `¿Quieres devolver 1 carta del oponente? (Si lo haces, ${triggerCardName} se voltea)`;
+          btnYes.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            // Si devuelve → encolar flipSelf después del return
+            gameState.effectQueue.unshift({
+              effect: { action: 'flipSelf', target: 'self' },
+              targetPlayer,
+              cardName: triggerCardName
+            });
+            startEffect('return', resolvedTarget, count || 1);
+          };
+          btnNo.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            processAbilityEffect();
+          };
+        } else {
+          processAbilityEffect();
         }
-        // Then flip
-        resolveAbilityAction({ action: 'flip', target: 'any', count: 1 }, targetPlayer);
+      } else {
+        // IA: si hay cartas del oponente en campo, devuelve una y se voltea
+        const l = gameState.currentEffectLine || LINES.find(l => gameState.field[l][resolvedTarget].length > 0);
+        if (l && gameState.field[l][resolvedTarget].length > 0) {
+          const cardObj = gameState.field[l][resolvedTarget].pop();
+          gameState[resolvedTarget].hand.push(cardObj.card);
+          // Voltear Psique 4
+          LINES.forEach(line => {
+            const stack = gameState.field[line][targetPlayer];
+            const self = stack.find(c => c.card.nombre === triggerCardName);
+            if (self) self.faceDown = !self.faceDown;
+          });
+        }
+        processAbilityEffect();
       }
       break;
     }
@@ -1676,7 +1758,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       break;
     }
 
-    case 'optionalSwapThenFlipSelf': {
+    case 'optionalShiftThenFlipSelf': {
       // Velocidad 3 Final: puedes cambiar 1 carta tuya; si lo haces, voltea esta carta
       if (targetPlayer === 'player') {
         const confirmArea = document.getElementById('command-confirm');
@@ -1686,12 +1768,12 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
         if (confirmArea && btnYes && btnNo) {
           gameState.effectContext = { type: 'confirm' };
           confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = '¿Cambias 1 de tus cartas? (Se volteará Velocidad 3 si lo haces)';
+          confirmMsg.textContent = `¿Cambias 1 de tus cartas de línea? (${triggerCardName} se volteará si lo haces)`;
           btnYes.onclick = () => {
             confirmArea.classList.add('hidden');
             gameState.effectContext = null;
-            gameState.effectQueue.unshift({ effect: { action: 'flip', target: 'self', count: 1 }, targetPlayer });
-            startEffect('swap', 'player', 1);
+            gameState.effectQueue.unshift({ effect: { action: 'flipSelf', target: 'self' }, targetPlayer, cardName: triggerCardName });
+            startEffect('shift', 'player', 1);
           };
           btnNo.onclick = () => {
             confirmArea.classList.add('hidden');
@@ -1703,7 +1785,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
         }
       } else {
         if (Math.random() > 0.5) {
-          resolveAbilityAction({ action: 'swap', target: 'self', count: 1 }, targetPlayer);
+          resolveAbilityAction({ action: 'shift', target: 'self', count: 1 }, targetPlayer);
         } else {
           processAbilityEffect();
         }
@@ -1719,19 +1801,22 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
 
     case 'shiftCovered': {
       // Oscuridad 0: cambia 1 carta cubierta del oponente (no la del tope)
+      const hasCovered = LINES.some(l => gameState.field[l][resolvedTarget].length >= 2);
+      if (!hasCovered) {
+        // Sin cartas cubiertas: omitir efecto
+        processAbilityEffect();
+        break;
+      }
       if (targetPlayer === 'player') {
-        // Por ahora usar shift normal — el jugador elige
-        startEffect('shift', resolvedTarget, count || 1);
+        startEffect('shift', resolvedTarget, count || 1, { coveredOnly: true, targetAll: true });
       } else {
-        // IA: mover carta cubierta aleatoria del jugador
-        const validLines = LINES.filter(l => gameState.field[l].player.length >= 2);
-        if (validLines.length > 0) {
-          const l = validLines[Math.floor(Math.random() * validLines.length)];
-          const coveredIdx = Math.floor(Math.random() * (gameState.field[l].player.length - 1));
-          const [cardObj] = gameState.field[l].player.splice(coveredIdx, 1);
-          const dest = LINES.filter(x => x !== l)[Math.floor(Math.random() * 2)];
-          gameState.field[dest].player.push(cardObj);
-        }
+        // IA: mover carta cubierta aleatoria
+        const validLines = LINES.filter(l => gameState.field[l][resolvedTarget].length >= 2);
+        const l = validLines[Math.floor(Math.random() * validLines.length)];
+        const coveredIdx = Math.floor(Math.random() * (gameState.field[l][resolvedTarget].length - 1));
+        const [cardObj] = gameState.field[l][resolvedTarget].splice(coveredIdx, 1);
+        const dest = LINES.filter(x => x !== l)[Math.floor(Math.random() * 2)];
+        gameState.field[dest][resolvedTarget].push(cardObj);
         processAbilityEffect();
       }
       break;
@@ -1740,14 +1825,32 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
     case 'mayFlipCovered': {
       // Oscuridad 2: voltea 1 carta cubierta de esta línea (opcional)
       const line = gameState.currentEffectLine;
+      const hasCoveredInLine = line && gameState.field[line][targetPlayer].length >= 2;
       if (targetPlayer === 'player') {
-        if (line && gameState.field[line][targetPlayer].length >= 2) {
-          startEffect('flip', targetPlayer, 1);
+        if (!hasCoveredInLine) { processAbilityEffect(); break; }
+        const confirmArea = document.getElementById('command-confirm');
+        const confirmMsg = document.getElementById('confirm-msg');
+        const btnYes = document.getElementById('btn-confirm-yes');
+        const btnNo = document.getElementById('btn-confirm-no');
+        if (confirmArea && btnYes && btnNo) {
+          gameState.effectContext = { type: 'confirm' };
+          confirmArea.classList.remove('hidden');
+          confirmMsg.textContent = '¿Quieres voltear una carta cubierta de esta línea?';
+          btnYes.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            startEffect('flip', targetPlayer, 1, { forceLine: line, coveredOnly: true, targetAll: true });
+          };
+          btnNo.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            processAbilityEffect();
+          };
         } else {
           processAbilityEffect();
         }
       } else {
-        if (line && gameState.field[line].ai.length >= 2) {
+        if (hasCoveredInLine && Math.random() > 0.4) {
           const coveredIdx = Math.floor(Math.random() * (gameState.field[line].ai.length - 1));
           gameState.field[line].ai[coveredIdx].faceDown = !gameState.field[line].ai[coveredIdx].faceDown;
         }
@@ -1759,9 +1862,12 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
     case 'playHandFaceDown': {
       // Oscuridad 3: juega 1 carta de tu mano bocabajo en otra línea
       if (targetPlayer === 'player') {
-        gameState.pendingPlayCard = true;
-        gameState.selectionModeFaceUp = false; // fuerza bocabajo
-        updateStatus('Oscuridad 3: coloca una carta bocabajo en otra línea');
+        if (gameState.player.hand.length === 0) { processAbilityEffect(); break; }
+        const excludeLine = gameState.currentEffectLine;
+        gameState.effectContext = { type: 'pickHandFaceDown', excludeLine };
+        updateStatus('Oscuridad 3: elige una carta de tu mano para jugar bocabajo en otra línea');
+        // Resaltar líneas destino disponibles (excluir la línea de Oscuridad 3)
+        if (typeof highlightSelectableLines === 'function') highlightSelectableLines(excludeLine);
       } else {
         if (gameState.ai.hand.length > 0) {
           const cardIdx = Math.floor(Math.random() * gameState.ai.hand.length);
@@ -1778,7 +1884,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
 
     case 'shiftFaceDown': {
       // Oscuridad 4: cambia 1 carta bocabajo de cualquier lugar
-      startEffect('shift', resolvedTarget === 'any' ? 'any' : resolvedTarget, count || 1);
+      startEffect('shift', resolvedTarget === 'any' ? 'any' : resolvedTarget, count || 1, { filter: 'faceDown' });
       break;
     }
 
@@ -2301,6 +2407,23 @@ function onTurnEndEffects(player) {
 }
 
 
+/**
+ * Velocidad 1: dispara onRefresh para cartas bocarriba del jugador que usó Refresh.
+ */
+function onRefreshEffects(player) {
+  LINES.forEach(line => {
+    const stack = gameState.field[line][player];
+    stack.forEach(cardObj => {
+      if (cardObj.faceDown) return;
+      const effectDef = CARD_EFFECTS[cardObj.card.nombre];
+      if (effectDef && effectDef.onRefresh) {
+        gameState.currentEffectLine = line;
+        triggerCardEffect(cardObj.card, 'onRefresh', player);
+      }
+    });
+  });
+}
+
 // ============================================================================
 // 6. INTEGRACIÓN CON CÁLCULO DE VALOR
 // ============================================================================
@@ -2359,14 +2482,31 @@ if (typeof window !== 'undefined') {
   window.onDrawEffects = onDrawEffects;
   window.calculateScoreWithModifiers = calculateScoreWithModifiers;
   window.getPersistentModifiers = getPersistentModifiers;
+  window.onRefreshEffects = onRefreshEffects;
   window.hasAllowAnyProtocol = hasAllowAnyProtocol;
   window.isPlayBlockedByPersistent = isPlayBlockedByPersistent;
+  window.hasForceOpponentFaceDown = hasForceOpponentFaceDown;
 }
 
 /**
  * Devuelve true si alguna carta del jugador con persistent.allowAnyProtocol está descubierta en campo.
  * ERRATA Espíritu 1: mientras esté bocarriba y descubierta, sus cartas bocarriba pueden jugarse en cualquier línea.
  */
+/**
+ * Devuelve true si el oponente de `player` tiene Psique 1 bocarriba en campo.
+ * Mientras esté activa, `player` solo puede jugar bocabajo.
+ */
+function hasForceOpponentFaceDown(player) {
+  const opponent = player === 'player' ? 'ai' : 'player';
+  return LINES.some(line => {
+    return gameState.field[line][opponent].some(cardObj => {
+      if (cardObj.faceDown) return false;
+      const effectDef = CARD_EFFECTS[cardObj.card.nombre];
+      return effectDef && effectDef.persistent && effectDef.persistent.effect === 'forceOpponentFaceDown';
+    });
+  });
+}
+
 function hasAllowAnyProtocol(player) {
   return LINES.some(line => {
     const stack = gameState.field[line][player];
