@@ -75,8 +75,10 @@ let gameState = {
     pendingTurnEnd: null,       // set when finalizePlay is waiting for effects to resolve
     pendingCompileShift: null,  // Velocidad 2: card to move after compile
     discardedSinceLastCheck: { player: false, ai: false },  // flag consumido por Plaga 1 al robar
-    drawnSinceLastCheck: { player: false, ai: false },      // flag consumido por Espíritu 3 al cambiar
+    drawnSinceLastCheck: { player: false, ai: false },      // flag: robó cartas este turno
+    drawnLastTurn: { player: false, ai: false },            // snapshot al inicio de turno (para Espíritu 3)
     uncoveredThisTurn: new Set(),                           // IDs de cartas ya activadas por onUncovered este turno
+    pendingLanding: null,                                   // carta en commit queue: aterriza tras resolver onCover
 };
 
 function createDeckForPlayer(target) {
@@ -164,7 +166,7 @@ function initLineListeners() {
             console.warn(`Line element not found: line-${line}`);
             return;
         }
-        lineEl.onclick = () => {
+        const handler = () => {
             if (gameState.selectionMode) {
                 finalizePlay(line, !gameState.selectionModeFaceUp);
                 gameState.selectionModeFaceUp = false;
@@ -172,6 +174,9 @@ function initLineListeners() {
                 handleShiftTargetLine(line);
             }
         };
+        lineEl.onclick = handler;
+        // line-* tiene display:contents — el área visual está en el padre
+        if (lineEl.parentElement) lineEl.parentElement.onclick = handler;
     });
 }
 
@@ -501,8 +506,11 @@ function startTurn(who) {
     gameState.phase = 'start';
     gameState.ignoreEffectsLines = {};
     gameState.uncoveredThisTurn = new Set();
+    // Snapshot del flag de robo del turno anterior (para Espíritu 3), luego resetear
+    gameState.drawnLastTurn = { player: gameState.drawnSinceLastCheck.player, ai: gameState.drawnSinceLastCheck.ai };
+    gameState.drawnSinceLastCheck = { player: false, ai: false };
     updateStatus(`--- Turno de ${who === 'player' ? 'Jugador' : 'IA'} ---`);
-    
+
     // NUEVO: Disparar efectos de inicio de turno
     if (typeof onTurnStartEffects === 'function') {
         onTurnStartEffects(who);
@@ -1106,10 +1114,43 @@ function handleFieldCardClick(line, target, cardIdx) {
     }
 }
 
+/**
+ * Aterriza la carta en commit queue (pendingLanding) tras resolver onCover.
+ * Dispara onPlay si es bocarriba, luego continúa el turno.
+ */
+function landPendingCard() {
+    const { line, cardObj, owner, isFaceDown } = gameState.pendingLanding;
+    gameState.pendingLanding = null;
+    gameState.field[line][owner].push(cardObj);
+    updateUI();
+    if (!isFaceDown) {
+        gameState.currentEffectLine = line;
+        if (owner === 'player') {
+            executeEffect(cardObj.card, 'player');
+            if (gameState.effectContext || gameState.effectQueue.length > 0) {
+                gameState.pendingTurnEnd = 'player';
+                return;
+            }
+            endTurn('player');
+        } else {
+            executeEffect(cardObj.card, 'ai');
+        }
+    } else {
+        if (owner === 'player') endTurn('player');
+        // AI face-down: endTurn se llama desde playAITurn al volver
+    }
+}
+
 function finishEffect() {
     gameState.effectContext = null;
     clearEffectHighlights();
     updateUI();
+
+    // Si hay carta en commit queue esperando aterrizar, aterrizarla ahora
+    if (gameState.pendingLanding && gameState.effectQueue.length === 0) {
+        landPendingCard();
+        return;
+    }
 
     // If this was the end-of-turn discard, resume end turn flow
     if (gameState.pendingEndTurnFor) {
@@ -1266,17 +1307,17 @@ function playSelectedCard(isFaceDown) {
     }
 
     // Face-up play: protocol must match the line (compiled lines allowed)
-    // ERRATA Espíritu 1: if allowAnyProtocol is active, any line is valid
+    // Espíritu 1: si allowAnyProtocol está activo, el jugador elige línea libremente
     const idx = gameState.player.protocols.indexOf(card.protocol);
-    if (idx !== -1) {
-        console.log(`✅ Playing face-up: ${card.nombre} on line ${LINES[idx]}`);
-        finalizePlay(LINES[idx], false);
-    } else if (typeof hasAllowAnyProtocol === 'function' && hasAllowAnyProtocol('player')) {
+    if (typeof hasAllowAnyProtocol === 'function' && hasAllowAnyProtocol('player')) {
         console.log(`✅ Playing face-up (any protocol allowed): ${card.nombre}`);
         gameState.selectionMode = true;
         gameState.selectionModeFaceUp = true;
         updateStatus("Espíritu 1: elige línea para colocar la carta bocarriba...");
         highlightSelectableLines();
+    } else if (idx !== -1) {
+        console.log(`✅ Playing face-up: ${card.nombre} on line ${LINES[idx]}`);
+        finalizePlay(LINES[idx], false);
     } else {
         console.error("❌ Illegal face-up play: protocol has no matching line", {
             protocol: card.protocol,
@@ -1315,21 +1356,38 @@ function finalizePlay(targetLine, isFaceDown) {
     const card = gameState.player.hand[gameState.selectedCardIndex];
     const playedCard = { card: card, faceDown: isFaceDown };
 
-    // Mover carta a campo y quitar de mano antes de disparar cualquier efecto
+    // Detectar carta que quedará cubierta (commit queue: onCover debe resolver antes de aterrizar)
     const playerStack = gameState.field[targetLine].player;
     const topCardBeforePush = (playerStack.length > 0 && !playerStack[playerStack.length - 1].faceDown)
         ? playerStack[playerStack.length - 1] : null;
+    const topHasOnCover = topCardBeforePush &&
+        typeof CARD_EFFECTS !== 'undefined' &&
+        CARD_EFFECTS[topCardBeforePush.card.nombre]?.onCover;
 
-    gameState.field[targetLine].player.push(playedCard);
+    // Quitar de mano antes de disparar cualquier efecto
     gameState.player.hand.splice(gameState.selectedCardIndex, 1);
     gameState.selectedCardIndex = null;
-    updateUI(); // asegurar que la carta jugada desaparece de la mano antes de cualquier prompt
+    updateUI();
 
-    // Disparar onCover ahora que la mano ya está actualizada
+    if (topHasOnCover) {
+        // Commit queue: carta entra en cola, aterriza solo tras resolver onCover
+        gameState.pendingLanding = { line: targetLine, cardObj: playedCard, owner: 'player', isFaceDown };
+        gameState.currentEffectLine = targetLine;
+        triggerCardEffect(topCardBeforePush.card, 'onCover', 'player');
+        // Si onCover fue no-interactivo y ya se resolvió, finishEffect lo aterrizará
+        // Si hay efectos pendientes, pendingLanding espera en finishEffect
+        if (gameState.effectContext || gameState.effectQueue.length > 0) {
+            gameState.pendingTurnEnd = null; // landPendingCard gestiona el fin de turno
+        }
+        return;
+    }
+
+    // Sin onCover: aterriza inmediatamente (flujo original)
     if (topCardBeforePush) {
         gameState.currentEffectLine = targetLine;
         triggerCardEffect(topCardBeforePush.card, 'onCover', 'player');
     }
+    gameState.field[targetLine].player.push(playedCard);
 
     console.log(`✅ Card played: ${card.nombre} on ${targetLine} (${isFaceDown ? 'face-down' : 'face-up'})`);
 
@@ -1820,8 +1878,8 @@ function showDraftResult() {
     document.getElementById('draft-turn-text').textContent = '¡Draft completo!';
 
     // Build matchup preview
-    // Player protocols: [0,1,2] → face AI protocols reversed: [2,1,0]
-    const aiOrdered = [...draftState.aiPicks].reverse();
+    // P1 pick[i] faces AI pick[i]: mismo índice = misma columna física (P2 construye de su derecha a izquierda)
+    const aiOrdered = [...draftState.aiPicks];
     const matchupsEl = document.getElementById('line-matchups');
     matchupsEl.innerHTML = '';
     const lineNames = ['Izquierda', 'Centro', 'Derecha'];
@@ -1862,7 +1920,7 @@ function startGameFromDraft() {
     if (draftState && draftState.playerPicks && draftState.playerPicks.length > 0) {
         // Viene del draft (tiene cartas seleccionadas)
         gameState.player.protocols = [...draftState.playerPicks];
-        gameState.ai.protocols = [...draftState.aiPicks].reverse();
+        gameState.ai.protocols = [...draftState.aiPicks];
         console.log('✅ Loaded from draftState:', { 
             player: gameState.player.protocols,
             ai: gameState.ai.protocols 

@@ -19,7 +19,7 @@ const CARDS_DATA = {
   },
   "Espíritu": [
     {"valor": 0, "nombre": "Espíritu 0", "fase": "Action", "h_inicio": "", "h_accion": "Actualiza. Roba 1 carta.", "h_final": "Sáltate tu Fase de Comprobar Caché."},
-    {"valor": 1, "nombre": "Espíritu 1", "fase": "Start",  "h_inicio": "Inicial: Descarta 1 carta o bien voltea esta carta. Cada vez que juegues una carta bocarriba, puedes colocarla sin que coincida con los Protocolos.", "h_accion": "Roba 2 cartas.", "h_final": ""},
+    {"valor": 1, "nombre": "Espíritu 1", "fase": "Start",  "h_inicio": "Cada vez que juegues una carta bocarriba, puedes colocarla sin que coincida con los protocolos.", "h_accion": "Roba 2 cartas.", "h_final": "Inicial: Descarta 1 carta o bien voltea esta carta."},
     {"valor": 2, "nombre": "Espíritu 2", "fase": "Action", "h_inicio": "", "h_accion": "Puedes voltear 1 carta.", "h_final": ""},
     {"valor": 3, "nombre": "Espíritu 3", "fase": "Action", "h_inicio": "Después de robar cartas: Puedes cambiar esta carta, incluso si está cubierta.", "h_accion": "", "h_final": ""},
     {"valor": 4, "nombre": "Espíritu 4", "fase": "Action", "h_inicio": "", "h_accion": "Reorganiza 2 de tus Protocolos.", "h_final": ""},

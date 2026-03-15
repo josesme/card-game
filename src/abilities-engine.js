@@ -32,7 +32,7 @@ const CARD_EFFECTS = {
     onPlay: [
       { action: 'draw', target: 'self', count: 2 }
     ],
-    onTurnStart: [
+    onTurnEnd: [
       { action: 'optionalDiscardOrFlipSelf', target: 'self' }
     ]
   },
@@ -203,7 +203,7 @@ const CARD_EFFECTS = {
   'Vida 2': {
     onPlay: [
       { action: 'draw', target: 'self', count: 1 },
-      { action: 'mayFlip', target: 'any', count: 1 }
+      { action: 'mayFlip', target: 'any', count: 1, filter: 'faceDown' }
     ]
   },
 
@@ -683,6 +683,11 @@ function processAbilityEffect() {
 
   if (!gameState.effectQueue || gameState.effectQueue.length === 0) {
     updateUI();
+    // Commit queue: aterrizar carta pendiente tras resolver onCover no-interactivo
+    if (gameState.pendingLanding && typeof landPendingCard === 'function') {
+      landPendingCard();
+      return;
+    }
     if (gameState.pendingStartTurn && !gameState.effectContext) {
       const next = gameState.pendingStartTurn;
       gameState.pendingStartTurn = null;
@@ -913,6 +918,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
     }
 
     case 'mayFlip': {
+      const flipOpts = actionDef.filter ? { filter: actionDef.filter } : {};
       if (targetPlayer === 'player') {
         const confirmArea = document.getElementById('command-confirm');
         const confirmMsg = document.getElementById('confirm-msg');
@@ -921,11 +927,13 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
         if (confirmArea && btnYes && btnNo) {
           gameState.effectContext = { type: 'confirm' };
           confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = '¿Quieres voltear 1 carta bocabajo?';
+          confirmMsg.textContent = target === 'self'
+            ? `¿Quieres voltear ${triggerCardName}?`
+            : flipOpts.filter === 'faceDown' ? '¿Quieres voltear 1 carta bocabajo?' : '¿Quieres voltear 1 carta?';
           btnYes.onclick = () => {
             confirmArea.classList.add('hidden');
             gameState.effectContext = null;
-            startEffect('flip', resolvedTarget === 'any' ? 'any' : resolvedTarget, count || 1, { filter: 'faceDown' });
+            startEffect('flip', resolvedTarget === 'any' ? 'any' : resolvedTarget, count || 1, flipOpts);
           };
           btnNo.onclick = () => {
             confirmArea.classList.add('hidden');
@@ -936,7 +944,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
           processAbilityEffect();
         }
       } else {
-        resolveAbilityAction({ action: 'flip', target, count, filter: 'faceDown' }, targetPlayer);
+        resolveAbilityAction({ action: 'flip', target, count, ...flipOpts }, targetPlayer);
       }
       break;
     }
@@ -966,8 +974,8 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       const selfLine = gameState.currentEffectLine;
       if (!selfLine) { processAbilityEffect(); break; }
       if (actionDef.condition === 'drawnSinceLastCheck') {
-        if (!gameState.drawnSinceLastCheck[targetPlayer]) { processAbilityEffect(); break; }
-        gameState.drawnSinceLastCheck[targetPlayer] = false; // consumir flag
+        if (!gameState.drawnLastTurn?.[targetPlayer]) { processAbilityEffect(); break; }
+        // No consumir — el snapshot se resetea al inicio de cada turno
       }
       if (targetPlayer === 'player') {
         const confirmArea = document.getElementById('command-confirm');
@@ -1595,13 +1603,12 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
           };
           btnNo.onclick = () => {
             confirmArea.classList.add('hidden');
-            // Voltear la carta de Espíritu 1 en campo
-            const line = gameState.currentEffectLine;
-            if (line) {
-              const stack = gameState.field[line][targetPlayer];
-              const top = stack[stack.length - 1];
-              if (top) top.faceDown = !top.faceDown;
-            }
+            // Buscar Espíritu 1 por nombre en todas las líneas y voltearla
+            LINES.forEach(l => {
+              const stack = gameState.field[l][targetPlayer];
+              const cardObj = stack.find(c => c.card.nombre === triggerCardName);
+              if (cardObj) cardObj.faceDown = true;
+            });
             gameState.effectContext = null;
             updateUI();
             processAbilityEffect();
@@ -2260,7 +2267,8 @@ function onCardFlipped(card, targetPlayer, line) {
 }
 
 /**
- * Hook para inicio de turno
+ * Hook para inicio de turno — todas las cartas bocarriba de la pila
+ * (el comando inicio es siempre visible aunque la carta esté cubierta)
  */
 function onTurnStartEffects(player) {
   LINES.forEach(line => {
@@ -2275,17 +2283,18 @@ function onTurnStartEffects(player) {
 }
 
 /**
- * Hook para fin de turno
+ * Hook para fin de turno — solo la carta top descubierta de cada pila
  */
 function onTurnEndEffects(player) {
   LINES.forEach(line => {
     if (gameState.ignoreEffectsLines && gameState.ignoreEffectsLines[line]) return;
-    gameState.currentEffectLine = line;
-    gameState.field[line][player].forEach(cardObj => {
-      if (!cardObj.faceDown) {
-        triggerCardEffect(cardObj.card, 'onTurnEnd', player);
-      }
-    });
+    const stack = gameState.field[line][player];
+    if (stack.length === 0) return;
+    const top = stack[stack.length - 1];
+    if (!top.faceDown) {
+      gameState.currentEffectLine = line;
+      triggerCardEffect(top.card, 'onTurnEnd', player);
+    }
   });
 }
 
