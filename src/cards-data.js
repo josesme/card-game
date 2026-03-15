@@ -114,7 +114,7 @@ const CARDS_DATA = {
     {"valor": 5, "nombre": "Oscuridad 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""}
   ],
   "Apatía": [
-    {"valor": 0, "nombre": "Apatía 0", "fase": "Start",  "h_inicio": "Tu Valor total en esta línea se incrementa en 1 por cada carta bocabajo en esta línea.", "h_accion": "", "h_final": ""},
+    {"valor": 0, "nombre": "Apatía 0", "fase": "Start",  "h_inicio": "Suma 1 al valor total en esta línea por cada carta bocabajo en ella.", "h_accion": "", "h_final": ""},
     {"valor": 1, "nombre": "Apatía 1", "fase": "Action", "h_inicio": "", "h_accion": "Voltea todas las demás cartas bocarriba en esta línea.", "h_final": ""},
     {"valor": 2, "nombre": "Apatía 2", "fase": "Start",  "h_inicio": "Ignora todos los comandos de acción de las cartas en esta línea.", "h_accion": "", "h_final": "Si se cubre esta carta: Primero, voltea esta carta."},
     {"valor": 3, "nombre": "Apatía 3", "fase": "Action", "h_inicio": "", "h_accion": "Voltea 1 de las cartas bocarriba de tu oponente.", "h_final": ""},
@@ -130,7 +130,7 @@ const CARDS_DATA = {
     {"valor": 5, "nombre": "Odio 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""}
   ],
   "Amor": [
-    {"valor": 1, "nombre": "Amor 1", "fase": "End",    "h_inicio": "", "h_accion": "", "h_final": "Final: Roba la carta superior del mazo de tu oponente. Puedes dar 1 carta de tu mano a tu oponente. Si lo haces, roba 2 cartas."},
+    {"valor": 1, "nombre": "Amor 1", "fase": "End",    "h_inicio": "", "h_accion": "Roba la carta superior del mazo de tu oponente.", "h_final": "Final: Puedes dar 1 carta de tu mano a tu oponente. Si lo haces, roba 2 cartas."},
     {"valor": 2, "nombre": "Amor 2", "fase": "Action", "h_inicio": "", "h_accion": "Tu oponente roba 1 carta. Actualiza.", "h_final": ""},
     {"valor": 3, "nombre": "Amor 3", "fase": "Action", "h_inicio": "", "h_accion": "Toma 1 carta aleatoria de la mano de tu oponente. Da 1 carta de tu mano a tu oponente.", "h_final": ""},
     {"valor": 4, "nombre": "Amor 4", "fase": "Action", "h_inicio": "", "h_accion": "Revela 1 carta de tu mano. Voltea 1 carta.", "h_final": ""},

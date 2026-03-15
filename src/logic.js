@@ -77,6 +77,8 @@ let gameState = {
     discardedSinceLastCheck: { player: false, ai: false },  // flag consumido por Plaga 1 al robar
     drawnSinceLastCheck: { player: false, ai: false },      // flag: robó cartas este turno
     drawnLastTurn: { player: false, ai: false },            // snapshot al inicio de turno (para Espíritu 3)
+    eliminatedSinceLastCheck: { player: false, ai: false }, // flag: eliminó cartas este turno
+    eliminatedLastTurn: { player: false, ai: false },       // snapshot al inicio de turno (para Odio 3)
     uncoveredThisTurn: new Set(),                           // IDs de cartas ya activadas por onUncovered este turno
     pendingLanding: null,                                   // carta en commit queue: aterriza tras resolver onCover
     refreshedThisTurn: null,                                // quién usó Refresh este turno (para Velocidad 1)
@@ -377,8 +379,8 @@ function updateUI() {
     document.querySelectorAll('#player-hand .card').forEach((cardEl, index) => {
         cardEl.onclick = () => {
             console.log(`🖱️ Card clicked at index ${index}. gameState.turn=${gameState.turn}, phase=${gameState.phase}, effectContext=${gameState.effectContext ? gameState.effectContext.type : 'none'}`);
-            if (gameState.effectContext && (gameState.effectContext.type === 'discard' || gameState.effectContext.type === 'discardVariable')) {
-                console.log(`   → Handling discard choice`);
+            if (gameState.effectContext && (gameState.effectContext.type === 'discard' || gameState.effectContext.type === 'discardVariable' || gameState.effectContext.type === 'give')) {
+                console.log(`   → Handling discard/give choice`);
                 handleDiscardChoice(index);
             } else if (gameState.effectContext && gameState.effectContext.type === 'pickHandFaceDown') {
                 // Oscuridad 3: seleccionar carta de mano
@@ -542,6 +544,9 @@ function startTurn(who) {
     // Snapshot del flag de robo del turno anterior (para Espíritu 3), luego resetear
     gameState.drawnLastTurn = { player: gameState.drawnSinceLastCheck.player, ai: gameState.drawnSinceLastCheck.ai };
     gameState.drawnSinceLastCheck = { player: false, ai: false };
+    // Snapshot del flag de eliminación del turno anterior (para Odio 3), luego resetear
+    gameState.eliminatedLastTurn = { player: gameState.eliminatedSinceLastCheck.player, ai: gameState.eliminatedSinceLastCheck.ai };
+    gameState.eliminatedSinceLastCheck = { player: false, ai: false };
     gameState.refreshedThisTurn = null;
     updateStatus(`--- Turno de ${who === 'player' ? 'Jugador' : 'IA'} ---`);
 
@@ -841,11 +846,14 @@ function startEffect(type, target, count, opts = {}) {
         return;
     }
 
-    // Si es descarte/dar del jugador y no tiene cartas, saltar efecto
-    if ((type === 'discard' || type === 'give') && target === 'player' && gameState.player.hand.length === 0) {
-        console.log(`⏭️ Descarte omitido — mano vacía`);
-        if (typeof processAbilityEffect === 'function') processAbilityEffect();
-        return;
+    // Si es descarte/dar del jugador, limitar count a cartas disponibles
+    if ((type === 'discard' || type === 'give') && target === 'player') {
+        if (gameState.player.hand.length === 0) {
+            console.log(`⏭️ Descarte omitido — mano vacía`);
+            if (typeof processAbilityEffect === 'function') processAbilityEffect();
+            return;
+        }
+        count = Math.min(count, gameState.player.hand.length);
     }
 
     // Si es eliminate/flip/return/shift y no hay cartas válidas en campo, saltar efecto
@@ -857,7 +865,10 @@ function startEffect(type, target, count, opts = {}) {
             targets.some(p => {
                 const stack = gameState.field[l][p];
                 if (opts.coveredOnly) return stack.length >= 2;
-                return stack.length > 0 && cardMatchesFilter(stack[stack.length - 1], filterCtx);
+                if (stack.length === 0) return false;
+                const topCard = stack[stack.length - 1];
+                if (opts.excludeCardName && topCard.card.nombre === opts.excludeCardName) return false;
+                return cardMatchesFilter(topCard, filterCtx);
             })
         );
         if (!hasValid) {
@@ -1020,6 +1031,7 @@ function executeMassDeleteByValueRange(line) {
 function cardMatchesFilter(cardObj, ctx) {
     if (!ctx.filter) return true;
     if (ctx.filter === 'faceDown') return cardObj.faceDown;
+    if (ctx.filter === 'faceUp') return !cardObj.faceDown;
     if (ctx.filter === 'maxValue') return !cardObj.faceDown && cardObj.card.valor <= (ctx.maxVal ?? 99);
     if (ctx.filter === 'minValue') return !cardObj.faceDown && cardObj.card.valor >= (ctx.minVal ?? 0);
     return true;
@@ -1062,7 +1074,7 @@ function handleDiscardChoice(handIndex) {
         return;
     }
 
-    if (ctx.selected.length >= ctx.count) {
+    if (ctx.selected.length >= ctx.count || gameState.player.hand.length === 0) {
         finishEffect();
     } else {
         const remaining = ctx.count - ctx.selected.length;
@@ -1099,6 +1111,7 @@ function handleFieldCardClick(line, target, cardIdx) {
         if (!cardMatchesFilter(cardObj, ctx)) return;
         gameState.field[line][target].splice(cardIdx, 1);
         gameState[target].trash.push(cardObj.card);
+        gameState.eliminatedSinceLastCheck[gameState.turn] = true;
         ctx.selected.push(cardObj);
         triggerUncovered(line, target);
     } else if (ctx.type === 'flip') {
@@ -1269,6 +1282,7 @@ function resolveEffectAI(type, target, count, opts = {}) {
                 const line = validLines[Math.floor(Math.random() * validLines.length)];
                 const cardObj = gameState.field[line][actualTarget].pop();
                 gameState[actualTarget].trash.push(cardObj.card);
+                gameState.eliminatedSinceLastCheck[gameState.turn] = true;
                 triggerUncovered(line, actualTarget);
             }
         }

@@ -542,7 +542,7 @@ const CARD_EFFECTS = {
 
   'Apatía 3': {
     onPlay: [
-      { action: 'flip', target: 'opponent', count: 1 }
+      { action: 'flip', target: 'opponent', count: 1, filter: 'faceUp' }
     ]
   },
 
@@ -584,7 +584,7 @@ const CARD_EFFECTS = {
 
   // "Después de que elimines cartas: Roba 1 carta." (persistent trigger)
   'Odio 3': {
-    persistent: { drawOnOwnDelete: 1 } // TODO: disparar en executeEliminate cuando Odio 3 está en campo
+    onTurnStart: [{ action: 'drawIfEliminatedLastTurn', target: 'self', count: 1 }]
   },
 
   'Odio 4': {
@@ -605,7 +605,7 @@ const CARD_EFFECTS = {
       { action: 'drawFromOpponentDeck', target: 'self', count: 1 }
     ],
     onTurnEnd: [
-      { action: 'mayGiveCardForDraw', target: 'self', count: 2 }
+      { action: 'mayGiveCardForDraw', target: 'self', count: 2 }   // opcional: da 1 → roba 2
     ]
   },
 
@@ -626,7 +626,7 @@ const CARD_EFFECTS = {
   'Amor 4': {
     onPlay: [
       { action: 'revealFromHand', target: 'self', count: 1 },
-      { action: 'flip', target: 'any', count: 1 }
+      { action: 'flip', target: 'any', count: 1, excludeSelf: true }
     ]
   },
 
@@ -756,18 +756,24 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
     }
 
     case 'flip': {
-      const flipOpts = actionDef.excludeSelf && triggerCardName ? { excludeCardName: triggerCardName } : {};
+      const flipOpts = {};
+      if (actionDef.excludeSelf && triggerCardName) flipOpts.excludeCardName = triggerCardName;
+      if (actionDef.filter) flipOpts.filter = actionDef.filter;
       startEffect('flip', resolvedTarget === 'any' ? 'any' : resolvedTarget, count || 1, flipOpts);
       break;
     }
 
     case 'flipSelf': {
-      // Voltea automáticamente la carta que disparó el efecto (sin UI)
       const selfLine = gameState.currentEffectLine;
+      let flipped = false;
       if (selfLine && triggerCardName) {
         const stack = gameState.field[selfLine][targetPlayer];
         const cardObj = stack.find(c => c.card.nombre === triggerCardName);
-        if (cardObj) cardObj.faceDown = !cardObj.faceDown;
+        if (cardObj) { cardObj.faceDown = !cardObj.faceDown; flipped = true; }
+      }
+      if (flipped) {
+        updateUI();
+        if (typeof updateStatus === 'function') updateStatus(`${triggerCardName} se voltea`);
       }
       processAbilityEffect();
       break;
@@ -1027,6 +1033,15 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       startEffect('swap', resolvedTarget === 'any' ? 'any' : resolvedTarget, count || 1);
       break;
 
+    case 'drawIfEliminatedLastTurn': {
+      // Odio 3: roba 1 carta si eliminaste cartas en el turno anterior
+      if (!gameState.eliminatedLastTurn?.[targetPlayer]) { processAbilityEffect(); break; }
+      drawCard(targetPlayer);
+      if (targetPlayer === 'player' && typeof onDrawEffects === 'function') onDrawEffects(targetPlayer);
+      processAbilityEffect();
+      break;
+    }
+
     case 'mayShiftSelf': {
       // Espíritu 3: mover esta carta a otra línea (aunque esté cubierta)
       const selfLine = gameState.currentEffectLine;
@@ -1276,15 +1291,25 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
     }
 
     case 'revealOpponentHand': {
-      // Show opponent hand to the player
+      // Luz 4 / Psique 0: muestra la mano de la IA al jugador en el modal
       if (targetPlayer === 'player') {
         const hand = gameState.ai.hand;
-        const names = hand.map(c => `${c.nombre} (${c.valor})`).join(', ');
-        updateStatus(`Mano del oponente: ${names || '(vacía)'}`);
-        // Keep message for 4 seconds then continue
-        setTimeout(() => processAbilityEffect(), 4000);
+        const modal = document.getElementById('reveal-modal');
+        const container = document.getElementById('reveal-cards-container');
+        const closeBtn = document.getElementById('btn-reveal-close');
+        if (modal && container && closeBtn && typeof createCardHTML === 'function') {
+          container.innerHTML = hand.length > 0
+            ? hand.map(c => `<div style="transform: scale(0.8); transform-origin: top center;">${createCardHTML(c)}</div>`).join('')
+            : '<p style="color:#ddd;">La mano del oponente está vacía.</p>';
+          modal.style.display = 'flex';
+          closeBtn.onclick = () => {
+            modal.style.display = 'none';
+            processAbilityEffect();
+          };
+        } else {
+          processAbilityEffect();
+        }
       } else {
-        // AI already "knows" all cards
         processAbilityEffect();
       }
       break;
@@ -2118,30 +2143,14 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       break;
     }
 
-    case 'flipSelf': {
-      // Apatía 2 onCover: voltea esta carta cuando se cubre
-      const line = gameState.currentEffectLine;
-      if (line) {
-        const stack = gameState.field[line][targetPlayer];
-        // La carta cubierta es la segunda desde arriba (justo se acaba de cubrir)
-        if (stack.length >= 2) {
-          const coveredCard = stack[stack.length - 2];
-          coveredCard.faceDown = !coveredCard.faceDown;
-        }
-      }
-      processAbilityEffect();
-      break;
-    }
-
     case 'deleteLowestCoveredInLine': {
-      // Odio 4 onCover: elimina la carta cubierta de menor valor en esta línea
+      // Odio 4 onCover: elimina la carta cubierta (no-top) de menor valor en esta línea
       const line = gameState.currentEffectLine;
       if (!line) { processAbilityEffect(); break; }
-      // Buscar en ambos lados la carta cubierta de menor valor
       let lowest = null, lowestPlayer = null, lowestIdx = -1;
       ['player', 'ai'].forEach(p => {
         const stack = gameState.field[line][p];
-        // cartas cubiertas = todas excepto la última (top)
+        // Solo cartas cubiertas: todas excepto la top (stack.length - 1)
         for (let i = 0; i < stack.length - 1; i++) {
           if (!lowest || stack[i].card.valor < lowest.card.valor) {
             lowest = stack[i]; lowestPlayer = p; lowestIdx = i;
@@ -2151,6 +2160,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       if (lowest) {
         gameState.field[line][lowestPlayer].splice(lowestIdx, 1);
         gameState[lowestPlayer].trash.push(lowest.card);
+        updateUI();
       }
       processAbilityEffect();
       break;
@@ -2171,12 +2181,29 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       if (targetPlayer === 'player') {
         if (gameState.player.hand.length === 0) { processAbilityEffect(); break; }
         gameState.effectQueue.unshift({ effect: { action: '_drawAfterGive', count }, targetPlayer });
-        showConfirm('¿Das 1 carta a tu oponente para robar ' + (count || 2) + ' cartas?', () => {
-          startEffect('give', 'player', 1); // mano→mano del rival
-        }, () => {
-          gameState.effectQueue.shift(); // cancelar el draw
+        const confirmArea = document.getElementById('command-confirm');
+        const confirmMsg = document.getElementById('confirm-msg');
+        const btnYes = document.getElementById('btn-confirm-yes');
+        const btnNo = document.getElementById('btn-confirm-no');
+        if (confirmArea && btnYes && btnNo) {
+          gameState.effectContext = { type: 'confirm' };
+          confirmArea.classList.remove('hidden');
+          confirmMsg.textContent = `¿Das 1 carta a tu oponente para robar ${count || 2} cartas?`;
+          btnYes.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            startEffect('give', 'player', 1);
+          };
+          btnNo.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            gameState.effectQueue.shift(); // cancelar _drawAfterGive
+            processAbilityEffect();
+          };
+        } else {
+          gameState.effectQueue.shift();
           processAbilityEffect();
-        });
+        }
       } else {
         // IA: dar si tiene ventaja en mano
         if (gameState.ai.hand.length > 3 && gameState.ai.hand.length > 0) {
@@ -2224,9 +2251,27 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
     }
 
     case 'revealFromHand': {
-      // Amor 4: revela 1 carta de tu mano (efecto informativo; sin impacto en estado)
-      // Para el jugador: mostrar confirmación; para la IA: no-op
+      // Amor 4: el jugador revela 1 carta de su mano al rival (info para IA, sin UI para el jugador)
       processAbilityEffect();
+      break;
+    }
+
+    case '_showRevealedCards': {
+      // Amor 4: mostrar las cartas seleccionadas en el modal de revelación
+      const cards = actionDef.cards || [];
+      const modal = document.getElementById('reveal-modal');
+      const container = document.getElementById('reveal-cards-container');
+      const closeBtn = document.getElementById('btn-reveal-close');
+      if (modal && container && closeBtn && typeof createCardHTML === 'function') {
+        container.innerHTML = cards.map(c => `<div style="transform: scale(0.85); transform-origin: top center;">${createCardHTML(c)}</div>`).join('');
+        modal.style.display = 'flex';
+        closeBtn.onclick = () => {
+          modal.style.display = 'none';
+          processAbilityEffect();
+        };
+      } else {
+        processAbilityEffect();
+      }
       break;
     }
 
