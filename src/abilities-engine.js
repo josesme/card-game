@@ -1353,11 +1353,11 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
         if (confirmArea && btnYes && btnNo) {
           gameState.effectContext = { type: 'confirm' };
           confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = '¿Qué quieres hacer? SÍ = Intercambiar carta · NO = Voltear carta';
+          confirmMsg.textContent = '¿Qué quieres hacer? SÍ = Cambiar carta de línea · NO = Voltear carta';
           btnYes.onclick = () => {
             confirmArea.classList.add('hidden');
             gameState.effectContext = null;
-            startEffect('swap', resolvedTarget === 'any' ? 'any' : resolvedTarget, count || 1);
+            startEffect('shift', resolvedTarget === 'any' ? 'any' : resolvedTarget, count || 1);
           };
           btnNo.onclick = () => {
             confirmArea.classList.add('hidden');
@@ -1369,7 +1369,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
         }
       } else {
         // AI: pick whichever is more beneficial — random for now
-        const aiAction = Math.random() > 0.5 ? 'swap' : 'flip';
+        const aiAction = Math.random() > 0.5 ? 'shift' : 'flip';
         resolveAbilityAction({ action: aiAction, target, count }, targetPlayer);
       }
       break;
@@ -2189,8 +2189,10 @@ function applyPersistentValueModifiers(state, line, player) {
   let totalReduction = 0;
   let totalBonus = 0;
 
-  // Reducciones: cartas del oponente en esta línea (ej: Metal 0)
+  // Reducciones: cartas bocarriba del oponente en esta línea (ej: Metal 0)
+  // h_inicio siempre activo aunque esté cubierto, pero NO si está bocabajo
   state.field[line][opponent].forEach(cardObj => {
+    if (cardObj.faceDown) return;
     const modifiers = getPersistentModifiers(cardObj.card);
     if (modifiers.valueReduction) {
       totalReduction += modifiers.valueReduction;
@@ -2329,12 +2331,15 @@ function calculateScoreWithModifiers(state, line, player) {
  * Devuelve true si el opponent no puede jugar cartas en targetLine
  * (porque el dueño de la línea tiene Plaga 0 activa en esa línea).
  */
-function isPlayBlockedByPersistent(targetLine, playingPlayer) {
+function isPlayBlockedByPersistent(targetLine, playingPlayer, isFaceDown = false) {
   const opponent = playingPlayer === 'player' ? 'ai' : 'player';
   return gameState.field[targetLine][opponent].some(cardObj => {
     if (cardObj.faceDown) return false;
     const mods = getPersistentModifiers(cardObj.card);
-    return !!mods.preventOpponentPlay;
+    if (mods.preventOpponentPlay) return true;
+    // Metal 2: bloquea solo jugadas bocabajo
+    if (isFaceDown && mods.preventFaceDown) return true;
+    return false;
   });
 }
 
@@ -2365,10 +2370,11 @@ if (typeof window !== 'undefined') {
 function hasAllowAnyProtocol(player) {
   return LINES.some(line => {
     const stack = gameState.field[line][player];
-    if (stack.length === 0) return false;
-    const top = stack[stack.length - 1];
-    if (top.faceDown) return false;
-    const effectDef = CARD_EFFECTS[top.card.nombre];
-    return effectDef && effectDef.persistent && effectDef.persistent.allowAnyProtocol;
+    // h_inicio siempre activo aunque esté cubierto — revisar todas las cartas bocarriba
+    return stack.some(cardObj => {
+      if (cardObj.faceDown) return false;
+      const effectDef = CARD_EFFECTS[cardObj.card.nombre];
+      return effectDef && effectDef.persistent && effectDef.persistent.allowAnyProtocol;
+    });
   });
 }

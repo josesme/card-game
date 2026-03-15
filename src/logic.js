@@ -525,6 +525,16 @@ function checkCompilePhase(who) {
     console.log(`📋 Checking compile phase for ${who}`);
     updateStatus(`Comprobando compilaciones...`);
     
+    // Metal 1: si el compilado está bloqueado este turno, consumir 1 turno y saltar toda la fase
+    if (gameState.preventCompile[who] > 0) {
+        console.log(`  🚫 Compile blocked for ${who} (${gameState.preventCompile[who]} turns left)`);
+        gameState.preventCompile[who]--;
+        updateStatus(`Compilado bloqueado por Metal 1`);
+        // Saltar la fase de compilado completamente — ir directo a fase de acción
+        setTimeout(() => actionPhase(who), 800);
+        return;
+    }
+
     let compiledAny = false;
     for (const line of LINES) {
         const myScore = calculateScore(gameState, line, who);
@@ -533,11 +543,6 @@ function checkCompilePhase(who) {
         console.log(`  Line ${line}: ${who}=${myScore} vs opp=${oppScore}`);
 
         if (myScore >= 10 && myScore > oppScore) {
-            if (gameState.preventCompile[who] > 0) {
-                console.log(`  🚫 Compile blocked for ${who} (${gameState.preventCompile[who]} turns left)`);
-                gameState.preventCompile[who]--;
-                continue;
-            }
             console.log(`  ✅ Compiled: ${line}`);
             compileLine(line, who);
             compiledAny = true;
@@ -1118,10 +1123,29 @@ function handleFieldCardClick(line, target, cardIdx) {
  * Aterriza la carta en commit queue (pendingLanding) tras resolver onCover.
  * Dispara onPlay si es bocarriba, luego continúa el turno.
  */
+/**
+ * Metal 6: si la carta recién cubierta tiene deleteOnModify, eliminarla del stack.
+ * Llamar DESPUÉS de hacer push de la nueva carta al stack.
+ */
+function checkDeleteOnCover(line, owner) {
+    const stack = gameState.field[line][owner];
+    if (stack.length < 2) return;
+    const coveredObj = stack[stack.length - 2]; // la que acaba de quedar tapada
+    if (coveredObj.faceDown) return;
+    if (typeof getPersistentModifiers !== 'function') return;
+    const mods = getPersistentModifiers(coveredObj.card);
+    if (mods.deleteOnModify) {
+        stack.splice(stack.length - 2, 1);
+        gameState[owner].trash.push(coveredObj.card);
+        updateUI();
+    }
+}
+
 function landPendingCard() {
     const { line, cardObj, owner, isFaceDown } = gameState.pendingLanding;
     gameState.pendingLanding = null;
     gameState.field[line][owner].push(cardObj);
+    checkDeleteOnCover(line, owner);
     updateUI();
     if (!isFaceDown) {
         gameState.currentEffectLine = line;
@@ -1342,9 +1366,10 @@ function clearSelectionHighlights() {
 function finalizePlay(targetLine, isFaceDown) {
     console.log(`🎲 finalizePlay: line=${targetLine}, faceDown=${isFaceDown}`);
 
-    // Comprobar si Plaga 0 del rival bloquea esta línea
-    if (typeof isPlayBlockedByPersistent === 'function' && isPlayBlockedByPersistent(targetLine, 'player')) {
-        updateStatus('La IA tiene Plaga 0 en esa línea — no puedes jugar ahí');
+    // Comprobar si Plaga 0 (o Metal 2 bocabajo) del rival bloquea esta línea
+    if (typeof isPlayBlockedByPersistent === 'function' && isPlayBlockedByPersistent(targetLine, 'player', isFaceDown)) {
+        const reason = isFaceDown ? 'La IA tiene Metal 2 en esa línea — no puedes jugar bocabajo ahí' : 'La IA tiene Plaga 0 en esa línea — no puedes jugar ahí';
+        updateStatus(reason);
         return;
     }
 
@@ -1388,6 +1413,7 @@ function finalizePlay(targetLine, isFaceDown) {
         triggerCardEffect(topCardBeforePush.card, 'onCover', 'player');
     }
     gameState.field[targetLine].player.push(playedCard);
+    checkDeleteOnCover(targetLine, 'player');
 
     console.log(`✅ Card played: ${card.nombre} on ${targetLine} (${isFaceDown ? 'face-down' : 'face-up'})`);
 
@@ -1526,7 +1552,10 @@ function playAITurnRandom() {
     if (targetLine && !(typeof isPlayBlockedByPersistent === 'function' && isPlayBlockedByPersistent(targetLine, 'ai'))) {
         isFaceDown = false;
     } else {
-        const freeLine = LINES.find(l => !(typeof isPlayBlockedByPersistent === 'function' && isPlayBlockedByPersistent(l, 'ai')));
+        // Buscar línea libre para bocabajo (ni Plaga 0 ni Metal 2 del jugador)
+        const freeLine = LINES.find(l =>
+            !(typeof isPlayBlockedByPersistent === 'function' && isPlayBlockedByPersistent(l, 'ai', true))
+        );
         targetLine = freeLine || LINES[0];
         isFaceDown = true;
     }
@@ -1534,6 +1563,7 @@ function playAITurnRandom() {
     if (targetLine) {
         const movedCard = gameState.ai.hand.splice(cardIdx, 1)[0];
         gameState.field[targetLine].ai.push({ card: movedCard, faceDown: isFaceDown });
+        checkDeleteOnCover(targetLine, 'ai');
         updateStatus(`IA jugó ${movedCard.nombre} ${isFaceDown ? 'bocabajo' : 'bocarriba'} en ${targetLine}`);
         console.log('Estado final del juego tras fallback aleatorio:', JSON.stringify(gameState));
     } else {
@@ -1568,14 +1598,16 @@ function generateAIPossibleMoves() {
                     });
                 }
 
-                // Movimiento bocabajo (siempre posible)
-                moves.push({
+                // Movimiento bocabajo (si Metal 2 del jugador no lo bloquea)
+                if (!(typeof isPlayBlockedByPersistent === 'function' && isPlayBlockedByPersistent(line, 'ai', true))) {
+                  moves.push({
                     cardIndex,
                     line,
                     faceUp: false,
                     card,
                     type: 'face-down',
-                });
+                  });
+                }
             }
         });
     });
@@ -1619,7 +1651,8 @@ function executeAIMove(move) {
         card: movedCard,
         faceDown: !move.faceUp
     });
-    
+    checkDeleteOnCover(move.line, 'ai');
+
     const faceText = move.faceUp ? 'bocarriba' : 'bocabajo';
     updateStatus(`IA jugó ${movedCard.nombre} ${faceText} en ${move.line}`);
     
