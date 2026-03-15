@@ -1923,22 +1923,22 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
     }
 
     case 'forceOpponentDeleteFaceDown': {
-      // Plaga 4: el oponente debe eliminar 1 de sus cartas bocabajo
+      // Plaga 4: el oponente (rival de quien jugó la carta) elimina 1 de SUS PROPIAS cartas bocabajo
       if (targetPlayer === 'player') {
-        // El jugador elige qué carta bocabajo del oponente eliminar
-        startEffect('eliminate', opponent, count || 1, { filter: 'faceDown' });
-      } else {
-        // IA: elimina una carta bocabajo del jugador aleatoriamente
-        const validLines = LINES.filter(l => gameState.field[l].player.some(c => c.faceDown));
+        // Jugador jugó Plaga 4: la IA (oponente) elimina aleatoriamente una de sus propias cartas bocabajo
+        const validLines = LINES.filter(l => gameState.field[l].ai.some(c => c.faceDown));
         if (validLines.length > 0) {
           const l = validLines[Math.floor(Math.random() * validLines.length)];
-          const fdIdx = gameState.field[l].player.findIndex(c => c.faceDown);
+          const fdIdx = gameState.field[l].ai.findIndex(c => c.faceDown);
           if (fdIdx >= 0) {
-            const [removed] = gameState.field[l].player.splice(fdIdx, 1);
-            gameState.player.trash.push(removed.card);
+            const [removed] = gameState.field[l].ai.splice(fdIdx, 1);
+            gameState.ai.trash.push(removed.card);
           }
         }
         processAbilityEffect();
+      } else {
+        // IA jugó Plaga 4: el jugador (oponente) elige una de sus propias cartas bocabajo
+        startEffect('eliminate', 'player', count || 1, { filter: 'faceDown' });
       }
       break;
     }

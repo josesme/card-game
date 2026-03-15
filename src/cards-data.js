@@ -74,7 +74,7 @@ const CARDS_DATA = {
     {"valor": 6, "nombre": "Metal 6", "fase": "Start",  "h_inicio": "Si se cubre o se voltea esta carta: Primero, elimina esta carta.", "h_accion": "", "h_final": ""}
   ],
   "Plaga": [
-    {"valor": 0, "nombre": "Plaga 0", "fase": "Start",  "h_inicio": "Tu oponente no puede jugar cartas en esta línea.", "h_accion": "Tu oponente descarta 1 carta.", "h_final": ""},
+    {"valor": 0, "nombre": "Plaga 0", "fase": "Start",  "h_inicio": "", "h_accion": "Tu oponente descarta 1 carta.", "h_final": "Tu oponente no puede jugar cartas en esta línea."},
     {"valor": 1, "nombre": "Plaga 1", "fase": "Start",  "h_inicio": "Después de que tu oponente descarte cartas: Roba 1 carta.", "h_accion": "Tu oponente descarta 1 carta.", "h_final": ""},
     {"valor": 2, "nombre": "Plaga 2", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 o más cartas. Tu oponente descarta tantas cartas como tú más 1.", "h_final": ""},
     {"valor": 3, "nombre": "Plaga 3", "fase": "Action", "h_inicio": "", "h_accion": "Voltea cada otra carta bocarriba.", "h_final": ""},
