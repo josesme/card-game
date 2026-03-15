@@ -99,6 +99,21 @@ class MiniMax {
   }
 
   /**
+   * Checks if a line is blocked for playingPlayer by opponent's Plaga 0 (in simulated state)
+   */
+  isLineBlocked(gameState, line, playingPlayer) {
+    const opponent = playingPlayer === 'player' ? 'ai' : 'player';
+    const stack = (gameState.field && gameState.field[line] && gameState.field[line][opponent]) || [];
+    return stack.some(cardObj => {
+      if (cardObj.faceDown) return false;
+      if (!cardObj.card) return false;
+      const effects = typeof CARD_EFFECTS !== 'undefined' && CARD_EFFECTS[cardObj.card.nombre];
+      const persistent = effects && effects.persistent;
+      return persistent && persistent.effect === 'preventOpponentPlay';
+    });
+  }
+
+  /**
    * 🎮 GENERATE AI MOVES
    */
   generateAIMoves(gameState) {
@@ -108,6 +123,9 @@ class MiniMax {
 
     hand.forEach((card, index) => {
       LINES.forEach(line => {
+        // Skip lines blocked by player's Plaga 0
+        if (this.isLineBlocked(gameState, line, 'ai')) return;
+
         // Option 1: Face up (only if protocol matches)
         const lineIdx = gameState.ai.protocols.indexOf(card.protocol);
         if (lineIdx !== -1 && LINES[lineIdx] === line) {
@@ -143,6 +161,9 @@ class MiniMax {
     bestIndices.forEach(index => {
       const card = hand[index];
       LINES.forEach(line => {
+        // Skip lines blocked by AI's Plaga 0
+        if (this.isLineBlocked(gameState, line, 'player')) return;
+
         const lineIdx = gameState.player.protocols.indexOf(card.protocol);
         if (lineIdx !== -1 && LINES[lineIdx] === line) {
           moves.push({ cardIndex: index, line, faceUp: true, card });

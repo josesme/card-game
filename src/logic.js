@@ -71,8 +71,15 @@ let gameState = {
     lastFlippedCard: null,   // last card flipped via interactive effect
     pendingPlayCard: false,  // waiting for player to play a card mid-effect
     ignoreEffectsLines: {},  // lines where effects are suppressed this turn
-    pendingEndTurnFor: null, // set when endTurn is waiting for interactive discard
-    pendingTurnEnd: null,    // set when finalizePlay is waiting for effects to resolve
+    pendingEndTurnFor: null,    // set when endTurn is waiting for interactive discard
+    pendingTurnEnd: null,       // set when finalizePlay is waiting for effects to resolve
+    pendingCompileShift: null,  // Velocidad 2: card to move after compile
+    discardedSinceLastCheck: { player: false, ai: false },  // flag consumido por Plaga 1 al robar
+    drawnSinceLastCheck: { player: false, ai: false },      // flag: robó cartas este turno
+    drawnLastTurn: { player: false, ai: false },            // snapshot al inicio de turno (para Espíritu 3)
+    uncoveredThisTurn: new Set(),                           // IDs de cartas ya activadas por onUncovered este turno
+    pendingLanding: null,                                   // carta en commit queue: aterriza tras resolver onCover
+    refreshedThisTurn: null,                                // quién usó Refresh este turno (para Velocidad 1)
 };
 
 function createDeckForPlayer(target) {
@@ -160,20 +167,51 @@ function initLineListeners() {
             console.warn(`Line element not found: line-${line}`);
             return;
         }
-        lineEl.onclick = () => {
+        const handler = () => {
             if (gameState.selectionMode) {
                 finalizePlay(line, !gameState.selectionModeFaceUp);
                 gameState.selectionModeFaceUp = false;
+            } else if (gameState.effectContext && gameState.effectContext.type === 'pickHandFaceDown_lineSelect') {
+                // Oscuridad 3: colocar carta seleccionada bocabajo en esta línea
+                if (line === gameState.effectContext.excludeLine) {
+                    updateStatus('Debes elegir una línea diferente a la de Oscuridad 3');
+                    return;
+                }
+                if (gameState.selectedCardIndex === null) return;
+                const card = gameState.player.hand.splice(gameState.selectedCardIndex, 1)[0];
+                gameState.selectedCardIndex = null;
+                gameState.effectContext = null;
+                gameState.field[line].player.push({ card, faceDown: true });
+                clearSelectionHighlights();
+                updateUI();
+                if (typeof processAbilityEffect === 'function') processAbilityEffect();
             } else if (gameState.effectContext && gameState.effectContext.waitingForLine) {
                 handleShiftTargetLine(line);
             }
         };
+        lineEl.onclick = handler;
+        // line-* tiene display:contents — el área visual está en el padre
+        if (lineEl.parentElement) lineEl.parentElement.onclick = handler;
     });
 }
 
 function handleShiftTargetLine(destinationLine) {
     const ctx = gameState.effectContext;
     console.log(`🔀 handleShiftTargetLine: dest=${destinationLine}, selectedCard=${JSON.stringify(ctx?.selectedCard)}, currentEffectLine=${gameState.currentEffectLine}`);
+
+    if (ctx.type === 'compileShift') {
+        if (destinationLine === ctx.sourceLine) {
+            updateStatus('Elige una línea diferente a la compilada');
+            return;
+        }
+        ctx.cards.forEach(c => gameState.field[destinationLine].player.push(c));
+        gameState.pendingCompileShift = null;
+        gameState.effectContext = null;
+        clearEffectHighlights();
+        updateUI();
+        setTimeout(() => endTurn(ctx.resumeFor), 2000);
+        return;
+    }
 
     if (ctx.type === 'playTopDeckFaceDownChooseLine') {
         console.log(`  → playTopDeckFaceDownChooseLine: sourceLine=${ctx.sourceLine}, dest=${destinationLine}`);
@@ -339,9 +377,15 @@ function updateUI() {
     document.querySelectorAll('#player-hand .card').forEach((cardEl, index) => {
         cardEl.onclick = () => {
             console.log(`🖱️ Card clicked at index ${index}. gameState.turn=${gameState.turn}, phase=${gameState.phase}, effectContext=${gameState.effectContext ? gameState.effectContext.type : 'none'}`);
-            if (gameState.effectContext && gameState.effectContext.type === 'discard') {
+            if (gameState.effectContext && (gameState.effectContext.type === 'discard' || gameState.effectContext.type === 'discardVariable')) {
                 console.log(`   → Handling discard choice`);
                 handleDiscardChoice(index);
+            } else if (gameState.effectContext && gameState.effectContext.type === 'pickHandFaceDown') {
+                // Oscuridad 3: seleccionar carta de mano
+                gameState.selectedCardIndex = index;
+                gameState.effectContext.type = 'pickHandFaceDown_lineSelect';
+                const card = gameState.player.hand[index];
+                updateStatus(`Oscuridad 3: elige línea destino para "${card.nombre}" (no la línea actual)`);
             } else if (gameState.effectContext) {
                 console.log(`   → Blocked: effectContext=${gameState.effectContext.type}`);
             } else {
@@ -389,9 +433,21 @@ function updateUI() {
 }
 
 function calculateScore(state, line, target) {
+    // Oscuridad 2: si hay una carta bocarriba con faceDownValueOverride en esta pila, bocabajo valen su valor override
+    const faceDownOverride = (() => {
+        if (typeof CARD_EFFECTS === 'undefined') return null;
+        for (const cardObj of state.field[line][target]) {
+            if (cardObj.faceDown) continue;
+            const ef = CARD_EFFECTS[cardObj.card.nombre];
+            if (ef && ef.persistent && ef.persistent.effect === 'faceDownValueOverride') return ef.persistent.value;
+        }
+        return null;
+    })();
+
     // Calcular score base
     let score = state.field[line][target].reduce((sum, cardObj) => {
-        return sum + (cardObj.faceDown ? 2 : cardObj.card.valor);
+        if (cardObj.faceDown) return sum + (faceDownOverride !== null ? faceDownOverride : 2);
+        return sum + cardObj.card.valor;
     }, 0);
     
     // Aplicar modificadores persistentes (Metal 0 reduce, Apatía 0 suma bono)
@@ -482,8 +538,13 @@ function startTurn(who) {
     gameState.turn = who;
     gameState.phase = 'start';
     gameState.ignoreEffectsLines = {};
+    gameState.uncoveredThisTurn = new Set();
+    // Snapshot del flag de robo del turno anterior (para Espíritu 3), luego resetear
+    gameState.drawnLastTurn = { player: gameState.drawnSinceLastCheck.player, ai: gameState.drawnSinceLastCheck.ai };
+    gameState.drawnSinceLastCheck = { player: false, ai: false };
+    gameState.refreshedThisTurn = null;
     updateStatus(`--- Turno de ${who === 'player' ? 'Jugador' : 'IA'} ---`);
-    
+
     // NUEVO: Disparar efectos de inicio de turno
     if (typeof onTurnStartEffects === 'function') {
         onTurnStartEffects(who);
@@ -498,6 +559,16 @@ function checkCompilePhase(who) {
     console.log(`📋 Checking compile phase for ${who}`);
     updateStatus(`Comprobando compilaciones...`);
     
+    // Metal 1: si el compilado está bloqueado este turno, consumir 1 turno y saltar toda la fase
+    if (gameState.preventCompile[who] > 0) {
+        console.log(`  🚫 Compile blocked for ${who} (${gameState.preventCompile[who]} turns left)`);
+        gameState.preventCompile[who]--;
+        updateStatus(`Compilado bloqueado por Metal 1`);
+        // Saltar la fase de compilado completamente — ir directo a fase de acción
+        setTimeout(() => actionPhase(who), 800);
+        return;
+    }
+
     let compiledAny = false;
     for (const line of LINES) {
         const myScore = calculateScore(gameState, line, who);
@@ -506,11 +577,6 @@ function checkCompilePhase(who) {
         console.log(`  Line ${line}: ${who}=${myScore} vs opp=${oppScore}`);
 
         if (myScore >= 10 && myScore > oppScore) {
-            if (gameState.preventCompile[who] > 0) {
-                console.log(`  🚫 Compile blocked for ${who} (${gameState.preventCompile[who]} turns left)`);
-                gameState.preventCompile[who]--;
-                continue;
-            }
             console.log(`  ✅ Compiled: ${line}`);
             compileLine(line, who);
             compiledAny = true;
@@ -520,7 +586,14 @@ function checkCompilePhase(who) {
 
     if (compiledAny) {
         updateUI();
-        setTimeout(() => endTurn(who), 2000);
+        if (gameState.pendingCompileShift) {
+            const { cards, sourceLine } = gameState.pendingCompileShift;
+            gameState.effectContext = { type: 'compileShift', cards, sourceLine, resumeFor: who, waitingForLine: true };
+            updateStatus('Velocidad 2: elige línea donde desplazar la carta');
+            highlightSelectableLines(sourceLine);
+        } else {
+            setTimeout(() => endTurn(who), 2000);
+        }
     } else {
         console.log(`✅ No compilations, moving to action phase`);
         actionPhase(who);
@@ -563,11 +636,30 @@ function compileLine(line, who) {
         gameState[who].compiled.push(line);
     }
 
-    // Descartar todas las cartas de la línea en ambos lados
+    // Velocidad 2: extraer antes de descartar para mover a otra línea
+    const otherLines = LINES.filter(l => l !== line);
+    const v2Player = gameState.field[line].player.filter(c => c.card.nombre === 'Velocidad 2');
+    const v2AI     = gameState.field[line].ai.filter(c => c.card.nombre === 'Velocidad 2');
+    gameState.field[line].player = gameState.field[line].player.filter(c => c.card.nombre !== 'Velocidad 2');
+    gameState.field[line].ai     = gameState.field[line].ai.filter(c => c.card.nombre !== 'Velocidad 2');
+
+    // Descartar todas las cartas restantes de la línea en ambos lados
     gameState.field[line].player.forEach(c => gameState.player.trash.push(c.card));
     gameState.field[line].ai.forEach(c => gameState.ai.trash.push(c.card));
     gameState.field[line].player = [];
     gameState.field[line].ai = [];
+
+    // IA: mover Velocidad 2 a línea aleatoria
+    v2AI.forEach(c => {
+        const dest = otherLines[Math.floor(Math.random() * otherLines.length)];
+        gameState.field[dest].ai.push(c);
+        updateStatus(`IA desplaza Velocidad 2 a ${dest}`);
+    });
+
+    // Jugador: marcar pendiente para selección interactiva
+    if (v2Player.length > 0) {
+        gameState.pendingCompileShift = { cards: v2Player, sourceLine: line };
+    }
 }
 
 function showActionModal(handIndex) {
@@ -599,7 +691,8 @@ function showActionModal(handIndex) {
     // ERRATA Espíritu 1: if allowAnyProtocol is active, any line is valid
     const lineIndex = gameState.player.protocols.indexOf(card.protocol);
     const targetLine = lineIndex !== -1 ? LINES[lineIndex] : null;
-    const canPlayUp = targetLine !== null || (typeof hasAllowAnyProtocol === 'function' && hasAllowAnyProtocol('player'));
+    const forcedFaceDown = typeof hasForceOpponentFaceDown === 'function' && hasForceOpponentFaceDown('player');
+    const canPlayUp = !forcedFaceDown && (targetLine !== null || (typeof hasAllowAnyProtocol === 'function' && hasAllowAnyProtocol('player')));
     
     console.log(`  Protocol: ${card.protocol}, Line: ${targetLine}, CanPlayUp: ${canPlayUp}`);
     
@@ -660,18 +753,7 @@ function initializeModalButtons() {
 
 // --- Motor de Habilidades ---
 function executeEffect(card, targetPlayer) {
-    // NUEVO MOTOR DE HABILIDADES: Intenta usar el sistema moderno
-    if (typeof executeNewEffect === 'function') {
-        executeNewEffect(card, targetPlayer);
-        return;
-    }
-    
-    // FALLBACK: Si abilities-engine.js no está cargado, usar texto plano (legacy)
-    const combinedText = ((card.h_inicio || "") + ". " + (card.h_accion || "") + ". " + (card.h_final || "")).toLowerCase();
-    const sentences = combinedText.split('.').map(s => s.trim()).filter(s => s.length > 0);
-    
-    gameState.effectQueue = sentences.map(s => ({ text: s, targetPlayer }));
-    processNextEffect();
+    executeNewEffect(card, targetPlayer);
 }
 
 function processNextEffect() {
@@ -774,6 +856,7 @@ function startEffect(type, target, count, opts = {}) {
         const hasValid = linesToCheck.some(l =>
             targets.some(p => {
                 const stack = gameState.field[l][p];
+                if (opts.coveredOnly) return stack.length >= 2;
                 return stack.length > 0 && cardMatchesFilter(stack[stack.length - 1], filterCtx);
             })
         );
@@ -805,7 +888,17 @@ function highlightEffectTargets() {
     const ctx = gameState.effectContext;
     if (!ctx) return;
 
-    if (ctx.type === 'discard' || ctx.type === 'give') {
+    if (ctx.type === 'discardVariable') {
+        const hand = document.getElementById('player-hand');
+        hand.classList.add('targeting', 'discard-mode');
+        const banner = document.getElementById('discard-banner');
+        if (banner) {
+            banner.textContent = `🗑 Plaga 2: lleva ${ctx.selected.length} descartada${ctx.selected.length !== 1 ? 's' : ''} — haz clic para descartar otra`;
+            banner.classList.add('visible');
+        }
+        const stopBtn = document.getElementById('btn-stop-discard');
+        if (stopBtn) stopBtn.classList.toggle('hidden', ctx.selected.length < 1);
+    } else if (ctx.type === 'discard' || ctx.type === 'give') {
         const hand = document.getElementById('player-hand');
         hand.classList.add('targeting', 'discard-mode');
         const remaining = ctx.count - ctx.selected.length;
@@ -824,12 +917,15 @@ function highlightEffectTargets() {
             ['player', 'ai'].forEach(p => {
                 if (ctx.target !== 'any' && ctx.target !== p) return;
                 const stack = gameState.field[l][p];
-                if (stack.length === 0) return;
-                const topCard = stack[stack.length - 1];
-                if (cardMatchesFilter(topCard, ctx)) {
-                    const stackEl = document.querySelector(`#line-${l} .${p}-stack`);
-                    if (stackEl) stackEl.classList.add('targeting');
+                if (ctx.coveredOnly) {
+                    if (stack.length < 2) return;
+                } else {
+                    if (stack.length === 0) return;
+                    const topCard = stack[stack.length - 1];
+                    if (!cardMatchesFilter(topCard, ctx)) return;
                 }
+                const stackEl = document.querySelector(`#line-${l} .${p}-stack`);
+                if (stackEl) stackEl.classList.add('targeting');
             });
         });
         const banner = document.getElementById('discard-banner');
@@ -863,24 +959,33 @@ function highlightEffectTargets() {
             ['player', 'ai'].forEach(p => {
                 if (ctx.target !== 'any' && ctx.target !== p) return;
                 const stack = gameState.field[l][p];
-                if (stack.length === 0) return;
-                const topCard = stack[stack.length - 1];
-                if (ctx.filter && !cardMatchesFilter(topCard, ctx)) return;
+                if (ctx.coveredOnly) {
+                    // Solo resaltar stacks con al menos 1 carta cubierta (length >= 2)
+                    if (stack.length < 2) return;
+                } else {
+                    if (stack.length === 0) return;
+                    const topCard = stack[stack.length - 1];
+                    if (ctx.filter && !cardMatchesFilter(topCard, ctx)) return;
+                }
                 const stackEl = document.querySelector(`#line-${l} .${p}-stack`);
                 if (stackEl) stackEl.classList.add('targeting');
             });
         });
         const banner = document.getElementById('discard-banner');
         if (banner) {
-            const gravLine = ctx.effectLine;
-            const filterDesc = ctx.filter === 'faceDown' ? ' bocabajo' : '';
-            banner.textContent = `🔀 Elige una carta${filterDesc} para DESPLAZAR (de/hacia ${gravLine || 'esta línea'})`;
+            const filterDesc = ctx.coveredOnly ? ' cubierta' : (ctx.filter === 'faceDown' ? ' bocabajo' : '');
+            banner.textContent = `🔀 Elige una carta${filterDesc} para DESPLAZAR`;
             banner.classList.add('visible');
         }
     } else if (ctx.type === 'confirm') {
         // No highlighting needed, just the confirm dialog
     } else if (ctx.type === 'massDeleteByValueRange') {
+        const { minVal, maxVal } = ctx;
         LINES.forEach(l => {
+            const hasEligible = ['player', 'ai'].some(p =>
+                gameState.field[l][p].some(c => c.faceDown || (c.card.valor >= minVal && c.card.valor <= maxVal))
+            );
+            if (!hasEligible) return;
             const lineEl = document.getElementById(`line-${l}`);
             if (lineEl) {
                 lineEl.classList.add('targeting');
@@ -926,22 +1031,36 @@ function clearEffectHighlights() {
         el.style.cursor = '';
         if (el.id && (el.id.startsWith('proto-') || el.id.startsWith('line-'))) el.onclick = null;
     });
+    document.querySelectorAll('.selectable-line').forEach(el => el.classList.remove('selectable-line'));
     document.getElementById('player-hand')?.classList.remove('discard-mode');
     const banner = document.getElementById('discard-banner');
     if (banner) banner.classList.remove('visible');
+    const stopBtn = document.getElementById('btn-stop-discard');
+    if (stopBtn) stopBtn.classList.add('hidden');
 }
 
 function handleDiscardChoice(handIndex) {
     const ctx = gameState.effectContext;
-    if (!ctx || (ctx.type !== 'discard' && ctx.type !== 'give')) return;
+    if (!ctx || (ctx.type !== 'discard' && ctx.type !== 'give' && ctx.type !== 'discardVariable')) return;
 
     const card = gameState.player.hand.splice(handIndex, 1)[0];
     if (ctx.type === 'give') {
-        gameState.ai.hand.push(card); // dar: va a la mano del rival
+        gameState.ai.hand.push(card);
     } else {
-        gameState.player.trash.push(card); // descartar: va al descarte
+        gameState.player.trash.push(card);
+        gameState.discardedSinceLastCheck.player = true;
     }
     ctx.selected.push(card);
+
+    if (ctx.type === 'discardVariable') {
+        if (gameState.player.hand.length === 0) {
+            finalizeDiscardVariable();
+        } else {
+            highlightEffectTargets();
+            updateUI();
+        }
+        return;
+    }
 
     if (ctx.selected.length >= ctx.count) {
         finishEffect();
@@ -958,6 +1077,15 @@ function handleDiscardChoice(handIndex) {
     }
 }
 
+function finalizeDiscardVariable() {
+    const ctx = gameState.effectContext;
+    if (!ctx || ctx.type !== 'discardVariable') return;
+    const n = ctx.selected.length;
+    finishEffect();
+    discard('ai', n + 1);
+    updateStatus(`Plaga 2: descartaste ${n}, la IA descarta ${n + 1}`);
+}
+
 function handleFieldCardClick(line, target, cardIdx) {
     const ctx = gameState.effectContext;
     if (!ctx) return;
@@ -972,10 +1100,12 @@ function handleFieldCardClick(line, target, cardIdx) {
         gameState.field[line][target].splice(cardIdx, 1);
         gameState[target].trash.push(cardObj.card);
         ctx.selected.push(cardObj);
+        triggerUncovered(line, target);
     } else if (ctx.type === 'flip') {
         const cardObj = gameState.field[line][target][cardIdx];
         if (ctx.excludeLine && line === ctx.excludeLine) return;
         if (ctx.excludeCardName && cardObj.card.nombre === ctx.excludeCardName) return;
+        if (ctx.coveredOnly && cardIdx === gameState.field[line][target].length - 1) return;
         if (ctx.filter && !cardMatchesFilter(cardObj, ctx)) return;
         cardObj.faceDown = !cardObj.faceDown;
         gameState.lastFlippedCard = { cardObj, line };
@@ -984,6 +1114,8 @@ function handleFieldCardClick(line, target, cardIdx) {
         const cardObj = gameState.field[line][target][cardIdx];
         // Bloquear línea excluida (ej. Gravedad 4: fuente no puede ser la propia línea)
         if (ctx.excludeLine && line === ctx.excludeLine) return;
+        // Oscuridad 0: solo cartas cubiertas (no la top)
+        if (ctx.coveredOnly && cardIdx === gameState.field[line][target].length - 1) return;
         // Bloquear si el filtro no pasa (ej. solo bocabajo)
         if (ctx.filter && !cardMatchesFilter(cardObj, ctx)) return;
         ctx.selectedCard = { line, target, cardIdx };
@@ -1002,6 +1134,7 @@ function handleFieldCardClick(line, target, cardIdx) {
         const cardObj = gameState.field[line][target].splice(cardIdx, 1)[0];
         gameState[target].hand.push(cardObj.card);
         ctx.selected.push(cardObj);
+        triggerUncovered(line, target);
     } else if (ctx.type === 'rearrange') {
         if (!ctx.firstProtocol) {
             ctx.firstProtocol = line;
@@ -1032,10 +1165,62 @@ function handleFieldCardClick(line, target, cardIdx) {
     }
 }
 
+/**
+ * Aterriza la carta en commit queue (pendingLanding) tras resolver onCover.
+ * Dispara onPlay si es bocarriba, luego continúa el turno.
+ */
+/**
+ * Metal 6: si la carta recién cubierta tiene deleteOnModify, eliminarla del stack.
+ * Llamar DESPUÉS de hacer push de la nueva carta al stack.
+ */
+function checkDeleteOnCover(line, owner) {
+    const stack = gameState.field[line][owner];
+    if (stack.length < 2) return;
+    const coveredObj = stack[stack.length - 2]; // la que acaba de quedar tapada
+    if (coveredObj.faceDown) return;
+    if (typeof getPersistentModifiers !== 'function') return;
+    const mods = getPersistentModifiers(coveredObj.card);
+    if (mods.deleteOnModify) {
+        stack.splice(stack.length - 2, 1);
+        gameState[owner].trash.push(coveredObj.card);
+        updateUI();
+    }
+}
+
+function landPendingCard() {
+    const { line, cardObj, owner, isFaceDown } = gameState.pendingLanding;
+    gameState.pendingLanding = null;
+    gameState.field[line][owner].push(cardObj);
+    checkDeleteOnCover(line, owner);
+    updateUI();
+    if (!isFaceDown) {
+        gameState.currentEffectLine = line;
+        if (owner === 'player') {
+            executeEffect(cardObj.card, 'player');
+            if (gameState.effectContext || gameState.effectQueue.length > 0) {
+                gameState.pendingTurnEnd = 'player';
+                return;
+            }
+            endTurn('player');
+        } else {
+            executeEffect(cardObj.card, 'ai');
+        }
+    } else {
+        if (owner === 'player') endTurn('player');
+        // AI face-down: endTurn se llama desde playAITurn al volver
+    }
+}
+
 function finishEffect() {
     gameState.effectContext = null;
     clearEffectHighlights();
     updateUI();
+
+    // Si hay carta en commit queue esperando aterrizar, aterrizarla ahora
+    if (gameState.pendingLanding && gameState.effectQueue.length === 0) {
+        landPendingCard();
+        return;
+    }
 
     // If this was the end-of-turn discard, resume end turn flow
     if (gameState.pendingEndTurnFor) {
@@ -1084,6 +1269,7 @@ function resolveEffectAI(type, target, count, opts = {}) {
                 const line = validLines[Math.floor(Math.random() * validLines.length)];
                 const cardObj = gameState.field[line][actualTarget].pop();
                 gameState[actualTarget].trash.push(cardObj.card);
+                triggerUncovered(line, actualTarget);
             }
         }
     } else if (type === 'flip') {
@@ -1115,9 +1301,26 @@ function resolveEffectAI(type, target, count, opts = {}) {
                 const line = validLines[Math.floor(Math.random() * validLines.length)];
                 const cardObj = gameState.field[line][actualTarget].pop();
                 gameState[actualTarget].hand.push(cardObj.card);
+                triggerUncovered(line, actualTarget);
             }
         }
     }
+    if (type === 'rearrange') {
+        // IA intercambia dos protocolos aleatorios del dueño (actualTarget)
+        const owner = actualTarget;
+        const protos = gameState[owner].protocols;
+        if (protos.length >= 2) {
+            const i = Math.floor(Math.random() * protos.length);
+            let j = Math.floor(Math.random() * (protos.length - 1));
+            if (j >= i) j++;
+            [protos[i], protos[j]] = [protos[j], protos[i]];
+            updateStatus(`IA reorganizó sus Protocolos`);
+            updateUI();
+        }
+        if (typeof processAbilityEffect === 'function') processAbilityEffect();
+        return;
+    }
+
     const typeLabels = { discard: 'descartó', eliminate: 'eliminó', flip: 'volteó', shift: 'desplazó', return: 'devolvió a mano' };
     const whoLabel = actualTarget === 'player' ? 'tu carta' : 'su carta';
     updateStatus(`IA ${typeLabels[type] || type} ${whoLabel}`);
@@ -1128,19 +1331,38 @@ function draw(target, count) {
     for (let i = 0; i < count; i++) {
         drawCard(target);
     }
+    if (count > 0) gameState.drawnSinceLastCheck[target] = true;
     updateStatus(`${target === 'player' ? 'Robas' : 'IA roba'} ${count} carta${count !== 1 ? 's' : ''}`);
-    if (typeof onDrawEffects === 'function') onDrawEffects(target);
 }
 
 function discard(target, count) {
+    let discarded = 0;
     for (let i = 0; i < count; i++) {
         if (gameState[target].hand.length > 0) {
             const idx = Math.floor(Math.random() * gameState[target].hand.length);
             const card = gameState[target].hand.splice(idx, 1)[0];
             gameState[target].trash.push(card);
+            gameState.discardedSinceLastCheck[target] = true;
+            discarded++;
         }
     }
-    updateStatus(`${target === 'player' ? 'Descartas' : 'IA descarta'} ${count} carta${count !== 1 ? 's' : ''}`);
+    if (discarded > 0) {
+        updateStatus(`${target === 'player' ? 'Descartas' : 'IA descarta'} ${discarded} carta${discarded !== 1 ? 's' : ''}`);
+        updateUI();
+    }
+}
+
+function triggerUncovered(line, owner) {
+    const stack = gameState.field[line][owner];
+    if (stack.length === 0) return;
+    const top = stack[stack.length - 1];
+    if (!top.faceDown && typeof triggerCardEffect === 'function') {
+        const cardId = top.card.id;
+        if (gameState.uncoveredThisTurn.has(cardId)) return;
+        gameState.uncoveredThisTurn.add(cardId);
+        gameState.currentEffectLine = line;
+        triggerCardEffect(top.card, 'onPlay', owner);
+    }
 }
 
 function flipCardInField(cardId) {
@@ -1171,17 +1393,17 @@ function playSelectedCard(isFaceDown) {
     }
 
     // Face-up play: protocol must match the line (compiled lines allowed)
-    // ERRATA Espíritu 1: if allowAnyProtocol is active, any line is valid
+    // Espíritu 1: si allowAnyProtocol está activo, el jugador elige línea libremente
     const idx = gameState.player.protocols.indexOf(card.protocol);
-    if (idx !== -1) {
-        console.log(`✅ Playing face-up: ${card.nombre} on line ${LINES[idx]}`);
-        finalizePlay(LINES[idx], false);
-    } else if (typeof hasAllowAnyProtocol === 'function' && hasAllowAnyProtocol('player')) {
+    if (typeof hasAllowAnyProtocol === 'function' && hasAllowAnyProtocol('player')) {
         console.log(`✅ Playing face-up (any protocol allowed): ${card.nombre}`);
         gameState.selectionMode = true;
         gameState.selectionModeFaceUp = true;
         updateStatus("Espíritu 1: elige línea para colocar la carta bocarriba...");
         highlightSelectableLines();
+    } else if (idx !== -1) {
+        console.log(`✅ Playing face-up: ${card.nombre} on line ${LINES[idx]}`);
+        finalizePlay(LINES[idx], false);
     } else {
         console.error("❌ Illegal face-up play: protocol has no matching line", {
             protocol: card.protocol,
@@ -1205,30 +1427,61 @@ function clearSelectionHighlights() {
 
 function finalizePlay(targetLine, isFaceDown) {
     console.log(`🎲 finalizePlay: line=${targetLine}, faceDown=${isFaceDown}`);
-    
+
+    // Psique 1: jugador forzado a jugar bocabajo
+    if (!isFaceDown && typeof hasForceOpponentFaceDown === 'function' && hasForceOpponentFaceDown('player')) {
+        updateStatus('Psique 1 activa — solo puedes jugar bocabajo');
+        return;
+    }
+
+    // Comprobar si Plaga 0 (o Metal 2 bocabajo) del rival bloquea esta línea
+    if (typeof isPlayBlockedByPersistent === 'function' && isPlayBlockedByPersistent(targetLine, 'player', isFaceDown)) {
+        const reason = isFaceDown ? 'La IA tiene Metal 2 en esa línea — no puedes jugar bocabajo ahí' : 'La IA tiene Plaga 0 en esa línea — no puedes jugar ahí';
+        updateStatus(reason);
+        return;
+    }
+
     // Compiled lines can still be played on (re-compile rules)
-    
+
     gameState.selectionMode = false;
     clearSelectionHighlights();
 
     const card = gameState.player.hand[gameState.selectedCardIndex];
     const playedCard = { card: card, faceDown: isFaceDown };
 
-    // Mover carta a campo y quitar de mano antes de disparar cualquier efecto
+    // Detectar carta que quedará cubierta (commit queue: onCover debe resolver antes de aterrizar)
     const playerStack = gameState.field[targetLine].player;
     const topCardBeforePush = (playerStack.length > 0 && !playerStack[playerStack.length - 1].faceDown)
         ? playerStack[playerStack.length - 1] : null;
+    const topHasOnCover = topCardBeforePush &&
+        typeof CARD_EFFECTS !== 'undefined' &&
+        CARD_EFFECTS[topCardBeforePush.card.nombre]?.onCover;
 
-    gameState.field[targetLine].player.push(playedCard);
+    // Quitar de mano antes de disparar cualquier efecto
     gameState.player.hand.splice(gameState.selectedCardIndex, 1);
     gameState.selectedCardIndex = null;
-    updateUI(); // asegurar que la carta jugada desaparece de la mano antes de cualquier prompt
+    updateUI();
 
-    // Disparar onCover ahora que la mano ya está actualizada
+    if (topHasOnCover) {
+        // Commit queue: carta entra en cola, aterriza solo tras resolver onCover
+        gameState.pendingLanding = { line: targetLine, cardObj: playedCard, owner: 'player', isFaceDown };
+        gameState.currentEffectLine = targetLine;
+        triggerCardEffect(topCardBeforePush.card, 'onCover', 'player');
+        // Si onCover fue no-interactivo y ya se resolvió, finishEffect lo aterrizará
+        // Si hay efectos pendientes, pendingLanding espera en finishEffect
+        if (gameState.effectContext || gameState.effectQueue.length > 0) {
+            gameState.pendingTurnEnd = null; // landPendingCard gestiona el fin de turno
+        }
+        return;
+    }
+
+    // Sin onCover: aterriza inmediatamente (flujo original)
     if (topCardBeforePush) {
         gameState.currentEffectLine = targetLine;
         triggerCardEffect(topCardBeforePush.card, 'onCover', 'player');
     }
+    gameState.field[targetLine].player.push(playedCard);
+    checkDeleteOnCover(targetLine, 'player');
 
     console.log(`✅ Card played: ${card.nombre} on ${targetLine} (${isFaceDown ? 'face-down' : 'face-up'})`);
 
@@ -1264,6 +1517,9 @@ function finalizePlay(targetLine, isFaceDown) {
     endTurn('player');
 }
 
+const btnStopDiscard = document.getElementById('btn-stop-discard');
+if (btnStopDiscard) btnStopDiscard.onclick = () => finalizeDiscardVariable();
+
 ui.btnRefresh.onclick = () => {
     console.log('🔘 btnRefresh clicked - checking conditions...');
     if (gameState.turn !== 'player' || gameState.phase !== 'action') {
@@ -1279,6 +1535,7 @@ ui.btnRefresh.onclick = () => {
     while(gameState.player.hand.length < 5) {
         if(!drawCard('player')) break;
     }
+    gameState.refreshedThisTurn = 'player';
     console.log('🔄 Hand refreshed, ending turn');
     endTurn('player');
 }
@@ -1360,17 +1617,23 @@ function playAITurnRandom() {
     let targetLine = lineIndex !== -1 ? LINES[lineIndex] : null;
 
     let isFaceDown = true;
+    const aiForced = typeof hasForceOpponentFaceDown === 'function' && hasForceOpponentFaceDown('ai');
 
-    if (targetLine) {
+    if (!aiForced && targetLine && !(typeof isPlayBlockedByPersistent === 'function' && isPlayBlockedByPersistent(targetLine, 'ai'))) {
         isFaceDown = false;
     } else {
-        targetLine = LINES[0]; // fallback: cualquier línea
+        // Buscar línea libre para bocabajo (ni Plaga 0 ni Metal 2 del jugador)
+        const freeLine = LINES.find(l =>
+            !(typeof isPlayBlockedByPersistent === 'function' && isPlayBlockedByPersistent(l, 'ai', true))
+        );
+        targetLine = freeLine || LINES[0];
         isFaceDown = true;
     }
 
     if (targetLine) {
         const movedCard = gameState.ai.hand.splice(cardIdx, 1)[0];
         gameState.field[targetLine].ai.push({ card: movedCard, faceDown: isFaceDown });
+        checkDeleteOnCover(targetLine, 'ai');
         updateStatus(`IA jugó ${movedCard.nombre} ${isFaceDown ? 'bocabajo' : 'bocarriba'} en ${targetLine}`);
         console.log('Estado final del juego tras fallback aleatorio:', JSON.stringify(gameState));
     } else {
@@ -1387,12 +1650,16 @@ function generateAIPossibleMoves() {
     
     gameState.ai.hand.forEach((card, cardIndex) => {
         LINES.forEach(line => {
+            // Saltar líneas bloqueadas por Plaga 0 del jugador
+            if (typeof isPlayBlockedByPersistent === 'function' && isPlayBlockedByPersistent(line, 'ai')) return;
+
             {
                 // Movimiento bocarriba (si coincide protocolo, compiled lines allowed)
                 const lineIndex = gameState.ai.protocols.indexOf(card.protocol);
                 const lineMatchesProtocol = lineIndex !== -1 && LINES[lineIndex] === line;
-                
-                if (lineMatchesProtocol) {
+
+                const aiForcedDown = typeof hasForceOpponentFaceDown === 'function' && hasForceOpponentFaceDown('ai');
+                if (lineMatchesProtocol && !aiForcedDown) {
                     moves.push({
                         cardIndex,
                         line,
@@ -1401,15 +1668,17 @@ function generateAIPossibleMoves() {
                         type: 'face-up',
                     });
                 }
-                
-                // Movimiento bocabajo (siempre posible)
-                moves.push({
+
+                // Movimiento bocabajo (si Metal 2 del jugador no lo bloquea)
+                if (!(typeof isPlayBlockedByPersistent === 'function' && isPlayBlockedByPersistent(line, 'ai', true))) {
+                  moves.push({
                     cardIndex,
                     line,
                     faceUp: false,
                     card,
                     type: 'face-down',
-                });
+                  });
+                }
             }
         });
     });
@@ -1433,11 +1702,11 @@ function executeAIMove(move) {
         while(gameState.ai.hand.length < 5 && gameState.ai.deck.length > 0) {
             drawCard('ai');
         }
+        gameState.refreshedThisTurn = 'ai';
         updateStatus('IA recarga su mazo');
         return; // endTurn se llama en el caller (playAITurn)
     }
 
-    const card = gameState.ai.hand[move.cardIndex];
     const movedCard = gameState.ai.hand.splice(move.cardIndex, 1)[0];
 
     // Disparar onCover en la carta que quedará cubierta (si existe)
@@ -1454,7 +1723,8 @@ function executeAIMove(move) {
         card: movedCard,
         faceDown: !move.faceUp
     });
-    
+    checkDeleteOnCover(move.line, 'ai');
+
     const faceText = move.faceUp ? 'bocarriba' : 'bocabajo';
     updateStatus(`IA jugó ${movedCard.nombre} ${faceText} en ${move.line}`);
     
@@ -1488,6 +1758,7 @@ function endTurn(who) {
             // AI discards randomly
             while(gameState.ai.hand.length > 5) {
                 gameState.ai.trash.push(gameState.ai.hand.pop());
+                gameState.discardedSinceLastCheck.ai = true;
             }
         }
     }
@@ -1498,12 +1769,17 @@ function endTurn(who) {
 function continueEndTurn(who) {
     updateUI();
     gameState.phase = 'end';
-
     if (typeof onTurnEndEffects === 'function') {
         onTurnEndEffects(who);
     }
 
-    // Si onTurnEnd dejó efectos interactivos pendientes, esperar a que se resuelvan
+    // Velocidad 1: si este jugador usó Refresh este turno, roba 1 carta extra DESPUÉS del cache check
+    if (gameState.refreshedThisTurn === who) {
+        gameState.refreshedThisTurn = null;
+        if (typeof onRefreshEffects === 'function') onRefreshEffects(who);
+    }
+
+    // Si onTurnEnd/onRefresh dejó efectos interactivos pendientes, esperar a que se resuelvan
     if (gameState.effectContext || gameState.effectQueue.length > 0) {
         gameState.pendingStartTurn = (who === 'player' ? 'ai' : 'player');
         console.log(`⏳ onTurnEnd pendiente — inicio de turno pausado`);
@@ -1713,8 +1989,8 @@ function showDraftResult() {
     document.getElementById('draft-turn-text').textContent = '¡Draft completo!';
 
     // Build matchup preview
-    // Player protocols: [0,1,2] → face AI protocols reversed: [2,1,0]
-    const aiOrdered = [...draftState.aiPicks].reverse();
+    // P1 pick[i] faces AI pick[i]: mismo índice = misma columna física (P2 construye de su derecha a izquierda)
+    const aiOrdered = [...draftState.aiPicks];
     const matchupsEl = document.getElementById('line-matchups');
     matchupsEl.innerHTML = '';
     const lineNames = ['Izquierda', 'Centro', 'Derecha'];
@@ -1755,7 +2031,7 @@ function startGameFromDraft() {
     if (draftState && draftState.playerPicks && draftState.playerPicks.length > 0) {
         // Viene del draft (tiene cartas seleccionadas)
         gameState.player.protocols = [...draftState.playerPicks];
-        gameState.ai.protocols = [...draftState.aiPicks].reverse();
+        gameState.ai.protocols = [...draftState.aiPicks];
         console.log('✅ Loaded from draftState:', { 
             player: gameState.player.protocols,
             ai: gameState.ai.protocols 

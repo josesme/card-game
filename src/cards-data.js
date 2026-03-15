@@ -19,7 +19,7 @@ const CARDS_DATA = {
   },
   "Espíritu": [
     {"valor": 0, "nombre": "Espíritu 0", "fase": "Action", "h_inicio": "", "h_accion": "Actualiza. Roba 1 carta.", "h_final": "Sáltate tu Fase de Comprobar Caché."},
-    {"valor": 1, "nombre": "Espíritu 1", "fase": "Start",  "h_inicio": "Inicial: Descarta 1 carta o bien voltea esta carta. Cada vez que juegues una carta bocarriba, puedes colocarla sin que coincida con los Protocolos.", "h_accion": "Roba 2 cartas.", "h_final": ""},
+    {"valor": 1, "nombre": "Espíritu 1", "fase": "Start",  "h_inicio": "Cada vez que juegues una carta bocarriba, puedes colocarla sin que coincida con los protocolos.", "h_accion": "Roba 2 cartas.", "h_final": "Inicial: Descarta 1 carta o bien voltea esta carta."},
     {"valor": 2, "nombre": "Espíritu 2", "fase": "Action", "h_inicio": "", "h_accion": "Puedes voltear 1 carta.", "h_final": ""},
     {"valor": 3, "nombre": "Espíritu 3", "fase": "Action", "h_inicio": "Después de robar cartas: Puedes cambiar esta carta, incluso si está cubierta.", "h_accion": "", "h_final": ""},
     {"valor": 4, "nombre": "Espíritu 4", "fase": "Action", "h_inicio": "", "h_accion": "Reorganiza 2 de tus Protocolos.", "h_final": ""},
@@ -83,7 +83,7 @@ const CARDS_DATA = {
   ],
   "Psique": [
     {"valor": 0, "nombre": "Psique 0", "fase": "Action", "h_inicio": "", "h_accion": "Roba 2 cartas. Tu oponente descarta 2 cartas y, luego, revela su mano.", "h_final": ""},
-    {"valor": 1, "nombre": "Psique 1", "fase": "Start",  "h_inicio": "Inicial: Voltea esta carta. Tu oponente solo puede jugar cartas bocabajo.", "h_accion": "", "h_final": ""},
+    {"valor": 1, "nombre": "Psique 1", "fase": "Start",  "h_inicio": "Tu oponente solo puede jugar cartas bocabajo.", "h_accion": "", "h_final": "Inicial: Voltea esta carta."},
     {"valor": 2, "nombre": "Psique 2", "fase": "Action", "h_inicio": "", "h_accion": "Tu oponente descarta 2 cartas. Reorganiza sus Protocolos.", "h_final": ""},
     {"valor": 3, "nombre": "Psique 3", "fase": "Action", "h_inicio": "", "h_accion": "Tu oponente descarta 1 carta. Cambia 1 de sus cartas.", "h_final": ""},
     {"valor": 4, "nombre": "Psique 4", "fase": "End",    "h_inicio": "", "h_accion": "", "h_final": "Final: Puedes devolver 1 de las cartas de tu oponente. Si lo haces, voltea esta carta."},
@@ -92,7 +92,7 @@ const CARDS_DATA = {
   "Velocidad": [
     {"valor": 0, "nombre": "Velocidad 0", "fase": "Action", "h_inicio": "", "h_accion": "Juega 1 carta.", "h_final": ""},
     {"valor": 1, "nombre": "Velocidad 1", "fase": "Action", "h_inicio": "Después de Borrar la Caché: Roba 1 carta.", "h_accion": "Roba 2 cartas.", "h_final": ""},
-    {"valor": 2, "nombre": "Velocidad 2", "fase": "Action", "h_inicio": "", "h_accion": "Si esta carta se elimina Compilando: En su lugar, cambia esta carta, incluso si está cubierta.", "h_final": ""},
+    {"valor": 2, "nombre": "Velocidad 2", "fase": "Action", "h_inicio": "Si esta carta se elimina Compilando: En su lugar, cambia esta carta, incluso si está cubierta.", "h_accion": "", "h_final": ""},
     {"valor": 3, "nombre": "Velocidad 3", "fase": "End",    "h_inicio": "", "h_accion": "Cambia 1 de tus otras cartas.", "h_final": "Final: Puedes cambiar 1 de tus cartas. Si lo haces, voltea esta carta."},
     {"valor": 4, "nombre": "Velocidad 4", "fase": "Action", "h_inicio": "", "h_accion": "Cambia 1 de las cartas bocabajo de tu oponente.", "h_final": ""},
     {"valor": 5, "nombre": "Velocidad 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""}
