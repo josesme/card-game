@@ -13,9 +13,9 @@ const CARDS_DATA = {
     "Velocidad":  { "color": "#06b6d4", "abilities": "ROBAR. JUGAR. CAMBIAR" },
     "Agua":       { "color": "#3b82f6", "abilities": "DEVOLVER. ROBAR. VOLTEAR" },
     "Oscuridad":  { "color": "#64748b", "abilities": "ROBAR. CAMBIAR. MANIPULAR" },
-    "Apatía":     { "color": "#6b7280", "abilities": "Voltear cartas bocabajo" },
-    "Odio":       { "color": "#b91c1c", "abilities": "Eliminar tus cartas y cartas del oponente" },
-    "Amor":       { "color": "#f43f5e", "abilities": "Robar, dar e intercambiar" }
+    "Apatía":     { "color": "#6b7280", "abilities": "VOLTEAR CARTAS BOCABAJO" },
+    "Odio":       { "color": "#b91c1c", "abilities": "ELIMINAR. DESCARTAR" },
+    "Amor":       { "color": "#f43f5e", "abilities": "ROBAR. DAR. INTERCAMBIAR" }
   },
   "Espíritu": [
     {"valor": 0, "nombre": "Espíritu 0", "fase": "Action", "h_inicio": "", "h_accion": "Actualiza. Roba 1 carta.", "h_final": "Sáltate tu Fase de Comprobar Caché."},
