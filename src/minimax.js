@@ -5,7 +5,7 @@
  */
 
 class MiniMax {
-  constructor(evaluator, maxDepth = 2) {
+  constructor(evaluator, maxDepth = 3) {
     this.evaluator = evaluator;
     this.maxDepth = maxDepth;
     this.nodeCount = 0;
@@ -21,8 +21,11 @@ class MiniMax {
 
     if (availableMoves.length === 0) return null;
 
+    // Order moves before search for better alpha-beta pruning
+    const orderedMoves = this.sortMoves(gameState, availableMoves, 'ai');
+
     // Try each move and evaluate resulting positions
-    const evaluatedMoves = availableMoves.map(move => {
+    const evaluatedMoves = orderedMoves.map(move => {
       const simulatedState = this.simulateMove(gameState, move, 'ai');
       return {
         move,
@@ -67,7 +70,7 @@ class MiniMax {
 
     if (isMaximizing) {
       let maxEval = -Infinity;
-      const aiMoves = this.generateAIMoves(gameState);
+      const aiMoves = this.sortMoves(gameState, this.generateAIMoves(gameState), 'ai');
 
       for (const move of aiMoves) {
         const nextState = this.simulateMove(gameState, move, 'ai');
@@ -82,7 +85,7 @@ class MiniMax {
       return maxEval;
     } else {
       let minEval = +Infinity;
-      const playerMoves = this.generatePlayerMoves(gameState);
+      const playerMoves = this.sortMoves(gameState, this.generatePlayerMoves(gameState), 'player');
 
       for (const move of playerMoves) {
         const nextState = this.simulateMove(gameState, move, 'player');
@@ -151,11 +154,11 @@ class MiniMax {
     const hand = gameState.player.hand || [];
     const LINES = ['izquierda', 'centro', 'derecha'];
 
-    // Prioritize high value cards to limit branching
+    // Prioritize high value cards to limit branching (top 2 for depth-3 perf)
     const bestIndices = hand
       .map((card, idx) => ({ idx, val: card.valor }))
       .sort((a, b) => b.val - a.val)
-      .slice(0, 3)
+      .slice(0, 2)
       .map(item => item.idx);
 
     bestIndices.forEach(index => {
@@ -172,7 +175,46 @@ class MiniMax {
       });
     });
 
+    if (gameState.player.deck.length > 0 && hand.length < 5) {
+      moves.push({ action: 'refresh' });
+    }
+
     return moves;
+  }
+
+  /**
+   * 🔀 MOVE ORDERING: Better moves first → improves alpha-beta pruning
+   * For AI (maximizing): compile-ready > face-up on leading line > high value > face-down > refresh
+   * For player (minimizing): same logic in reverse (worst for AI first)
+   */
+  sortMoves(gameState, moves, player) {
+    const LINES = ['izquierda', 'centro', 'derecha'];
+    const score = (move) => {
+      if (move.action === 'refresh') return player === 'ai' ? -5 : 5;
+      if (!move.line) return 0;
+
+      const myScore  = this._lineScore(gameState, move.line, player);
+      const oppScore = this._lineScore(gameState, move.line, player === 'ai' ? 'player' : 'ai');
+      const cardVal  = (move.card && move.card.valor) || 0;
+      let s = 0;
+
+      // Compile-ready: playing here wins the line
+      if (myScore + cardVal >= 10 && myScore + cardVal > oppScore) s += 100;
+      // Leading the line
+      if (myScore > oppScore) s += 20;
+      // Face up preferred (visible value contribution)
+      if (move.faceUp) s += 10;
+      // Card value
+      s += cardVal * 2;
+
+      return player === 'ai' ? s : -s; // player moves: lower is better for AI
+    };
+
+    return [...moves].sort((a, b) => score(b) - score(a));
+  }
+
+  _lineScore(gameState, line, player) {
+    return window.calculateScore ? window.calculateScore(gameState, line, player) : 0;
   }
 
   /**

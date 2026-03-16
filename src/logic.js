@@ -77,6 +77,8 @@ let gameState = {
     discardedSinceLastCheck: { player: false, ai: false },  // flag consumido por Plaga 1 al robar
     drawnSinceLastCheck: { player: false, ai: false },      // flag: robó cartas este turno
     drawnLastTurn: { player: false, ai: false },            // snapshot al inicio de turno (para Espíritu 3)
+    eliminatedSinceLastCheck: { player: false, ai: false }, // flag: eliminó cartas este turno
+    eliminatedLastTurn: { player: false, ai: false },       // snapshot al inicio de turno (para Odio 3)
     uncoveredThisTurn: new Set(),                           // IDs de cartas ya activadas por onUncovered este turno
     pendingLanding: null,                                   // carta en commit queue: aterriza tras resolver onCover
     refreshedThisTurn: null,                                // quién usó Refresh este turno (para Velocidad 1)
@@ -282,9 +284,15 @@ function initProtocolDisplay() {
             if (nameEl) nameEl.textContent = pProto;
             if (nameEl) nameEl.style.color = pColor;
             const statusEl = pCard.querySelector('.proto-card-status');
-            if (statusEl) statusEl.textContent = PROTOCOL_DEFS[pProto].abilities;
+            if (statusEl) statusEl.textContent = '';
             pCard.style.borderColor = pColor;
             pCard.style.boxShadow = `0 0 18px ${pColor}44`;
+            if (!pCard.dataset.stackHover) {
+                pCard.dataset.stackHover = '1';
+                pCard.style.cursor = 'pointer';
+                pCard.addEventListener('mouseenter', () => showStackPreview(line, 'player'));
+                pCard.addEventListener('mouseleave', hideCardPreview);
+            }
         }
 
         // AI protocol card (top) - check if exists
@@ -294,9 +302,15 @@ function initProtocolDisplay() {
             if (nameEl) nameEl.textContent = aProto;
             if (nameEl) nameEl.style.color = aColor;
             const statusEl = aCard.querySelector('.proto-card-status');
-            if (statusEl) statusEl.textContent = PROTOCOL_DEFS[aProto].abilities;
+            if (statusEl) statusEl.textContent = '';
             aCard.style.borderColor = aColor;
             aCard.style.boxShadow = `0 0 18px ${aColor}44`;
+            if (!aCard.dataset.stackHover) {
+                aCard.dataset.stackHover = '1';
+                aCard.style.cursor = 'pointer';
+                aCard.addEventListener('mouseenter', () => showStackPreview(line, 'ai'));
+                aCard.addEventListener('mouseleave', hideCardPreview);
+            }
         }
     });
 }
@@ -312,13 +326,73 @@ function drawCard(target) {
     return true;
 }
 
+function createFieldCardHTML(card) {
+    const color = PROTOCOL_DEFS[card.protocol] ? PROTOCOL_DEFS[card.protocol].color : '#00d4ff';
+    return `<div class="field-card" data-id="${card.id}" style="border-color:${color}; box-shadow: 0 0 10px ${color}33;">
+        <span class="field-card-value" style="color:${color}">${card.valor}</span>
+    </div>`;
+}
+
+function isSelectionActive() {
+    return gameState.selectionMode ||
+        (gameState.effectContext && (gameState.effectContext.waitingForLine || gameState.effectContext.type === 'pickHandFaceDown_lineSelect'));
+}
+
+function showCardPreview(card) {
+    const panel = document.getElementById('card-preview-panel');
+    if (!panel || isSelectionActive()) return;
+    panel.classList.remove('hidden', 'stacked-view');
+    panel.classList.add('single-card');
+    panel.style.width = '370px';
+    panel.style.height = '490px';
+    panel.innerHTML = createCardHTML(card);
+}
+
+function showStackPreview(line, owner) {
+    const panel = document.getElementById('card-preview-panel');
+    if (!panel || isSelectionActive()) return;
+    const stack = gameState.field[line][owner];
+    if (!stack || stack.length === 0) { hideCardPreview(); return; }
+
+    const OFFSET = 120, CARD_H = 288, CARD_W = 216;
+    const totalH = (stack.length - 1) * OFFSET + CARD_H;
+
+    panel.classList.remove('hidden', 'single-card');
+    panel.classList.add('stacked-view');
+    panel.style.width = CARD_W + 'px';
+    panel.style.height = totalH + 'px';
+
+    let html = `<div style="position:relative;width:${CARD_W}px;height:${totalH}px;">`;
+    stack.forEach((cardObj, idx) => {
+        const top = idx * OFFSET;
+        const z = idx + 1;
+        if (cardObj.faceDown) {
+            html += `<div style="position:absolute;top:${top}px;left:0;z-index:${z};">
+                <div class="card face-down"><div class="card-back-value">2</div><div class="card-back-title">COMPILE</div></div>
+            </div>`;
+        } else {
+            html += `<div style="position:absolute;top:${top}px;left:0;z-index:${z};">${createCardHTML(cardObj.card)}</div>`;
+        }
+    });
+    html += '</div>';
+    panel.innerHTML = html;
+}
+
+function hideCardPreview() {
+    const panel = document.getElementById('card-preview-panel');
+    if (panel) {
+        panel.classList.add('hidden');
+        panel.classList.remove('single-card', 'stacked-view');
+    }
+}
+
 function createCardHTML(card, faceDown = false) {
     if (!card) return '';
     
     if (faceDown) {
         return `<div class="card face-down">
-            <div class="card-back-title">COMPILE</div>
             <div class="card-back-value">2</div>
+            <div class="card-back-title">COMPILE</div>
         </div>`;
     }
     
@@ -364,7 +438,10 @@ function updateUI() {
     if (aiTrashEl) aiTrashEl.innerText = gameState.ai.trash.length;
 
     // Update hands
-    if (ui.playerHand) ui.playerHand.innerHTML = gameState.player.hand.map(c => createCardHTML(c)).join('');
+    if (ui.playerHand) {
+        ui.playerHand.innerHTML = gameState.player.hand.map(c => createCardHTML(c)).join('');
+        // No hover preview for hand cards — stacked preview via protocol cards is sufficient
+    }
     // AI hand: just show count
     const aiHandCountEl = document.getElementById('ai-hand-count');
     if (aiHandCountEl) {
@@ -377,8 +454,8 @@ function updateUI() {
     document.querySelectorAll('#player-hand .card').forEach((cardEl, index) => {
         cardEl.onclick = () => {
             console.log(`🖱️ Card clicked at index ${index}. gameState.turn=${gameState.turn}, phase=${gameState.phase}, effectContext=${gameState.effectContext ? gameState.effectContext.type : 'none'}`);
-            if (gameState.effectContext && (gameState.effectContext.type === 'discard' || gameState.effectContext.type === 'discardVariable')) {
-                console.log(`   → Handling discard choice`);
+            if (gameState.effectContext && (gameState.effectContext.type === 'discard' || gameState.effectContext.type === 'discardVariable' || gameState.effectContext.type === 'give')) {
+                console.log(`   → Handling discard/give choice`);
                 handleDiscardChoice(index);
             } else if (gameState.effectContext && gameState.effectContext.type === 'pickHandFaceDown') {
                 // Oscuridad 3: seleccionar carta de mano
@@ -404,13 +481,10 @@ function updateUI() {
         const aiScore = calculateScore(gameState, line, 'ai');
         
         // Try to update score display if it exists
-        const scoreEl = document.getElementById(`score-${line}`);
-        if (scoreEl) {
-            const pScoreEl = scoreEl.querySelector('.player-score');
-            const aiScoreEl = scoreEl.querySelector('.ai-score');
-            if (pScoreEl) pScoreEl.innerText = pScore;
-            if (aiScoreEl) aiScoreEl.innerText = aiScore;
-        }
+        const pScoreEl = document.querySelector(`#proto-${line}-player .player-score`);
+        const aiScoreEl = document.querySelector(`#proto-${line}-ai .ai-score`);
+        if (pScoreEl) pScoreEl.innerText = pScore;
+        if (aiScoreEl) aiScoreEl.innerText = aiScore;
 
         // Mark compiled protocols if they exist
         if (gameState.field[line].compiledBy) {
@@ -420,11 +494,6 @@ function updateUI() {
             const cardToMark = compiledBy === 'player' ? pCard : aCard;
             if (cardToMark) {
                 cardToMark.classList.add('compiled');
-                const statusEl = cardToMark.querySelector('.proto-card-status');
-                if (statusEl) {
-                    const winner = compiledBy === 'player' ? 'COMPILADO ✓' : 'COMPILADO ✗';
-                    statusEl.textContent = winner;
-                }
             }
         }
     });
@@ -493,17 +562,20 @@ function renderStack(line, target) {
         const cEl = document.createElement('div');
         
         if (cardObj.faceDown) {
-            cEl.innerHTML = `<div class="card face-down card-in-field" title="Cara oculta">
-                <div class="card-back-title">COMPILE</div>
-                <div class="card-back-value">2</div>
+            cEl.innerHTML = `<div class="field-card face-down" title="Carta bocabajo">
+                <span class="field-card-value" style="color:#94a3b8">2</span>
             </div>`;
+        } else {
+            cEl.innerHTML = createFieldCardHTML(cardObj.card);
         }
- else {
-            cEl.innerHTML = createCardHTML(cardObj.card);
-        }
-        
+
         const domCard = cEl.firstElementChild;
-        
+
+        if (!cardObj.faceDown) {
+            domCard.addEventListener('mouseenter', () => showCardPreview(cardObj.card));
+            domCard.addEventListener('mouseleave', hideCardPreview);
+        }
+
         const isUncovered = idx === stack.length - 1;
 
         // Add click handler for effects (eliminate/flip/shift/return)
@@ -519,17 +591,14 @@ function renderStack(line, target) {
             }
         };
 
-        if (target === 'ai') {
-            domCard.style.bottom = `${idx * 20}px`;
-        } else {
-            domCard.style.top = `${idx * 20}px`;
-        }
         domCard.style.zIndex = idx;
-        
-        
+
         if (isUncovered) domCard.classList.add('uncovered');
-        
-        stackEl.appendChild(domCard);
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'card-field-wrapper';
+        wrapper.appendChild(domCard);
+        stackEl.appendChild(wrapper);
     });
 }
 
@@ -542,6 +611,9 @@ function startTurn(who) {
     // Snapshot del flag de robo del turno anterior (para Espíritu 3), luego resetear
     gameState.drawnLastTurn = { player: gameState.drawnSinceLastCheck.player, ai: gameState.drawnSinceLastCheck.ai };
     gameState.drawnSinceLastCheck = { player: false, ai: false };
+    // Snapshot del flag de eliminación del turno anterior (para Odio 3), luego resetear
+    gameState.eliminatedLastTurn = { player: gameState.eliminatedSinceLastCheck.player, ai: gameState.eliminatedSinceLastCheck.ai };
+    gameState.eliminatedSinceLastCheck = { player: false, ai: false };
     gameState.refreshedThisTurn = null;
     updateStatus(`--- Turno de ${who === 'player' ? 'Jugador' : 'IA'} ---`);
 
@@ -589,7 +661,7 @@ function checkCompilePhase(who) {
         if (gameState.pendingCompileShift) {
             const { cards, sourceLine } = gameState.pendingCompileShift;
             gameState.effectContext = { type: 'compileShift', cards, sourceLine, resumeFor: who, waitingForLine: true };
-            updateStatus('Velocidad 2: elige línea donde desplazar la carta');
+            updateStatus('Velocidad 2: elige línea donde cambiar la carta');
             highlightSelectableLines(sourceLine);
         } else {
             setTimeout(() => endTurn(who), 2000);
@@ -841,11 +913,14 @@ function startEffect(type, target, count, opts = {}) {
         return;
     }
 
-    // Si es descarte/dar del jugador y no tiene cartas, saltar efecto
-    if ((type === 'discard' || type === 'give') && target === 'player' && gameState.player.hand.length === 0) {
-        console.log(`⏭️ Descarte omitido — mano vacía`);
-        if (typeof processAbilityEffect === 'function') processAbilityEffect();
-        return;
+    // Si es descarte/dar del jugador, limitar count a cartas disponibles
+    if ((type === 'discard' || type === 'give') && target === 'player') {
+        if (gameState.player.hand.length === 0) {
+            console.log(`⏭️ Descarte omitido — mano vacía`);
+            if (typeof processAbilityEffect === 'function') processAbilityEffect();
+            return;
+        }
+        count = Math.min(count, gameState.player.hand.length);
     }
 
     // Si es eliminate/flip/return/shift y no hay cartas válidas en campo, saltar efecto
@@ -857,7 +932,10 @@ function startEffect(type, target, count, opts = {}) {
             targets.some(p => {
                 const stack = gameState.field[l][p];
                 if (opts.coveredOnly) return stack.length >= 2;
-                return stack.length > 0 && cardMatchesFilter(stack[stack.length - 1], filterCtx);
+                if (stack.length === 0) return false;
+                const topCard = stack[stack.length - 1];
+                if (opts.excludeCardName && topCard.card.nombre === opts.excludeCardName) return false;
+                return cardMatchesFilter(topCard, filterCtx);
             })
         );
         if (!hasValid) {
@@ -875,7 +953,7 @@ function startEffect(type, target, count, opts = {}) {
     else if (type === 'give') actionVerb = 'DAR AL OPONENTE';
     else if (type === 'eliminate') actionVerb = 'ELIMINAR';
     else if (type === 'return') actionVerb = 'DEVOLVER';
-    else if (type === 'shift') actionVerb = 'DESPLAZAR';
+    else if (type === 'shift') actionVerb = 'CAMBIAR de línea';
     else if (type === 'swap') actionVerb = 'INTERCAMBIAR';
     else if (type === 'rearrange') actionVerb = 'REORGANIZAR';
     
@@ -974,7 +1052,7 @@ function highlightEffectTargets() {
         const banner = document.getElementById('discard-banner');
         if (banner) {
             const filterDesc = ctx.coveredOnly ? ' cubierta' : (ctx.filter === 'faceDown' ? ' bocabajo' : '');
-            banner.textContent = `🔀 Elige una carta${filterDesc} para DESPLAZAR`;
+            banner.textContent = `🔀 Elige una carta${filterDesc} para CAMBIAR de línea`;
             banner.classList.add('visible');
         }
     } else if (ctx.type === 'confirm') {
@@ -1020,6 +1098,7 @@ function executeMassDeleteByValueRange(line) {
 function cardMatchesFilter(cardObj, ctx) {
     if (!ctx.filter) return true;
     if (ctx.filter === 'faceDown') return cardObj.faceDown;
+    if (ctx.filter === 'faceUp') return !cardObj.faceDown;
     if (ctx.filter === 'maxValue') return !cardObj.faceDown && cardObj.card.valor <= (ctx.maxVal ?? 99);
     if (ctx.filter === 'minValue') return !cardObj.faceDown && cardObj.card.valor >= (ctx.minVal ?? 0);
     return true;
@@ -1062,7 +1141,7 @@ function handleDiscardChoice(handIndex) {
         return;
     }
 
-    if (ctx.selected.length >= ctx.count) {
+    if (ctx.selected.length >= ctx.count || gameState.player.hand.length === 0) {
         finishEffect();
     } else {
         const remaining = ctx.count - ctx.selected.length;
@@ -1099,6 +1178,7 @@ function handleFieldCardClick(line, target, cardIdx) {
         if (!cardMatchesFilter(cardObj, ctx)) return;
         gameState.field[line][target].splice(cardIdx, 1);
         gameState[target].trash.push(cardObj.card);
+        gameState.eliminatedSinceLastCheck[gameState.turn] = true;
         ctx.selected.push(cardObj);
         triggerUncovered(line, target);
     } else if (ctx.type === 'flip') {
@@ -1127,7 +1207,7 @@ function handleFieldCardClick(line, target, cardIdx) {
             return;
         }
         // Si viene de la línea actual (o no hay restricción), elegir línea destino
-        updateStatus("Elige la línea de destino para desplazar...");
+        updateStatus("Elige la línea de destino para cambiar la carta...");
         highlightSelectableLines();
         return; 
     } else if (ctx.type === 'return') {
@@ -1269,6 +1349,7 @@ function resolveEffectAI(type, target, count, opts = {}) {
                 const line = validLines[Math.floor(Math.random() * validLines.length)];
                 const cardObj = gameState.field[line][actualTarget].pop();
                 gameState[actualTarget].trash.push(cardObj.card);
+                gameState.eliminatedSinceLastCheck[gameState.turn] = true;
                 triggerUncovered(line, actualTarget);
             }
         }
