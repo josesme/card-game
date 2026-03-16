@@ -63,17 +63,23 @@ class AIEvaluator {
     score += (aiCompiled - playerCompiled) * 0.12;
 
     // Best card value in each hand (for "one card away" detection)
-    // AI knows its own hand exactly; player's hand is estimated from public info
     const bestAI     = state.ai.hand.reduce((m, c) => Math.max(m, c.valor || 0), 0);
     const bestPlayer = this._estimatePlayerBestCard(state);
 
     LINES.forEach(line => {
       if (state.field[line].compiledBy) return; // already decided, skip
 
+      // Dead line check
+      if (this.isDeadLine(state, line, 'ai')) {
+        // AI cannot win this line. If player can still win it, it's a threat.
+        if (!this.isDeadLine(state, line, 'player')) score -= 0.1;
+        return;
+      }
+
       const aiScore     = this._score(state, line, 'ai');
       const playerScore = this._score(state, line, 'player');
 
-      // Immediate compile opportunity this turn (score beats opponent AND reaches threshold)
+      // Immediate compile opportunity this turn
       if (aiScore > playerScore && aiScore >= 10)     score += 0.28;
       if (playerScore > aiScore && playerScore >= 10) score -= 0.28;
 
@@ -87,8 +93,6 @@ class AIEvaluator {
 
   // ─────────────────────────────────────────────
   // LINE STRENGTHS
-  // positive = AI leads overall, negative = player leads
-  // Lines close to the compile threshold are weighted more.
   // ─────────────────────────────────────────────
 
   evaluateLineStrengths(state) {
@@ -96,18 +100,63 @@ class AIEvaluator {
     let total = 0;
 
     LINES.forEach(line => {
+      if (state.field[line].compiledBy) return;
+
+      // Penalize dead lines for AI
+      if (this.isDeadLine(state, line, 'ai')) {
+        total -= 0.5;
+        return;
+      }
+
       const aiScore     = this._score(state, line, 'ai');
       const playerScore = this._score(state, line, 'player');
-      const diff        = aiScore - playerScore;           // positive = AI leads
+      const diff        = aiScore - playerScore;
       const maxScore    = Math.max(aiScore, playerScore);
 
-      // Weight by proximity to compile threshold (hot lines matter more)
       const weight = maxScore >= 8 ? 1.6 : maxScore >= 5 ? 1.1 : 0.7;
-
       total += (diff / 20) * weight;
     });
 
     return Math.max(-1, Math.min(1, total / 3));
+  }
+
+  // ─────────────────────────────────────────────
+  // DEAD LINE DETECTION
+  // A line is "dead" for a player if they cannot possibly win it (reach 10 + beat opponent).
+  // ─────────────────────────────────────────────
+
+  isDeadLine(state, line, player) {
+    if (state.field[line].compiledBy) return true;
+
+    const opponent = player === 'ai' ? 'player' : 'ai';
+    const myScore  = this._score(state, line, player);
+    const oppScore = this._score(state, line, opponent);
+
+    // If opponent already has 10+ and I am behind, can I still catch up?
+    if (oppScore >= 10 && myScore < oppScore) {
+      // Simple check: how many cards can I still play here?
+      // For AI we know exactly, for player we estimate.
+      const handCount = state[player].hand.length;
+      const deckCount = state[player].deck.length;
+      const cardsLeft = handCount + deckCount;
+
+      if (cardsLeft === 0) return true;
+
+      // Even if I play all cards as 5s, can I beat oppScore?
+      // (Simplified: assuming 1 card slot available per turn, but field is unlimited in depth)
+      // Actually COMPILE is about reaching 10 AND being ahead.
+      // If opponent is at 15 and I have 0 cards, it's dead.
+      // If I have cards but their max possible sum < 10 or < oppScore, it's dead.
+      
+      const maxPotential = myScore + (cardsLeft * 5); 
+      if (maxPotential < 10 || maxPotential <= oppScore) return true;
+    }
+
+    // Special case: blocked lines (Plaga 0) - handled by isLineBlocked in minimax,
+    // but here we consider it "temporarily dead" for evaluation if blocked.
+    // However, isDeadLine here is more about "permanent" inability to win.
+
+    return false;
   }
 
   // ─────────────────────────────────────────────
@@ -118,15 +167,40 @@ class AIEvaluator {
     const hand = state.ai.hand || [];
     if (hand.length === 0) return 0;
 
-    let totalValue  = 0;
-    let effectCount = 0;
-
+    const deckCount = state.ai.deck.length;
+    let score = 0;
+    
+    // 1. Base values and effect density
     hand.forEach(card => {
-      totalValue += (card.valor || 0) / 6;
-      if (card.h_accion || card.h_inicio || card.h_final) effectCount++;
+      score += (card.valor || 0) / 6; // base value contribution
+      if (card.h_accion || card.h_inicio || card.h_final) score += 0.2;
     });
 
-    return Math.min(1, (totalValue / hand.length + effectCount / hand.length) / 2);
+    // 2. Protocol Coverage
+    const myProtocols = state.ai.protocols || [];
+    const faceUpPotential = hand.filter(c => myProtocols.includes(c.protocol)).length;
+    score += (faceUpPotential / hand.length) * 0.3;
+
+    // 3. Synergy & Combos
+    // Fuego 4 / Plaga 2: Better with more cards in hand
+    const hasDiscardSynergy = hand.some(c => c.nombre === 'Fuego 4' || c.nombre === 'Plaga 2');
+    if (hasDiscardSynergy && hand.length >= 4) score += 0.25;
+
+    // Vida 0 / Agua 1 / Gravedad 0: Synergy with cards in deck
+    const hasDeckSynergy = hand.some(c => ['Vida 0', 'Agua 1', 'Gravedad 0'].includes(c.nombre));
+    if (hasDeckSynergy && deckCount >= 3) score += 0.2;
+    if (hasDeckSynergy && deckCount === 0) score -= 0.3; // Useless without deck
+
+    // Draw cards: High value if hand is low
+    const hasDraw = hand.some(c => c.h_accion && c.h_accion.includes('Roba'));
+    if (hasDraw && hand.length <= 2) score += 0.3;
+
+    // 4. Resource balance (mix of high and low values)
+    const highVals = hand.filter(c => c.valor >= 4).length;
+    const lowVals  = hand.filter(c => c.valor <= 1).length;
+    if (highVals > 0 && lowVals > 0) score += 0.15; // Balanced hand
+
+    return Math.max(0, Math.min(1, score / hand.length));
   }
 
   // ─────────────────────────────────────────────

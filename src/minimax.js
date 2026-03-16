@@ -156,17 +156,20 @@ class MiniMax {
 
   /**
    * Checks if a line is blocked for playingPlayer by opponent's Plaga 0 (in simulated state)
+   * DEBE estar descubierta (top de la pila)
    */
   isLineBlocked(gameState, line, playingPlayer) {
     const opponent = playingPlayer === 'player' ? 'ai' : 'player';
     const stack = (gameState.field && gameState.field[line] && gameState.field[line][opponent]) || [];
-    return stack.some(cardObj => {
-      if (cardObj.faceDown) return false;
-      if (!cardObj.card) return false;
-      const effects = typeof CARD_EFFECTS !== 'undefined' && CARD_EFFECTS[cardObj.card.nombre];
-      const persistent = effects && effects.persistent;
-      return persistent && persistent.effect === 'preventOpponentPlay';
-    });
+    if (stack.length === 0) return false;
+
+    const topCardObj = stack[stack.length - 1];
+    if (topCardObj.faceDown) return false;
+    if (!topCardObj.card) return false;
+    
+    const effects = typeof CARD_EFFECTS !== 'undefined' && CARD_EFFECTS[topCardObj.card.nombre];
+    const persistent = effects && effects.persistent;
+    return persistent && persistent.effect === 'preventOpponentPlay';
   }
 
   /**
@@ -179,8 +182,14 @@ class MiniMax {
 
     hand.forEach((card, index) => {
       LINES.forEach(line => {
+        // Skip lines already compiled
+        if (gameState.field[line].compiledBy) return;
+
         // Skip lines blocked by player's Plaga 0
         if (this.isLineBlocked(gameState, line, 'ai')) return;
+
+        // DEAD LINE DETECTION: Skip if AI cannot win this line
+        if (this.evaluator && this.evaluator.isDeadLine(gameState, line, 'ai')) return;
 
         // Option 1: Face up (only if protocol matches)
         const lineIdx = gameState.ai.protocols.indexOf(card.protocol);
@@ -267,13 +276,14 @@ class MiniMax {
 
   /**
    * 🔀 MOVE ORDERING: Better moves first → improves alpha-beta pruning
-   * For AI (maximizing): compile-ready > face-up on leading line > high value > face-down > refresh
-   * For player (minimizing): same logic in reverse (worst for AI first)
    */
   sortMoves(gameState, moves, player) {
-    const LINES = ['izquierda', 'centro', 'derecha'];
     const score = (move) => {
-      if (move.action === 'refresh') return player === 'ai' ? -5 : 5;
+      if (move.action === 'refresh') {
+        // Refresh is good if hand is low
+        const handCount = (gameState[player].hand || []).length;
+        return player === 'ai' ? (5 - handCount) * 10 : (handCount - 5) * 10;
+      }
       if (!move.line) return 0;
 
       const myScore  = this._lineScore(gameState, move.line, player);
@@ -281,16 +291,26 @@ class MiniMax {
       const cardVal  = (move.card && move.card.valor) || 0;
       let s = 0;
 
-      // Compile-ready: playing here wins the line
-      if (myScore + cardVal >= 10 && myScore + cardVal > oppScore) s += 100;
-      // Leading the line
-      if (myScore > oppScore) s += 20;
-      // Face up preferred (visible value contribution)
-      if (move.faceUp) s += 10;
-      // Card value
-      s += cardVal * 2;
+      // 1. Compile Priority
+      if (myScore + cardVal >= 10 && myScore + cardVal > oppScore) s += 150;
+      
+      // 2. Block Opponent Compile
+      if (oppScore >= 7 && player === 'ai') s += 50;
 
-      return player === 'ai' ? s : -s; // player moves: lower is better for AI
+      // 3. Efficiency (Face-up > Face-down)
+      if (move.faceUp) s += 25;
+      else {
+        // Penalty for playing face-down if the card COULD be face-up elsewhere
+        const protocols = gameState[player].protocols || [];
+        if (protocols.includes(move.card.protocol)) s -= 15;
+      }
+
+      // 4. Synergy & Value
+      s += cardVal * 5;
+      const hasEffect = move.card && (move.card.h_accion || move.card.h_inicio || move.card.h_final);
+      if (hasEffect && move.faceUp) s += 20;
+
+      return player === 'ai' ? s : -s;
     };
 
     return [...moves].sort((a, b) => score(b) - score(a));

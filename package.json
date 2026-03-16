@@ -7,7 +7,7 @@
     "dev": "echo 'Open src/index.html in your browser'",
     "build": "echo 'No build required for this project'",
     "test": "echo 'Tests coming in Phase 2'",
-    "start": "python -m http.server 8000 --directory ."
+    "start": "node server.js"
   },
   "keywords": [
     "card-game",

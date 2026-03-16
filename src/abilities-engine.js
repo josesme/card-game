@@ -864,8 +864,10 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
           processAbilityEffect();
         }
       } else {
-        // IA decide aleatoriamente
-        if (handSize > 0 && Math.random() > 0.5) {
+        // IA descarta solo si tiene ventaja en mano (más de 3 cartas) o si el efecto vale la pena
+        const aiScore = LINES.reduce((s, l) => s + calculateScore(gameState, l, 'ai'), 0);
+        const plScore = LINES.reduce((s, l) => s + calculateScore(gameState, l, 'player'), 0);
+        if (handSize > 0 && (handSize > 3 || aiScore < plScore)) {
           discard('ai', 1);
           resolveAbilityAction({ action: ifThenAction, target: ifThenTarget, count: ifThenCount }, targetPlayer);
         } else {
@@ -2188,35 +2190,43 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       // Amor 1 Final: puedes dar 1 carta de tu mano; si lo haces, roba N cartas
       if (targetPlayer === 'player') {
         if (gameState.player.hand.length === 0) { processAbilityEffect(); break; }
-        gameState.effectQueue.unshift({ effect: { action: '_drawAfterGive', count }, targetPlayer });
+        
         const confirmArea = document.getElementById('command-confirm');
         const confirmMsg = document.getElementById('confirm-msg');
         const btnYes = document.getElementById('btn-confirm-yes');
         const btnNo = document.getElementById('btn-confirm-no');
+        
         if (confirmArea && btnYes && btnNo) {
+          gameState.effectQueue.unshift({ effect: { action: '_drawAfterGive', count }, targetPlayer });
           gameState.effectContext = { type: 'confirm' };
+          confirmArea.style.display = 'flex';
           confirmArea.classList.remove('hidden');
           confirmMsg.textContent = `¿Das 1 carta a tu oponente para robar ${count || 2} cartas?`;
+          
           btnYes.onclick = () => {
+            confirmArea.style.display = 'none';
             confirmArea.classList.add('hidden');
             gameState.effectContext = null;
             startEffect('give', 'player', 1);
           };
           btnNo.onclick = () => {
+            confirmArea.style.display = 'none';
             confirmArea.classList.add('hidden');
             gameState.effectContext = null;
-            gameState.effectQueue.shift(); // cancelar _drawAfterGive
+            gameState.effectQueue.shift(); // quitar _drawAfterGive
             processAbilityEffect();
           };
         } else {
-          gameState.effectQueue.shift();
           processAbilityEffect();
         }
       } else {
-        // IA: dar si tiene ventaja en mano
-        if (gameState.ai.hand.length > 3 && gameState.ai.hand.length > 0) {
-          const given = gameState.ai.hand.splice(Math.floor(Math.random() * gameState.ai.hand.length), 1)[0];
-          gameState.player.hand.push(given); // mano→mano del jugador
+        // IA: dar si tiene ventaja en mano o el mazo tiene cartas valiosas
+        if (gameState.ai.hand.length >= 2 && gameState.ai.deck.length > 0) {
+          // IA da su carta de menor valor
+          const idx = aiLowestValueCardIdx('ai');
+          const [given] = gameState.ai.hand.splice(idx, 1);
+          gameState.player.hand.push(given);
+          updateStatus(`IA da ${given.nombre} al jugador y roba ${count || 2} cartas`);
           draw('ai', count || 2);
         }
         processAbilityEffect();
@@ -2237,6 +2247,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
         const idx = Math.floor(Math.random() * gameState[opponent].hand.length);
         const [taken] = gameState[opponent].hand.splice(idx, 1);
         gameState[targetPlayer].hand.push(taken);
+        updateStatus(`${targetPlayer === 'player' ? 'Tomas' : 'IA toma'} una carta de la mano rival`);
       }
       processAbilityEffect();
       break;
@@ -2249,9 +2260,11 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
         startEffect('give', 'player', 1);
       } else {
         if (gameState.ai.hand.length > 0) {
-          const idx = Math.floor(Math.random() * gameState.ai.hand.length);
+          // IA da su carta de menor valor
+          const idx = aiLowestValueCardIdx('ai');
           const [given] = gameState.ai.hand.splice(idx, 1);
           gameState.player.hand.push(given);
+          updateStatus(`IA da ${given.nombre} al jugador`);
         }
         processAbilityEffect();
       }
@@ -2259,8 +2272,21 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
     }
 
     case 'revealFromHand': {
-      // Amor 4: el jugador revela 1 carta de su mano al rival (info para IA, sin UI para el jugador)
-      processAbilityEffect();
+      // Amor 4: el jugador revela 1 carta de su mano al rival
+      if (targetPlayer === 'player') {
+        if (gameState.player.hand.length === 0) { processAbilityEffect(); break; }
+        startEffect('reveal', 'player', 1);
+      } else {
+        // IA revela una carta aleatoria (se muestra en el log y modal)
+        if (gameState.ai.hand.length > 0) {
+          const idx = Math.floor(Math.random() * gameState.ai.hand.length);
+          const card = gameState.ai.hand[idx];
+          updateStatus(`IA revela: ${card.nombre}`);
+          // Mostrar modal de revelación para el jugador
+          gameState.effectQueue.unshift({ effect: { action: '_showRevealedCards', cards: [card] }, targetPlayer: 'ai' });
+        }
+        processAbilityEffect();
+      }
       break;
     }
 
@@ -2349,19 +2375,24 @@ function applyPersistentValueModifiers(state, line, player) {
   let totalBonus = 0;
 
   // Reducciones: cartas bocarriba del oponente en esta línea (ej: Metal 0)
-  // h_inicio siempre activo aunque esté cubierto, pero NO si está bocabajo
-  state.field[line][opponent].forEach(cardObj => {
-    if (cardObj.faceDown) return;
-    const modifiers = getPersistentModifiers(cardObj.card);
-    if (modifiers.valueReduction) {
-      totalReduction += modifiers.valueReduction;
+  // DEBEN estar descubiertas (ser la última de la pila)
+  const oppStack = state.field[line][opponent];
+  if (oppStack.length > 0) {
+    const topCardObj = oppStack[oppStack.length - 1];
+    if (!topCardObj.faceDown) {
+      const modifiers = getPersistentModifiers(topCardObj.card);
+      if (modifiers.valueReduction) {
+        totalReduction += modifiers.valueReduction;
+      }
     }
-  });
+  }
 
   // Bonos: cartas propias bocarriba en esta línea (ej: Apatía 0)
-  state.field[line][player].forEach(cardObj => {
-    if (!cardObj.faceDown) {
-      const effectDef = CARD_EFFECTS[cardObj.card.nombre];
+  const selfStack = state.field[line][player];
+  if (selfStack.length > 0) {
+    const topCardObj = selfStack[selfStack.length - 1];
+    if (!topCardObj.faceDown) {
+      const effectDef = CARD_EFFECTS[topCardObj.card.nombre];
       if (effectDef && effectDef.persistent && effectDef.persistent.valueBonusPerFaceDown) {
         // Contar cartas bocabajo en toda la línea (ambos lados)
         const faceDownCount =
@@ -2370,7 +2401,7 @@ function applyPersistentValueModifiers(state, line, player) {
         totalBonus += effectDef.persistent.valueBonusPerFaceDown * faceDownCount;
       }
     }
-  });
+  }
 
   // Retorna reducción neta; si es negativo, calculateScore lo interpreta como bono
   return totalReduction - totalBonus;
@@ -2382,16 +2413,18 @@ function applyPersistentValueModifiers(state, line, player) {
 
 /**
  * Comprueba si alguna carta bocarriba en la línea tiene ignoreMiddleCommands activo (Apatía 2)
+ * DEBE estar descubierta (top de la pila)
  */
 function lineHasIgnoreMiddleCommands(line) {
   if (!line) return false;
-  return ['player', 'ai'].some(p =>
-    gameState.field[line][p].some(cardObj => {
-      if (cardObj.faceDown) return false;
-      const ef = CARD_EFFECTS[cardObj.card.nombre];
-      return ef && ef.persistent && ef.persistent.ignoreMiddleCommands;
-    })
-  );
+  return ['player', 'ai'].some(p => {
+    const stack = gameState.field[line][p];
+    if (stack.length === 0) return false;
+    const topCardObj = stack[stack.length - 1];
+    if (topCardObj.faceDown) return false;
+    const ef = CARD_EFFECTS[topCardObj.card.nombre];
+    return ef && ef.persistent && ef.persistent.ignoreMiddleCommands;
+  });
 }
 
 /**
@@ -2506,17 +2539,22 @@ function calculateScoreWithModifiers(state, line, player) {
 /**
  * Devuelve true si el opponent no puede jugar cartas en targetLine
  * (porque el dueño de la línea tiene Plaga 0 activa en esa línea).
+ * DEBE estar descubierta (top de la pila)
  */
 function isPlayBlockedByPersistent(targetLine, playingPlayer, isFaceDown = false) {
   const opponent = playingPlayer === 'player' ? 'ai' : 'player';
-  return gameState.field[targetLine][opponent].some(cardObj => {
-    if (cardObj.faceDown) return false;
-    const mods = getPersistentModifiers(cardObj.card);
-    if (mods.preventOpponentPlay) return true;
-    // Metal 2: bloquea solo jugadas bocabajo
-    if (isFaceDown && mods.preventFaceDown) return true;
-    return false;
-  });
+  const stack = gameState.field[targetLine][opponent];
+  if (stack.length === 0) return false;
+  
+  const topCardObj = stack[stack.length - 1];
+  if (topCardObj.faceDown) return false;
+  
+  const mods = getPersistentModifiers(topCardObj.card);
+  if (mods.preventOpponentPlay) return true;
+  // Metal 2: bloquea solo jugadas bocabajo
+  if (isFaceDown && mods.preventFaceDown) return true;
+  
+  return false;
 }
 
 // ============================================================================
@@ -2542,21 +2580,19 @@ if (typeof window !== 'undefined') {
 }
 
 /**
- * Devuelve true si alguna carta del jugador con persistent.allowAnyProtocol está descubierta en campo.
- * ERRATA Espíritu 1: mientras esté bocarriba y descubierta, sus cartas bocarriba pueden jugarse en cualquier línea.
- */
-/**
  * Devuelve true si el oponente de `player` tiene Psique 1 bocarriba en campo.
  * Mientras esté activa, `player` solo puede jugar bocabajo.
+ * DEBE estar descubierta (top de la pila)
  */
 function hasForceOpponentFaceDown(player) {
   const opponent = player === 'player' ? 'ai' : 'player';
   return LINES.some(line => {
-    return gameState.field[line][opponent].some(cardObj => {
-      if (cardObj.faceDown) return false;
-      const effectDef = CARD_EFFECTS[cardObj.card.nombre];
-      return effectDef && effectDef.persistent && effectDef.persistent.effect === 'forceOpponentFaceDown';
-    });
+    const stack = gameState.field[line][opponent];
+    if (stack.length === 0) return false;
+    const topCardObj = stack[stack.length - 1];
+    if (topCardObj.faceDown) return false;
+    const effectDef = CARD_EFFECTS[topCardObj.card.nombre];
+    return effectDef && effectDef.persistent && effectDef.persistent.effect === 'forceOpponentFaceDown';
   });
 }
 

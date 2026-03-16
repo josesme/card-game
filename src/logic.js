@@ -486,6 +486,21 @@ function updateUI() {
         if (pScoreEl) pScoreEl.innerText = pScore;
         if (aiScoreEl) aiScoreEl.innerText = aiScore;
 
+        // Visual blocking indicators
+        const lineEl = document.getElementById(`line-${line}`);
+        if (lineEl) {
+            lineEl.classList.remove('line-blocked', 'line-blocked-facedown');
+            
+            // Plaga 0: Total block for player
+            if (isPlayBlockedByPersistent(line, 'player', false)) {
+                lineEl.classList.add('line-blocked');
+            } 
+            // Metal 2: Block face-down for player
+            else if (isPlayBlockedByPersistent(line, 'player', true)) {
+                lineEl.classList.add('line-blocked-facedown');
+            }
+        }
+
         // Mark compiled protocols if they exist
         if (gameState.field[line].compiledBy) {
             const compiledBy = gameState.field[line].compiledBy;
@@ -1055,6 +1070,14 @@ function highlightEffectTargets() {
             banner.textContent = `🔀 Elige una carta${filterDesc} para CAMBIAR de línea`;
             banner.classList.add('visible');
         }
+    } else if (ctx.type === 'reveal') {
+        const hand = document.getElementById('player-hand');
+        hand.classList.add('targeting', 'reveal-mode');
+        const banner = document.getElementById('discard-banner');
+        if (banner) {
+            banner.textContent = `👁️ Selecciona 1 carta de tu mano para REVELAR al oponente`;
+            banner.classList.add('visible');
+        }
     } else if (ctx.type === 'confirm') {
         // No highlighting needed, just the confirm dialog
     } else if (ctx.type === 'massDeleteByValueRange') {
@@ -1326,27 +1349,99 @@ function finishEffect() {
     }
 }
 
+// ─── AI Decision Helpers ──────────────────────────────────────────────────
+
+/** Line from `owner`'s field with highest current calculateScore */
+function aiHighestScoreLine(owner, excludeLines = []) {
+    return LINES
+        .filter(l => !excludeLines.includes(l) && gameState.field[l][owner].length > 0)
+        .sort((a, b) => calculateScore(gameState, b, owner) - calculateScore(gameState, a, owner))[0] || null;
+}
+
+/** Line from `owner`'s field with lowest current calculateScore (or any occupied line) */
+function aiLowestScoreLine(owner, excludeLines = []) {
+    return LINES
+        .filter(l => !excludeLines.includes(l) && gameState.field[l][owner].length > 0)
+        .sort((a, b) => calculateScore(gameState, a, owner) - calculateScore(gameState, b, owner))[0] || null;
+}
+
+/**
+ * Best destination line for moving an AI card (excludes given lines).
+ * Prefers lines where AI is closest to compiling and ahead of opponent.
+ */
+function aiPickDestLine(excludeLines = [], forOwner = 'ai') {
+    const opp = forOwner === 'ai' ? 'player' : 'ai';
+    return LINES
+        .filter(l => !excludeLines.includes(l) && !gameState.field[l].compiledBy)
+        .sort((a, b) => {
+            const diff = (calculateScore(gameState, a, forOwner) - calculateScore(gameState, a, opp))
+                       - (calculateScore(gameState, b, forOwner) - calculateScore(gameState, b, opp));
+            return -diff; // higher advantage first
+        })[0] || null;
+}
+
+/** Index of the lowest-value card in `owner`'s hand (-1 if empty) */
+function aiLowestValueCardIdx(owner) {
+    const hand = gameState[owner].hand;
+    if (!hand.length) return -1;
+    return hand.reduce((minI, c, i) => c.valor < hand[minI].valor ? i : minI, 0);
+}
+
+/**
+ * Best line to eliminate from `target`'s field.
+ * For opponent: line with highest score (hurts them most).
+ * Respects filter/maxVal/minVal opts like cardMatchesFilter.
+ */
+function aiPickEliminateLine(target, opts = {}) {
+    const filterCtx = { filter: opts.filter, maxVal: opts.maxVal, minVal: opts.minVal };
+    const lines = (opts.forceLine ? [opts.forceLine] : LINES)
+        .filter(l => {
+            const stack = gameState.field[l][target];
+            if (!stack.length) return false;
+            return cardMatchesFilter(stack[stack.length - 1], filterCtx);
+        })
+        .sort((a, b) => calculateScore(gameState, b, target) - calculateScore(gameState, a, target));
+    return lines[0] || null;
+}
+
+/**
+ * Best line to flip a card in.
+ * target='player': flip opponent's highest-score line top (face-up→down reduces their score).
+ * target='ai':     flip own face-down card in line closest to compile.
+ */
+function aiPickFlipLine(target) {
+    if (target === 'player') {
+        return LINES
+            .filter(l => {
+                const s = gameState.field[l].player;
+                return s.length > 0 && !s[s.length - 1].faceDown;
+            })
+            .sort((a, b) => calculateScore(gameState, b, 'player') - calculateScore(gameState, a, 'player'))[0] || null;
+    } else {
+        return LINES
+            .filter(l => gameState.field[l].ai.some(c => c.faceDown))
+            .sort((a, b) => calculateScore(gameState, b, 'ai') - calculateScore(gameState, a, 'ai'))[0] || null;
+    }
+}
+
 function resolveEffectAI(type, target, count, opts = {}) {
     const actualTarget = (target === 'any') ? (type === 'discard' ? 'ai' : 'player') : target;
 
     if (type === 'discard') {
         for (let i = 0; i < count; i++) {
             if (gameState[actualTarget].hand.length > 0) {
-                gameState[actualTarget].trash.push(gameState[actualTarget].hand.pop());
+                // AI discards its lowest value card; player discards highest (worst case for them)
+                const idx = actualTarget === 'ai'
+                    ? aiLowestValueCardIdx('ai')
+                    : gameState.player.hand.reduce((maxI, c, i) => c.valor > gameState.player.hand[maxI].valor ? i : maxI, 0);
+                const [card] = gameState[actualTarget].hand.splice(idx >= 0 ? idx : gameState[actualTarget].hand.length - 1, 1);
+                gameState[actualTarget].trash.push(card);
             }
         }
     } else if (type === 'eliminate') {
         for (let i = 0; i < count; i++) {
-            // Construir contexto de filtro temporal para reutilizar cardMatchesFilter
-            const filterCtx = { filter: opts.filter, maxVal: opts.maxVal, minVal: opts.minVal };
-            const linesToCheck = opts.forceLine ? [opts.forceLine] : LINES;
-            const validLines = linesToCheck.filter(l => {
-                const stack = gameState.field[l][actualTarget];
-                if (stack.length === 0) return false;
-                return cardMatchesFilter(stack[stack.length - 1], filterCtx);
-            });
-            if (validLines.length > 0) {
-                const line = validLines[Math.floor(Math.random() * validLines.length)];
+            const line = aiPickEliminateLine(actualTarget, opts);
+            if (line !== null) {
                 const cardObj = gameState.field[line][actualTarget].pop();
                 gameState[actualTarget].trash.push(cardObj.card);
                 gameState.eliminatedSinceLastCheck[gameState.turn] = true;
@@ -1355,54 +1450,69 @@ function resolveEffectAI(type, target, count, opts = {}) {
         }
     } else if (type === 'flip') {
         for (let i = 0; i < count; i++) {
-            const validLines = LINES.filter(l => gameState.field[l][actualTarget].length > 0);
-            if (validLines.length > 0) {
-                const line = validLines[Math.floor(Math.random() * validLines.length)];
+            const line = aiPickFlipLine(actualTarget);
+            if (line !== null) {
                 const stack = gameState.field[line][actualTarget];
-                const cardObj = stack[stack.length - 1]; // Only uncovered
-                cardObj.faceDown = !cardObj.faceDown;
+                if (actualTarget === 'player') {
+                    // Flip top card of opponent's best line (face-up→face-down hurts them)
+                    stack[stack.length - 1].faceDown = !stack[stack.length - 1].faceDown;
+                } else {
+                    // Flip our own face-down card in best line (activate its value)
+                    const fdIdx = [...stack].reverse().findIndex(c => c.faceDown);
+                    if (fdIdx >= 0) stack[stack.length - 1 - fdIdx].faceDown = false;
+                }
             }
         }
     } else if (type === 'shift') {
         for (let i = 0; i < count; i++) {
-            const validLines = LINES.filter(l => gameState.field[l][actualTarget].length > 0 && !gameState.field[l].compiledBy);
-            if (validLines.length > 1) {
-                const startLine = validLines[Math.floor(Math.random() * validLines.length)];
-                const otherLines = validLines.filter(l => l !== startLine);
-                const endLine = otherLines[Math.floor(Math.random() * otherLines.length)];
-                
-                const cardObj = gameState.field[startLine][actualTarget].pop();
-                gameState.field[endLine][actualTarget].push(cardObj);
-            }
+            // Move top card from weakest line to where it helps most
+            const sourceLine = aiLowestScoreLine(actualTarget);
+            if (!sourceLine) continue;
+            const destLine = aiPickDestLine([sourceLine], actualTarget);
+            if (!destLine) continue;
+            const cardObj = gameState.field[sourceLine][actualTarget].pop();
+            gameState.field[destLine][actualTarget].push(cardObj);
+            triggerUncovered(sourceLine, actualTarget);
         }
     } else if (type === 'return') {
         for (let i = 0; i < count; i++) {
-            const validLines = LINES.filter(l => gameState.field[l][actualTarget].length > 0);
-            if (validLines.length > 0) {
-                const line = validLines[Math.floor(Math.random() * validLines.length)];
+            // Return top card from opponent's highest-score line (remove their biggest threat)
+            const line = aiHighestScoreLine(actualTarget);
+            if (line !== null) {
                 const cardObj = gameState.field[line][actualTarget].pop();
                 gameState[actualTarget].hand.push(cardObj.card);
                 triggerUncovered(line, actualTarget);
             }
         }
     }
+
     if (type === 'rearrange') {
-        // IA intercambia dos protocolos aleatorios del dueño (actualTarget)
+        // Swap protocols to maximise face-up playability:
+        // align the protocol of AI's highest-value hand card with its best line
         const owner = actualTarget;
         const protos = gameState[owner].protocols;
-        if (protos.length >= 2) {
-            const i = Math.floor(Math.random() * protos.length);
-            let j = Math.floor(Math.random() * (protos.length - 1));
-            if (j >= i) j++;
-            [protos[i], protos[j]] = [protos[j], protos[i]];
-            updateStatus(`IA reorganizó sus Protocolos`);
-            updateUI();
+        const hand = gameState[owner].hand;
+        if (protos.length >= 2 && hand.length > 0) {
+            // Find hand card with highest valor and its protocol
+            const bestCard = hand.reduce((best, c) => c.valor > best.valor ? c : best, hand[0]);
+            const bestProtoIdx = protos.indexOf(bestCard.protocol);
+            if (bestProtoIdx >= 0) {
+                // Find the best line (highest current score advantage) to assign it to
+                const bestLineIdx = LINES
+                    .map((l, idx) => ({ idx, score: calculateScore(gameState, l, owner) - calculateScore(gameState, l, owner === 'ai' ? 'player' : 'ai') }))
+                    .sort((a, b) => b.score - a.score)[0].idx;
+                if (bestProtoIdx !== bestLineIdx) {
+                    [protos[bestProtoIdx], protos[bestLineIdx]] = [protos[bestLineIdx], protos[bestProtoIdx]];
+                    updateStatus('IA reorganizó sus Protocolos estratégicamente');
+                    updateUI();
+                }
+            }
         }
         if (typeof processAbilityEffect === 'function') processAbilityEffect();
         return;
     }
 
-    const typeLabels = { discard: 'descartó', eliminate: 'eliminó', flip: 'volteó', shift: 'desplazó', return: 'devolvió a mano' };
+    const typeLabels = { discard: 'descartó', eliminate: 'eliminó', flip: 'volteó', shift: 'cambió', return: 'devolvió a mano' };
     const whoLabel = actualTarget === 'player' ? 'tu carta' : 'su carta';
     updateStatus(`IA ${typeLabels[type] || type} ${whoLabel}`);
     if (typeof processAbilityEffect === 'function') processAbilityEffect();
@@ -1420,7 +1530,7 @@ function discard(target, count) {
     let discarded = 0;
     for (let i = 0; i < count; i++) {
         if (gameState[target].hand.length > 0) {
-            const idx = Math.floor(Math.random() * gameState[target].hand.length);
+            const idx = target === 'ai' ? aiLowestValueCardIdx('ai') : Math.floor(Math.random() * gameState[target].hand.length);
             const card = gameState[target].hand.splice(idx, 1)[0];
             gameState[target].trash.push(card);
             gameState.discardedSinceLastCheck[target] = true;
@@ -1563,6 +1673,7 @@ function finalizePlay(targetLine, isFaceDown) {
     }
     gameState.field[targetLine].player.push(playedCard);
     checkDeleteOnCover(targetLine, 'player');
+    updateUI(); // Sincronizar DOM antes de disparar efectos (necesario para efectos interactivos como Agua 4)
 
     console.log(`✅ Card played: ${card.nombre} on ${targetLine} (${isFaceDown ? 'face-down' : 'face-up'})`);
 
@@ -1623,8 +1734,10 @@ ui.btnRefresh.onclick = () => {
 
 function playAITurn() {
     // FASE 2: IA INTELIGENTE - Minimax + Evaluación Estratégica
-    console.log('🤖 IA Turno iniciado');
-    console.log('Estado inicial del juego:', JSON.stringify(gameState));
+    const diffDepth = parseInt(sessionStorage.getItem('aiDifficultyDepth') || '3');
+    const diffName  = sessionStorage.getItem('aiDifficultyName') || 'NÚCLEO';
+
+    console.log(`🤖 IA Turno iniciado (Dificultad: ${diffName}, Profundidad: ${diffDepth})`);
 
     if (gameState.ai.hand.length === 0) {
         while(gameState.ai.hand.length < 5) drawCard('ai');
@@ -1635,14 +1748,16 @@ function playAITurn() {
     }
 
     try {
-        // Inicializar motores de IA (primera vez)
+        // Inicializar motores de IA (primera vez o si cambia profundidad)
         if (!window.aiEvaluator) {
             window.aiEvaluator = new AIEvaluator(gameState);
             console.log('✅ Motor de Evaluación inicializado');
         }
-        if (!window.miniMax) {
-            window.miniMax = new MiniMax(window.aiEvaluator, 2);
-            console.log('✅ Minimax inicializado (depth=2)');
+        
+        // Re-inicializar minimax si la profundidad actual es diferente a la deseada
+        if (!window.miniMax || window.miniMax.maxDepth !== diffDepth) {
+            window.miniMax = new MiniMax(window.aiEvaluator, diffDepth);
+            console.log(`✅ Minimax inicializado (depth=${diffDepth}, lore=${diffName})`);
         }
 
         // Generar todos los movimientos posibles
@@ -1805,6 +1920,7 @@ function executeAIMove(move) {
         faceDown: !move.faceUp
     });
     checkDeleteOnCover(move.line, 'ai');
+    updateUI();
 
     const faceText = move.faceUp ? 'bocarriba' : 'bocabajo';
     updateStatus(`IA jugó ${movedCard.nombre} ${faceText} en ${move.line}`);
@@ -1874,16 +1990,68 @@ function continueEndTurn(who) {
 function updateStatus(msg) {
     const log = document.getElementById('game-log');
     if (!log) return;
-    const entry = document.createElement('div');
+
+    // Detectar tipo de mensaje para icono y color
+    let icon = '•';
+    let color = '#aaddff'; // Default player blueish
+    let bgColor = 'transparent';
     const isAI = gameState.turn === 'ai';
+
+    if (msg.includes('--- Turno')) {
+        icon = '➔';
+        color = isAI ? '#ef4444' : '#00d4ff';
+        bgColor = isAI ? 'rgba(239, 68, 68, 0.1)' : 'rgba(0, 212, 255, 0.1)';
+    } else if (msg.includes('¡Has compilado') || msg.includes('¡IA ha compilado')) {
+        icon = '⚡';
+        color = '#facc15';
+        bgColor = 'rgba(250, 204, 21, 0.15)';
+    } else if (msg.includes('Robas') || msg.includes('IA roba')) {
+        icon = '🎴';
+    } else if (msg.includes('eliminó') || msg.includes('Eliminar')) {
+        icon = '💀';
+        color = '#ef4444';
+    } else if (msg.includes('volteó') || msg.includes('Voltea')) {
+        icon = '🔄';
+    } else if (msg.includes('Descartas') || msg.includes('IA descarta')) {
+        icon = '🗑️';
+    } else if (msg.includes('Agua 4')) {
+        icon = '💧';
+    } else if (msg.includes('Plaga')) {
+        icon = '☣️';
+    } else if (isAI) {
+        color = '#ef9999'; // AI soft red
+    }
+
+    const entry = document.createElement('div');
+    entry.style.cssText = `
+        color: ${color}; 
+        background: ${bgColor};
+        font-size: 0.85em; 
+        line-height: 1.4; 
+        padding: 4px 8px; 
+        border-left: 3px solid ${color}; 
+        margin-bottom: 2px;
+        border-radius: 0 4px 4px 0;
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        animation: fadeInLog 0.3s ease-out;
+    `;
+
+    entry.innerHTML = `<span style="opacity:0.7; flex-shrink:0;">${icon}</span> <span style="flex:1;">${msg}</span>`;
+    
+    // Quitar clase 'latest' del anterior
     const prev = log.querySelector('.log-latest');
-    if (prev) prev.style.color = isAI ? '#ef9999' : '#aaddff';
     if (prev) prev.classList.remove('log-latest');
     entry.classList.add('log-latest');
-    entry.style.cssText = `color: #00ff41; font-size: 0.8em; line-height: 1.4; padding: 2px 4px; border-left: 2px solid ${isAI ? '#ef4444' : '#00d4ff'}; padding-left: 6px;`;
-    entry.textContent = msg;
+
     log.appendChild(entry);
-    log.scrollTop = log.scrollHeight;
+    
+    // Auto-scroll al final
+    log.scrollTo({
+        top: log.scrollHeight,
+        behavior: 'smooth'
+    });
 }
 
 function checkWinCondition() {
