@@ -1427,6 +1427,14 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
     }
 
     case 'maySwapOrFlip': {
+      // Prerequisite: there must be at least one face-down card to reveal (Luz 2 mechanic)
+      const hasFaceDown = LINES.some(l =>
+        ['player', 'ai'].some(p => gameState.field[l][p].some(c => c.faceDown))
+      );
+      if (!hasFaceDown) {
+        processAbilityEffect();
+        break;
+      }
       // Player chooses: swap a card or flip a card
       if (targetPlayer === 'player') {
         const confirmArea = document.getElementById('command-confirm');

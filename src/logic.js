@@ -661,7 +661,7 @@ function checkCompilePhase(who) {
         if (gameState.pendingCompileShift) {
             const { cards, sourceLine } = gameState.pendingCompileShift;
             gameState.effectContext = { type: 'compileShift', cards, sourceLine, resumeFor: who, waitingForLine: true };
-            updateStatus('Velocidad 2: elige línea donde desplazar la carta');
+            updateStatus('Velocidad 2: elige línea donde cambiar la carta');
             highlightSelectableLines(sourceLine);
         } else {
             setTimeout(() => endTurn(who), 2000);
@@ -953,7 +953,7 @@ function startEffect(type, target, count, opts = {}) {
     else if (type === 'give') actionVerb = 'DAR AL OPONENTE';
     else if (type === 'eliminate') actionVerb = 'ELIMINAR';
     else if (type === 'return') actionVerb = 'DEVOLVER';
-    else if (type === 'shift') actionVerb = 'DESPLAZAR';
+    else if (type === 'shift') actionVerb = 'CAMBIAR de línea';
     else if (type === 'swap') actionVerb = 'INTERCAMBIAR';
     else if (type === 'rearrange') actionVerb = 'REORGANIZAR';
     
@@ -1052,7 +1052,7 @@ function highlightEffectTargets() {
         const banner = document.getElementById('discard-banner');
         if (banner) {
             const filterDesc = ctx.coveredOnly ? ' cubierta' : (ctx.filter === 'faceDown' ? ' bocabajo' : '');
-            banner.textContent = `🔀 Elige una carta${filterDesc} para DESPLAZAR`;
+            banner.textContent = `🔀 Elige una carta${filterDesc} para CAMBIAR de línea`;
             banner.classList.add('visible');
         }
     } else if (ctx.type === 'confirm') {
@@ -1207,7 +1207,7 @@ function handleFieldCardClick(line, target, cardIdx) {
             return;
         }
         // Si viene de la línea actual (o no hay restricción), elegir línea destino
-        updateStatus("Elige la línea de destino para desplazar...");
+        updateStatus("Elige la línea de destino para cambiar la carta...");
         highlightSelectableLines();
         return; 
     } else if (ctx.type === 'return') {
