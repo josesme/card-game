@@ -17,8 +17,16 @@
         
         #game-container {
             padding: 20px;
-            max-width: 1600px;
+            max-width: 1500px;
             margin: 0 auto;
+        }
+
+        #btn-fullscreen:hover {
+            background: rgba(0,212,255,0.25) !important;
+        }
+
+        :fullscreen body, :-webkit-full-screen body {
+            overflow: hidden;
         }
 
         .hidden {
@@ -30,10 +38,13 @@
 
 <div id="game-container">
     <!-- HEADER -->
-    <header style="text-align: center; margin-bottom: 30px;">
+    <header style="text-align: center; margin-bottom: 30px; position: relative;">
         <h1 style="color: #00d4ff; font-size: 2.5em; text-shadow: 0 0 20px rgba(0, 212, 255, 0.5); font-family: 'Orbitron', monospace;">
             ⚡ COMPILE ⚡
         </h1>
+        <button id="btn-fullscreen" onclick="toggleFullscreen()" title="Pantalla completa" style="position: absolute; top: 50%; right: 0; transform: translateY(-50%); background: rgba(0,212,255,0.1); border: 1px solid #00d4ff; color: #00d4ff; border-radius: 8px; padding: 8px 14px; cursor: pointer; font-family: 'Orbitron', monospace; font-size: 0.75em; letter-spacing: 1px; transition: background 0.2s;">
+            ⛶ FULLSCREEN
+        </button>
     </header>
 
     <!-- GAME BOARD -->
@@ -42,74 +53,68 @@
         <!-- LINES (MESA) -->
         <div style="margin-bottom: 30px;">
             <!-- Column headers -->
-            <div style="display: grid; grid-template-columns: 1fr 90px 60px 90px 1fr; gap: 8px; align-items: center; padding: 0 0 8px 0; color: #888; font-size: 0.72em; text-transform: uppercase; letter-spacing: 1px;">
+            <div style="display: grid; grid-template-columns: 1fr 108px 4px 108px 1fr; gap: 8px; align-items: center; padding: 0 0 8px 0; color: #888; font-size: 0.72em; text-transform: uppercase; letter-spacing: 1px;">
                 <div style="color: #00d4ff; text-align: right;">← Cartas Jugador</div>
-                <div style="color: #00d4ff; text-align: center;">Proto</div>
-                <div style="text-align: center; color: #555;">⚔️</div>
-                <div style="color: #ef4444; text-align: center;">Proto</div>
+                <div style="color: #00d4ff; text-align: center; font-size: 1.8em; line-height: 1;">👤</div>
+                <div></div>
+                <div style="color: #ef4444; text-align: center; font-size: 1.8em; line-height: 1;">🤖</div>
                 <div style="color: #ef4444; text-align: left;">Cartas IA →</div>
             </div>
 
             <!-- Line: IZQUIERDA -->
-            <div style="display: grid; grid-template-columns: 1fr 90px 60px 90px 1fr; gap: 8px; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid #333; border-radius: 8px; padding: 10px; margin-bottom: 8px;">
-                <div id="proto-izquierda-player" style="order: 2; border: 2px solid #00d4ff; border-radius: 8px; padding: 8px; background: linear-gradient(135deg, rgba(26,31,58,0.85), rgba(30,41,59,0.7)); text-align: center; box-shadow: 0 0 14px #00d4ff33;">
-                    <div class="proto-card-name" style="font-family: 'Orbitron', monospace; font-weight: bold; font-size: 0.78em; color: #00d4ff;">—</div>
-                    <div class="proto-card-status" style="font-size: 0.55em; color: #aaa; margin-top: 3px; line-height: 1.3;">...</div>
+            <div style="display: grid; grid-template-columns: 1fr 108px 4px 108px 1fr; gap: 8px; align-items: stretch; background: rgba(0,0,0,0.3); border: 1px solid #333; border-radius: 8px; padding: 10px; margin-bottom: 8px;">
+                <div id="proto-izquierda-player" style="order: 2; border: 2px solid #00d4ff; border-radius: 8px; padding: 10px; background: linear-gradient(135deg, rgba(26,31,58,0.85), rgba(30,41,59,0.7)); text-align: center; box-shadow: 0 0 14px #00d4ff33;">
+                    <div class="proto-card-name" style="font-family: 'Orbitron', monospace; font-weight: bold; font-size: 0.94em; color: #00d4ff;">—</div>
+                    <div class="proto-card-status" style="font-size: 0.66em; color: #aaa; margin-top: 3px; line-height: 1.3;"></div>
+                    <div class="proto-score player-score">0</div>
                 </div>
                 <div id="line-izquierda" style="display: contents;">
                     <div class="player-stack" style="order: 1; min-height: 80px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; justify-content: flex-end;"></div>
-                    <div id="score-izquierda" style="order: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 4px; background: rgba(0,0,0,0.4); border-radius: 6px; font-family: 'Orbitron', monospace;">
-                        <span class="player-score" style="color: #00d4ff; font-size: 1em; font-weight: bold;">0</span>
-                        <span style="color: #444; font-size: 0.6em;">VS</span>
-                        <span class="ai-score" style="color: #ef4444; font-size: 1em; font-weight: bold;">0</span>
-                    </div>
+                    <div class="line-separator" style="order: 3;"></div>
                     <div class="ai-stack" style="order: 5; min-height: 80px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; justify-content: flex-start;"></div>
                 </div>
-                <div id="proto-izquierda-ai" style="order: 4; border: 2px solid #ef4444; border-radius: 8px; padding: 8px; background: linear-gradient(135deg, rgba(26,31,58,0.85), rgba(30,41,59,0.7)); text-align: center; box-shadow: 0 0 14px #ef444433;">
-                    <div class="proto-card-name" style="font-family: 'Orbitron', monospace; font-weight: bold; font-size: 0.78em; color: #ef4444;">—</div>
-                    <div class="proto-card-status" style="font-size: 0.55em; color: #aaa; margin-top: 3px; line-height: 1.3;">...</div>
+                <div id="proto-izquierda-ai" style="order: 4; border: 2px solid #ef4444; border-radius: 8px; padding: 10px; background: linear-gradient(135deg, rgba(26,31,58,0.85), rgba(30,41,59,0.7)); text-align: center; box-shadow: 0 0 14px #ef444433;">
+                    <div class="proto-card-name" style="font-family: 'Orbitron', monospace; font-weight: bold; font-size: 0.94em; color: #ef4444;">—</div>
+                    <div class="proto-card-status" style="font-size: 0.66em; color: #aaa; margin-top: 3px; line-height: 1.3;"></div>
+                    <div class="proto-score ai-score">0</div>
                 </div>
             </div>
 
             <!-- Line: CENTRO -->
-            <div style="display: grid; grid-template-columns: 1fr 90px 60px 90px 1fr; gap: 8px; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid #333; border-radius: 8px; padding: 10px; margin-bottom: 8px;">
-                <div id="proto-centro-player" style="order: 2; border: 2px solid #00d4ff; border-radius: 8px; padding: 8px; background: linear-gradient(135deg, rgba(26,31,58,0.85), rgba(30,41,59,0.7)); text-align: center; box-shadow: 0 0 14px #00d4ff33;">
-                    <div class="proto-card-name" style="font-family: 'Orbitron', monospace; font-weight: bold; font-size: 0.78em; color: #00d4ff;">—</div>
-                    <div class="proto-card-status" style="font-size: 0.55em; color: #aaa; margin-top: 3px; line-height: 1.3;">...</div>
+            <div style="display: grid; grid-template-columns: 1fr 108px 4px 108px 1fr; gap: 8px; align-items: stretch; background: rgba(0,0,0,0.3); border: 1px solid #333; border-radius: 8px; padding: 10px; margin-bottom: 8px;">
+                <div id="proto-centro-player" style="order: 2; border: 2px solid #00d4ff; border-radius: 8px; padding: 10px; background: linear-gradient(135deg, rgba(26,31,58,0.85), rgba(30,41,59,0.7)); text-align: center; box-shadow: 0 0 14px #00d4ff33;">
+                    <div class="proto-card-name" style="font-family: 'Orbitron', monospace; font-weight: bold; font-size: 0.94em; color: #00d4ff;">—</div>
+                    <div class="proto-card-status" style="font-size: 0.66em; color: #aaa; margin-top: 3px; line-height: 1.3;"></div>
+                    <div class="proto-score player-score">0</div>
                 </div>
                 <div id="line-centro" style="display: contents;">
                     <div class="player-stack" style="order: 1; min-height: 80px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; justify-content: flex-end;"></div>
-                    <div id="score-centro" style="order: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 4px; background: rgba(0,0,0,0.4); border-radius: 6px; font-family: 'Orbitron', monospace;">
-                        <span class="player-score" style="color: #00d4ff; font-size: 1em; font-weight: bold;">0</span>
-                        <span style="color: #444; font-size: 0.6em;">VS</span>
-                        <span class="ai-score" style="color: #ef4444; font-size: 1em; font-weight: bold;">0</span>
-                    </div>
+                    <div class="line-separator" style="order: 3;"></div>
                     <div class="ai-stack" style="order: 5; min-height: 80px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; justify-content: flex-start;"></div>
                 </div>
-                <div id="proto-centro-ai" style="order: 4; border: 2px solid #ef4444; border-radius: 8px; padding: 8px; background: linear-gradient(135deg, rgba(26,31,58,0.85), rgba(30,41,59,0.7)); text-align: center; box-shadow: 0 0 14px #ef444433;">
-                    <div class="proto-card-name" style="font-family: 'Orbitron', monospace; font-weight: bold; font-size: 0.78em; color: #ef4444;">—</div>
-                    <div class="proto-card-status" style="font-size: 0.55em; color: #aaa; margin-top: 3px; line-height: 1.3;">...</div>
+                <div id="proto-centro-ai" style="order: 4; border: 2px solid #ef4444; border-radius: 8px; padding: 10px; background: linear-gradient(135deg, rgba(26,31,58,0.85), rgba(30,41,59,0.7)); text-align: center; box-shadow: 0 0 14px #ef444433;">
+                    <div class="proto-card-name" style="font-family: 'Orbitron', monospace; font-weight: bold; font-size: 0.94em; color: #ef4444;">—</div>
+                    <div class="proto-card-status" style="font-size: 0.66em; color: #aaa; margin-top: 3px; line-height: 1.3;"></div>
+                    <div class="proto-score ai-score">0</div>
                 </div>
             </div>
 
             <!-- Line: DERECHA -->
-            <div style="display: grid; grid-template-columns: 1fr 90px 60px 90px 1fr; gap: 8px; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid #333; border-radius: 8px; padding: 10px;">
-                <div id="proto-derecha-player" style="order: 2; border: 2px solid #00d4ff; border-radius: 8px; padding: 8px; background: linear-gradient(135deg, rgba(26,31,58,0.85), rgba(30,41,59,0.7)); text-align: center; box-shadow: 0 0 14px #00d4ff33;">
-                    <div class="proto-card-name" style="font-family: 'Orbitron', monospace; font-weight: bold; font-size: 0.78em; color: #00d4ff;">—</div>
-                    <div class="proto-card-status" style="font-size: 0.55em; color: #aaa; margin-top: 3px; line-height: 1.3;">...</div>
+            <div style="display: grid; grid-template-columns: 1fr 108px 4px 108px 1fr; gap: 8px; align-items: stretch; background: rgba(0,0,0,0.3); border: 1px solid #333; border-radius: 8px; padding: 10px;">
+                <div id="proto-derecha-player" style="order: 2; border: 2px solid #00d4ff; border-radius: 8px; padding: 10px; background: linear-gradient(135deg, rgba(26,31,58,0.85), rgba(30,41,59,0.7)); text-align: center; box-shadow: 0 0 14px #00d4ff33;">
+                    <div class="proto-card-name" style="font-family: 'Orbitron', monospace; font-weight: bold; font-size: 0.94em; color: #00d4ff;">—</div>
+                    <div class="proto-card-status" style="font-size: 0.66em; color: #aaa; margin-top: 3px; line-height: 1.3;"></div>
+                    <div class="proto-score player-score">0</div>
                 </div>
                 <div id="line-derecha" style="display: contents;">
                     <div class="player-stack" style="order: 1; min-height: 80px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; justify-content: flex-end;"></div>
-                    <div id="score-derecha" style="order: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 4px; background: rgba(0,0,0,0.4); border-radius: 6px; font-family: 'Orbitron', monospace;">
-                        <span class="player-score" style="color: #00d4ff; font-size: 1em; font-weight: bold;">0</span>
-                        <span style="color: #444; font-size: 0.6em;">VS</span>
-                        <span class="ai-score" style="color: #ef4444; font-size: 1em; font-weight: bold;">0</span>
-                    </div>
+                    <div class="line-separator" style="order: 3;"></div>
                     <div class="ai-stack" style="order: 5; min-height: 80px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; justify-content: flex-start;"></div>
                 </div>
-                <div id="proto-derecha-ai" style="order: 4; border: 2px solid #ef4444; border-radius: 8px; padding: 8px; background: linear-gradient(135deg, rgba(26,31,58,0.85), rgba(30,41,59,0.7)); text-align: center; box-shadow: 0 0 14px #ef444433;">
-                    <div class="proto-card-name" style="font-family: 'Orbitron', monospace; font-weight: bold; font-size: 0.78em; color: #ef4444;">—</div>
-                    <div class="proto-card-status" style="font-size: 0.55em; color: #aaa; margin-top: 3px; line-height: 1.3;">...</div>
+                <div id="proto-derecha-ai" style="order: 4; border: 2px solid #ef4444; border-radius: 8px; padding: 10px; background: linear-gradient(135deg, rgba(26,31,58,0.85), rgba(30,41,59,0.7)); text-align: center; box-shadow: 0 0 14px #ef444433;">
+                    <div class="proto-card-name" style="font-family: 'Orbitron', monospace; font-weight: bold; font-size: 0.94em; color: #ef4444;">—</div>
+                    <div class="proto-card-status" style="font-size: 0.66em; color: #aaa; margin-top: 3px; line-height: 1.3;"></div>
+                    <div class="proto-score ai-score">0</div>
                 </div>
             </div>
         </div>
@@ -117,9 +122,24 @@
         <!-- PLAYER HAND + AI HAND + STATE INFO en la misma fila -->
         <div style="display: flex; align-items: flex-start; gap: 24px; margin-bottom: 10px;">
 
-            <!-- TU MANO -->
+            <!-- JUGADOR -->
             <div id="player-hand-col" style="flex: 1; min-width: 0;">
-                <div style="color: #00d4ff; font-size: 1.1em; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">🎴 Tu Mano</div>
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px; flex-wrap: wrap;">
+                    <div style="color: #00d4ff; font-size: 1.1em; text-transform: uppercase; letter-spacing: 1px; flex-shrink: 0;">👤 Jugador</div>
+                    <span style="color:#888; font-size:0.9em; flex-shrink:0;">Mazo:</span>
+                    <span id="player-deck-count" style="font-family:'Orbitron',monospace; font-size:1em; color:#00d4ff; flex-shrink:0;">0</span>
+                    <span style="color:#888; font-size:0.9em; flex-shrink:0;">Desc.:</span>
+                    <span id="player-trash-count" style="font-family:'Orbitron',monospace; font-size:1em; color:#ef4444; flex-shrink:0;">0</span>
+                    <button id="player-deck-btn" title="Recargar Mazo" style="background: linear-gradient(135deg, #00d4ff, #0099cc); color: #0a0e27; border: none; padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8em; font-weight: bold; font-family: 'Space Mono', monospace; flex-shrink: 0;">🔄 Actualizar</button>
+                    <div style="width:1px; height:1em; background:#444; flex-shrink:0;"></div>
+                    <span style="color:#ef4444; font-size:0.9em; text-transform:uppercase; letter-spacing:1px; flex-shrink:0;">🤖 IA</span>
+                    <span style="color:#888; font-size:0.9em; flex-shrink:0;">Mano:</span>
+                    <span id="ai-hand-count" style="font-family:'Orbitron',monospace; font-weight:900; font-size:1.1em; color:#00ff41; flex-shrink:0;">0</span>
+                    <span style="color:#888; font-size:0.9em; flex-shrink:0;">Mazo:</span>
+                    <span id="ai-deck-count" style="font-family:'Orbitron',monospace; font-size:1em; color:#00d4ff; flex-shrink:0;">0</span>
+                    <span style="color:#888; font-size:0.9em; flex-shrink:0;">Desc.:</span>
+                    <span id="ai-trash-count" style="font-family:'Orbitron',monospace; font-size:1em; color:#ef4444; flex-shrink:0;">0</span>
+                </div>
                 <div id="discard-banner"></div>
                 <button id="btn-stop-discard" class="hidden" style="background:#f59e0b;color:#000;border:none;border-radius:5px;padding:4px 14px;margin-bottom:8px;cursor:pointer;font-weight:bold;font-size:0.9em;">Detener descarte</button>
                 <div id="command-confirm" class="hidden" style="background: rgba(0,0,0,0.85); border: 1px solid #f59e0b; border-radius: 8px; padding: 12px 16px; margin-bottom: 10px; text-align: center;">
@@ -127,58 +147,14 @@
                     <button id="btn-confirm-yes" style="background:#16a34a;color:#fff;border:none;border-radius:6px;padding:6px 18px;margin-right:8px;cursor:pointer;font-size:0.9em;">Sí</button>
                     <button id="btn-confirm-no" style="background:#dc2626;color:#fff;border:none;border-radius:6px;padding:6px 18px;cursor:pointer;font-size:0.9em;">No</button>
                 </div>
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                    <div style="display: flex; flex-direction: column; gap: 8px; flex-shrink: 0;">
-                        <div style="background: rgba(26, 31, 58, 0.8); border: 1px solid #00d4ff; border-radius: 8px; padding: 10px 12px; text-align: center; min-width: 72px;">
-                            <div style="color: #888; font-size: 0.65em; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 1px;">Mazo</div>
-                            <div id="player-deck-count" style="color: #00d4ff; font-size: 1.6em; font-weight: bold;">0</div>
-                        </div>
-                        <div style="background: rgba(26, 31, 58, 0.8); border: 1px solid #ef4444; border-radius: 8px; padding: 10px 12px; text-align: center; min-width: 72px;">
-                            <div style="color: #888; font-size: 0.65em; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 1px;">Desc.</div>
-                            <div id="player-trash-count" style="color: #ef4444; font-size: 1.6em; font-weight: bold;">0</div>
-                        </div>
-                    </div>
-                    <div id="player-hand" style="display: flex; flex-wrap: nowrap; gap: 10px; min-height: 160px; overflow: visible; align-items: center;">
-                        <!-- Player cards populated by logic.js -->
-                    </div>
-                </div>
-                <div style="margin-bottom: 10px;">
-                    <button id="player-deck-btn" style="background: linear-gradient(135deg, #00d4ff, #0099cc); color: #0a0e27; border: none; padding: 12px 28px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1em; font-family: 'Space Mono', monospace; letter-spacing: 1px;">
-                        🔄 Recargar Mazo
-                    </button>
+                <div id="player-hand" style="display: flex; flex-wrap: nowrap; gap: 10px; min-height: 245px; overflow-x: auto; overflow-y: visible; align-items: center; scrollbar-width: thin; scrollbar-color: #00d4ff44 transparent; padding-bottom: 2px;">
+                    <!-- Player cards populated by logic.js -->
                 </div>
             </div>
 
             <!-- SEPARADOR VERTICAL -->
             <div style="width: 1px; background: #333; align-self: stretch; flex-shrink: 0;"></div>
-
-            <!-- MANO IA -->
-            <div style="flex-shrink: 0;">
-                <div style="color: #ef4444; font-size: 1.1em; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">🎴 Mano - IA</div>
-                <div style="display: flex; align-items: stretch; gap: 10px;">
-                    <div id="ai-hand" style="display: none;"></div>
-                    <div style="display: flex; flex-direction: column; gap: 8px; flex-shrink: 0;">
-                        <div style="background: rgba(26, 31, 58, 0.8); border: 1px solid #00d4ff; border-radius: 8px; padding: 10px 12px; text-align: center; min-width: 72px;">
-                            <div style="color: #888; font-size: 0.65em; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 1px;">Mazo</div>
-                            <div id="ai-deck-count" style="color: #00d4ff; font-size: 1.6em; font-weight: bold;">0</div>
-                            <div style="color: #555; font-size: 0.6em; margin-top: 4px;">IA</div>
-                        </div>
-                        <div style="background: rgba(26, 31, 58, 0.8); border: 1px solid #ef4444; border-radius: 8px; padding: 10px 12px; text-align: center; min-width: 72px;">
-                            <div style="color: #888; font-size: 0.65em; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 1px;">Desc.</div>
-                            <div id="ai-trash-count" style="color: #ef4444; font-size: 1.6em; font-weight: bold;">0</div>
-                            <div style="color: #555; font-size: 0.6em; margin-top: 4px;">IA</div>
-                        </div>
-                    </div>
-                    <div style="width: 120px; background: rgba(239,68,68,0.08); border: 2px solid #ef4444; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 12px rgba(239,68,68,0.2);">
-                        <div style="color: #555; font-size: 0.55em; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Mano</div>
-                        <div id="ai-hand-count" style="font-family: 'Orbitron', monospace; font-size: 2.8em; font-weight: 900; color: #00ff41; line-height: 1;">0</div>
-                        <div style="color: #555; font-size: 0.55em; margin-top: 6px;">cartas</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SEPARADOR VERTICAL -->
-            <div style="width: 1px; background: #333; align-self: stretch; flex-shrink: 0;"></div>
+            <div id="ai-hand" style="display: none;"></div>
 
             <!-- STATE INFO -->
             <div id="game-log-box" style="flex: 0 0 300px; background: rgba(26, 31, 58, 0.8); border: 1px solid #00d4ff; border-radius: 8px; padding: 15px; display: flex; flex-direction: column;">
@@ -194,6 +170,9 @@
 
 
 </div>
+
+<!-- CARD PREVIEW PANEL (centro fijo) -->
+<div id="card-preview-panel" class="hidden"></div>
 
 <!-- MODALS (Hidden, controlled by logic.js) -->
 
@@ -290,6 +269,42 @@
         new ResizeObserver(update).observe(col);
         update();
     })();
+</script>
+<script>
+    const DESIGN_WIDTH = 1500;
+    const DESIGN_HEIGHT = 920;
+
+    function updateGameZoom() {
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const scale = Math.min(vw / DESIGN_WIDTH, vh / DESIGN_HEIGHT);
+        document.documentElement.style.zoom = scale.toFixed(4);
+    }
+
+    function toggleFullscreen() {
+        const btn = document.getElementById('btn-fullscreen');
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(() => {});
+            btn.textContent = '✕ SALIR';
+        } else {
+            document.exitFullscreen().catch(() => {});
+            btn.textContent = '⛶ FULLSCREEN';
+        }
+    }
+
+    document.addEventListener('fullscreenchange', () => {
+        const btn = document.getElementById('btn-fullscreen');
+        if (!document.fullscreenElement) {
+            btn.textContent = '⛶ FULLSCREEN';
+        }
+        // Small delay so the browser reports the new viewport size
+        setTimeout(updateGameZoom, 50);
+    });
+
+    window.addEventListener('resize', updateGameZoom);
+    document.addEventListener('DOMContentLoaded', updateGameZoom);
+    // Fallback for when scripts load late
+    window.addEventListener('load', updateGameZoom);
 </script>
 </body>
 </html>

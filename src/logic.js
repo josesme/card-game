@@ -284,9 +284,15 @@ function initProtocolDisplay() {
             if (nameEl) nameEl.textContent = pProto;
             if (nameEl) nameEl.style.color = pColor;
             const statusEl = pCard.querySelector('.proto-card-status');
-            if (statusEl) statusEl.textContent = PROTOCOL_DEFS[pProto].abilities;
+            if (statusEl) statusEl.textContent = '';
             pCard.style.borderColor = pColor;
             pCard.style.boxShadow = `0 0 18px ${pColor}44`;
+            if (!pCard.dataset.stackHover) {
+                pCard.dataset.stackHover = '1';
+                pCard.style.cursor = 'pointer';
+                pCard.addEventListener('mouseenter', () => showStackPreview(line, 'player'));
+                pCard.addEventListener('mouseleave', hideCardPreview);
+            }
         }
 
         // AI protocol card (top) - check if exists
@@ -296,9 +302,15 @@ function initProtocolDisplay() {
             if (nameEl) nameEl.textContent = aProto;
             if (nameEl) nameEl.style.color = aColor;
             const statusEl = aCard.querySelector('.proto-card-status');
-            if (statusEl) statusEl.textContent = PROTOCOL_DEFS[aProto].abilities;
+            if (statusEl) statusEl.textContent = '';
             aCard.style.borderColor = aColor;
             aCard.style.boxShadow = `0 0 18px ${aColor}44`;
+            if (!aCard.dataset.stackHover) {
+                aCard.dataset.stackHover = '1';
+                aCard.style.cursor = 'pointer';
+                aCard.addEventListener('mouseenter', () => showStackPreview(line, 'ai'));
+                aCard.addEventListener('mouseleave', hideCardPreview);
+            }
         }
     });
 }
@@ -314,13 +326,73 @@ function drawCard(target) {
     return true;
 }
 
+function createFieldCardHTML(card) {
+    const color = PROTOCOL_DEFS[card.protocol] ? PROTOCOL_DEFS[card.protocol].color : '#00d4ff';
+    return `<div class="field-card" data-id="${card.id}" style="border-color:${color}; box-shadow: 0 0 10px ${color}33;">
+        <span class="field-card-value" style="color:${color}">${card.valor}</span>
+    </div>`;
+}
+
+function isSelectionActive() {
+    return gameState.selectionMode ||
+        (gameState.effectContext && (gameState.effectContext.waitingForLine || gameState.effectContext.type === 'pickHandFaceDown_lineSelect'));
+}
+
+function showCardPreview(card) {
+    const panel = document.getElementById('card-preview-panel');
+    if (!panel || isSelectionActive()) return;
+    panel.classList.remove('hidden', 'stacked-view');
+    panel.classList.add('single-card');
+    panel.style.width = '370px';
+    panel.style.height = '490px';
+    panel.innerHTML = createCardHTML(card);
+}
+
+function showStackPreview(line, owner) {
+    const panel = document.getElementById('card-preview-panel');
+    if (!panel || isSelectionActive()) return;
+    const stack = gameState.field[line][owner];
+    if (!stack || stack.length === 0) { hideCardPreview(); return; }
+
+    const OFFSET = 120, CARD_H = 288, CARD_W = 216;
+    const totalH = (stack.length - 1) * OFFSET + CARD_H;
+
+    panel.classList.remove('hidden', 'single-card');
+    panel.classList.add('stacked-view');
+    panel.style.width = CARD_W + 'px';
+    panel.style.height = totalH + 'px';
+
+    let html = `<div style="position:relative;width:${CARD_W}px;height:${totalH}px;">`;
+    stack.forEach((cardObj, idx) => {
+        const top = idx * OFFSET;
+        const z = idx + 1;
+        if (cardObj.faceDown) {
+            html += `<div style="position:absolute;top:${top}px;left:0;z-index:${z};">
+                <div class="card face-down"><div class="card-back-value">2</div><div class="card-back-title">COMPILE</div></div>
+            </div>`;
+        } else {
+            html += `<div style="position:absolute;top:${top}px;left:0;z-index:${z};">${createCardHTML(cardObj.card)}</div>`;
+        }
+    });
+    html += '</div>';
+    panel.innerHTML = html;
+}
+
+function hideCardPreview() {
+    const panel = document.getElementById('card-preview-panel');
+    if (panel) {
+        panel.classList.add('hidden');
+        panel.classList.remove('single-card', 'stacked-view');
+    }
+}
+
 function createCardHTML(card, faceDown = false) {
     if (!card) return '';
     
     if (faceDown) {
         return `<div class="card face-down">
-            <div class="card-back-title">COMPILE</div>
             <div class="card-back-value">2</div>
+            <div class="card-back-title">COMPILE</div>
         </div>`;
     }
     
@@ -366,7 +438,10 @@ function updateUI() {
     if (aiTrashEl) aiTrashEl.innerText = gameState.ai.trash.length;
 
     // Update hands
-    if (ui.playerHand) ui.playerHand.innerHTML = gameState.player.hand.map(c => createCardHTML(c)).join('');
+    if (ui.playerHand) {
+        ui.playerHand.innerHTML = gameState.player.hand.map(c => createCardHTML(c)).join('');
+        // No hover preview for hand cards — stacked preview via protocol cards is sufficient
+    }
     // AI hand: just show count
     const aiHandCountEl = document.getElementById('ai-hand-count');
     if (aiHandCountEl) {
@@ -406,13 +481,10 @@ function updateUI() {
         const aiScore = calculateScore(gameState, line, 'ai');
         
         // Try to update score display if it exists
-        const scoreEl = document.getElementById(`score-${line}`);
-        if (scoreEl) {
-            const pScoreEl = scoreEl.querySelector('.player-score');
-            const aiScoreEl = scoreEl.querySelector('.ai-score');
-            if (pScoreEl) pScoreEl.innerText = pScore;
-            if (aiScoreEl) aiScoreEl.innerText = aiScore;
-        }
+        const pScoreEl = document.querySelector(`#proto-${line}-player .player-score`);
+        const aiScoreEl = document.querySelector(`#proto-${line}-ai .ai-score`);
+        if (pScoreEl) pScoreEl.innerText = pScore;
+        if (aiScoreEl) aiScoreEl.innerText = aiScore;
 
         // Mark compiled protocols if they exist
         if (gameState.field[line].compiledBy) {
@@ -422,11 +494,6 @@ function updateUI() {
             const cardToMark = compiledBy === 'player' ? pCard : aCard;
             if (cardToMark) {
                 cardToMark.classList.add('compiled');
-                const statusEl = cardToMark.querySelector('.proto-card-status');
-                if (statusEl) {
-                    const winner = compiledBy === 'player' ? 'COMPILADO ✓' : 'COMPILADO ✗';
-                    statusEl.textContent = winner;
-                }
             }
         }
     });
@@ -495,17 +562,20 @@ function renderStack(line, target) {
         const cEl = document.createElement('div');
         
         if (cardObj.faceDown) {
-            cEl.innerHTML = `<div class="card face-down card-in-field" title="Cara oculta">
-                <div class="card-back-title">COMPILE</div>
-                <div class="card-back-value">2</div>
+            cEl.innerHTML = `<div class="field-card face-down" title="Carta bocabajo">
+                <span class="field-card-value" style="color:#94a3b8">2</span>
             </div>`;
+        } else {
+            cEl.innerHTML = createFieldCardHTML(cardObj.card);
         }
- else {
-            cEl.innerHTML = createCardHTML(cardObj.card);
-        }
-        
+
         const domCard = cEl.firstElementChild;
-        
+
+        if (!cardObj.faceDown) {
+            domCard.addEventListener('mouseenter', () => showCardPreview(cardObj.card));
+            domCard.addEventListener('mouseleave', hideCardPreview);
+        }
+
         const isUncovered = idx === stack.length - 1;
 
         // Add click handler for effects (eliminate/flip/shift/return)
@@ -521,17 +591,14 @@ function renderStack(line, target) {
             }
         };
 
-        if (target === 'ai') {
-            domCard.style.bottom = `${idx * 20}px`;
-        } else {
-            domCard.style.top = `${idx * 20}px`;
-        }
         domCard.style.zIndex = idx;
-        
-        
+
         if (isUncovered) domCard.classList.add('uncovered');
-        
-        stackEl.appendChild(domCard);
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'card-field-wrapper';
+        wrapper.appendChild(domCard);
+        stackEl.appendChild(wrapper);
     });
 }
 

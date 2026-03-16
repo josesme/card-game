@@ -364,9 +364,9 @@ body::before {
 
 /* CARTAS */
 .card {
-    min-width: 120px;
-    width: 120px;
-    height: 160px;
+    min-width: 185px;
+    width: 185px;
+    height: 245px;
     border: 2px solid;
     border-radius: var(--radius-lg);
     padding: 2px 6px 6px;
@@ -397,10 +397,9 @@ body::before {
     100% { transform: translate(100%, 100%) rotate(45deg); }
 }
 
-.card:hover {
-    transform: translateY(-20px) scale(2);
-    box-shadow: 0 20px 60px rgba(0, 212, 255, 0.7);
-    z-index: 1000;
+#player-hand .card:hover {
+    box-shadow: 0 0 18px rgba(0, 212, 255, 0.4);
+    z-index: 100;
 }
 
 .card.card-in-field:hover {
@@ -415,18 +414,9 @@ body::before {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
+    padding-top: 10px;
     text-align: center;
-}
-
-.card-back-title {
-    font-family: var(--font-title);
-    font-size: 0.7em;
-    letter-spacing: 2px;
-    opacity: 0.5;
-    text-transform: uppercase;
-    margin-bottom: 5px;
-    color: var(--accent);
 }
 
 .card-back-value {
@@ -436,6 +426,16 @@ body::before {
     color: var(--accent);
     line-height: 1;
     text-shadow: 0 0 10px rgba(0, 212, 255, 0.4);
+    margin-bottom: 6px;
+}
+
+.card-back-title {
+    font-family: var(--font-title);
+    font-size: 0.7em;
+    letter-spacing: 2px;
+    opacity: 0.5;
+    text-transform: uppercase;
+    color: var(--accent);
 }
 
 .card-header {
@@ -451,14 +451,14 @@ body::before {
 
 .card-value {
     font-family: var(--font-title);
-    font-size: 1.4em;
+    font-size: 1.8em;
     font-weight: 900;
     min-width: 25px;
     text-align: center;
 }
 
 .card-title {
-    font-size: 0.75em;
+    font-size: 1.0em;
     text-align: left;
 }
 
@@ -482,15 +482,15 @@ body::before {
 
 .zone-label {
     font-weight: bold;
-    font-size: 0.65em;
+    font-size: 0.7em;
     text-transform: uppercase;
     opacity: 0.7;
     display: block;
-    margin-bottom: 2px;
+    margin-bottom: 1px;
 }
 
 .zone-content {
-    font-size: 0.65em;
+    font-size: 1.0em;
     line-height: 1.2;
     overflow: hidden;
 }
@@ -630,42 +630,130 @@ body::before {
     margin-top: 0;
 }
 
-/* CARTAS EN MESA */
-.card-in-field {
-    width: 100px;
-    height: 140px;
-    border: 2px solid;
-    border-radius: 8px;
-    padding: 8px;
-    background: linear-gradient(135deg, rgba(26, 31, 58, 0.9), rgba(10, 14, 39, 0.95));
+/* CARTAS EN MESA — versión compacta landscape */
+.card-field-wrapper {
+    flex-shrink: 0;
+}
+
+.field-card {
     display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 14px 10px;
+    border: 2px solid;
+    border-radius: 6px;
+    background: linear-gradient(135deg, rgba(26,31,58,0.95), rgba(10,14,39,0.98));
     cursor: pointer;
-    transition: all 0.2s;
-    position: relative;
-    font-size: 0.75em;
-    text-align: center;
+    transition: box-shadow 0.2s, transform 0.15s;
+    white-space: nowrap;
     color: #e0e0e0;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
-.card-in-field:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 8px 24px rgba(0, 212, 255, 0.3);
+.field-card:hover {
+    transform: translateY(-2px);
 }
 
-.card-in-field.face-down {
+.field-card.face-down {
+    border-color: #4a5568;
     border-style: dashed;
-    background: linear-gradient(135deg, #1a1f3a, #0a0e27);
+    opacity: 0.75;
+}
+
+.field-card-value {
+    font-family: 'Orbitron', monospace;
+    font-weight: 900;
+    font-size: 1.32em;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.field-card-name {
+    font-size: 0.72em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.85;
+}
+
+.player-stack {
+    padding: 6px 10px 6px 4px;
+}
+
+.ai-stack {
+    padding: 6px 4px 6px 10px;
+}
+
+/* Separador central jugador / IA */
+.line-separator {
+    background: linear-gradient(to bottom, transparent, #444, transparent);
+    width: 2px;
+    align-self: stretch;
+    margin: 0 auto;
+}
+
+/* Protocolo en mesa */
+[id^="proto-"] {
+    min-height: 60px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    text-align: center;
 }
 
-.card-in-field.face-down::after {
+/* ── EFECTO COMPILADO ─────────────────────────────────────── */
+@keyframes pulse-gold {
+    0%,100% { box-shadow: 0 0 8px #facc15, 0 0 20px #facc1588; border-color: #facc15; }
+    50%      { box-shadow: 0 0 20px #facc15, 0 0 50px #facc15aa; border-color: #ffe566; }
+}
+.compiled { animation: pulse-gold 1.6s ease-in-out infinite; border-color: #facc15 !important; }
+/* ────────────────────────────────────────────────────────── */
+
+/* Puntuación dentro del proto card */
+.proto-score {
+    font-family: 'Orbitron', monospace;
+    font-weight: 900;
+    font-size: 1.6em;
+    line-height: 1;
+    background: rgba(0,0,0,0.35);
+    border-radius: 6px;
+    padding: 3px 10px;
+    margin-top: 6px;
+}
+
+.player-score {
+    color: #00d4ff;
+}
+
+.ai-score {
+    color: #ef4444;
+}
+
+/* Panel de preview — carta ampliada centrada en pantalla */
+#card-preview-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9998;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 12px 40px rgba(0,0,0,0.9));
+}
+
+#card-preview-panel.single-card .card {
+    transform: scale(2);
+    transform-origin: center;
+}
+
+#card-preview-panel.stacked-view .card {
+    width: 216px;
+    height: 288px;
+    font-size: 1.35em;
+}
+
+#card-preview-panel.hidden {
     display: none;
 }
 
@@ -1017,8 +1105,8 @@ body::before {
     }
     
     .card {
-        width: 100px;
-        height: 140px;
+        width: 130px;
+        height: 173px;
     }
 }
 
