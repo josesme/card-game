@@ -1,8 +1,61 @@
 /**
  * 🧠 MINIMAX ALGORITHM - COMPILE AI DECISION MAKING
- * Version: 2.1.1
- * Last Updated: 2026-03-11
+ * Version: 2.2.0
+ * Last Updated: 2026-03-16
  */
+
+/**
+ * Simplified effect table for minimax simulation.
+ * Only face-up AI cards use this. Keys must match card.nombre exactly.
+ * Fields:
+ *   draw:              number  — AI draws N cards from deck
+ *   selfDiscard:       number  — AI discards N cards from hand (cost)
+ *   opponentDiscard:   number  — player discards N cards from hand
+ *   eliminate:         object  — remove opponent card(s) from field
+ *     strategy: 'highest' | 'faceDown' | 'maxVal' | 'eachOtherLine'
+ *     count:    number (default 1)
+ *     maxVal:   number (for maxVal strategy)
+ *   selfEliminateHighest: bool — Odio 2: also eliminate AI's own highest
+ *   playFromDeck:      object  — push face-down cards from AI deck to field
+ *     target: 'occupiedLines' | 'otherLines' | 'pairsInLine'
+ *   preventCompile:    bool    — flag player cannot compile next simulated turn
+ */
+const CARD_SIM_EFFECTS = {
+  // ── Draw ──────────────────────────────────────────────
+  'Espíritu 0': { draw: 1 },
+  'Espíritu 1': { draw: 2 },
+  'Fuego 0':    { draw: 2 },
+  'Fuego 4':    { draw: 1 },                          // net: discard 1, draw 2 → +1
+  'Gravedad 1': { draw: 2 },
+  'Luz 0':      { draw: 2 },                          // avg flip value ≈ 2
+  'Luz 2':      { draw: 2 },
+  'Metal 1':    { draw: 2, preventCompile: true },
+  'Oscuridad 0':{ draw: 3 },
+  'Psique 0':   { draw: 2, opponentDiscard: 2 },
+  'Velocidad 1':{ draw: 2 },
+  'Agua 2':     { draw: 2 },
+  'Amor 1':     { draw: 1 },                          // steals from opponent deck
+
+  // ── Opponent discard ─────────────────────────────────
+  'Plaga 0':    { opponentDiscard: 1 },
+  'Plaga 1':    { opponentDiscard: 1 },
+  'Plaga 2':    { selfDiscard: 1, opponentDiscard: 2 },
+  'Psique 2':   { opponentDiscard: 2 },
+  'Psique 3':   { opponentDiscard: 1 },
+
+  // ── Eliminate ────────────────────────────────────────
+  'Muerte 0':   { eliminate: { strategy: 'eachOtherLine' } },
+  'Muerte 3':   { eliminate: { strategy: 'faceDown' } },
+  'Muerte 4':   { eliminate: { strategy: 'maxVal', maxVal: 1 } },
+  'Odio 0':     { eliminate: { strategy: 'highest' } },
+  'Odio 1':     { selfDiscard: 3, eliminate: { strategy: 'highest', count: 2 } },
+  'Odio 2':     { selfEliminateHighest: true, eliminate: { strategy: 'highest' } },
+
+  // ── Play from deck ───────────────────────────────────
+  'Vida 0':     { playFromDeck: { target: 'occupiedLines' } },
+  'Agua 1':     { playFromDeck: { target: 'otherLines' } },
+  'Gravedad 0': { playFromDeck: { target: 'pairsInLine' } },
+};
 
 class MiniMax {
   constructor(evaluator, maxDepth = 3) {
@@ -274,9 +327,149 @@ class MiniMax {
         card,
         faceDown: !move.faceUp
       });
+
+      // Simulate onPlay effects for known AI cards played face-up
+      if (player === 'ai' && move.faceUp && card.nombre !== '??') {
+        this.simulateCardEffect(newState, card, move.line);
+      }
     }
 
     return newState;
+  }
+
+  /**
+   * 🃏 SIMULATE CARD EFFECT: Apply simplified onPlay effects for AI cards
+   */
+  simulateCardEffect(state, card, line) {
+    const fx = CARD_SIM_EFFECTS[card.nombre];
+    if (!fx) return;
+
+    const LINES = ['izquierda', 'centro', 'derecha'];
+
+    // Draw
+    if (fx.draw) {
+      const n = Math.min(fx.draw, state.ai.deck.length);
+      for (let i = 0; i < n; i++) state.ai.hand.push(state.ai.deck.pop());
+    }
+
+    // AI self-discard (cost)
+    if (fx.selfDiscard) {
+      const n = Math.min(fx.selfDiscard, state.ai.hand.length);
+      for (let i = 0; i < n; i++) {
+        const c = state.ai.hand.pop();
+        if (c) state.ai.trash.push(c);
+      }
+    }
+
+    // Opponent discard
+    if (fx.opponentDiscard) {
+      const n = Math.min(fx.opponentDiscard, state.player.hand.length);
+      for (let i = 0; i < n; i++) {
+        const c = state.player.hand.pop();
+        if (c) state.player.trash.push(c);
+      }
+    }
+
+    // Odio 2: also remove AI's own highest value card first
+    if (fx.selfEliminateHighest) {
+      this._simEliminateHighest(state, 'ai', LINES);
+    }
+
+    // Eliminate opponent cards
+    if (fx.eliminate) {
+      this._simEliminate(state, fx.eliminate, line, LINES);
+    }
+
+    // Play face-down cards from AI deck onto field
+    if (fx.playFromDeck) {
+      this._simPlayFromDeck(state, fx.playFromDeck, line, LINES);
+    }
+
+    // Prevent player from compiling (Metal 1)
+    if (fx.preventCompile) {
+      state.player.cannotCompile = true;
+    }
+  }
+
+  /**
+   * Remove opponent cards from field based on strategy
+   */
+  _simEliminate(state, config, currentLine, LINES) {
+    const count = config.count || 1;
+
+    for (let i = 0; i < count; i++) {
+      if (config.strategy === 'highest') {
+        this._simEliminateHighest(state, 'player', LINES);
+
+      } else if (config.strategy === 'faceDown') {
+        // Remove first face-down card found in opponent field
+        let removed = false;
+        for (const l of LINES) {
+          const stack = state.field[l].player;
+          const idx = stack.findIndex(c => c.faceDown);
+          if (idx !== -1) { state.player.trash.push(stack.splice(idx, 1)[0].card); removed = true; break; }
+        }
+
+      } else if (config.strategy === 'maxVal') {
+        // Remove highest value card with valor <= maxVal
+        let best = null, bestLine = null, bestIdx = -1;
+        for (const l of LINES) {
+          state.field[l].player.forEach((c, idx) => {
+            if (!c.faceDown && c.card.valor <= config.maxVal) {
+              if (!best || c.card.valor > best.card.valor) { best = c; bestLine = l; bestIdx = idx; }
+            }
+          });
+        }
+        if (best) { state.player.trash.push(state.field[bestLine].player.splice(bestIdx, 1)[0].card); }
+
+      } else if (config.strategy === 'eachOtherLine') {
+        // Muerte 0: remove highest from each line OTHER than current
+        LINES.filter(l => l !== currentLine).forEach(l => {
+          this._simEliminateHighest(state, 'player', [l]);
+        });
+        break; // already handled multiple lines
+      }
+    }
+  }
+
+  /**
+   * Remove the highest value face-up card of `player` across given lines
+   */
+  _simEliminateHighest(state, player, lines) {
+    let best = null, bestLine = null, bestIdx = -1;
+    for (const l of lines) {
+      (state.field[l][player] || []).forEach((c, idx) => {
+        if (!c.faceDown && (!best || c.card.valor > best.card.valor)) {
+          best = c; bestLine = l; bestIdx = idx;
+        }
+      });
+    }
+    if (best) { state[player].trash.push(state.field[bestLine][player].splice(bestIdx, 1)[0].card); }
+  }
+
+  /**
+   * Push face-down cards from AI deck onto field
+   */
+  _simPlayFromDeck(state, config, currentLine, LINES) {
+    if (config.target === 'occupiedLines') {
+      LINES.forEach(l => {
+        if (state.field[l].ai.length > 0 && state.ai.deck.length > 0) {
+          state.field[l].ai.push({ card: state.ai.deck.pop(), faceDown: true });
+        }
+      });
+    } else if (config.target === 'otherLines') {
+      LINES.filter(l => l !== currentLine).forEach(l => {
+        if (state.ai.deck.length > 0) {
+          state.field[l].ai.push({ card: state.ai.deck.pop(), faceDown: true });
+        }
+      });
+    } else if (config.target === 'pairsInLine') {
+      const stack = state.field[currentLine].ai;
+      const pairs = Math.floor(stack.length / 2);
+      for (let i = 0; i < pairs && state.ai.deck.length > 0; i++) {
+        stack.splice(stack.length - 1, 0, { card: state.ai.deck.pop(), faceDown: true });
+      }
+    }
   }
 
   isGameOver(gameState) {
