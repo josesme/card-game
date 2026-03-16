@@ -63,8 +63,9 @@ class AIEvaluator {
     score += (aiCompiled - playerCompiled) * 0.12;
 
     // Best card value in each hand (for "one card away" detection)
+    // AI knows its own hand exactly; player's hand is estimated from public info
     const bestAI     = state.ai.hand.reduce((m, c) => Math.max(m, c.valor || 0), 0);
-    const bestPlayer = state.player.hand.reduce((m, c) => Math.max(m, c.valor || 0), 0);
+    const bestPlayer = this._estimatePlayerBestCard(state);
 
     LINES.forEach(line => {
       if (state.field[line].compiledBy) return; // already decided, skip
@@ -200,6 +201,31 @@ class AIEvaluator {
 
   _score(state, line, player) {
     return window.calculateScore ? window.calculateScore(state, line, player) : 0;
+  }
+
+  /**
+   * Estimate the highest card value the player might hold,
+   * using only public information: protocols (18 cards known) minus
+   * face-up field cards and discards (both visible).
+   */
+  _estimatePlayerBestCard(state) {
+    const pool = [0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5];
+    const LINES = ['izquierda', 'centro', 'derecha'];
+
+    LINES.forEach(line => {
+      (state.field[line].player || []).forEach(c => {
+        if (!c.faceDown) {
+          const idx = pool.indexOf(c.card.valor);
+          if (idx !== -1) pool.splice(idx, 1);
+        }
+      });
+    });
+    (state.player.trash || []).forEach(c => {
+      const idx = pool.indexOf(c.valor);
+      if (idx !== -1) pool.splice(idx, 1);
+    });
+
+    return pool.length > 0 ? Math.max(...pool) : 2.5;
   }
 }
 

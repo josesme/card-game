@@ -147,39 +147,69 @@ class MiniMax {
   }
 
   /**
-   * 🎯 GENERATE PLAYER MOVES (Heuristic search)
+   * 🎯 GENERATE PLAYER MOVES (Imperfect information)
+   * The AI does NOT know which specific cards the player holds.
+   * It only knows: hand count (visible), protocols chosen (public), face-up field cards and discards.
+   * Moves are generated with estimated average card value derived from public information.
    */
   generatePlayerMoves(gameState) {
     const moves = [];
-    const hand = gameState.player.hand || [];
+    const handCount = (gameState.player.hand || []).length;
     const LINES = ['izquierda', 'centro', 'derecha'];
 
-    // Prioritize high value cards to limit branching (top 2 for depth-3 perf)
-    const bestIndices = hand
-      .map((card, idx) => ({ idx, val: card.valor }))
-      .sort((a, b) => b.val - a.val)
-      .slice(0, 2)
-      .map(item => item.idx);
+    if (handCount === 0) {
+      if (gameState.player.deck.length > 0) moves.push({ action: 'refresh' });
+      return moves;
+    }
 
-    bestIndices.forEach(index => {
-      const card = hand[index];
-      LINES.forEach(line => {
-        // Skip lines blocked by AI's Plaga 0
-        if (this.isLineBlocked(gameState, line, 'player')) return;
+    const estimatedValue = this._estimatePlayerCardValue(gameState);
+    const estimatedCard = { valor: estimatedValue, nombre: '??', protocol: null };
 
-        const lineIdx = gameState.player.protocols.indexOf(card.protocol);
-        if (lineIdx !== -1 && LINES[lineIdx] === line) {
-          moves.push({ cardIndex: index, line, faceUp: true, card });
+    LINES.forEach(line => {
+      if (this.isLineBlocked(gameState, line, 'player')) return;
+
+      // Face-down play: always possible when holding cards
+      moves.push({ line, faceUp: false, card: estimatedCard, estimated: true });
+
+      // Face-up play: only on matching protocol line (public info)
+      gameState.player.protocols.forEach((protocol, idx) => {
+        if (LINES[idx] === line) {
+          moves.push({ line, faceUp: true, card: { valor: estimatedValue, nombre: '??', protocol }, estimated: true });
         }
-        moves.push({ cardIndex: index, line, faceUp: false, card });
       });
     });
 
-    if (gameState.player.deck.length > 0 && hand.length < 5) {
+    if (gameState.player.deck.length > 0 && handCount < 5) {
       moves.push({ action: 'refresh' });
     }
 
     return moves;
+  }
+
+  /**
+   * Estimate average value of player's unknown cards using only public information:
+   * - Player's 18 cards = values [0-5] × 3 protocol families
+   * - Subtract face-up cards on field (visible) and discards (visible)
+   */
+  _estimatePlayerCardValue(gameState) {
+    const pool = [0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5];
+    const LINES = ['izquierda', 'centro', 'derecha'];
+
+    LINES.forEach(line => {
+      (gameState.field[line].player || []).forEach(c => {
+        if (!c.faceDown) {
+          const idx = pool.indexOf(c.card.valor);
+          if (idx !== -1) pool.splice(idx, 1);
+        }
+      });
+    });
+    (gameState.player.trash || []).forEach(c => {
+      const idx = pool.indexOf(c.valor);
+      if (idx !== -1) pool.splice(idx, 1);
+    });
+
+    if (pool.length === 0) return 2.5;
+    return pool.reduce((a, b) => a + b, 0) / pool.length;
   }
 
   /**
@@ -232,13 +262,18 @@ class MiniMax {
     }
 
     if (move.line) {
-      const card = pState.hand.splice(move.cardIndex, 1)[0];
+      let card;
+      if (move.estimated) {
+        // Player moves use estimated cards — don't expose real hand contents
+        pState.hand.pop();
+        card = move.card;
+      } else {
+        card = pState.hand.splice(move.cardIndex, 1)[0];
+      }
       newState.field[move.line][player].push({
-        card: card,
+        card,
         faceDown: !move.faceUp
       });
-      // Basic simulation doesn't handle all complex effects yet, 
-      // but board state update is already a huge improvement.
     }
 
     return newState;
