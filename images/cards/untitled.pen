@@ -1,0 +1,916 @@
+{
+  "version": "2.9",
+  "children": [
+    {
+      "type": "frame",
+      "id": "jQ80c",
+      "x": 40,
+      "y": 40,
+      "name": "Agent Work",
+      "enabled": false,
+      "width": 520,
+      "height": 760,
+      "fill": "#1B1D22",
+      "layout": "vertical",
+      "gap": 24,
+      "padding": 32,
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "frame",
+          "id": "Id0jl",
+          "name": "Component/HUD SciFi Card",
+          "reusable": true,
+          "width": "fill_container",
+          "height": "fill_container",
+          "fill": "#101218",
+          "stroke": {
+            "align": "inside",
+            "thickness": 1,
+            "fill": "#7C818B"
+          },
+          "layout": "vertical",
+          "gap": 16,
+          "padding": [
+            20,
+            20,
+            18,
+            20
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "OalnB",
+              "name": "header",
+              "width": "fill_container",
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "RoOjn",
+                  "name": "leftHeader",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "odgX5",
+                      "name": "numBox",
+                      "width": 86,
+                      "height": 126,
+                      "cornerRadius": 4,
+                      "stroke": {
+                        "thickness": 2,
+                        "fill": "#EFEFEF"
+                      },
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Zl4eN",
+                          "name": "numText",
+                          "fill": "#F5F5F5",
+                          "content": "2",
+                          "fontFamily": "Orbitron",
+                          "fontSize": 86,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "HGN1A",
+                  "name": "titleChip",
+                  "cornerRadius": 4,
+                  "stroke": {
+                    "thickness": 2,
+                    "fill": "#EFEFEF"
+                  },
+                  "padding": [
+                    8,
+                    14
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "3tVOj",
+                      "name": "titleText",
+                      "fill": "#F5F5F5",
+                      "content": "APATHY",
+                      "fontFamily": "Orbitron",
+                      "fontSize": 44,
+                      "fontWeight": "700"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "PeQhd",
+              "name": "centerBox",
+              "width": "fill_container",
+              "height": 133,
+              "fill": "#141820",
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "#676E79"
+              },
+              "layout": "vertical",
+              "gap": 10,
+              "padding": 14,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "8SoFE",
+                  "name": "centerTitle",
+                  "fill": "#B3BAC4",
+                  "content": "STATUS / TECHNICAL NOTE",
+                  "fontFamily": "IBM Plex Mono",
+                  "fontSize": 11,
+                  "fontWeight": "600",
+                  "letterSpacing": 1
+                },
+                {
+                  "type": "text",
+                  "id": "cjRHv",
+                  "name": "centerBody",
+                  "fill": "#E2E6ED",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Signal coherence remains stable across all channels. Keep axis lock engaged and correct drift within the listed tolerance window.",
+                  "lineHeight": 1.45,
+                  "fontFamily": "IBM Plex Mono",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "rectangle",
+              "id": "4vzlx",
+              "name": "ruleTop",
+              "fill": "#59616D",
+              "width": "fill_container",
+              "height": 1
+            },
+            {
+              "type": "frame",
+              "id": "J2M2D",
+              "name": "centerBox",
+              "width": "fill_container",
+              "height": 133,
+              "fill": "#141820",
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "#676E79"
+              },
+              "layout": "vertical",
+              "gap": 10,
+              "padding": 14,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "PO6wU",
+                  "name": "centerTitle",
+                  "fill": "#B3BAC4",
+                  "content": "STATUS / TECHNICAL NOTE",
+                  "fontFamily": "IBM Plex Mono",
+                  "fontSize": 11,
+                  "fontWeight": "600",
+                  "letterSpacing": 1
+                },
+                {
+                  "type": "text",
+                  "id": "dRMGd",
+                  "name": "centerBody",
+                  "fill": "#E2E6ED",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Signal coherence remains stable across all channels. Keep axis lock engaged and correct drift within the listed tolerance window.",
+                  "lineHeight": 1.45,
+                  "fontFamily": "IBM Plex Mono",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "rectangle",
+              "id": "GVw8D",
+              "name": "ruleTop",
+              "fill": "#59616D",
+              "width": "fill_container",
+              "height": 1
+            },
+            {
+              "type": "frame",
+              "id": "rnQkj",
+              "name": "centerBox",
+              "width": "fill_container",
+              "height": 133,
+              "fill": "#141820",
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "#676E79"
+              },
+              "layout": "vertical",
+              "gap": 10,
+              "padding": 14,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "dxDPK",
+                  "name": "centerTitle",
+                  "fill": "#B3BAC4",
+                  "content": "STATUS / TECHNICAL NOTE",
+                  "fontFamily": "IBM Plex Mono",
+                  "fontSize": 11,
+                  "fontWeight": "600",
+                  "letterSpacing": 1
+                },
+                {
+                  "type": "text",
+                  "id": "oteCR",
+                  "name": "centerBody",
+                  "fill": "#E2E6ED",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Signal coherence remains stable across all channels. Keep axis lock engaged and correct drift within the listed tolerance window.",
+                  "lineHeight": 1.45,
+                  "fontFamily": "IBM Plex Mono",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "rectangle",
+              "id": "HlOw9",
+              "name": "ruleTop",
+              "fill": "#59616D",
+              "width": "fill_container",
+              "height": 1
+            },
+            {
+              "type": "rectangle",
+              "id": "4BeG4",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 0,
+              "name": "notchTL",
+              "fill": "#101218",
+              "width": 18,
+              "height": 18,
+              "stroke": {
+                "align": "inside",
+                "thickness": {
+                  "right": 1,
+                  "bottom": 1
+                },
+                "fill": "#7C818B"
+              }
+            },
+            {
+              "type": "rectangle",
+              "id": "jgBVs",
+              "layoutPosition": "absolute",
+              "x": 438,
+              "y": 0,
+              "name": "notchTR",
+              "fill": "#101218",
+              "width": 18,
+              "height": 18,
+              "stroke": {
+                "align": "inside",
+                "thickness": {
+                  "bottom": 1,
+                  "left": 1
+                },
+                "fill": "#7C818B"
+              }
+            },
+            {
+              "type": "rectangle",
+              "id": "fuvku",
+              "layoutPosition": "absolute",
+              "x": 0,
+              "y": 678,
+              "name": "notchBL",
+              "fill": "#101218",
+              "width": 18,
+              "height": 18,
+              "stroke": {
+                "align": "inside",
+                "thickness": {
+                  "top": 1,
+                  "right": 1
+                },
+                "fill": "#7C818B"
+              }
+            },
+            {
+              "type": "rectangle",
+              "id": "p5wUO",
+              "layoutPosition": "absolute",
+              "x": 438,
+              "y": 678,
+              "name": "notchBR",
+              "fill": "#101218",
+              "width": 18,
+              "height": 18,
+              "stroke": {
+                "align": "inside",
+                "thickness": {
+                  "top": 1,
+                  "left": 1
+                },
+                "fill": "#7C818B"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "yzkXr",
+      "x": 620,
+      "y": 40,
+      "name": "Main Work",
+      "enabled": false,
+      "width": 520,
+      "height": 760,
+      "fill": "#1B1D22",
+      "layout": "vertical",
+      "gap": 20,
+      "padding": 24,
+      "children": [
+        {
+          "type": "frame",
+          "id": "MfWLZ",
+          "name": "Component/HUD Card",
+          "reusable": true,
+          "width": "fill_container",
+          "height": "fill_container",
+          "fill": "#2A2D33",
+          "cornerRadius": 10,
+          "stroke": {
+            "thickness": 2,
+            "fill": "#E6E6E6"
+          },
+          "layout": "vertical",
+          "gap": 18,
+          "padding": [
+            20,
+            20,
+            24,
+            20
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "xNq6k",
+              "name": "header",
+              "width": "fill_container",
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "7JiKD",
+                  "name": "leftHeader",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "6bPAQ",
+                      "name": "numBox",
+                      "width": 86,
+                      "height": 126,
+                      "cornerRadius": 4,
+                      "stroke": {
+                        "thickness": 2,
+                        "fill": "#EFEFEF"
+                      },
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "f6EOG",
+                          "name": "numText",
+                          "fill": "#F5F5F5",
+                          "content": "2",
+                          "fontFamily": "Orbitron",
+                          "fontSize": 86,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "67ei1",
+                  "name": "titleChip",
+                  "cornerRadius": 4,
+                  "stroke": {
+                    "thickness": 2,
+                    "fill": "#EFEFEF"
+                  },
+                  "padding": [
+                    8,
+                    14
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "8Q0XZ",
+                      "name": "titleText",
+                      "fill": "#F5F5F5",
+                      "content": "APATHY",
+                      "fontFamily": "Orbitron",
+                      "fontSize": 44,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "YlQDh",
+                  "name": "rightGlyph",
+                  "width": 96,
+                  "height": 96,
+                  "cornerRadius": 14,
+                  "stroke": {
+                    "thickness": 2,
+                    "fill": "#EFEFEF"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "iXj2A",
+              "name": "bodyCard",
+              "width": "fill_container",
+              "height": 230,
+              "fill": "#30343B",
+              "cornerRadius": 10,
+              "stroke": {
+                "thickness": 2,
+                "fill": "#F0F0F0"
+              },
+              "layout": "vertical",
+              "padding": 18,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "CUvNp",
+                  "name": "bodyText",
+                  "fill": "#E9E9E9",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Ignore all middle commands on cards in this line.",
+                  "lineHeight": 1.05,
+                  "fontFamily": "Rajdhani",
+                  "fontSize": 48,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "rectangle",
+              "id": "HEUz3",
+              "name": "divider",
+              "fill": "#EDEDED",
+              "width": "fill_container",
+              "height": 3
+            },
+            {
+              "type": "frame",
+              "id": "EiaN1",
+              "name": "footer",
+              "width": "fill_container",
+              "fill": "#2D3037",
+              "cornerRadius": 8,
+              "stroke": {
+                "thickness": 2,
+                "fill": "#EFEFEF"
+              },
+              "layout": "vertical",
+              "gap": 6,
+              "padding": [
+                14,
+                16
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "G5XKP",
+                  "name": "footerTitle",
+                  "fill": "#F2F2F2",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "When this card would be covered:",
+                  "fontFamily": "Rajdhani",
+                  "fontSize": 52,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "rectangle",
+                  "id": "6FJ1U",
+                  "name": "footerDivider",
+                  "fill": "#CFCFCF",
+                  "width": "fill_container",
+                  "height": 2
+                },
+                {
+                  "type": "text",
+                  "id": "6PNGD",
+                  "name": "footerSub",
+                  "fill": "#F2F2F2",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "First, flip this card.",
+                  "fontFamily": "Rajdhani",
+                  "fontSize": 50,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "ghQR5",
+      "x": 1820,
+      "y": 0,
+      "name": "jQ80c v3 image bg",
+      "enabled": false,
+      "width": 520,
+      "height": 760,
+      "fill": "#1B1D22",
+      "layout": "vertical",
+      "gap": 22,
+      "padding": 28,
+      "children": [
+        {
+          "type": "frame",
+          "id": "FBGqc",
+          "name": "cardInstance",
+          "width": "fill_container",
+          "height": "fill_container",
+          "fill": [
+            {
+              "type": "image",
+              "enabled": true,
+              "url": "../Gemini_Generated_Image_8mlmov8mlmov8mlm.png",
+              "mode": "fill"
+            },
+            "#171B23B8"
+          ],
+          "cornerRadius": 10,
+          "stroke": {
+            "thickness": 2,
+            "fill": "#E6E6E6"
+          },
+          "layout": "vertical",
+          "gap": 18,
+          "padding": [
+            18,
+            18,
+            20,
+            18
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "tcaP8",
+              "name": "tripleBoxes",
+              "width": "fill_container",
+              "height": 170,
+              "fill": "#11141B66",
+              "cornerRadius": 8,
+              "gap": 10,
+              "padding": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Hstna",
+                  "name": "boxA",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "cornerRadius": 6,
+                  "stroke": {
+                    "thickness": 2,
+                    "fill": "#EFEFEF"
+                  },
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "9Z57U",
+                      "name": "box1Text",
+                      "fill": "#F5F5F5",
+                      "content": "APATHY",
+                      "fontFamily": "Orbitron",
+                      "fontSize": 32,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "i4010",
+                  "name": "boxB",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "cornerRadius": 6,
+                  "stroke": {
+                    "thickness": 2,
+                    "fill": "#EFEFEF"
+                  },
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Go17S",
+                      "name": "box2Text",
+                      "fill": "#F5F5F5",
+                      "content": "2",
+                      "fontFamily": "Orbitron",
+                      "fontSize": 110,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "6izX5",
+                  "name": "boxC",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "cornerRadius": 6,
+                  "stroke": {
+                    "thickness": 2,
+                    "fill": "#EFEFEF"
+                  },
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "54zNU",
+                      "name": "box3Inner",
+                      "width": 92,
+                      "height": 92,
+                      "cornerRadius": 16,
+                      "stroke": {
+                        "thickness": 2,
+                        "fill": "#EDEDED"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "fWVHB",
+              "name": "bodyCard",
+              "width": "fill_container",
+              "height": 230,
+              "fill": "#1A1E27C2",
+              "cornerRadius": 10,
+              "stroke": {
+                "thickness": 2,
+                "fill": "#F0F0F0"
+              },
+              "layout": "vertical",
+              "padding": 18,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "FUgpg",
+                  "name": "bodyText",
+                  "fill": "#E9E9E9",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Ignore all middle commands on cards in this line.",
+                  "lineHeight": 1.05,
+                  "fontFamily": "Rajdhani",
+                  "fontSize": 48,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "rectangle",
+              "id": "b1UOM",
+              "name": "divider",
+              "fill": "#EDEDED",
+              "width": "fill_container",
+              "height": 3
+            },
+            {
+              "type": "frame",
+              "id": "X2NXP",
+              "name": "footer",
+              "width": "fill_container",
+              "fill": "#161A23C7",
+              "cornerRadius": 8,
+              "stroke": {
+                "thickness": 2,
+                "fill": "#EFEFEF"
+              },
+              "layout": "vertical",
+              "gap": 6,
+              "padding": [
+                14,
+                16
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "knNJE",
+                  "name": "footerTitle",
+                  "fill": "#F2F2F2",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "When this card would be covered:",
+                  "fontFamily": "Rajdhani",
+                  "fontSize": 52,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "rectangle",
+                  "id": "ap2RH",
+                  "name": "footerDivider",
+                  "fill": "#CFCFCF",
+                  "width": "fill_container",
+                  "height": 2
+                },
+                {
+                  "type": "text",
+                  "id": "m45q2",
+                  "name": "footerSub",
+                  "fill": "#F2F2F2",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "First, flip this card.",
+                  "fontFamily": "Rajdhani",
+                  "fontSize": 50,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "T7g9H",
+      "x": 1200,
+      "y": 40,
+      "name": "cards",
+      "width": 520,
+      "height": 760,
+      "fill": [
+        {
+          "type": "image",
+          "enabled": true,
+          "url": "../Gemini_Generated_Image_8mlmov8mlmov8mlm.png",
+          "mode": "fill"
+        },
+        "#1B1D22CC"
+      ],
+      "layout": "vertical",
+      "gap": 24,
+      "padding": 32,
+      "alignItems": "center",
+      "children": [
+        {
+          "id": "nYMYr",
+          "type": "ref",
+          "ref": "Id0jl",
+          "fill": "#10121800",
+          "descendants": {
+            "RoOjn": {
+              "flipX": false,
+              "flipY": false,
+              "width": "fit_content",
+              "height": "fit_content",
+              "x": 0,
+              "y": 0,
+              "textGrowth": "auto"
+            },
+            "odgX5": {
+              "flipX": false,
+              "flipY": false,
+              "width": 86,
+              "height": 126,
+              "x": 0,
+              "y": 0,
+              "textGrowth": "auto",
+              "stroke": {
+                "thickness": 2,
+                "fill": "#EFEFEF"
+              },
+              "cornerRadius": 4
+            },
+            "Zl4eN": {
+              "x": 7,
+              "y": 9
+            },
+            "3tVOj": {
+              "content": "APATHY"
+            },
+            "PeQhd": {
+              "flipX": false,
+              "flipY": false,
+              "width": "fill_container",
+              "height": 149,
+              "x": 20,
+              "y": 162
+            },
+            "J2M2D": {
+              "enabled": true,
+              "flipX": false,
+              "flipY": false,
+              "width": "fill_container",
+              "height": 149,
+              "x": 20,
+              "y": 344
+            },
+            "PO6wU": {
+              "x": 14,
+              "y": 14
+            },
+            "dRMGd": {
+              "width": "fill_container",
+              "height": 0,
+              "x": 14,
+              "y": 38
+            },
+            "GVw8D": {
+              "enabled": true
+            },
+            "rnQkj": {
+              "enabled": true,
+              "flipX": false,
+              "flipY": false,
+              "width": "fill_container",
+              "height": 148,
+              "x": 20,
+              "y": 526
+            },
+            "dxDPK": {
+              "x": 14,
+              "y": 14
+            },
+            "oteCR": {
+              "width": "fill_container",
+              "height": 0,
+              "x": 14,
+              "y": 38
+            },
+            "HlOw9": {
+              "enabled": false
+            },
+            "4BeG4": {
+              "fill": "#101218",
+              "enabled": false
+            },
+            "jgBVs": {
+              "fill": "#101218",
+              "enabled": false
+            },
+            "fuvku": {
+              "fill": "#101218",
+              "enabled": false
+            },
+            "p5wUO": {
+              "fill": "#101218",
+              "enabled": false
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

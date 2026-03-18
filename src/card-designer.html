@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compile — Card Designer</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'IBM Plex Mono', monospace, sans-serif;
+      background: #0d1117;
+      color: #e2e6ed;
+      height: 100vh;
+      display: grid;
+      grid-template-columns: 260px 1fr 300px;
+      grid-template-rows: 48px 1fr;
+      overflow: hidden;
+    }
+
+    /* ── Topbar ───────────────────────────────────────── */
+    .topbar {
+      grid-column: 1 / -1;
+      background: #161a23;
+      border-bottom: 1px solid #2a2d3a;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 0 20px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 13px;
+      color: #b3bac4;
+      letter-spacing: 2px;
+    }
+
+    .topbar-title {
+      color: #f5f5f5;
+      font-size: 14px;
+    }
+
+    .topbar-sep { flex: 1; }
+
+    .topbar select {
+      background: #1e2330;
+      border: 1px solid #3a3f4e;
+      color: #e2e6ed;
+      padding: 4px 8px;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    /* ── Sidebar izquierda: lista de cartas ───────────── */
+    .sidebar-left {
+      background: #111520;
+      border-right: 1px solid #1e2330;
+      overflow-y: auto;
+      padding: 12px 0;
+    }
+
+    .element-group {}
+
+    .element-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #b3bac4;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .element-header:hover { background: #1a1f2e; }
+
+    .element-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .card-item {
+      padding: 6px 14px 6px 30px;
+      font-size: 11px;
+      color: #8899aa;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-left: 2px solid transparent;
+    }
+
+    .card-item:hover { background: #1a1f2e; color: #e2e6ed; }
+
+    .card-item.active {
+      background: #1e2a40;
+      color: #f5f5f5;
+    }
+
+    .card-item .valor-badge {
+      font-size: 10px;
+      font-weight: 700;
+      width: 18px;
+      height: 18px;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid currentColor;
+      opacity: 0.7;
+      flex-shrink: 0;
+    }
+
+    /* ── Centro: preview ──────────────────────────────── */
+    .preview-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      overflow: hidden;
+      background: #0d1117;
+      padding: 24px;
+    }
+
+    .preview-wrap {
+      transform-origin: center center;
+    }
+
+    .scale-hint {
+      font-size: 11px;
+      color: #59616d;
+      letter-spacing: 1px;
+    }
+
+    /* ── Panel derecho: controles ─────────────────────── */
+    .panel-right {
+      background: #111520;
+      border-left: 1px solid #1e2330;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .panel-section-title {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #59616d;
+      margin-bottom: 8px;
+    }
+
+    .field-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 10px;
+    }
+
+    .field-label {
+      font-size: 10px;
+      color: #7a8494;
+      letter-spacing: 1px;
+    }
+
+    .field-value {
+      font-size: 12px;
+      color: #e2e6ed;
+      background: #1a1f2e;
+      border: 1px solid #2a2d3a;
+      padding: 6px 8px;
+      border-radius: 3px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+    }
+
+    .field-value.empty {
+      color: #3a3f4e;
+      font-style: italic;
+    }
+
+    .color-swatch {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      vertical-align: middle;
+      margin-right: 4px;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .btn-facedown {
+      width: 100%;
+      padding: 8px;
+      background: #1e2330;
+      border: 1px solid #3a3f4e;
+      color: #e2e6ed;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 1px;
+      cursor: pointer;
+    }
+
+    .btn-facedown:hover { background: #252c3e; }
+    .btn-facedown.active { background: #1e3a5e; border-color: #4a8aca; color: #7dc3ff; }
+
+    .scale-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .scale-control input[type=range] {
+      flex: 1;
+      accent-color: #4a8aca;
+    }
+
+    .scale-value {
+      font-size: 11px;
+      color: #b3bac4;
+      min-width: 36px;
+      text-align: right;
+    }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=IBM+Plex+Mono:ital,wght@0,400;0,600&display=swap" rel="stylesheet">
+  <script src="cards-data.js"></script>
+  <script src="compile-card.js"></script>
+</head>
+<body>
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <span class="topbar-title">COMPILE</span>
+    <span>/ Card Designer</span>
+    <span class="topbar-sep"></span>
+    <label>Vista: <select id="view-mode">
+      <option value="single">Individual</option>
+      <option value="grid">Galería</option>
+    </select></label>
+  </header>
+
+  <!-- Sidebar izquierda -->
+  <nav class="sidebar-left" id="sidebar"></nav>
+
+  <!-- Preview central -->
+  <main class="preview-area" id="preview-area">
+    <div class="preview-wrap" id="preview-wrap">
+      <compile-card id="main-card" img-base="../images"></compile-card>
+    </div>
+    <div class="scale-hint" id="scale-hint"></div>
+  </main>
+
+  <!-- Panel derecho -->
+  <aside class="panel-right" id="panel-right">
+    <div>
+      <div class="panel-section-title">Carta seleccionada</div>
+      <div class="field-row">
+        <div class="field-label">NOMBRE</div>
+        <div class="field-value" id="info-nombre">—</div>
+      </div>
+      <div class="field-row">
+        <div class="field-label">VALOR</div>
+        <div class="field-value" id="info-valor">—</div>
+      </div>
+      <div class="field-row">
+        <div class="field-label">FASE</div>
+        <div class="field-value" id="info-fase">—</div>
+      </div>
+      <div class="field-row">
+        <div class="field-label">COLOR ELEMENTO</div>
+        <div class="field-value" id="info-color">—</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel-section-title">Habilidades</div>
+      <div class="field-row">
+        <div class="field-label">INICIO</div>
+        <div class="field-value" id="info-inicio">—</div>
+      </div>
+      <div class="field-row">
+        <div class="field-label">ACCIÓN</div>
+        <div class="field-value" id="info-accion">—</div>
+      </div>
+      <div class="field-row">
+        <div class="field-label">FINAL</div>
+        <div class="field-value" id="info-final">—</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel-section-title">Vista</div>
+      <button class="btn-facedown" id="btn-facedown">Voltear bocabajo</button>
+    </div>
+
+    <div>
+      <div class="panel-section-title">Escala</div>
+      <div class="scale-control">
+        <input type="range" id="scale-slider" min="20" max="100" value="55" step="1">
+        <span class="scale-value" id="scale-display">55%</span>
+      </div>
+    </div>
+  </aside>
+
+<script>
+  const PROTOCOL_DEFS = CARDS_DATA._protocolMeta;
+
+  // ── Build sidebar ─────────────────────────────────────────────────
+  let currentCard = null;
+  let faceDown = false;
+
+  const sidebar = document.getElementById('sidebar');
+
+  Object.entries(CARDS_DATA).forEach(([proto, cards]) => {
+    if (proto === '_protocolMeta') return;
+    const meta = PROTOCOL_DEFS[proto] || {};
+    const color = meta.color || '#7c818b';
+
+    const group = document.createElement('div');
+    group.className = 'element-group';
+
+    const header = document.createElement('div');
+    header.className = 'element-header';
+    header.innerHTML = `<span class="element-dot" style="background:${color}"></span>${proto}`;
+    group.appendChild(header);
+
+    cards.forEach(card => {
+      const item = document.createElement('div');
+      item.className = 'card-item';
+      item.innerHTML = `
+        <span class="valor-badge" style="color:${color}">${card.valor}</span>
+        ${card.nombre}
+      `;
+      item.dataset.proto = proto;
+      item.dataset.nombre = card.nombre;
+      item.onclick = () => selectCard(proto, card, item);
+      group.appendChild(item);
+    });
+
+    sidebar.appendChild(group);
+  });
+
+  // ── Select card ────────────────────────────────────────────────────
+  function selectCard(proto, card, itemEl) {
+    // Update sidebar active state
+    document.querySelectorAll('.card-item').forEach(i => i.classList.remove('active'));
+    if (itemEl) itemEl.classList.add('active');
+
+    currentCard = { proto, card };
+    const meta = PROTOCOL_DEFS[proto] || {};
+    const color = meta.color || '#7c818b';
+
+    const el = document.getElementById('main-card');
+    el.setAttribute('valor', card.valor);
+    el.setAttribute('protocolo', proto);
+    el.setAttribute('h-inicio', card.h_inicio || '');
+    el.setAttribute('h-accion', card.h_accion || '');
+    el.setAttribute('h-final', card.h_final || '');
+    el.setAttribute('accent', color);
+    if (faceDown) el.setAttribute('face-down', '');
+    else el.removeAttribute('face-down');
+
+    // Info panel
+    document.getElementById('info-nombre').textContent = card.nombre;
+    document.getElementById('info-valor').textContent  = card.valor;
+    document.getElementById('info-fase').textContent   = card.fase || '—';
+    document.getElementById('info-color').innerHTML    =
+      `<span class="color-swatch" style="background:${color}"></span>${color}`;
+
+    const setField = (id, text) => {
+      const el2 = document.getElementById(id);
+      el2.textContent = text || '(vacío)';
+      el2.classList.toggle('empty', !text);
+    };
+    setField('info-inicio', card.h_inicio);
+    setField('info-accion', card.h_accion);
+    setField('info-final',  card.h_final);
+  }
+
+  // ── Scale ──────────────────────────────────────────────────────────
+  const slider       = document.getElementById('scale-slider');
+  const scaleDisplay = document.getElementById('scale-display');
+  const previewWrap  = document.getElementById('preview-wrap');
+  const scaleHint    = document.getElementById('scale-hint');
+
+  function applyScale(pct) {
+    const s = pct / 100;
+    previewWrap.style.transform = `scale(${s})`;
+    previewWrap.style.width  = `${520 * s}px`;
+    previewWrap.style.height = `${760 * s}px`;
+    scaleDisplay.textContent = `${pct}%`;
+    scaleHint.textContent    = `520 × 760 px  ·  escala ${pct}%`;
+  }
+
+  slider.addEventListener('input', () => applyScale(+slider.value));
+  applyScale(+slider.value);
+
+  // ── Face-down toggle ───────────────────────────────────────────────
+  const btnFacedown = document.getElementById('btn-facedown');
+  btnFacedown.addEventListener('click', () => {
+    faceDown = !faceDown;
+    btnFacedown.classList.toggle('active', faceDown);
+    btnFacedown.textContent = faceDown ? 'Mostrar boca arriba' : 'Voltear bocabajo';
+    const el = document.getElementById('main-card');
+    if (faceDown) el.setAttribute('face-down', '');
+    else el.removeAttribute('face-down');
+  });
+
+  // ── Select first card by default ───────────────────────────────────
+  const firstProto = Object.keys(CARDS_DATA).find(k => k !== '_protocolMeta');
+  if (firstProto) {
+    const firstCard = CARDS_DATA[firstProto][0];
+    const firstItem = document.querySelector('.card-item');
+    selectCard(firstProto, firstCard, firstItem);
+  }
+</script>
+</body>
+</html>
