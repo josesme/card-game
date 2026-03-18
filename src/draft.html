@@ -346,17 +346,110 @@ function playerSelectProtocol(protocol) {
     }
 }
 
-function aiSelectProtocols(count) {
-    for (let i = 0; i < count; i++) {
-        // Seleccionar al azar (en el futuro: evaluador estratégico)
-        const idx = Math.floor(Math.random() * draftState.available.length);
-        const protocol = draftState.available[idx];
+// ── Tablas de evaluación estratégica del draft ─────────────────────
 
-        draftState.aiSelected.push(protocol);
-        draftState.available.splice(idx, 1);
+// Fuerza base de cada protocolo (standalone)
+const PROTOCOL_STRENGTH = {
+    'Espíritu':  8, // Robar + voltear + cambiar — muy versátil
+    'Muerte':    8, // Eliminación fuerte y consistente
+    'Fuego':     6, // Efectos condicionales (requiere descarte como coste)
+    'Gravedad':  7, // Posicional + cambiar + deck cycling
+    'Vida':      7, // Robar + jugar desde mazo
+    'Luz':       6, // Robar + voltear
+    'Metal':     7, // Prevenir compilado + robar
+    'Plaga':     6, // Forzar descarte rival — disruptivo
+    'Psique':    7, // Manipulación + descarte rival
+    'Velocidad': 6, // Jugar extra + cambiar
+    'Agua':      7, // Devolver + voltear + robar
+    'Oscuridad': 7, // Robar + cambiar + manipular
+    'Apatía':    5, // Estrategia bocabajo — nicho
+    'Odio':      7, // Eliminación (con coste de descarte)
+    'Amor':      6, // Intercambio de mano
+};
 
-        console.log(`🤖 IA seleccionó: ${protocol}`);
+// Sinergia entre pares (ambos se refuerzan mutuamente)
+const PROTOCOL_SYNERGY = {
+    'Espíritu':  { 'Vida': 8, 'Psique': 7, 'Agua': 7, 'Amor': 6 },
+    'Muerte':    { 'Odio': 9, 'Fuego': 6, 'Plaga': 5 },
+    'Fuego':     { 'Plaga': 8, 'Odio': 7, 'Muerte': 6 },
+    'Gravedad':  { 'Velocidad': 8, 'Metal': 6, 'Apatía': 6 },
+    'Vida':      { 'Espíritu': 8, 'Agua': 7, 'Amor': 6, 'Luz': 6 },
+    'Luz':       { 'Metal': 7, 'Vida': 6, 'Espíritu': 5 },
+    'Metal':     { 'Luz': 7, 'Gravedad': 6 },
+    'Plaga':     { 'Psique': 8, 'Fuego': 8, 'Odio': 6 },
+    'Psique':    { 'Plaga': 8, 'Espíritu': 7, 'Oscuridad': 7 },
+    'Velocidad': { 'Gravedad': 8, 'Oscuridad': 6 },
+    'Agua':      { 'Espíritu': 7, 'Vida': 7, 'Oscuridad': 6 },
+    'Oscuridad': { 'Psique': 7, 'Velocidad': 6, 'Agua': 6, 'Apatía': 7 },
+    'Apatía':    { 'Oscuridad': 7, 'Gravedad': 6 },
+    'Odio':      { 'Muerte': 9, 'Fuego': 7, 'Plaga': 6 },
+    'Amor':      { 'Vida': 6, 'Espíritu': 6 },
+};
+
+// Qué protocolos responden bien a los picks del rival
+const PROTOCOL_COUNTER = {
+    'Metal':     ['Muerte', 'Odio'],    // Previene compilado contra decks de eliminación
+    'Vida':      ['Plaga', 'Psique'],   // Reposición de mano contra descarte
+    'Muerte':    ['Vida', 'Gravedad'],  // Elimina las cartas que esos protocolos juegan
+    'Odio':      ['Espíritu', 'Luz'],   // Elimina cartas con efectos de robar
+    'Psique':    ['Amor', 'Vida'],      // Descarte fuerza a rivales de mano
+    'Metal':     ['Velocidad', 'Fuego'],
+};
+
+function getDraftSynergy(a, b) {
+    return (PROTOCOL_SYNERGY[a] && PROTOCOL_SYNERGY[a][b]) ||
+           (PROTOCOL_SYNERGY[b] && PROTOCOL_SYNERGY[b][a]) || 0;
+}
+
+function scoreProtocolForDraft(protocol, aiAlready, playerPicked) {
+    let score = PROTOCOL_STRENGTH[protocol] || 5;
+
+    // Sinergia con los ya elegidos por la IA (peso alto)
+    aiAlready.forEach(p => { score += getDraftSynergy(protocol, p) * 1.8; });
+
+    // Bonus de contrapick respecto a lo que el jugador ha elegido
+    playerPicked.forEach(p => {
+        const counters = PROTOCOL_COUNTER[protocol] || [];
+        if (counters.includes(p)) score += 3;
+    });
+
+    return score;
+}
+
+function aiBestPick(available, aiAlready, playerPicked) {
+    return available.slice().sort((a, b) =>
+        scoreProtocolForDraft(b, aiAlready, playerPicked) -
+        scoreProtocolForDraft(a, aiAlready, playerPicked)
+    )[0];
+}
+
+function aiBestPair(available, aiAlready, playerPicked) {
+    // Evalúa todas las combinaciones posibles de 2 y elige la mejor pareja
+    let bestPair = null, bestScore = -Infinity;
+    for (let i = 0; i < available.length; i++) {
+        for (let j = i + 1; j < available.length; j++) {
+            const a = available[i], b = available[j];
+            const score = scoreProtocolForDraft(a, aiAlready, playerPicked) +
+                          scoreProtocolForDraft(b, [...aiAlready, a], playerPicked) +
+                          getDraftSynergy(a, b) * 2; // bonus por sinergia interna del par
+            if (score > bestScore) { bestScore = score; bestPair = [a, b]; }
+        }
     }
+    return bestPair || available.slice(0, 2);
+}
+
+// ───────────────────────────────────────────────────────────────────
+
+function aiSelectProtocols(count) {
+    const picks = count === 2
+        ? aiBestPair(draftState.available, draftState.aiSelected, draftState.playerSelected)
+        : [aiBestPick(draftState.available, draftState.aiSelected, draftState.playerSelected)];
+
+    picks.forEach(protocol => {
+        draftState.aiSelected.push(protocol);
+        draftState.available.splice(draftState.available.indexOf(protocol), 1);
+        console.log(`🤖 IA seleccionó: ${protocol}`);
+    });
 
     draftState.round++;
     updateDraftDisplay();
