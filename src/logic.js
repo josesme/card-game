@@ -1212,6 +1212,7 @@ function finalizeDiscardVariable() {
 }
 
 function handleFieldCardClick(line, target, cardIdx) {
+    hideCardPreview();
     const ctx = gameState.effectContext;
     if (!ctx) return;
 
