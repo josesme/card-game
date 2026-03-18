@@ -1916,9 +1916,11 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
     }
 
     case 'mayFlipCovered': {
-      // Oscuridad 2: voltea 1 carta cubierta de esta línea (opcional)
+      // Oscuridad 2: voltea 1 carta cubierta de esta línea — propia o rival (opcional)
       const line = gameState.currentEffectLine;
-      const hasCoveredInLine = line && gameState.field[line][targetPlayer].length >= 2;
+      const hasCoveredOwn = line && gameState.field[line][targetPlayer].length >= 2;
+      const hasCoveredOpp = line && gameState.field[line][opponent].length >= 2;
+      const hasCoveredInLine = hasCoveredOwn || hasCoveredOpp;
       if (targetPlayer === 'player') {
         if (!hasCoveredInLine) { processAbilityEffect(); break; }
         const confirmArea = document.getElementById('command-confirm');
@@ -1932,7 +1934,8 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
           btnYes.onclick = () => {
             confirmArea.classList.add('hidden');
             gameState.effectContext = null;
-            startEffect('flip', targetPlayer, 1, { forceLine: line, coveredOnly: true, targetAll: true });
+            // target 'any' para poder elegir carta propia o rival
+            startEffect('flip', 'any', 1, { forceLine: line, coveredOnly: true });
           };
           btnNo.onclick = () => {
             confirmArea.classList.add('hidden');
@@ -1943,11 +1946,20 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
           processAbilityEffect();
         }
       } else {
-        if (hasCoveredInLine) {
-          // Voltear la carta cubierta de mayor valor (activarla)
+        // IA: prefiere voltear cubierta propia de mayor valor (la activa);
+        // si no tiene, voltea la cubierta rival de mayor valor (boca arriba→abajo = pierde puntos)
+        if (hasCoveredOwn) {
           const covered = gameState.field[line].ai.slice(0, -1);
           const bestIdx = covered.reduce((b, c, i) => c.card.valor > covered[b].card.valor ? i : b, 0);
           gameState.field[line].ai[bestIdx].faceDown = !gameState.field[line].ai[bestIdx].faceDown;
+        } else if (hasCoveredOpp) {
+          const coveredOpp = gameState.field[line].player.slice(0, -1);
+          // Voltear la de mayor valor bocaarriba → bocabajo para reducir puntuación rival
+          const faceUpCovered = coveredOpp.map((c, i) => ({ c, i })).filter(({ c }) => !c.faceDown);
+          if (faceUpCovered.length > 0) {
+            const best = faceUpCovered.reduce((b, x) => x.c.card.valor > b.c.card.valor ? x : b);
+            gameState.field[line].player[best.i].faceDown = true;
+          }
         }
         processAbilityEffect();
       }
