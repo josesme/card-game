@@ -1287,7 +1287,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
         highlightSelectableLines(sourceLine);
       } else {
         const others = LINES.filter(l => l !== sourceLine);
-        const dest = others[Math.floor(Math.random() * others.length)];
+        const dest = aiPickDestLine([sourceLine]) || others[0];
         const topCard = gameState[targetPlayer].deck.pop();
         gameState.field[dest][targetPlayer].push({ card: topCard, faceDown: true });
         processAbilityEffect();
@@ -1343,11 +1343,15 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       if (targetPlayer === 'player') {
         startEffect('flip', resolvedTarget === 'any' ? 'any' : resolvedTarget, count || 1);
       } else {
-        // AI flips a random card
-        const validLines = LINES.filter(l => gameState.field[l][resolvedTarget === 'any' ? 'player' : resolvedTarget].length > 0);
+        // AI flips la carta de mayor valor (maximiza las robadas)
+        const actualTarget = resolvedTarget === 'any' ? 'player' : resolvedTarget;
+        const validLines = LINES.filter(l => gameState.field[l][actualTarget].length > 0);
         if (validLines.length > 0) {
-          const l = validLines[Math.floor(Math.random() * validLines.length)];
-          const actualTarget = resolvedTarget === 'any' ? 'player' : resolvedTarget;
+          const l = validLines.sort((a, b) => {
+            const va = gameState.field[a][actualTarget].at(-1).card.valor || 0;
+            const vb = gameState.field[b][actualTarget].at(-1).card.valor || 0;
+            return vb - va;
+          })[0];
           const stack = gameState.field[l][actualTarget];
           const cardObj = stack[stack.length - 1];
           gameState.lastFlippedCard = { cardObj, line: l };
@@ -1374,11 +1378,16 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       if (targetPlayer === 'player') {
         startEffect('flip', resolvedTarget === 'any' ? 'any' : resolvedTarget, count || 1);
       } else {
-        const actualTarget = resolvedTarget === 'any' ? 'player' : resolvedTarget;
-        const validLines = LINES.filter(l => gameState.field[l][actualTarget].length > 0);
-        if (validLines.length > 0) {
-          const l = validLines[Math.floor(Math.random() * validLines.length)];
-          const stack = gameState.field[l][actualTarget];
+        // AI flips en la línea con más bocabajo (maximiza robadas después del volteo)
+        const actualTarget2 = resolvedTarget === 'any' ? 'player' : resolvedTarget;
+        const validLines2 = LINES.filter(l => gameState.field[l][actualTarget2].length > 0);
+        if (validLines2.length > 0) {
+          const l = validLines2.sort((a, b) => {
+            const fdA = [...gameState.field[a].player, ...gameState.field[a].ai].filter(c => c.faceDown).length;
+            const fdB = [...gameState.field[b].player, ...gameState.field[b].ai].filter(c => c.faceDown).length;
+            return fdB - fdA;
+          })[0];
+          const stack = gameState.field[l][actualTarget2];
           const cardObj = stack[stack.length - 1];
           gameState.lastFlippedCard = { cardObj, line: l };
           cardObj.faceDown = !cardObj.faceDown;
@@ -1860,7 +1869,9 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
           processAbilityEffect();
         }
       } else {
-        if (Math.random() > 0.5) {
+        // IA cambia si hay línea destino ventajosa; si no, omite
+        const destLine = aiPickDestLine([gameState.currentEffectLine]);
+        if (destLine) {
           resolveAbilityAction({ action: 'shift', target: 'self', count: 1 }, targetPlayer);
         } else {
           processAbilityEffect();
@@ -1886,12 +1897,18 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       if (targetPlayer === 'player') {
         startEffect('shift', resolvedTarget, count || 1, { coveredOnly: true, targetAll: true });
       } else {
-        // IA: mover carta cubierta aleatoria
+        // IA: toma cubierta de la línea rival de mayor puntuación; la mueve a su línea más débil
         const validLines = LINES.filter(l => gameState.field[l][resolvedTarget].length >= 2);
-        const l = validLines[Math.floor(Math.random() * validLines.length)];
-        const coveredIdx = Math.floor(Math.random() * (gameState.field[l][resolvedTarget].length - 1));
-        const [cardObj] = gameState.field[l][resolvedTarget].splice(coveredIdx, 1);
-        const dest = LINES.filter(x => x !== l)[Math.floor(Math.random() * 2)];
+        const srcLine = validLines.sort((a, b) =>
+          calculateScore(gameState, b, resolvedTarget) - calculateScore(gameState, a, resolvedTarget)
+        )[0];
+        const covered = gameState.field[srcLine][resolvedTarget].slice(0, -1);
+        const coveredIdx = covered.reduce((best, c, i) => c.card.valor > covered[best].card.valor ? i : best, 0);
+        const [cardObj] = gameState.field[srcLine][resolvedTarget].splice(coveredIdx, 1);
+        const destCandidates = LINES.filter(x => x !== srcLine);
+        const dest = destCandidates.sort((a, b) =>
+          calculateScore(gameState, a, resolvedTarget) - calculateScore(gameState, b, resolvedTarget)
+        )[0] || destCandidates[0];
         gameState.field[dest][resolvedTarget].push(cardObj);
         processAbilityEffect();
       }
@@ -2328,10 +2345,10 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
         if (gameState.player.hand.length === 0) { processAbilityEffect(); break; }
         startEffect('reveal', 'player', 1);
       } else {
-        // IA revela una carta aleatoria (se muestra en el log y modal)
+        // IA revela su carta de menor valor (mínima información útil al jugador)
         if (gameState.ai.hand.length > 0) {
-          const idx = Math.floor(Math.random() * gameState.ai.hand.length);
-          const card = gameState.ai.hand[idx];
+          const idx = aiLowestValueCardIdx('ai');
+          const card = gameState.ai.hand[idx >= 0 ? idx : 0];
           updateStatus(`IA revela: ${card.nombre}`);
           // Mostrar modal de revelación para el jugador
           gameState.effectQueue.unshift({ effect: { action: '_showRevealedCards', cards: [card] }, targetPlayer: 'ai' });
