@@ -1463,10 +1463,10 @@ function resolveEffectAI(type, target, count, opts = {}) {
     if (type === 'discard') {
         for (let i = 0; i < count; i++) {
             if (gameState[actualTarget].hand.length > 0) {
-                // AI discards its lowest value card; player discards highest (worst case for them)
+                // AI discards its lowest value card; player discards randomly (IA no conoce la mano del jugador)
                 const idx = actualTarget === 'ai'
                     ? aiLowestValueCardIdx('ai')
-                    : gameState.player.hand.reduce((maxI, c, i) => c.valor > gameState.player.hand[maxI].valor ? i : maxI, 0);
+                    : Math.floor(Math.random() * gameState.player.hand.length);
                 const [card] = gameState[actualTarget].hand.splice(idx >= 0 ? idx : gameState[actualTarget].hand.length - 1, 1);
                 gameState[actualTarget].trash.push(card);
             }

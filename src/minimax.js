@@ -426,11 +426,12 @@ class MiniMax {
       }
     }
 
-    // Opponent discard
+    // Opponent discard (random — AI no conoce la mano del jugador)
     if (fx.opponentDiscard) {
       const n = Math.min(fx.opponentDiscard, state.player.hand.length);
       for (let i = 0; i < n; i++) {
-        const c = state.player.hand.pop();
+        const idx = Math.floor(Math.random() * state.player.hand.length);
+        const [c] = state.player.hand.splice(idx, 1);
         if (c) state.player.trash.push(c);
       }
     }
