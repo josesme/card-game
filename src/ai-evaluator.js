@@ -10,11 +10,13 @@ class AIEvaluator {
   constructor(gameState) {
     this.gameState = gameState;
     this.weights = {
-      compilationThreat: 100,  // Win/loss proximity — highest priority
-      defensiveNeed:      80,  // Suppress opponent resources
-      lineValue:          50,  // Score advantage across lines
-      cardAdvantage:      30,  // Hand quality
-      opportunities:      25,  // Exploitable line situations
+      compilationThreat:  100,  // Win/loss proximity — highest priority
+      defensiveNeed:       80,  // Suppress opponent resources
+      lineValue:           50,  // Score advantage across lines
+      cardAdvantage:       30,  // Hand quality
+      opportunities:       25,  // Exploitable line situations
+      protocolCoverage:    20,  // Protocol cards face-up = effects active
+      faceDownBalance:     15,  // Bocabajos propios vs amenaza bocabajos rival
     };
   }
 
@@ -28,17 +30,21 @@ class AIEvaluator {
     const handQuality       = this.evaluateHandQuality(state);
     const opponentThreat    = this.evaluateOpponentThreat(state);
     const opportunities     = this.evaluateOpportunities(state);
+    const protocolCoverage  = this.evaluateProtocolCoverage(state);
+    const faceDownBalance   = this.evaluateFaceDownBalance(state);
 
     const total =
       compilationThreat * this.weights.compilationThreat +
       lineStrength      * this.weights.lineValue +
       handQuality       * this.weights.cardAdvantage +
-      (-opponentThreat) * this.weights.defensiveNeed +   // high threat = bad for AI
-      opportunities     * this.weights.opportunities;
+      (-opponentThreat) * this.weights.defensiveNeed +
+      opportunities     * this.weights.opportunities +
+      protocolCoverage  * this.weights.protocolCoverage +
+      faceDownBalance   * this.weights.faceDownBalance;
 
     return {
       total,
-      details: { compilationThreat, lineStrength, handQuality, opponentThreat, opportunities },
+      details: { compilationThreat, lineStrength, handQuality, opponentThreat, opportunities, protocolCoverage, faceDownBalance },
       recommendation: this.getRecommendation(compilationThreat, lineStrength),
     };
   }
@@ -204,17 +210,108 @@ class AIEvaluator {
   }
 
   // ─────────────────────────────────────────────
-  // OPPONENT THREAT (resources + compile potential)
+  // OPPONENT THREAT (resources + compile potential + hidden bocabajos)
   // positive = player is dangerous (caller subtracts this)
   // ─────────────────────────────────────────────
 
   evaluateOpponentThreat(state) {
+    const LINES = ['izquierda', 'centro', 'derecha'];
     const hand  = state.player.hand  || [];
     const deck  = state.player.deck  || [];
-    const cardsAvailable     = hand.length + Math.min(deck.length, 3);
+    const cardsAvailable       = hand.length + Math.min(deck.length, 3);
     const compilationPotential = this.countCompilationPotential(state, 'player');
 
-    return Math.min(1, (cardsAvailable / 10 + compilationPotential / 4) / 2);
+    // Bocabajos rivales en líneas cercanas a compilar = amenaza oculta
+    let hiddenThreat = 0;
+    LINES.forEach(line => {
+      if (state.field[line].compiledBy) return;
+      const playerScore  = this._score(state, line, 'player');
+      const faceDownCount = (state.field[line].player || []).filter(c => c.faceDown).length;
+      // Si el rival está cerca y tiene bocabajos = riesgo de activar de golpe
+      if (playerScore >= 5 && faceDownCount > 0) hiddenThreat += faceDownCount * 0.1;
+      else hiddenThreat += faceDownCount * 0.04;
+    });
+
+    return Math.min(1, (cardsAvailable / 10 + compilationPotential / 4) / 2 + hiddenThreat);
+  }
+
+  // ─────────────────────────────────────────────
+  // PROTOCOL COVERAGE
+  // Bonus por cartas propias de protocolo boca arriba (efectos activos)
+  // y presión en las 3 líneas simultáneamente
+  // ─────────────────────────────────────────────
+
+  evaluateProtocolCoverage(state) {
+    const LINES = ['izquierda', 'centro', 'derecha'];
+    const myProtocols = state.ai.protocols || [];
+    let score = 0;
+    let linesWithCards = 0;
+
+    LINES.forEach((line, idx) => {
+      if (state.field[line].compiledBy) return;
+      const lineCards = state.field[line].ai || [];
+      if (lineCards.length > 0) linesWithCards++;
+
+      const protocol = myProtocols[idx];
+      if (!protocol) return;
+
+      const faceUpProtocol = lineCards.filter(c => !c.faceDown && c.card && c.card.protocol === protocol).length;
+      const faceUpAny      = lineCards.filter(c => !c.faceDown).length;
+
+      // Carta de protocolo activa = efecto disponible
+      score += faceUpProtocol * 0.22;
+
+      // 2+ cartas de protocolo en la misma línea = combo potencial
+      if (faceUpProtocol >= 2) score += 0.25;
+
+      // Línea mixta (protocolo + otras boca arriba) = presión estable
+      if (faceUpProtocol >= 1 && faceUpAny >= 2) score += 0.12;
+    });
+
+    // Presión en las 3 frentes simultáneamente dificulta al rival defenderse
+    if (linesWithCards === 3) score += 0.3;
+    else if (linesWithCards === 2) score += 0.1;
+
+    return Math.max(-1, Math.min(1, score / 3));
+  }
+
+  // ─────────────────────────────────────────────
+  // FACE-DOWN BALANCE
+  // Tener algunos bocabajos es flexible; demasiados = sin efectos activos.
+  // Los bocabajos rivales son amenaza oculta.
+  // ─────────────────────────────────────────────
+
+  evaluateFaceDownBalance(state) {
+    const LINES = ['izquierda', 'centro', 'derecha'];
+    let score = 0;
+
+    LINES.forEach(line => {
+      if (state.field[line].compiledBy) return;
+      const aiCards     = state.field[line].ai     || [];
+      const playerCards = state.field[line].player || [];
+      const aiTotal     = aiCards.length;
+
+      if (aiTotal > 0) {
+        const aiFaceDown      = aiCards.filter(c =>  c.faceDown).length;
+        const aiFaceUp        = aiCards.filter(c => !c.faceDown).length;
+        const faceDownRatio   = aiFaceDown / aiTotal;
+
+        // Tener al menos 1 boca arriba = efectos accesibles
+        if (aiFaceUp >= 1) score += 0.15;
+
+        // Demasiados bocabajos sin ninguno activo = sin efectos = penalizar
+        if (faceDownRatio > 0.75 && aiFaceUp === 0) score -= 0.35;
+
+        // Mezcla equilibrada = flexibilidad táctica
+        if (aiFaceDown >= 1 && aiFaceUp >= 1) score += 0.1;
+      }
+
+      // Bocabajos del rival = potencial oculto que no podemos evaluar bien
+      const playerFaceDown = playerCards.filter(c => c.faceDown).length;
+      score -= playerFaceDown * 0.06;
+    });
+
+    return Math.max(-1, Math.min(1, score));
   }
 
   // ─────────────────────────────────────────────
