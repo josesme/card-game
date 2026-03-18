@@ -1644,45 +1644,73 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
     }
 
     case 'deleteHighestUncovered': {
-      // Odio 2: elimina tu mayor valor, luego la del oponente
-      const findHighestUncovered = (player) => {
-        let best = null, bestLine = null, bestIdx = -1;
+      // Odio 2: elimina tu carta descubierta de mayor valor, luego la del oponente.
+      // Si hay empate en el mayor valor, el jugador elige cuál eliminar.
+      // Si Odio 2 es su carta de mayor valor (se suicida), el segundo efecto no se activa.
+      const findAllHighestUncovered = (player) => {
+        let maxVal = -1;
         LINES.forEach(l => {
           const stack = gameState.field[l][player];
           if (stack.length === 0) return;
           const top = stack[stack.length - 1];
-          if (!top.faceDown && (!best || top.card.valor > best.card.valor)) {
-            best = top; bestLine = l; bestIdx = stack.length - 1;
-          }
+          if (!top.faceDown && top.card.valor > maxVal) maxVal = top.card.valor;
         });
-        return { card: best, line: bestLine, idx: bestIdx };
+        if (maxVal < 0) return [];
+        const ties = [];
+        LINES.forEach(l => {
+          const stack = gameState.field[l][player];
+          if (stack.length === 0) return;
+          const top = stack[stack.length - 1];
+          if (!top.faceDown && top.card.valor === maxVal)
+            ties.push({ card: top, line: l, idx: stack.length - 1 });
+        });
+        return ties;
       };
 
-      const selfHighest = findHighestUncovered(targetPlayer);
-      if (!selfHighest.card) { processAbilityEffect(); break; }
+      const isOppOnly = !!actionDef._oppOnly;
+      const phasePlayer = isOppOnly ? opponent : targetPlayer;
+      const ties = findAllHighestUncovered(phasePlayer);
 
-      const isSelf = selfHighest.card.card.nombre === triggerCardName;
-      
-      // Eliminar la propia (con triggers)
-      const p = targetPlayer;
-      const l = selfHighest.line;
-      const removedSelf = gameState.field[l][p].splice(selfHighest.idx, 1)[0];
-      gameState[p].trash.push(removedSelf.card);
-      updateStatus(`${triggerCardName} elimina a ${removedSelf.card.nombre} (propia)`);
-      if (typeof triggerUncovered === 'function') triggerUncovered(l, p);
+      if (ties.length === 0) { processAbilityEffect(); break; }
 
-      if (!isSelf) {
-        // Solo si no se suicidó, eliminar la del oponente
-        const oppHighest = findHighestUncovered(opponent);
-        if (oppHighest.card) {
-          const ol = oppHighest.line;
-          const removedOpp = gameState.field[ol][opponent].splice(oppHighest.idx, 1)[0];
-          gameState[opponent].trash.push(removedOpp.card);
-          updateStatus(`${triggerCardName} elimina a ${removedOpp.card.nombre} (rival)`);
-          if (typeof triggerUncovered === 'function') triggerUncovered(ol, opponent);
+      const label = isOppOnly ? 'rival' : 'propia';
+
+      if (ties.length === 1 || gameState.turn === 'ai') {
+        // Auto-eliminar (única carta o turno de IA)
+        const chosen = ties[0];
+        const removedCard = gameState.field[chosen.line][phasePlayer].splice(chosen.idx, 1)[0];
+        gameState[phasePlayer].trash.push(removedCard.card);
+        updateStatus(`${triggerCardName} elimina a ${removedCard.card.nombre} (${label})`);
+        if (typeof triggerUncovered === 'function') triggerUncovered(chosen.line, phasePlayer);
+
+        if (!isOppOnly) {
+          const isSelf = removedCard.card.nombre === triggerCardName;
+          if (!isSelf) {
+            gameState.effectQueue.unshift({
+              effect: { action: 'deleteHighestUncovered', target: actionDef.target, _oppOnly: true },
+              targetPlayer,
+              cardName: triggerCardName
+            });
+          }
         }
+        processAbilityEffect();
+      } else {
+        // Empate: el jugador elige cuál eliminar
+        const allowedLines = ties.map(t => t.line);
+        const opts = { allowedLines };
+        if (!isOppOnly) {
+          // Si el jugador NO elige Odio 2 (no se suicida), activar fase del oponente
+          opts._checkSuicide = {
+            triggerCardName,
+            queueEffect: {
+              effect: { action: 'deleteHighestUncovered', target: actionDef.target, _oppOnly: true },
+              targetPlayer,
+              cardName: triggerCardName
+            }
+          };
+        }
+        startEffect('eliminate', phasePlayer, 1, opts);
       }
-      processAbilityEffect();
       break;
     }
 

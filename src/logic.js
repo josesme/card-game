@@ -1006,7 +1006,7 @@ function highlightEffectTargets() {
             banner.classList.add('visible');
         }
     } else if (ctx.type === 'eliminate' || ctx.type === 'flip' || ctx.type === 'return') {
-        const linesToCheck = ctx.forceLine ? [ctx.forceLine] : LINES;
+        const linesToCheck = ctx.allowedLines ? ctx.allowedLines : (ctx.forceLine ? [ctx.forceLine] : LINES);
         linesToCheck.forEach(l => {
             if (ctx.excludeLine && l === ctx.excludeLine) return;
             ['player', 'ai'].forEach(p => {
@@ -1221,12 +1221,20 @@ function handleFieldCardClick(line, target, cardIdx) {
 
     if (ctx.type === 'eliminate') {
         if (ctx.forceLine && line !== ctx.forceLine) return;
+        if (ctx.allowedLines && !ctx.allowedLines.includes(line)) return;
         const cardObj = gameState.field[line][target][cardIdx];
         if (!cardMatchesFilter(cardObj, ctx)) return;
         gameState.field[line][target].splice(cardIdx, 1);
         gameState[target].trash.push(cardObj.card);
         gameState.eliminatedSinceLastCheck[gameState.turn] = true;
         ctx.selected.push(cardObj);
+        // Odio 2 tie-break: if the chosen card is NOT Odio 2 itself, queue opponent phase
+        if (ctx._checkSuicide) {
+            const { triggerCardName, queueEffect } = ctx._checkSuicide;
+            if (cardObj.card.nombre !== triggerCardName && queueEffect) {
+                gameState.effectQueue.unshift(queueEffect);
+            }
+        }
         triggerUncovered(line, target);
     } else if (ctx.type === 'flip') {
         const cardObj = gameState.field[line][target][cardIdx];
