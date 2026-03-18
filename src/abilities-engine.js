@@ -442,8 +442,8 @@ const CARD_EFFECTS = {
   // ========== AGUA ==========
   'Agua 0': {
     onPlay: [
-      { action: 'flip', target: 'other', count: 1 },
-      { action: 'flip', target: 'self', count: 1 }
+      { action: 'flip', target: 'any', count: 1, excludeSelf: true },
+      { action: 'flipSelf', target: 'self' }
     ]
   },
 
