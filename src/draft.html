@@ -215,7 +215,7 @@
 <div id="draft-container">
     <h1>⚡ COMPILE ⚡</h1>
     <p class="subtitle">Selecciona Tus Protocolos</p>
-    <p id="difficulty-badge" style="font-family:'Orbitron',monospace; font-size:0.75em; letter-spacing:2px; color:#666; margin-bottom:24px;"></p>
+    <p id="difficulty-badge" style="font-family:'Orbitron',monospace; font-size:0.85em; letter-spacing:3px; font-weight:700; margin-bottom:24px; padding:8px 20px; border-radius:6px; display:inline-block;"></p>
 
     <!-- Status -->
     <div class="draft-status">
@@ -547,8 +547,16 @@ function updateSelections() {
 document.addEventListener('DOMContentLoaded', () => {
     const diffName  = sessionStorage.getItem('aiDifficultyName')  || 'NÚCLEO';
     const diffDepth = sessionStorage.getItem('aiDifficultyDepth') || '3';
+    const diffColor = sessionStorage.getItem('aiDifficultyColor') || '234,179,8';
+    const diffIcon  = sessionStorage.getItem('aiDifficultyIcon')  || '⬢';
     const badge = document.getElementById('difficulty-badge');
-    if (badge) badge.textContent = `⚙ NIVEL ${diffDepth} — ${diffName}`;
+    if (badge) {
+        badge.textContent = `${diffIcon} NIVEL ${diffDepth} — ${diffName}`;
+        badge.style.color = `rgb(${diffColor})`;
+        badge.style.border = `1px solid rgba(${diffColor}, 0.5)`;
+        badge.style.background = `rgba(${diffColor}, 0.08)`;
+        badge.style.textShadow = `0 0 12px rgba(${diffColor}, 0.5)`;
+    }
 
     console.log('🎮 Iniciando con CARDS_DATA integrado');
     try {

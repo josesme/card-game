@@ -190,6 +190,8 @@ document.getElementById('btn-play').addEventListener('click', () => {
     const diff = DIFFICULTY_LEVELS.find(l => l.id === selected);
     sessionStorage.setItem('aiDifficultyDepth', diff.depth);
     sessionStorage.setItem('aiDifficultyName', diff.name);
+    sessionStorage.setItem('aiDifficultyColor', diff.color);
+    sessionStorage.setItem('aiDifficultyIcon', diff.icon);
     window.location.href = 'draft.html';
 });
 </script>
