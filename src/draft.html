@@ -215,6 +215,7 @@
 <div id="draft-container">
     <h1>⚡ COMPILE ⚡</h1>
     <p class="subtitle">Selecciona Tus Protocolos</p>
+    <p id="difficulty-badge" style="font-family:'Orbitron',monospace; font-size:0.75em; letter-spacing:2px; color:#666; margin-bottom:24px;"></p>
 
     <!-- Status -->
     <div class="draft-status">
@@ -544,6 +545,11 @@ function updateSelections() {
 
 // Cargar datos directamente e iniciar draft
 document.addEventListener('DOMContentLoaded', () => {
+    const diffName  = sessionStorage.getItem('aiDifficultyName')  || 'NÚCLEO';
+    const diffDepth = sessionStorage.getItem('aiDifficultyDepth') || '3';
+    const badge = document.getElementById('difficulty-badge');
+    if (badge) badge.textContent = `⚙ NIVEL ${diffDepth} — ${diffName}`;
+
     console.log('🎮 Iniciando con CARDS_DATA integrado');
     try {
         PROTOCOL_DEFS = CARDS_DATA._protocolMeta || {};
