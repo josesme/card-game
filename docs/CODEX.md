@@ -45,7 +45,7 @@ El jugador que eligió primero en el draft va primero. El Control Component comi
 1. **Inicio (Start):** Se realizan los efectos de "Inicio" en tu lado del campo.
 2. **Verificar Control △:** Si tienes un valor total mayor que tu oponente en al menos 2 líneas, **obtienes el Control Component**.
 3. **Verificar Compilación:** Si cumples las condiciones para compilar, **debes compilar**. Esta es tu única acción del turno.
-4. **Acción:** Juega 1 carta O refresca tu mano. Si no tienes cartas para jugar, **debes** refrescar.
+4. **Acción:** Juega 1 carta O actualiza tu mano. Si no tienes cartas para jugar, **debes** actualizar.
 5. **Verificar Caché:** Si tienes más de 5 cartas en mano, descarta hasta tener 5.
 6. **Fin (End):** Se realizan los efectos de "Fin" en tu lado del campo.
 
@@ -57,7 +57,7 @@ El jugador que eligió primero en el draft va primero. El Control Component comi
 - **Boca arriba (face-up):** Solo en la línea cuyo protocolo coincida con el de la carta. Se resuelven sus efectos activos (texto del medio).
 - **Boca abajo (face-down):** En cualquier línea. Valor base = **2**, independientemente del valor impreso.
 
-**Refrescar:** Roba cartas de tu mazo hasta tener 5 en mano. Si el mazo se vacía, baraja el descarte para formar uno nuevo y completa el robo. **No puedes refrescar con 5 o más cartas en mano.**
+**Actualizar:** Roba cartas de tu mazo hasta tener 5 en mano. Si el mazo se vacía, baraja el descarte para formar uno nuevo y completa el robo. **No puedes actualizar con 5 o más cartas en mano.**
 
 **Compilar:** Ver sección de Compilación.
 
@@ -90,7 +90,7 @@ Durante la fase "Verificar Compilación": si tienes **valor ≥ 10** en una lín
 
 **Ganar el Control Component:** En la fase "Verificar Control", si tienes valor total mayor que tu oponente en **al menos 2 líneas**, obtienes el Control Component.
 
-**Usar el Control Component:** Cuando un jugador **compila o refresca**, si ese jugador tiene el Control Component:
+**Usar el Control Component:** Cuando un jugador **compila o actualiza**, si ese jugador tiene el Control Component:
 1. El Control Component se devuelve a la posición neutral.
 2. Ese jugador puede **reorganizar los protocolos de un jugador** (cualquiera de los dos).
 
@@ -99,7 +99,7 @@ Durante la fase "Verificar Compilación": si tienes **valor ≥ 10** en una lín
 - Las cartas en las líneas de esos protocolos **no se mueven**.
 - El jugador **debe hacer algún cambio** — no puede dejar los protocolos en la misma posición.
 
-> El Control Component se restablece al compilar o refrescar **incluso si no se usa** para reorganizar.
+> El Control Component se restablece al compilar o actualizar **incluso si no se usa** para reorganizar.
 
 **Estado en el juego digital:** ❌ **NO IMPLEMENTADO**. Falta la fase "Verificar Control" en el ciclo de turno y toda la mecánica de reorganización vinculada al Control Component.
 
@@ -151,22 +151,22 @@ Durante la fase "Verificar Compilación": si tienes **valor ≥ 10** en una lín
 | **Compilar** | Eliminar todas las cartas de una línea en ambos lados y voltear un protocolo. |
 | **Cubierta** | Carta con otra carta encima de ella. |
 | **Descubierta** | La carta en el extremo de una pila, más alejada del protocolo. |
-| **Eliminar (Delete)** | Mover una carta del campo al descarte. |
-| **Descartar (Discard)** | Mover una carta de la mano al descarte del propietario. El jugador **elige** qué carta. |
-| **Robar (Draw)** | El propietario toma X cartas superiores de su mazo y las añade a su mano. Si el mazo se vacía, baraja el descarte y completa. |
-| **Voltear (Flip)** | Cambiar la orientación de boca abajo a boca arriba, o viceversa. |
+| **Eliminar** | Mover una carta del campo al descarte. |
+| **Descartar** | Mover una carta de la mano al descarte del propietario. El jugador **elige** qué carta. |
+| **Robar** | El propietario toma X cartas superiores de su mazo y las añade a su mano. Si el mazo se vacía, baraja el descarte y completa. |
+| **Voltear** | Cambiar la orientación de boca abajo a boca arriba, o viceversa. |
 | **Línea** | Zona de juego a través de dos protocolos opuestos. El campo tiene 3 líneas. |
-| **Pila (Stack)** | Las cartas en una línea en el lado de un jugador. |
+| **Pila** | Las cartas en una línea en el lado de un jugador. |
 | **Protocolo** | La cabecera que dicta en qué línea se pueden jugar cartas boca arriba. |
-| **Reorganizar (Rearrange)** | Cambiar la posición de protocolos. |
-| **Refrescar (Refresh)** | Robar hasta tener 5 cartas en mano. |
-| **Devolver (Return)** | Mover una carta del campo a la mano de su propietario. |
-| **Revelar (Reveal)** | Mostrar información oculta a ambos jugadores y devolverla a su estado anterior (ej. volver boca abajo). Sin efecto permanente. |
-| **Desplazar (Shift)** | Mover una carta a otra línea en el mismo lado del campo. |
-| **Limpiar Caché (Clear Cache)** | Descartar hasta tener 5 cartas en mano. |
-| **Descarte (Trash)** | Zona donde van las cartas descartadas y eliminadas. Se baraja para reconstruir el mazo cuando es necesario. |
-| **Todas (All)** | Afecta a todas las cartas válidas **simultáneamente**. |
-| **Cada (Each)** | Aplica los efectos **una por una**, en secuencia. |
+| **Reorganizar** | Cambiar la posición de protocolos. |
+| **Actualizar** | Robar hasta tener 5 cartas en mano. Requiere tener menos de 5 cartas. |
+| **Devolver** | Mover una carta del campo a la mano de su propietario. |
+| **Revelar** | Mostrar información oculta a ambos jugadores y devolverla a su estado anterior (ej. volver boca abajo). Sin efecto permanente. |
+| **Desplazar** | Mover una carta a otra línea en el mismo lado del campo. |
+| **Limpiar Caché** | Descartar hasta tener 5 cartas en mano. |
+| **Descarte** | Zona donde van las cartas descartadas y eliminadas. Se baraja para reconstruir el mazo cuando es necesario. |
+| **Todas** | Afecta a todas las cartas válidas **simultáneamente**. |
+| **Cada** | Aplica los efectos **una por una**, en secuencia. |
 
 ---
 
@@ -178,7 +178,7 @@ Sí, es obligatorio.
 **¿Puedo compilar más de una línea si varias califican?**
 No. Solo una línea por turno.
 
-**¿Puedo refrescar con 5 o más cartas en mano?**
+**¿Puedo actualizar con 5 o más cartas en mano?**
 No. Solo si tienes menos de 5.
 
 **¿Se activan efectos durante la compilación al eliminar cartas?**
@@ -208,7 +208,7 @@ Sí.
 **¿Cuál es la diferencia entre "Línea" y "Pila"?**
 Una línea es 1/3 del campo, compuesta por 2 protocolos. Una pila es la parte de la línea perteneciente a un jugador.
 
-**¿Debo usar el Control Component al compilar o refrescar?**
+**¿Debo usar el Control Component al compilar o actualizar?**
 Se restablece a neutral automáticamente incluso si no lo usas para reorganizar.
 
 **¿Cuál es la diferencia entre "Todas" y "Cada"?**
@@ -227,7 +227,7 @@ No. Solo la carta superior de una pila está descubierta.
 ### 🟣 Espíritu (Spirit)
 
 **Espíritu 0**
-- Refrescar como indica la carta es una acción normal, incluyendo el uso del Control Component.
+- Actualizar como indica la carta es una acción normal, incluyendo el uso del Control Component.
 
 **Espíritu 1**
 - ERRATA (10/2024) — Comando superior: *"Cuando juegas cartas boca arriba, pueden jugarse sin coincidir con protocolos."*
