@@ -25,16 +25,39 @@ const CARD_SIM_EFFECTS = {
   'Espíritu 0': { draw: 1 },
   'Espíritu 1': { draw: 2 },
   'Fuego 0':    { draw: 2 },
-  'Fuego 4':    { draw: 1 },                          // net: discard 1, draw 2 → +1
+  'Fuego 4':    { draw: 1 },
   'Gravedad 1': { draw: 2 },
-  'Luz 0':      { draw: 2 },                          // avg flip value ≈ 2
+  'Luz 0':      { draw: 2 },
   'Luz 2':      { draw: 2 },
   'Metal 1':    { draw: 2, preventCompile: true },
+  'Metal 3':    { draw: 1, eliminate: { strategy: 'lineOver8' } },
   'Oscuridad 0':{ draw: 3 },
   'Psique 0':   { draw: 2, opponentDiscard: 2 },
   'Velocidad 1':{ draw: 2 },
+  'Vida 2':     { draw: 1, flipOpponent: 1 },
   'Agua 2':     { draw: 2 },
-  'Amor 1':     { draw: 1 },                          // steals from opponent deck
+  'Amor 1':     { draw: 1 },
+
+  // ── Self discard (cost cards) ─────────────────────────
+  'Espíritu 5': { selfDiscard: 1 },
+  'Muerte 5':   { selfDiscard: 1 },
+  'Fuego 5':    { selfDiscard: 1 },
+  'Gravedad 5': { selfDiscard: 1 },
+  'Vida 5':     { selfDiscard: 1 },
+  'Luz 5':      { selfDiscard: 1 },
+  'Metal 5':    { selfDiscard: 1 },
+  'Plaga 5':    { selfDiscard: 1 },
+  'Psique 5':   { selfDiscard: 1 },
+  'Velocidad 5':{ selfDiscard: 1 },
+  'Agua 5':     { selfDiscard: 1 },
+  'Oscuridad 5':{ selfDiscard: 1 },
+  'Apatía 5':   { selfDiscard: 1 },
+  'Odio 5':     { selfDiscard: 1 },
+  'Amor 5':     { selfDiscard: 1 },
+
+  // ── Conditional (discard to activate) ────────────────
+  'Fuego 1':    { selfDiscard: 1, eliminate: { strategy: 'highest' } },
+  'Fuego 2':    { selfDiscard: 1, returnOpponent: 1 },
 
   // ── Opponent discard ─────────────────────────────────
   'Plaga 0':    { opponentDiscard: 1 },
@@ -45,16 +68,38 @@ const CARD_SIM_EFFECTS = {
 
   // ── Eliminate ────────────────────────────────────────
   'Muerte 0':   { eliminate: { strategy: 'eachOtherLine' } },
+  'Muerte 2':   { eliminate: { strategy: 'byValueRange', minVal: 1, maxVal: 2 } },
   'Muerte 3':   { eliminate: { strategy: 'faceDown' } },
   'Muerte 4':   { eliminate: { strategy: 'maxVal', maxVal: 1 } },
   'Odio 0':     { eliminate: { strategy: 'highest' } },
   'Odio 1':     { selfDiscard: 3, eliminate: { strategy: 'highest', count: 2 } },
   'Odio 2':     { selfEliminateHighest: true, eliminate: { strategy: 'highest' } },
 
+  // ── Flip opponent cards (reduces their score) ─────────
+  'Espíritu 2': { flipOpponent: 1 },
+  'Metal 0':    { flipOpponent: 1 },
+  'Apatía 3':   { flipOpponent: 1 },
+  'Oscuridad 1':{ flipOpponent: 1 },
+  'Gravedad 2': { flipOpponent: 1 },
+  'Vida 1':     { flipOpponent: 2 },
+
+  // ── Flip self line (hide own cards) ──────────────────
+  'Apatía 1':   { flipSelfLineAllFaceUp: true },
+
   // ── Play from deck ───────────────────────────────────
   'Vida 0':     { playFromDeck: { target: 'occupiedLines' } },
   'Agua 1':     { playFromDeck: { target: 'otherLines' } },
   'Gravedad 0': { playFromDeck: { target: 'pairsInLine' } },
+
+  // ── Positional ───────────────────────────────────────
+  'Gravedad 6': { opponentPlayFromDeck: true },
+  'Agua 3':     { returnOpponentByValue: 2 },
+  'Velocidad 0':{ extraPlay: 1 },
+  'Oscuridad 3':{ extraPlay: 1 },
+
+  // ── Opponent gains (bad for AI) ───────────────────────
+  'Amor 6':     { opponentDraw: 2 },
+  'Amor 2':     { opponentDraw: 1 },
 };
 
 class MiniMax {
@@ -409,6 +454,67 @@ class MiniMax {
     if (fx.preventCompile) {
       state.player.cannotCompile = true;
     }
+
+    // Flip opponent cards face-down (reduces their score in evaluation)
+    if (fx.flipOpponent) {
+      this._simFlipOpponent(state, fx.flipOpponent, LINES);
+    }
+
+    // Return opponent card(s) to hand
+    if (fx.returnOpponent) {
+      for (let i = 0; i < fx.returnOpponent; i++) {
+        this._simReturnHighest(state, 'player', LINES);
+      }
+    }
+
+    // Return all opponent cards of a specific value
+    if (fx.returnOpponentByValue !== undefined) {
+      LINES.forEach(l => {
+        const stack = state.field[l].player;
+        const toKeep = [];
+        stack.forEach(c => {
+          if (!c.faceDown && c.card.valor === fx.returnOpponentByValue) {
+            state.player.hand.push(c.card);
+          } else {
+            toKeep.push(c);
+          }
+        });
+        state.field[l].player = toKeep;
+      });
+    }
+
+    // Apatía 1: flip all own face-up cards in this line face-down
+    if (fx.flipSelfLineAllFaceUp) {
+      (state.field[line].ai || []).forEach(c => {
+        if (!c.faceDown) c.faceDown = true;
+      });
+    }
+
+    // Gravedad 6: opponent places top deck card face-down on this line
+    if (fx.opponentPlayFromDeck && state.player.deck.length > 0) {
+      const card = state.player.deck.pop();
+      state.field[line].player.push({ card, faceDown: true });
+    }
+
+    // Extra play: AI plays one additional card from hand face-down on best available line
+    if (fx.extraPlay && state.ai.hand.length > 0) {
+      const bestLine = LINES.filter(l => !state.field[l].compiledBy)
+        .sort((a, b) => {
+          const sa = window.calculateScore ? window.calculateScore(state, a, 'ai') : 0;
+          const sb = window.calculateScore ? window.calculateScore(state, b, 'ai') : 0;
+          return sb - sa;
+        })[0];
+      if (bestLine) {
+        const card = state.ai.hand.pop();
+        state.field[bestLine].ai.push({ card, faceDown: true });
+      }
+    }
+
+    // Opponent draws cards (bad for AI)
+    if (fx.opponentDraw) {
+      const n = Math.min(fx.opponentDraw, state.player.deck.length);
+      for (let i = 0; i < n; i++) state.player.hand.push(state.player.deck.pop());
+    }
   }
 
   /**
@@ -422,16 +528,13 @@ class MiniMax {
         this._simEliminateHighest(state, 'player', LINES);
 
       } else if (config.strategy === 'faceDown') {
-        // Remove first face-down card found in opponent field
-        let removed = false;
         for (const l of LINES) {
           const stack = state.field[l].player;
           const idx = stack.findIndex(c => c.faceDown);
-          if (idx !== -1) { state.player.trash.push(stack.splice(idx, 1)[0].card); removed = true; break; }
+          if (idx !== -1) { state.player.trash.push(stack.splice(idx, 1)[0].card); break; }
         }
 
       } else if (config.strategy === 'maxVal') {
-        // Remove highest value card with valor <= maxVal
         let best = null, bestLine = null, bestIdx = -1;
         for (const l of LINES) {
           state.field[l].player.forEach((c, idx) => {
@@ -447,8 +550,70 @@ class MiniMax {
         LINES.filter(l => l !== currentLine).forEach(l => {
           this._simEliminateHighest(state, 'player', [l]);
         });
-        break; // already handled multiple lines
+        break;
+
+      } else if (config.strategy === 'byValueRange') {
+        // Muerte 2 / Agua 3: remove all cards with valor in [minVal, maxVal] from best opponent line
+        const bestLine = LINES.filter(l => state.field[l].player.length > 0)
+          .sort((a, b) => {
+            const sa = window.calculateScore ? window.calculateScore(state, a, 'player') : 0;
+            const sb = window.calculateScore ? window.calculateScore(state, b, 'player') : 0;
+            return sb - sa;
+          })[0];
+        if (bestLine) {
+          state.field[bestLine].player = state.field[bestLine].player.filter(c => {
+            const inRange = !c.faceDown && c.card.valor >= config.minVal && c.card.valor <= config.maxVal;
+            if (inRange) state.player.trash.push(c.card);
+            return !inRange;
+          });
+        }
+        break;
+
+      } else if (config.strategy === 'lineOver8') {
+        // Metal 3: eliminate all cards from opponent's best line if score >= 8
+        const target = LINES.filter(l => l !== currentLine).find(l => {
+          const score = window.calculateScore ? window.calculateScore(state, l, 'player') : 0;
+          return score >= 8;
+        });
+        if (target) {
+          state.field[target].player.forEach(c => state.player.trash.push(c.card));
+          state.field[target].player = [];
+        }
+        break;
       }
+    }
+  }
+
+  /**
+   * Flip N of opponent's highest-value face-up cards to face-down
+   */
+  _simFlipOpponent(state, count, LINES) {
+    for (let i = 0; i < count; i++) {
+      let best = null, bestLine = null;
+      for (const l of LINES) {
+        const stack = state.field[l].player;
+        if (stack.length === 0) continue;
+        const top = stack[stack.length - 1];
+        if (!top.faceDown && (!best || top.card.valor > best.card.valor)) {
+          best = top; bestLine = l;
+        }
+      }
+      if (best) best.faceDown = true;
+    }
+  }
+
+  /**
+   * Return highest-value card of `player` from field back to their hand
+   */
+  _simReturnHighest(state, player, LINES) {
+    let best = null, bestLine = null, bestIdx = -1;
+    for (const l of LINES) {
+      (state.field[l][player] || []).forEach((c, idx) => {
+        if (!best || c.card.valor > best.card.valor) { best = c; bestLine = l; bestIdx = idx; }
+      });
+    }
+    if (best) {
+      state[player].hand.push(state.field[bestLine][player].splice(bestIdx, 1)[0].card);
     }
   }
 
