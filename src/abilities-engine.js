@@ -765,12 +765,14 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
     }
 
     case 'flipSelf': {
-      const selfLine = gameState.currentEffectLine;
+      // Buscar en todas las líneas (currentEffectLine puede haber cambiado tras el return)
       let flipped = false;
-      if (selfLine && triggerCardName) {
-        const stack = gameState.field[selfLine][targetPlayer];
-        const cardObj = stack.find(c => c.card.nombre === triggerCardName);
-        if (cardObj) { cardObj.faceDown = !cardObj.faceDown; flipped = true; }
+      if (triggerCardName) {
+        LINES.forEach(line => {
+          const stack = gameState.field[line][targetPlayer];
+          const cardObj = stack.find(c => c.card.nombre === triggerCardName);
+          if (cardObj) { cardObj.faceDown = !cardObj.faceDown; flipped = true; }
+        });
       }
       if (flipped) {
         updateUI();
