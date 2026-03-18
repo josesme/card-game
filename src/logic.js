@@ -426,6 +426,7 @@ function createCardHTML(card, faceDown = false) {
 
 function updateUI() {
     if (!GLOBAL_CARDS) return; // Esperar a que carguen las cartas
+    hideCardPreview(); // Limpiar preview flotante al re-renderizar el campo
 
     // Update deck/trash counts (query fresh to avoid stale references)
     const playerDeckEl = document.getElementById('player-deck-count');
@@ -917,11 +918,11 @@ function startEffect(type, target, count, opts = {}) {
     // Determine if this should be interactive or automatic
     let isAIResolving = false;
     
-    if (type === 'discard' || type === 'give') {
-        // En "descartar/dar", el dueño de la mano (target) elige.
+    if (type === 'discard' || type === 'give' || type === 'reveal') {
+        // Acciones sobre la mano: el dueño de la mano elige.
         isAIResolving = (target === 'ai');
     } else {
-        // En "eliminar/voltear" (tablero), el jugador del turno elige el objetivo en la zona permitida.
+        // Acciones sobre el tablero: el jugador del turno elige.
         isAIResolving = (gameState.turn === 'ai');
     }
 
