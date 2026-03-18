@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -v \"^--$\")",
+      "Bash(grep -iv \"comment\\\\|//\")",
+      "Bash(grep -n \"''onFlip''\" src/abilities-engine.js)",
+      "Bash(grep -v \"function\\\\|//\")"
+    ]
+  }
+}
