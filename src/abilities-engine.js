@@ -1022,7 +1022,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
           const { cardObj, line } = flipped;
           const cardIdx = gameState.field[line][resolvedTarget]?.indexOf(cardObj);
           if (cardIdx !== undefined && cardIdx !== -1) {
-            const dest = LINES.filter(l => l !== line)[Math.floor(Math.random() * 2)];
+            const dest = aiPickDestLine([line], resolvedTarget) || LINES.filter(l => l !== line)[0];
             gameState.field[line][resolvedTarget].splice(cardIdx, 1);
             gameState.field[dest][resolvedTarget].push(cardObj);
           }
@@ -1080,7 +1080,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
         // IA: mover a línea aleatoria distinta
         const otherLines = LINES.filter(l => l !== selfLine);
         if (otherLines.length > 0) {
-          const dest = otherLines[Math.floor(Math.random() * otherLines.length)];
+          const dest = aiPickDestLine([selfLine]) || otherLines[0];
           const stack = gameState.field[selfLine][targetPlayer];
           const idx = stack.findIndex(c => c.card.nombre === 'Espíritu 3');
           if (idx !== -1) {
@@ -1188,7 +1188,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
         // AI: find player face-down cards and return one
         const validLines = LINES.filter(l => gameState.field[l][resolvedTarget].some(c => c.faceDown));
         if (validLines.length > 0) {
-          const l = validLines[Math.floor(Math.random() * validLines.length)];
+          const l = validLines.sort((a, b) => calculateScore(gameState, b, resolvedTarget) - calculateScore(gameState, a, resolvedTarget))[0];
           const faceDownIdx = gameState.field[l][resolvedTarget].findLastIndex(c => c.faceDown);
           if (faceDownIdx >= 0) {
             const cardObj = gameState.field[l][resolvedTarget].splice(faceDownIdx, 1)[0];
@@ -1225,12 +1225,12 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
         gameState.pendingPlayCard = true;
         updateStatus('Juega una carta adicional este turno');
       } else {
-        // AI plays a random card from hand if available
+        // IA juega su carta de mayor valor a la línea con más ventaja
         if (gameState.ai.hand.length > 0) {
-          const cardIdx = Math.floor(Math.random() * gameState.ai.hand.length);
+          const cardIdx = gameState.ai.hand.reduce((b, c, i) => c.valor > gameState.ai.hand[b].valor ? i : b, 0);
           const validLines = LINES.filter(l => !gameState.field[l].compiledBy);
           if (validLines.length > 0) {
-            const line = validLines[Math.floor(Math.random() * validLines.length)];
+            const line = aiPickDestLine([], 'ai') || validLines[0];
             const movedCard = gameState.ai.hand.splice(cardIdx, 1)[0];
             gameState.field[line].ai.push({ card: movedCard, faceDown: false });
             gameState.currentEffectLine = line;
@@ -1410,9 +1410,9 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
         updateStatus('Elige línea destino para desplazar todas tus cartas bocabajo');
         highlightSelectableLines();
       } else {
-        // AI picks a random other line
+        // IA mueve bocabajos a línea con mayor potencial de compilado
         const others = LINES.filter(l => l !== sourceLine);
-        const dest = others[Math.floor(Math.random() * others.length)];
+        const dest = aiPickDestLine([sourceLine]) || others[0];
         const toMove = gameState.field[sourceLine].ai.filter(c => c.faceDown);
         gameState.field[sourceLine].ai = gameState.field[sourceLine].ai.filter(c => !c.faceDown);
         toMove.forEach(c => gameState.field[dest].ai.push(c));
@@ -1462,8 +1462,10 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
           startEffect('flip', resolvedTarget, count || 1);
         }
       } else {
-        // AI: pick whichever is more beneficial — random for now
-        const aiAction = Math.random() > 0.5 ? 'shift' : 'flip';
+        // Flip si el rival tiene cartas bocarriba (bajarlas daña más); cambiar si no
+        const canFlipOpp = LINES.some(l => { const s = gameState.field[l].player; return s.length > 0 && !s[s.length-1].faceDown; });
+        const canShift = LINES.filter(l => gameState.field[l].ai.length > 0).length >= 2;
+        const aiAction = (canFlipOpp || !canShift) ? 'flip' : 'shift';
         resolveAbilityAction({ action: aiAction, target, count }, targetPlayer);
       }
       break;
@@ -1894,9 +1896,11 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
           processAbilityEffect();
         }
       } else {
-        if (hasCoveredInLine && Math.random() > 0.4) {
-          const coveredIdx = Math.floor(Math.random() * (gameState.field[line].ai.length - 1));
-          gameState.field[line].ai[coveredIdx].faceDown = !gameState.field[line].ai[coveredIdx].faceDown;
+        if (hasCoveredInLine) {
+          // Voltear la carta cubierta de mayor valor (activarla)
+          const covered = gameState.field[line].ai.slice(0, -1);
+          const bestIdx = covered.reduce((b, c, i) => c.card.valor > covered[b].card.valor ? i : b, 0);
+          gameState.field[line].ai[bestIdx].faceDown = !gameState.field[line].ai[bestIdx].faceDown;
         }
         processAbilityEffect();
       }
@@ -1914,10 +1918,10 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
         if (typeof highlightSelectableLines === 'function') highlightSelectableLines(excludeLine);
       } else {
         if (gameState.ai.hand.length > 0) {
-          const cardIdx = Math.floor(Math.random() * gameState.ai.hand.length);
+          const cardIdx = aiLowestValueCardIdx('ai') >= 0 ? aiLowestValueCardIdx('ai') : 0;
           const currentLine = gameState.currentEffectLine;
           const others = LINES.filter(l => l !== currentLine);
-          const dest = others[Math.floor(Math.random() * others.length)];
+          const dest = aiPickDestLine([currentLine]) || others[0];
           const movedCard = gameState.ai.hand.splice(cardIdx, 1)[0];
           gameState.field[dest].ai.push({ card: movedCard, faceDown: true });
         }
@@ -1972,7 +1976,12 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
         // Jugador jugó Plaga 4: la IA (oponente) elimina aleatoriamente una de sus propias cartas bocabajo
         const validLines = LINES.filter(l => gameState.field[l].ai.some(c => c.faceDown));
         if (validLines.length > 0) {
-          const l = validLines[Math.floor(Math.random() * validLines.length)];
+          // Eliminar bocabajo de menor valor (sacrificar la menos útil)
+          const l = validLines.sort((a, b) => {
+            const fa = gameState.field[a].ai.find(c => c.faceDown);
+            const fb = gameState.field[b].ai.find(c => c.faceDown);
+            return (fa?.card.valor ?? 99) - (fb?.card.valor ?? 99);
+          })[0];
           const fdIdx = gameState.field[l].ai.findIndex(c => c.faceDown);
           if (fdIdx >= 0) {
             const [removed] = gameState.field[l].ai.splice(fdIdx, 1);
@@ -2009,7 +2018,8 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
           // IA elimina la carta superior de cualquier pila en esa línea
           const targets = ['player', 'ai'].filter(p => gameState.field[l][p].length > 0);
           if (targets.length > 0) {
-            const p = targets[Math.floor(Math.random() * targets.length)];
+            // Preferir eliminar carta del rival; solo propia si no hay del rival
+            const p = targets.includes('player') ? 'player' : 'ai';
             const removed = gameState.field[l][p].pop();
             gameState[p].trash.push(removed.card);
           }
@@ -2076,7 +2086,8 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       } else {
         const validLines = LINES.filter(l => l !== destLine && gameState.field[l][opponent].length > 0);
         if (validLines.length > 0) {
-          const l = validLines[Math.floor(Math.random() * validLines.length)];
+          // Voltear carta de la línea de mayor ventaja del rival
+          const l = validLines.sort((a, b) => calculateScore(gameState, b, opponent) - calculateScore(gameState, a, opponent))[0];
           const stack = gameState.field[l][opponent];
           const cardObj = stack[stack.length - 1];
           gameState.lastFlippedCard = { cardObj, line: l };
@@ -2119,7 +2130,8 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       } else {
         const srcLines = LINES.filter(l => l !== destLine && gameState.field[l].ai.some(c => c.faceDown));
         if (srcLines.length > 0) {
-          const l = srcLines[Math.floor(Math.random() * srcLines.length)];
+          // Mover bocabajo desde línea de menor puntuación (la menos valiosa)
+          const l = srcLines.sort((a, b) => calculateScore(gameState, a, 'ai') - calculateScore(gameState, b, 'ai'))[0];
           const fdIdx = gameState.field[l].ai.findIndex(c => c.faceDown);
           if (fdIdx >= 0 && destLine) {
             const [moved] = gameState.field[l].ai.splice(fdIdx, 1);
