@@ -457,6 +457,8 @@ function updateUI() {
             if (gameState.effectContext && (gameState.effectContext.type === 'discard' || gameState.effectContext.type === 'discardVariable' || gameState.effectContext.type === 'give')) {
                 console.log(`   → Handling discard/give choice`);
                 handleDiscardChoice(index);
+            } else if (gameState.effectContext && gameState.effectContext.type === 'reveal') {
+                handleRevealChoice(index);
             } else if (gameState.effectContext && gameState.effectContext.type === 'pickHandFaceDown') {
                 // Oscuridad 3: seleccionar carta de mano
                 gameState.selectedCardIndex = index;
@@ -1134,7 +1136,7 @@ function clearEffectHighlights() {
         if (el.id && (el.id.startsWith('proto-') || el.id.startsWith('line-'))) el.onclick = null;
     });
     document.querySelectorAll('.selectable-line').forEach(el => el.classList.remove('selectable-line'));
-    document.getElementById('player-hand')?.classList.remove('discard-mode');
+    document.getElementById('player-hand')?.classList.remove('discard-mode', 'reveal-mode');
     const banner = document.getElementById('discard-banner');
     if (banner) banner.classList.remove('visible');
     const stopBtn = document.getElementById('btn-stop-discard');
@@ -1176,6 +1178,27 @@ function handleDiscardChoice(handIndex) {
             banner.textContent = msg;
         }
         updateUI();
+    }
+}
+
+function handleRevealChoice(handIndex) {
+    const ctx = gameState.effectContext;
+    if (!ctx || ctx.type !== 'reveal') return;
+    const card = gameState.player.hand[handIndex]; // no se elimina de la mano, solo se muestra
+    finishEffect();
+    // Mostrar la carta revelada en el modal y luego continuar la cola (flip)
+    const modal = document.getElementById('reveal-modal');
+    const container = document.getElementById('reveal-cards-container');
+    const closeBtn = document.getElementById('btn-reveal-close');
+    if (modal && container && closeBtn && typeof createCardHTML === 'function') {
+        container.innerHTML = `<div style="transform: scale(0.85); transform-origin: top center;">${createCardHTML(card)}</div>`;
+        modal.style.display = 'flex';
+        closeBtn.onclick = () => {
+            modal.style.display = 'none';
+            processAbilityEffect();
+        };
+    } else {
+        processAbilityEffect();
     }
 }
 
