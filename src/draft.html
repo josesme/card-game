@@ -204,38 +204,6 @@
             transform: scale(1.05);
         }
 
-        /* DIFICULTAD */
-        .difficulty-selector {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin-top: 10px;
-        }
-
-        .diff-btn {
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid #444;
-            color: #888;
-            padding: 8px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-family: 'Orbitron', monospace;
-            font-size: 0.7em;
-            transition: all 0.2s;
-            flex: 1;
-        }
-
-        .diff-btn:hover {
-            border-color: #888;
-            color: #ccc;
-        }
-
-        .diff-btn.active {
-            background: rgba(255, 183, 0, 0.15);
-            border-color: #ffb700;
-            color: #ffb700;
-            box-shadow: 0 0 10px rgba(255, 183, 0, 0.3);
-        }
 
         .waiting {
             color: #888;
@@ -265,17 +233,6 @@
 
     <!-- Selecciones -->
     <div class="selections-row">
-        <!-- DIFICULTAD -->
-        <div class="selection-box" style="min-width: 300px;">
-            <div class="selection-label" style="color: var(--warning, #ffb700);">⚙️ NIVEL DE COMPILACIÓN</div>
-            <div class="difficulty-selector" id="difficulty-selector">
-                <!-- Los niveles se generan por JS -->
-            </div>
-            <p id="difficulty-desc" style="font-size: 0.8em; color: #888; margin-top: 10px; min-height: 3em;">
-                IA procesando jugadas a nivel estándar.
-            </p>
-        </div>
-
         <!-- JUGADOR -->
         <div class="selection-box">
             <div class="selection-label player">👤 TU SELECCIÓN</div>
@@ -508,44 +465,6 @@ function updateSelections() {
           ).join('');
 }
 
-// ========================== DIFICULTAD = [Lore] ==========================
-const DIFFICULTY_LEVELS = [
-    { id: 1, name: 'SUBRUTINA',    depth: 1, desc: 'IA básica. Ejecuta protocolos sin análisis profundo.' },
-    { id: 2, name: 'ALGORITMO',    depth: 2, desc: 'IA táctica. Empieza a anticipar tus jugadas inmediatas.' },
-    { id: 3, name: 'NÚCLEO',       depth: 3, desc: 'IA estándar. Equilibrio óptimo entre velocidad y estrategia.' },
-    { id: 4, name: 'CENTINELA',    depth: 4, desc: 'IA avanzada. Analiza múltiples futuros para bloquearte.' },
-    { id: 5, name: 'SINGULARIDAD', depth: 5, desc: 'IA total. Máxima capacidad de cómputo y predicción.' }
-];
-
-let selectedDifficulty = 3; // Nivel Medio por defecto
-
-function initDifficultySelector() {
-    const container = document.getElementById('difficulty-selector');
-    const desc = document.getElementById('difficulty-desc');
-    
-    container.innerHTML = '';
-    
-    DIFFICULTY_LEVELS.forEach(level => {
-        const btn = document.createElement('button');
-        btn.className = 'diff-btn';
-        if (level.id === selectedDifficulty) btn.classList.add('active');
-        btn.textContent = level.name;
-        
-        btn.onclick = () => {
-            selectedDifficulty = level.id;
-            document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            desc.textContent = level.desc;
-            console.log(`⚙️ Dificultad cambiada a: ${level.name} (profundidad ${level.depth})`);
-        };
-        
-        container.appendChild(btn);
-    });
-    
-    // Set initial description
-    desc.textContent = DIFFICULTY_LEVELS.find(l => l.id === selectedDifficulty).desc;
-}
-
 // Cargar datos directamente e iniciar draft
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🎮 Iniciando con CARDS_DATA integrado');
@@ -554,8 +473,6 @@ document.addEventListener('DOMContentLoaded', () => {
         ALL_PROTOCOLS = Object.keys(PROTOCOL_DEFS);
         draftState.available = [...ALL_PROTOCOLS];
         console.log('✅ Protocolos cargados:', ALL_PROTOCOLS.length);
-        
-        initDifficultySelector();
         initDraft();
     } catch(e) {
         console.error('❌ Error iniciando draft:', e);
@@ -565,18 +482,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 document.getElementById('start-game-btn').addEventListener('click', function() {
     if (draftState.isComplete) {
-        console.log('🎮 Iniciando juego con protocolos seleccionados');
-        
-        // Guardar dificultad
-        const diffObj = DIFFICULTY_LEVELS.find(l => l.id === selectedDifficulty);
-        sessionStorage.setItem('aiDifficultyDepth', diffObj.depth);
-        sessionStorage.setItem('aiDifficultyName', diffObj.name);
-
+        // Dificultad ya guardada en sessionStorage desde index.html
         // Guardar protocolos para que logic.js lo recoja
         sessionStorage.setItem('playerProtocols', JSON.stringify(draftState.playerSelected));
         sessionStorage.setItem('aiProtocols', JSON.stringify(draftState.aiSelected));
-        
-        // Redirigir a game.html
         window.location.href = 'game.html';
     }
 });
