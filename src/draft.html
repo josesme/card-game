@@ -40,6 +40,7 @@
         h1 {
             color: #00d4ff;
             font-size: 2.5em;
+            margin-top: 30px;
             margin-bottom: 10px;
             text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
             font-family: 'Orbitron', monospace;
@@ -401,7 +402,7 @@ function updateDraftDisplay() {
     // Mostrar/ocultar mensaje
     const waiting = document.getElementById('waiting-message');
     if (draftState.isPlayerTurn && !draftState.isComplete) {
-        waiting.textContent = `⏳ Elige ${draftState.selectionsNeeded} protocolo(s)`;
+        waiting.textContent = '';
     } else if (!draftState.isComplete) {
         waiting.textContent = '🤖 IA está pensando...';
     } else {
