@@ -74,10 +74,14 @@
             gap: 6px;
         }
 
-        .diff-btn .diff-num {
-            font-size: 1.6em;
-            font-weight: 700;
+        .diff-icon {
+            font-size: 1.8em;
             line-height: 1;
+        }
+
+        .diff-name {
+            font-size: 0.6em;
+            letter-spacing: 1px;
         }
 
         .diff-btn:hover {
@@ -86,10 +90,10 @@
         }
 
         .diff-btn.active {
-            background: rgba(255, 183, 0, 0.12);
-            border-color: #ffb700;
-            color: #ffb700;
-            box-shadow: 0 0 14px rgba(255, 183, 0, 0.25);
+            background: rgba(var(--c), 0.12);
+            border-color: rgb(var(--c));
+            color: rgb(var(--c));
+            box-shadow: 0 0 14px rgba(var(--c), 0.3);
         }
 
         .diff-desc {
@@ -146,11 +150,11 @@
 
 <script>
 const DIFFICULTY_LEVELS = [
-    { id: 1, name: 'SUBRUTINA',    depth: 1, desc: 'IA básica. Ejecuta protocolos sin análisis profundo.' },
-    { id: 2, name: 'ALGORITMO',    depth: 2, desc: 'IA táctica. Anticipa tus jugadas inmediatas.' },
-    { id: 3, name: 'NÚCLEO',       depth: 3, desc: 'IA estándar. Equilibrio entre velocidad y estrategia.' },
-    { id: 4, name: 'CENTINELA',    depth: 4, desc: 'IA avanzada. Analiza múltiples futuros para bloquearte.' },
-    { id: 5, name: 'SINGULARIDAD', depth: 5, desc: 'IA total. Máxima capacidad de cómputo y predicción.' }
+    { id: 1, name: 'SUBRUTINA',    icon: '⬡', color: '34,197,94',   depth: 1, desc: 'IA básica. Ejecuta protocolos sin análisis profundo.' },
+    { id: 2, name: 'ALGORITMO',    icon: '◈', color: '6,182,212',   depth: 2, desc: 'IA táctica. Anticipa tus jugadas inmediatas.' },
+    { id: 3, name: 'NÚCLEO',       icon: '⬢', color: '234,179,8',   depth: 3, desc: 'IA estándar. Equilibrio entre velocidad y estrategia.' },
+    { id: 4, name: 'CENTINELA',    icon: '◉', color: '249,115,22',  depth: 4, desc: 'IA avanzada. Analiza múltiples futuros para bloquearte.' },
+    { id: 5, name: 'SINGULARIDAD', icon: '✦', color: '239,68,68',   depth: 5, desc: 'IA total. Máxima capacidad de cómputo y predicción.' }
 ];
 
 let selected = 3;
@@ -161,16 +165,22 @@ function renderDiff() {
     DIFFICULTY_LEVELS.forEach(l => {
         const btn = document.createElement('button');
         btn.className = 'diff-btn' + (l.id === selected ? ' active' : '');
-        btn.innerHTML = `<span class="diff-num">${l.id}</span>${l.name}`;
+        btn.style.setProperty('--c', l.color);
+        btn.innerHTML = `<span class="diff-icon">${l.icon}</span><span class="diff-name">${l.name}</span>`;
         btn.onclick = () => {
             selected = l.id;
             renderDiff();
-            document.getElementById('diff-desc').textContent = l.desc;
+            const d = DIFFICULTY_LEVELS.find(x => x.id === selected);
+            const desc = document.getElementById('diff-desc');
+            desc.textContent = d.desc;
+            desc.style.color = `rgb(${d.color})`;
         };
         grid.appendChild(btn);
     });
-    document.getElementById('diff-desc').textContent =
-        DIFFICULTY_LEVELS.find(l => l.id === selected).desc;
+    const cur = DIFFICULTY_LEVELS.find(l => l.id === selected);
+    const desc = document.getElementById('diff-desc');
+    desc.textContent = cur.desc;
+    desc.style.color = `rgb(${cur.color})`;
 }
 
 renderDiff();
