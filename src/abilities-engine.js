@@ -665,11 +665,12 @@ function triggerCardEffect(card, trigger, targetPlayer) {
   const effectList = effectDef[trigger];
   if (!Array.isArray(effectList)) return;
 
-  // Agregar los efectos a la cola
+  // LIFO Stack: Agregar los efectos al INICIO de la cola (unshift)
+  // Para que se resuelvan en el orden correcto de la lista, los agregamos en reversa al inicio
   gameState.effectQueue = gameState.effectQueue || [];
-  effectList.forEach(effect => {
-    gameState.effectQueue.push({ effect, targetPlayer, cardName });
-  });
+  for (let i = effectList.length - 1; i >= 0; i--) {
+    gameState.effectQueue.unshift({ effect: effectList[i], targetPlayer, cardName });
+  }
 
   // Iniciar procesamiento
   processAbilityEffect();
@@ -1639,8 +1640,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
     }
 
     case 'deleteHighestUncovered': {
-      // Odio 2: delete own highest-value uncovered card, then delete opponent's highest
-      // If Odio 2 itself is the highest, it self-destructs and second effect doesn't fire
+      // Odio 2: elimina tu mayor valor, luego la del oponente
       const findHighestUncovered = (player) => {
         let best = null, bestLine = null, bestIdx = -1;
         LINES.forEach(l => {
@@ -1657,16 +1657,25 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       const selfHighest = findHighestUncovered(targetPlayer);
       if (!selfHighest.card) { processAbilityEffect(); break; }
 
-      const isSelf = selfHighest.card.card.nombre === 'Odio 2';
-      gameState.field[selfHighest.line][targetPlayer].splice(selfHighest.idx, 1);
-      gameState[targetPlayer].trash.push(selfHighest.card.card);
+      const isSelf = selfHighest.card.card.nombre === triggerCardName;
+      
+      // Eliminar la propia (con triggers)
+      const p = targetPlayer;
+      const l = selfHighest.line;
+      const removedSelf = gameState.field[l][p].splice(selfHighest.idx, 1)[0];
+      gameState[p].trash.push(removedSelf.card);
+      updateStatus(`${triggerCardName} elimina a ${removedSelf.card.nombre} (propia)`);
+      if (typeof triggerUncovered === 'function') triggerUncovered(l, p);
 
       if (!isSelf) {
-        // Second effect: delete opponent's highest uncovered card
+        // Solo si no se suicidó, eliminar la del oponente
         const oppHighest = findHighestUncovered(opponent);
         if (oppHighest.card) {
-          gameState.field[oppHighest.line][opponent].splice(oppHighest.idx, 1);
-          gameState[opponent].trash.push(oppHighest.card.card);
+          const ol = oppHighest.line;
+          const removedOpp = gameState.field[ol][opponent].splice(oppHighest.idx, 1)[0];
+          gameState[opponent].trash.push(removedOpp.card);
+          updateStatus(`${triggerCardName} elimina a ${removedOpp.card.nombre} (rival)`);
+          if (typeof triggerUncovered === 'function') triggerUncovered(ol, opponent);
         }
       }
       processAbilityEffect();
