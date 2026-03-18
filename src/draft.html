@@ -23,7 +23,7 @@
 
         body {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: center;
             padding: 20px;
             overflow: auto;
@@ -35,12 +35,12 @@
             align-items: center;
             width: 100%;
             max-width: 1400px;
+            padding-top: 30px;
         }
 
         h1 {
             color: #00d4ff;
             font-size: 2.5em;
-            margin-top: 30px;
             margin-bottom: 10px;
             text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
             font-family: 'Orbitron', monospace;
@@ -206,13 +206,6 @@
         }
 
 
-        .waiting {
-            color: #888;
-            font-style: italic;
-            text-align: center;
-            margin-top: 20px;
-            font-size: 1.1em;
-        }
     </style>
 </head>
 <body>
@@ -254,8 +247,6 @@
     <!-- Botón para comenzar -->
     <button class="start-button" id="start-game-btn">🎮 COMENZAR JUEGO</button>
 
-    <!-- Mensajes de espera -->
-    <div class="waiting" id="waiting-message"></div>
 </div>
 
 <!-- Scripts -->
@@ -398,16 +389,6 @@ function updateDraftDisplay() {
 
     document.getElementById('current-turn').textContent = roundDesc;
     document.getElementById('draft-info').textContent = `Disponibles: ${draftState.available.length} | Jugador: ${draftState.playerSelected.length}/3 | IA: ${draftState.aiSelected.length}/3`;
-
-    // Mostrar/ocultar mensaje
-    const waiting = document.getElementById('waiting-message');
-    if (draftState.isPlayerTurn && !draftState.isComplete) {
-        waiting.textContent = '';
-    } else if (!draftState.isComplete) {
-        waiting.textContent = '🤖 IA está pensando...';
-    } else {
-        waiting.textContent = '✅ ¡Draft listo! Haz click en el botón para comenzar.';
-    }
 
     // Actualizar grid de protocolos
     updateProtocolsGrid();
