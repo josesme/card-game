@@ -2919,12 +2919,13 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
     }
 
     case 'flipCoveredInEachLine': {
-      // Chaos 0: en cada línea, voltea la primera carta cubierta (bajo otra) bocarriba
+      // Caos 0: en cada línea, voltea (alterna) la primera carta cubierta (sea bocaarriba o bocabajo)
       LINES.forEach(l => {
         ['player', 'ai'].forEach(p => {
           const stack = gameState.field[l][p];
-          for (let i = 0; i < stack.length - 1; i++) {
-            if (stack[i].faceDown) { stack[i].faceDown = false; break; }
+          // Cualquier carta que no sea la top está cubierta — voltea la inmediatamente bajo la top
+          if (stack.length >= 2) {
+            stack[stack.length - 2].faceDown = !stack[stack.length - 2].faceDown;
           }
         });
       });
