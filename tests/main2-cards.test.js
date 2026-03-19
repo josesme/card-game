@@ -149,9 +149,10 @@ describe('CARD_EFFECTS — Main 2 nuevas entradas', () => {
   });
 
   describe('Caos', () => {
-    test('Caos 2: onPlay=mayShiftCovered target:self', () => {
+    test('Caos 2: onPlay=shiftCovered target:self (obligatorio)', () => {
       const ef = ENGINE.CARD_EFFECTS['Caos 2'];
-      expect(ef.onPlay[0].action).toBe('mayShiftCovered');
+      expect(ef.onPlay[0].action).toBe('shiftCovered');
+      expect(ef.onPlay[0].target).toBe('self');
     });
     test('Caos 3: sin efectos activos (solo regla de juego)', () => {
       const ef = ENGINE.CARD_EFFECTS['Caos 3'];
@@ -327,9 +328,10 @@ describe('CARD_EFFECTS — Main 2 nuevas entradas', () => {
     test('Tiempo 0: onPlay=playFromDiscardThenShuffle', () => {
       expect(ENGINE.CARD_EFFECTS['Tiempo 0'].onPlay[0].action).toBe('playFromDiscardThenShuffle');
     });
-    test('Tiempo 1: onPlay=[mayFlipCovered, discardOwnDeck]', () => {
+    test('Tiempo 1: onPlay=[flip coveredOnly, discardOwnDeck] (obligatorio)', () => {
       const ef = ENGINE.CARD_EFFECTS['Tiempo 1'];
-      expect(ef.onPlay[0].action).toBe('mayFlipCovered');
+      expect(ef.onPlay[0].action).toBe('flip');
+      expect(ef.onPlay[0].coveredOnly).toBe(true);
       expect(ef.onPlay[1].action).toBe('discardOwnDeck');
     });
     test('Tiempo 3: onPlay=playFromDiscardFaceDownOtherLine', () => {

@@ -376,6 +376,20 @@ function initProtocolDisplay() {
 }
 
 function drawCard(target) {
+    // Hielo 6: si el oponente tiene preventDraw activo y el jugador tiene cartas en mano, no roba
+    if (gameState[target].hand.length > 0 && typeof getPersistentModifiers === 'function') {
+        const opp = target === 'player' ? 'ai' : 'player';
+        const blocked = LINES.some(l => {
+            const stack = gameState.field[l][opp];
+            if (stack.length === 0) return false;
+            const top = stack[stack.length - 1];
+            return !top.faceDown && getPersistentModifiers(top.card).preventDraw;
+        });
+        if (blocked) {
+            updateStatus(`Hielo 6: ${target === 'player' ? 'no puedes' : 'IA no puede'} robar cartas`);
+            return false;
+        }
+    }
     let pState = gameState[target];
     if (pState.deck.length === 0) {
         if (pState.trash.length === 0) return false;

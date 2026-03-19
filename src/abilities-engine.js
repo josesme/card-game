@@ -752,8 +752,7 @@ const CARD_EFFECTS = {
 
   'Miedo 4': {
     onPlay: [
-      // TODO Fase B: forzar descarte aleatorio (actualmente el jugador elige)
-      { action: 'discard', target: 'opponent', count: 1 }
+      { action: 'discardRandom', target: 'opponent', count: 1 }
     ]
   },
 
@@ -930,7 +929,7 @@ const CARD_EFFECTS = {
 
   // ========== CAOS (faltantes) ==========
   'Caos 2': {
-    onPlay: [{ action: 'mayShiftCovered', target: 'self' }]
+    onPlay: [{ action: 'shiftCovered', target: 'self', count: 1 }]
   },
   'Caos 3': {
     // "Esta carta puede jugarse sin coincidir con los Protocolos." — regla, no efecto activo
@@ -1092,7 +1091,7 @@ const CARD_EFFECTS = {
   },
   'Tiempo 1': {
     onPlay: [
-      { action: 'mayFlipCovered', target: 'any' },
+      { action: 'flip', target: 'any', count: 1, coveredOnly: true },
       { action: 'discardOwnDeck' }
     ]
   },
@@ -1246,6 +1245,12 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       }
       break;
 
+    case 'discardRandom':
+      // Miedo 4: el oponente descarta aleatoriamente (sin elección)
+      discard(resolvedTarget, count || 1);
+      processAbilityEffect();
+      break;
+
     case 'delete': {
       const deleteOpts = {};
       if (actionDef.forceLine) deleteOpts.forceLine = actionDef.forceLine;
@@ -1260,6 +1265,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       const flipOpts = {};
       if (actionDef.excludeSelf && triggerCardName) flipOpts.excludeCardName = triggerCardName;
       if (actionDef.filter) flipOpts.filter = actionDef.filter;
+      if (actionDef.coveredOnly) flipOpts.coveredOnly = true;
       startEffect('flip', resolvedTarget === 'any' ? 'any' : resolvedTarget, count || 1, flipOpts);
       break;
     }
