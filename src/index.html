@@ -73,10 +73,11 @@
 
         .diff-btn {
             flex: 1;
+            height: 90px;
             background: rgba(0,0,0,0.4);
             border: 1px solid #333;
             color: #666;
-            padding: 22px 8px 16px;
+            padding: 0 8px;
             border-radius: 8px;
             cursor: pointer;
             font-family: 'Orbitron', monospace;
@@ -86,7 +87,9 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             gap: 10px;
+            overflow: hidden;
         }
 
         .diff-icon {
@@ -115,10 +118,14 @@
         .diff-desc {
             font-size: 0.95em;
             color: #667;
-            height: 3.2em;
+            height: 2.6em;
             margin-bottom: 24px;
             line-height: 1.6;
             overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
         }
 
         /* ── Protocolos ─────────────────────────────── */
@@ -277,6 +284,7 @@ function renderDiff() {
     const desc = document.getElementById('diff-desc');
     desc.textContent = cur.desc;
     desc.style.color = `rgb(${cur.color})`;
+    applyIndexScale();
 }
 
 function updateProtocolSelection() {
