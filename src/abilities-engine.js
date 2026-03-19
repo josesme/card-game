@@ -3779,7 +3779,8 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       const hasMatch = LINES.some(l => ['player', 'ai'].some(p => gameState.field[l][p].some(c => c.card.valor === targetVal)));
       if (hasMatch) {
         if (targetPlayer === 'player') {
-          startEffect('eliminate', 'any', 1);
+          // filter exactValue + targetAll: permite seleccionar cubierta o descubierta
+          startEffect('eliminate', 'any', 1, { filter: 'exactValue', exactVal: targetVal, targetAll: true });
         } else {
           let done = false;
           LINES.forEach(l => {
@@ -3854,10 +3855,12 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       // Enqueue the shuffle for after the play
       gameState.effectQueue.unshift({ effect: { action: '_shuffleDiscardIntoDeck' }, targetPlayer, cardName: triggerCardName });
       if (targetPlayer === 'player') {
-        updateStatus('Tiempo 0: elige una carta del descarte para jugar');
-        // Simplified: let player pick via the discard pile click (effectContext)
-        gameState.effectContext = { type: 'playFromDiscard', line: gameState.currentEffectLine };
-        highlightEffectTargets();
+        const trashCount = gameState.player.trash.length;
+        const handSizeBefore = gameState.player.hand.length;
+        gameState.player.hand.push(...gameState.player.trash.splice(0));
+        gameState.effectContext = { type: 'pickFromDiscardToPlay', handSizeBefore, revealedCount: trashCount };
+        updateStatus(`Tiempo 0: elige 1 carta del descarte para jugar (las últimas ${trashCount} de tu mano)`);
+        updateUI();
       } else {
         const bestIdx = gameState.ai.trash.reduce((b, c, i) => c.valor > gameState.ai.trash[b].valor ? i : b, 0);
         const [card] = gameState.ai.trash.splice(bestIdx, 1);
@@ -3879,9 +3882,12 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       // Tiempo 3: revela 1 carta del descarte, juégala bocabajo en otra línea
       if (gameState[targetPlayer].trash.length === 0) { processAbilityEffect(); break; }
       if (targetPlayer === 'player') {
-        updateStatus('Tiempo 3: elige una carta del descarte para jugar bocabajo en otra línea');
-        gameState.effectContext = { type: 'playFromDiscardFaceDown', excludeLine: gameState.currentEffectLine };
-        highlightEffectTargets();
+        const trashCount = gameState.player.trash.length;
+        const handSizeBefore = gameState.player.hand.length;
+        gameState.player.hand.push(...gameState.player.trash.splice(0));
+        gameState.effectContext = { type: 'pickFromDiscardFaceDown', handSizeBefore, revealedCount: trashCount, excludeLine: gameState.currentEffectLine };
+        updateStatus(`Tiempo 3: elige 1 carta del descarte para jugar bocabajo en otra línea (las últimas ${trashCount} de tu mano)`);
+        updateUI();
       } else {
         const bestIdx = gameState.ai.trash.reduce((b, c, i) => c.valor > gameState.ai.trash[b].valor ? i : b, 0);
         const [card] = gameState.ai.trash.splice(bestIdx, 1);

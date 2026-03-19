@@ -187,6 +187,32 @@ function initLineListeners() {
                 clearSelectionHighlights();
                 updateUI();
                 if (typeof processAbilityEffect === 'function') processAbilityEffect();
+            } else if (gameState.effectContext && gameState.effectContext.type === 'pickFromDiscardToPlay_lineSelect') {
+                // Tiempo 0: jugar carta del descarte bocarriba en línea elegida
+                const ctx = gameState.effectContext;
+                const revealed = gameState.player.hand.splice(ctx.handSizeBefore, ctx.revealedCount);
+                const chosen = revealed[ctx.chosenRelIdx];
+                revealed.forEach((c, i) => { if (i !== ctx.chosenRelIdx) gameState.player.trash.push(c); });
+                gameState.effectContext = null;
+                gameState.field[line].player.push({ card: chosen, faceDown: false });
+                clearSelectionHighlights();
+                updateUI();
+                if (typeof processAbilityEffect === 'function') processAbilityEffect();
+            } else if (gameState.effectContext && gameState.effectContext.type === 'pickFromDiscardFaceDown_lineSelect') {
+                // Tiempo 3: jugar carta del descarte bocabajo en otra línea
+                const ctx = gameState.effectContext;
+                if (ctx.excludeLine && line === ctx.excludeLine) {
+                    updateStatus('Tiempo 3: elige una línea diferente a la actual');
+                    return;
+                }
+                const revealed = gameState.player.hand.splice(ctx.handSizeBefore, ctx.revealedCount);
+                const chosen = revealed[ctx.chosenRelIdx];
+                revealed.forEach((c, i) => { if (i !== ctx.chosenRelIdx) gameState.player.trash.push(c); });
+                gameState.effectContext = null;
+                gameState.field[line].player.push({ card: chosen, faceDown: true });
+                clearSelectionHighlights();
+                updateUI();
+                if (typeof processAbilityEffect === 'function') processAbilityEffect();
             } else if (gameState.effectContext && gameState.effectContext.type === 'playHandCard_valor1_lineSelect') {
                 // Claridad 2: jugar carta de Valor 1 en línea elegida
                 if (gameState.selectedCardIndex === null) return;
@@ -362,6 +388,10 @@ function isSelectionActive() {
             gameState.effectContext.type === 'playTopDeckFaceDownOpponentChooseLine' ||
             gameState.effectContext.type === 'playHandCard_valor1_lineSelect' ||
             gameState.effectContext.type === 'pickDeckCard_valor1' ||
+            gameState.effectContext.type === 'pickFromDiscardToPlay' ||
+            gameState.effectContext.type === 'pickFromDiscardToPlay_lineSelect' ||
+            gameState.effectContext.type === 'pickFromDiscardFaceDown' ||
+            gameState.effectContext.type === 'pickFromDiscardFaceDown_lineSelect' ||
             gameState.effectContext.type === 'rearrange'
         ));
 }
@@ -494,6 +524,30 @@ function updateUI() {
                 gameState.effectContext.type = 'pickHandFaceDown_lineSelect';
                 const card = gameState.player.hand[index];
                 updateStatus(`Oscuridad 3: elige línea destino para "${card.nombre}" (no la línea actual)`);
+            } else if (gameState.effectContext && gameState.effectContext.type === 'pickFromDiscardToPlay') {
+                // Tiempo 0: elegir carta del descarte para jugar bocarriba
+                const ctx = gameState.effectContext;
+                if (index < ctx.handSizeBefore) {
+                    updateStatus('Tiempo 0: elige una de las cartas del descarte (las últimas de tu mano)');
+                    return;
+                }
+                ctx.chosenRelIdx = index - ctx.handSizeBefore;
+                ctx.type = 'pickFromDiscardToPlay_lineSelect';
+                const cardT0 = gameState.player.hand[index];
+                updateStatus(`Tiempo 0: elige la línea donde jugar "${cardT0.nombre}"`);
+                updateUI();
+            } else if (gameState.effectContext && gameState.effectContext.type === 'pickFromDiscardFaceDown') {
+                // Tiempo 3: elegir carta del descarte para jugar bocabajo en otra línea
+                const ctx = gameState.effectContext;
+                if (index < ctx.handSizeBefore) {
+                    updateStatus('Tiempo 3: elige una de las cartas del descarte (las últimas de tu mano)');
+                    return;
+                }
+                ctx.chosenRelIdx = index - ctx.handSizeBefore;
+                ctx.type = 'pickFromDiscardFaceDown_lineSelect';
+                const cardT3 = gameState.player.hand[index];
+                updateStatus(`Tiempo 3: elige la línea destino para "${cardT3.nombre}" (bocabajo, no la línea actual)`);
+                updateUI();
             } else if (gameState.effectContext && gameState.effectContext.type === 'pickDeckCard_valor1') {
                 // Claridad 2 paso 1: elegir cuál de las cartas reveladas del mazo robar
                 const ctx = gameState.effectContext;
@@ -1018,7 +1072,7 @@ function startEffect(type, target, count, opts = {}) {
 
     // Si es eliminate/flip/return/shift y no hay cartas válidas en campo, saltar efecto
     if (type === 'eliminate' || type === 'flip' || type === 'return' || type === 'shift') {
-        const filterCtx = { filter: opts.filter, maxVal: opts.maxVal, minVal: opts.minVal };
+        const filterCtx = { filter: opts.filter, maxVal: opts.maxVal, minVal: opts.minVal, exactVal: opts.exactVal };
         const baseLines = opts.allowedLines || (opts.forceLine ? [opts.forceLine] : LINES);
         const linesToCheck = baseLines.filter(l => l !== opts.excludeLine);
         const targets = target === 'any' ? ['player', 'ai'] : [target];
@@ -1027,10 +1081,15 @@ function startEffect(type, target, count, opts = {}) {
                 const stack = gameState.field[l][p];
                 if (opts.coveredOnly) return stack.length >= 2;
                 if (stack.length === 0) return false;
-                // targetAll: buscar en toda la pila (no solo top), p.ej. bocabajos cubiertos
-                if (opts.targetAll && filterCtx.filter === 'faceDown') return stack.some(c => c.faceDown);
+                // targetAll: buscar en toda la pila (no solo top)
+                if (opts.targetAll) {
+                    if (filterCtx.filter === 'faceDown') return stack.some(c => c.faceDown);
+                    if (filterCtx.filter === 'exactValue') return stack.some(c => c.card.valor === filterCtx.exactVal);
+                }
                 const topCard = stack[stack.length - 1];
                 if (opts.excludeCardName && topCard.card.nombre === opts.excludeCardName) return false;
+                // preventFlip: Hielo 4 no puede ser objetivo de flip
+                if (type === 'flip' && typeof getPersistentModifiers === 'function' && getPersistentModifiers(topCard.card).preventFlip) return false;
                 return cardMatchesFilter(topCard, filterCtx);
             })
         );
@@ -1095,12 +1154,15 @@ function highlightEffectTargets() {
                     if (stack.length < 2) return;
                 } else {
                     if (stack.length === 0) return;
-                    // targetAll con faceDown: resaltar cualquier pila que tenga alguna bocabajo
-                    if (ctx.filter === 'faceDown' && ctx.targetAll) {
+                    if (ctx.targetAll && ctx.filter === 'faceDown') {
                         if (!stack.some(c => c.faceDown)) return;
+                    } else if (ctx.targetAll && ctx.filter === 'exactValue') {
+                        if (!stack.some(c => c.card.valor === ctx.exactVal)) return;
                     } else {
                         const topCard = stack[stack.length - 1];
                         if (!cardMatchesFilter(topCard, ctx)) return;
+                        // preventFlip: no resaltar cartas que no pueden ser volteadas
+                        if (ctx.type === 'flip' && typeof getPersistentModifiers === 'function' && getPersistentModifiers(topCard.card).preventFlip) return;
                     }
                 }
                 const stackEl = document.querySelector(`#line-${l} .${p}-stack`);
@@ -1210,6 +1272,7 @@ function cardMatchesFilter(cardObj, ctx) {
     if (ctx.filter === 'faceUp') return !cardObj.faceDown;
     if (ctx.filter === 'maxValue') return !cardObj.faceDown && cardObj.card.valor <= (ctx.maxVal ?? 99);
     if (ctx.filter === 'minValue') return !cardObj.faceDown && cardObj.card.valor >= (ctx.minVal ?? 0);
+    if (ctx.filter === 'exactValue') return cardObj.card.valor === ctx.exactVal; // cubierta o descubierta
     return true;
 }
 
@@ -1327,6 +1390,11 @@ function handleFieldCardClick(line, target, cardIdx) {
         if (ctx.excludeCardName && cardObj.card.nombre === ctx.excludeCardName) return;
         if (ctx.coveredOnly && cardIdx === gameState.field[line][target].length - 1) return;
         if (ctx.filter && !cardMatchesFilter(cardObj, ctx)) return;
+        // preventFlip: Hielo 4 no puede ser volteada por ningún efecto
+        if (typeof getPersistentModifiers === 'function' && getPersistentModifiers(cardObj.card).preventFlip) {
+            updateStatus(`${cardObj.card.nombre} no puede ser volteada`);
+            return;
+        }
         cardObj.faceDown = !cardObj.faceDown;
         gameState.lastFlippedCard = { cardObj, line };
         ctx.selected.push(cardObj);
