@@ -90,4 +90,4 @@ compile-project/
 
 ---
 
-Basado en el juego de cartas físico [COMPILE](https://ryanascherr.github.io/compile/) de Ryan Scherr.
+Basado en el juego de cartas físico [COMPILE](https://www.malditogames.com/juegos/compile-unidad-principal-01-juego/) de Michael Yang.

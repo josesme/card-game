@@ -330,7 +330,6 @@ function createFieldCardHTML(card) {
     const color = PROTOCOL_DEFS[card.protocol] ? PROTOCOL_DEFS[card.protocol].color : '#00d4ff';
     return `<div class="field-card" data-id="${card.id}" style="border-color:${color}; box-shadow: 0 0 10px ${color}33;">
         <span class="field-card-value" style="color:${color}">${card.valor}</span>
-        <span class="field-card-name">${card.protocol}</span>
     </div>`;
 }
 
