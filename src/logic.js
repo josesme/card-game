@@ -330,6 +330,7 @@ function createFieldCardHTML(card) {
     const color = PROTOCOL_DEFS[card.protocol] ? PROTOCOL_DEFS[card.protocol].color : '#00d4ff';
     return `<div class="field-card" data-id="${card.id}" style="border-color:${color}; box-shadow: 0 0 10px ${color}33;">
         <span class="field-card-value" style="color:${color}">${card.valor}</span>
+        <span class="field-card-name">${card.protocol}</span>
     </div>`;
 }
 
@@ -604,8 +605,8 @@ function renderStack(line, target) {
         domCard.onclick = (e) => {
             e.stopPropagation();
             if (gameState.effectContext) {
-                // Rule: Only uncovered cards can be manipulated unless "all" is specified
-                if (!isUncovered && !gameState.effectContext.targetAll) {
+                // Rule: Only uncovered cards can be manipulated unless "all" or coveredOnly is specified
+                if (!isUncovered && !gameState.effectContext.targetAll && !gameState.effectContext.coveredOnly) {
                     console.warn("Only uncovered cards can be targeted.");
                     return;
                 }
@@ -1246,6 +1247,7 @@ function handleFieldCardClick(line, target, cardIdx) {
         triggerUncovered(line, target);
     } else if (ctx.type === 'flip') {
         const cardObj = gameState.field[line][target][cardIdx];
+        if (ctx.forceLine && line !== ctx.forceLine) return;
         if (ctx.excludeLine && line === ctx.excludeLine) return;
         if (ctx.excludeCardName && cardObj.card.nombre === ctx.excludeCardName) return;
         if (ctx.coveredOnly && cardIdx === gameState.field[line][target].length - 1) return;
