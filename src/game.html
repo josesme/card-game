@@ -289,9 +289,11 @@
         if (!document.fullscreenElement) {
             document.documentElement.requestFullscreen().catch(() => {});
             btn.textContent = '✕ SALIR';
+            sessionStorage.setItem('fs', '1');
         } else {
             document.exitFullscreen().catch(() => {});
             btn.textContent = '⛶ FULLSCREEN';
+            sessionStorage.removeItem('fs');
         }
     }
 
@@ -299,6 +301,7 @@
         const btn = document.getElementById('btn-fullscreen');
         if (!document.fullscreenElement) {
             btn.textContent = '⛶ FULLSCREEN';
+            sessionStorage.removeItem('fs');
         }
         // Small delay so the browser reports the new viewport size
         setTimeout(updateGameZoom, 50);
@@ -308,6 +311,10 @@
     document.addEventListener('DOMContentLoaded', updateGameZoom);
     // Fallback for when scripts load late
     window.addEventListener('load', updateGameZoom);
+    if (sessionStorage.getItem('fs') === '1') {
+        document.documentElement.requestFullscreen().catch(() => {});
+        document.getElementById('btn-fullscreen').textContent = '✕ SALIR';
+    }
 </script>
 </body>
 </html>

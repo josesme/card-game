@@ -312,15 +312,24 @@ function toggleFullscreen() {
     if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(() => {});
         btn.textContent = '✕ SALIR';
+        sessionStorage.setItem('fs', '1');
     } else {
         document.exitFullscreen().catch(() => {});
         btn.textContent = '⛶ FULLSCREEN';
+        sessionStorage.removeItem('fs');
     }
 }
 document.addEventListener('fullscreenchange', () => {
     const btn = document.getElementById('btn-fullscreen');
-    if (!document.fullscreenElement) btn.textContent = '⛶ FULLSCREEN';
+    if (!document.fullscreenElement) {
+        btn.textContent = '⛶ FULLSCREEN';
+        sessionStorage.removeItem('fs');
+    }
 });
+if (sessionStorage.getItem('fs') === '1') {
+    document.documentElement.requestFullscreen().catch(() => {});
+    document.getElementById('btn-fullscreen').textContent = '✕ SALIR';
+}
 
 function applyIndexScale() {
     const container = document.getElementById('index-container');
