@@ -361,6 +361,7 @@ function isSelectionActive() {
             gameState.effectContext.type === 'pickHandFaceDown_lineSelect' ||
             gameState.effectContext.type === 'playTopDeckFaceDownOpponentChooseLine' ||
             gameState.effectContext.type === 'playHandCard_valor1_lineSelect' ||
+            gameState.effectContext.type === 'pickDeckCard_valor1' ||
             gameState.effectContext.type === 'rearrange'
         ));
 }
@@ -493,8 +494,41 @@ function updateUI() {
                 gameState.effectContext.type = 'pickHandFaceDown_lineSelect';
                 const card = gameState.player.hand[index];
                 updateStatus(`Oscuridad 3: elige línea destino para "${card.nombre}" (no la línea actual)`);
+            } else if (gameState.effectContext && gameState.effectContext.type === 'pickDeckCard_valor1') {
+                // Claridad 2 paso 1: elegir cuál de las cartas reveladas del mazo robar
+                const ctx = gameState.effectContext;
+                if (index < ctx.handSizeBefore) {
+                    updateStatus('Claridad 2: elige una de las cartas reveladas del mazo (las últimas de tu mano)');
+                    return;
+                }
+                const chosenRelIdx = index - ctx.handSizeBefore;
+                // Extraer todas las reveladas de la mano
+                const revealed = gameState.player.hand.splice(ctx.handSizeBefore, ctx.revealedCount);
+                const chosen = revealed[chosenRelIdx];
+                // Devolver las no elegidas al mazo (se barajará después)
+                revealed.forEach((c, i) => { if (i !== chosenRelIdx) gameState.player.deck.push(c); });
+                gameState.player.hand.push(chosen);
+                gameState.effectContext = null;
+                updateStatus(`Robas ${chosen.nombre} (Valor 1) del mazo`);
+                // Barajar mazo
+                const dk = gameState.player.deck;
+                for (let i = dk.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [dk[i], dk[j]] = [dk[j], dk[i]];
+                }
+                clearSelectionHighlights();
+                updateUI();
+                // Paso siguiente: jugar carta Valor 1
+                const v1InHand = gameState.player.hand.some(c => c.valor === 1);
+                if (v1InHand) {
+                    gameState.effectContext = { type: 'playHandCard_valor1' };
+                    updateStatus('Claridad 2: juega 1 carta con Valor 1 de tu mano');
+                    updateUI();
+                } else {
+                    if (typeof processAbilityEffect === 'function') processAbilityEffect();
+                }
             } else if (gameState.effectContext && gameState.effectContext.type === 'playHandCard_valor1') {
-                // Claridad 2: elegir carta de Valor 1 para jugar
+                // Claridad 2 paso 2: elegir carta de Valor 1 para jugar en campo
                 const card = gameState.player.hand[index];
                 if (!card || card.valor !== 1) {
                     updateStatus('Claridad 2: solo puedes elegir cartas con Valor 1');

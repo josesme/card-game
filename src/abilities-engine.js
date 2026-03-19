@@ -3182,42 +3182,67 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
     }
 
     case 'searchDeckValue1ThenPlay': {
-      // Claridad 2: revela mazo, roba 1 carta con Valor 1, baraja, juega 1 carta con Valor 1
+      // Claridad 2: revela mazo, elige 1 carta con Valor 1 para robar, baraja mazo, juega 1 carta con Valor 1
       const deckRef = gameState[targetPlayer].deck;
-      const v1Idx = deckRef.findIndex(c => c.valor === 1);
-      if (v1Idx >= 0) {
-        const [drawn] = deckRef.splice(v1Idx, 1);
+      const v1Indices = [];
+      for (let i = 0; i < deckRef.length; i++) {
+        if (deckRef[i].valor === 1) v1Indices.push(i);
+      }
+
+      // Helper: baraja mazo y lanza el paso "jugar carta Valor 1"
+      const shuffleThenPlayStep = () => {
+        for (let i = deckRef.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [deckRef[i], deckRef[j]] = [deckRef[j], deckRef[i]];
+        }
+        updateUI();
+        const v1InHand = gameState[targetPlayer].hand.filter(c => c.valor === 1);
+        if (v1InHand.length === 0) { processAbilityEffect(); return; }
+        if (targetPlayer === 'player') {
+          gameState.effectContext = { type: 'playHandCard_valor1' };
+          updateStatus('Claridad 2: juega 1 carta con Valor 1 de tu mano');
+          updateUI();
+        } else {
+          const bestIdx = gameState.ai.hand.findIndex(c => c.valor === 1);
+          const bestCard = gameState.ai.hand.splice(bestIdx, 1)[0];
+          const bestLine = LINES.reduce((best, l) => {
+            const advanL = (calculateScore(gameState, l, 'ai') + bestCard.valor) - calculateScore(gameState, l, 'player');
+            const advanB = (calculateScore(gameState, best, 'ai') + bestCard.valor) - calculateScore(gameState, best, 'player');
+            return advanL > advanB ? l : best;
+          }, LINES[0]);
+          gameState.field[bestLine].ai.push({ card: bestCard, faceDown: false });
+          updateUI();
+          processAbilityEffect();
+        }
+      };
+
+      if (v1Indices.length === 0) {
+        // No hay valor-1 en mazo: solo barajar
+        updateStatus('Claridad 2: no hay cartas con Valor 1 en el mazo');
+        shuffleThenPlayStep();
+        break;
+      }
+
+      if (v1Indices.length === 1 || targetPlayer === 'ai') {
+        // Una sola opción o IA: auto-robar la primera
+        const [drawn] = deckRef.splice(v1Indices[0], 1);
         gameState[targetPlayer].hand.push(drawn);
         updateStatus(`${targetPlayer === 'player' ? 'Robas' : 'IA roba'} ${drawn.nombre} (Valor 1) del mazo`);
+        shuffleThenPlayStep();
+        break;
       }
-      for (let i = deckRef.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [deckRef[i], deckRef[j]] = [deckRef[j], deckRef[i]];
+
+      // Múltiples valor-1 en mazo: jugador elige cuál robar
+      // Extrae todas de mayor a menor índice para no desplazar índices
+      const revealedCards = [];
+      for (let i = v1Indices.length - 1; i >= 0; i--) {
+        revealedCards.unshift(deckRef.splice(v1Indices[i], 1)[0]);
       }
+      const handSizeBefore = gameState.player.hand.length;
+      gameState.player.hand.push(...revealedCards);
+      gameState.effectContext = { type: 'pickDeckCard_valor1', handSizeBefore, revealedCount: revealedCards.length };
+      updateStatus(`Claridad 2: ${revealedCards.length} cartas con Valor 1 reveladas en tu mazo — elige cuál robar`);
       updateUI();
-      // Ahora jugar 1 carta con Valor 1 de la mano
-      const v1HandCards = gameState[targetPlayer].hand
-        .map((c, i) => ({ c, i }))
-        .filter(({ c }) => c.valor === 1);
-      if (v1HandCards.length === 0) { processAbilityEffect(); break; }
-      if (targetPlayer === 'player') {
-        gameState.effectContext = { type: 'playHandCard_valor1' };
-        updateStatus('Claridad 2: juega 1 carta con Valor 1 de tu mano');
-        updateUI();
-      } else {
-        // IA: juega la carta de valor 1 en la línea más beneficiosa
-        const { c: bestCard, i: bestIdx } = v1HandCards[0];
-        const bestLine = LINES.reduce((best, l) => {
-          const scoreHere = calculateScore(gameState, l, 'ai') + bestCard.valor;
-          const scoreBest = calculateScore(gameState, best, 'ai') + bestCard.valor;
-          return (calculateScore(gameState, l, 'player') - scoreHere) <
-                 (calculateScore(gameState, best, 'player') - scoreBest) ? l : best;
-        }, LINES[0]);
-        gameState.ai.hand.splice(bestIdx, 1);
-        gameState.field[bestLine].ai.push({ card: bestCard, faceDown: false });
-        updateUI();
-        processAbilityEffect();
-      }
       break;
     }
 
