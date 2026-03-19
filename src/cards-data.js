@@ -1,21 +1,22 @@
 // Datos de cartas y protocolos integrados para evitar errores de fetch/CORS
 const CARDS_DATA = {
+  // edicion: 1 = Compile Main 1 | 2 = Compile Main 2
   "_protocolMeta": {
-    "Espíritu":   { "color": "#8b5cf6", "abilities": "VOLTEAR. CAMBIAR. ROBAR" },
-    "Muerte":     { "color": "#ef4444", "abilities": "ELIMINAR. ROBAR" },
-    "Fuego":      { "color": "#f97316", "abilities": "DESCARTAR PARA RESOLVER EFECTO" },
-    "Gravedad":   { "color": "#6366f1", "abilities": "CAMBIAR. VOLTEAR. ROBAR" },
-    "Vida":       { "color": "#10b981", "abilities": "VOLTEAR. JUGAR CARTA SUPERIOR DEL MAZO. ROBAR" },
-    "Luz":        { "color": "#facc15", "abilities": "ROBAR. VOLTEAR. CAMBIAR" },
-    "Metal":      { "color": "#94a3b8", "abilities": "PREVENIR. ROBAR. VOLTEAR" },
-    "Plaga":      { "color": "#a855f7", "abilities": "FORZAR DESCARTAR. VOLTEAR" },
-    "Psique":     { "color": "#ec4899", "abilities": "ROBAR. MANIPULAR. CAMBIAR" },
-    "Velocidad":  { "color": "#06b6d4", "abilities": "ROBAR. JUGAR. CAMBIAR" },
-    "Agua":       { "color": "#3b82f6", "abilities": "DEVOLVER. ROBAR. VOLTEAR" },
-    "Oscuridad":  { "color": "#64748b", "abilities": "ROBAR. CAMBIAR. MANIPULAR" },
-    "Apatía":     { "color": "#6b7280", "abilities": "VOLTEAR CARTAS BOCABAJO" },
-    "Odio":       { "color": "#b91c1c", "abilities": "ELIMINAR. DESCARTAR" },
-    "Amor":       { "color": "#f43f5e", "abilities": "ROBAR. DAR. INTERCAMBIAR" }
+    "Espíritu":   { "edicion": 1, "color": "#8b5cf6", "abilities": "VOLTEAR. CAMBIAR. ROBAR" },
+    "Muerte":     { "edicion": 1, "color": "#ef4444", "abilities": "ELIMINAR. ROBAR" },
+    "Fuego":      { "edicion": 1, "color": "#f97316", "abilities": "DESCARTAR PARA RESOLVER EFECTO" },
+    "Gravedad":   { "edicion": 1, "color": "#6366f1", "abilities": "CAMBIAR. VOLTEAR. ROBAR" },
+    "Vida":       { "edicion": 1, "color": "#10b981", "abilities": "VOLTEAR. JUGAR CARTA SUPERIOR DEL MAZO. ROBAR" },
+    "Luz":        { "edicion": 1, "color": "#facc15", "abilities": "ROBAR. VOLTEAR. CAMBIAR" },
+    "Metal":      { "edicion": 1, "color": "#94a3b8", "abilities": "PREVENIR. ROBAR. VOLTEAR" },
+    "Plaga":      { "edicion": 1, "color": "#a855f7", "abilities": "FORZAR DESCARTAR. VOLTEAR" },
+    "Psique":     { "edicion": 1, "color": "#ec4899", "abilities": "ROBAR. MANIPULAR. CAMBIAR" },
+    "Velocidad":  { "edicion": 1, "color": "#06b6d4", "abilities": "ROBAR. JUGAR. CAMBIAR" },
+    "Agua":       { "edicion": 1, "color": "#3b82f6", "abilities": "DEVOLVER. ROBAR. VOLTEAR" },
+    "Oscuridad":  { "edicion": 1, "color": "#64748b", "abilities": "ROBAR. CAMBIAR. MANIPULAR" },
+    "Apatía":     { "edicion": 1, "color": "#6b7280", "abilities": "VOLTEAR CARTAS BOCABAJO" },
+    "Odio":       { "edicion": 1, "color": "#b91c1c", "abilities": "ELIMINAR. DESCARTAR" },
+    "Amor":       { "edicion": 1, "color": "#f43f5e", "abilities": "ROBAR. DAR. INTERCAMBIAR" }
   },
   "Espíritu": [
     {"valor": 0, "nombre": "Espíritu 0", "fase": "Action", "h_inicio": "", "h_accion": "Actualiza. Roba 1 carta.", "h_final": "Sáltate tu Fase de Comprobar Caché."},
