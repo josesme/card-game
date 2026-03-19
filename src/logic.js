@@ -187,6 +187,16 @@ function initLineListeners() {
                 clearSelectionHighlights();
                 updateUI();
                 if (typeof processAbilityEffect === 'function') processAbilityEffect();
+            } else if (gameState.effectContext && gameState.effectContext.type === 'playHandCard_valor1_lineSelect') {
+                // Claridad 2: jugar carta de Valor 1 en línea elegida
+                if (gameState.selectedCardIndex === null) return;
+                const card = gameState.player.hand.splice(gameState.selectedCardIndex, 1)[0];
+                gameState.selectedCardIndex = null;
+                gameState.effectContext = null;
+                gameState.field[line].player.push({ card, faceDown: false });
+                clearSelectionHighlights();
+                updateUI();
+                if (typeof processAbilityEffect === 'function') processAbilityEffect();
             } else if (gameState.effectContext && gameState.effectContext.waitingForLine) {
                 handleShiftTargetLine(line);
             }
@@ -350,6 +360,7 @@ function isSelectionActive() {
             gameState.effectContext.waitingForLine ||
             gameState.effectContext.type === 'pickHandFaceDown_lineSelect' ||
             gameState.effectContext.type === 'playTopDeckFaceDownOpponentChooseLine' ||
+            gameState.effectContext.type === 'playHandCard_valor1_lineSelect' ||
             gameState.effectContext.type === 'rearrange'
         ));
 }
@@ -482,6 +493,17 @@ function updateUI() {
                 gameState.effectContext.type = 'pickHandFaceDown_lineSelect';
                 const card = gameState.player.hand[index];
                 updateStatus(`Oscuridad 3: elige línea destino para "${card.nombre}" (no la línea actual)`);
+            } else if (gameState.effectContext && gameState.effectContext.type === 'playHandCard_valor1') {
+                // Claridad 2: elegir carta de Valor 1 para jugar
+                const card = gameState.player.hand[index];
+                if (!card || card.valor !== 1) {
+                    updateStatus('Claridad 2: solo puedes elegir cartas con Valor 1');
+                    return;
+                }
+                gameState.selectedCardIndex = index;
+                gameState.effectContext.type = 'playHandCard_valor1_lineSelect';
+                updateStatus(`Claridad 2: elige la línea donde jugar "${card.nombre}"`);
+                updateUI();
             } else if (gameState.effectContext) {
                 console.log(`   → Blocked: effectContext=${gameState.effectContext.type}`);
             } else {
@@ -963,7 +985,8 @@ function startEffect(type, target, count, opts = {}) {
     // Si es eliminate/flip/return/shift y no hay cartas válidas en campo, saltar efecto
     if (type === 'eliminate' || type === 'flip' || type === 'return' || type === 'shift') {
         const filterCtx = { filter: opts.filter, maxVal: opts.maxVal, minVal: opts.minVal };
-        const linesToCheck = (opts.forceLine ? [opts.forceLine] : LINES).filter(l => l !== opts.excludeLine);
+        const baseLines = opts.allowedLines || (opts.forceLine ? [opts.forceLine] : LINES);
+        const linesToCheck = baseLines.filter(l => l !== opts.excludeLine);
         const targets = target === 'any' ? ['player', 'ai'] : [target];
         const hasValid = linesToCheck.some(l =>
             targets.some(p => {

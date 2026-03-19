@@ -3057,11 +3057,11 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
     }
 
     case 'playOpponentTopDeckHere': {
-      // Asimilación 2 onTurnEnd: juega bocabajo la carta top del mazo rival en este lado
+      // Asimilación 2 onTurnEnd: juega bocabajo la carta top del mazo rival EN ESTA PILA (del targetPlayer)
       const line = gameState.currentEffectLine;
       if (line && gameState[opponent].deck.length > 0) {
         const top = gameState[opponent].deck.pop();
-        gameState.field[line][opponent].push({ card: top, faceDown: true });
+        gameState.field[line][targetPlayer].push({ card: top, faceDown: true });
         updateUI();
       }
       processAbilityEffect();
@@ -3182,7 +3182,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
     }
 
     case 'searchDeckValue1ThenPlay': {
-      // Claridad 2: revela mazo, roba 1 carta con Valor 1, baraja, puedes jugar 1 carta con Valor 1
+      // Claridad 2: revela mazo, roba 1 carta con Valor 1, baraja, juega 1 carta con Valor 1
       const deckRef = gameState[targetPlayer].deck;
       const v1Idx = deckRef.findIndex(c => c.valor === 1);
       if (v1Idx >= 0) {
@@ -3195,7 +3195,29 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
         [deckRef[i], deckRef[j]] = [deckRef[j], deckRef[i]];
       }
       updateUI();
-      processAbilityEffect();
+      // Ahora jugar 1 carta con Valor 1 de la mano
+      const v1HandCards = gameState[targetPlayer].hand
+        .map((c, i) => ({ c, i }))
+        .filter(({ c }) => c.valor === 1);
+      if (v1HandCards.length === 0) { processAbilityEffect(); break; }
+      if (targetPlayer === 'player') {
+        gameState.effectContext = { type: 'playHandCard_valor1' };
+        updateStatus('Claridad 2: juega 1 carta con Valor 1 de tu mano');
+        updateUI();
+      } else {
+        // IA: juega la carta de valor 1 en la línea más beneficiosa
+        const { c: bestCard, i: bestIdx } = v1HandCards[0];
+        const bestLine = LINES.reduce((best, l) => {
+          const scoreHere = calculateScore(gameState, l, 'ai') + bestCard.valor;
+          const scoreBest = calculateScore(gameState, best, 'ai') + bestCard.valor;
+          return (calculateScore(gameState, l, 'player') - scoreHere) <
+                 (calculateScore(gameState, best, 'player') - scoreBest) ? l : best;
+        }, LINES[0]);
+        gameState.ai.hand.splice(bestIdx, 1);
+        gameState.field[bestLine].ai.push({ card: bestCard, faceDown: false });
+        updateUI();
+        processAbilityEffect();
+      }
       break;
     }
 
@@ -3207,7 +3229,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       });
       if (winLines.length === 0) { processAbilityEffect(); break; }
       if (targetPlayer === 'player') {
-        startEffect('eliminate', 'opponent', 1);
+        startEffect('eliminate', 'opponent', 1, { allowedLines: winLines });
       } else {
         const best = winLines.sort((a, b) => calculateScore(gameState, b, 'player') - calculateScore(gameState, a, 'player'))[0];
         const removed = gameState.field[best].player.pop();

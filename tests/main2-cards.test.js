@@ -538,7 +538,7 @@ describe('Acciones directas Main 2', () => {
     GS.field['alpha'].ai = [{ card: makeCard('AIStrong', 5), faceDown: false }];
     GS.field['alpha'].player = [{ card: makeCard('Weak', 1), faceDown: false }];
     runAction({ action: 'deleteInWinningOpponentLine' }, 'player');
-    expect(global.startEffect).toHaveBeenCalledWith('eliminate', 'opponent', 1);
+    expect(global.startEffect).toHaveBeenCalledWith('eliminate', 'opponent', 1, { allowedLines: ['alpha'] });
   });
 });
 
@@ -664,14 +664,15 @@ describe('Rutas IA — acciones auto-resueltas', () => {
     expect(global.discard).not.toHaveBeenCalled();
   });
 
-  test('playOpponentTopDeckHere (IA): coloca la top del mazo del jugador en el lado del jugador en alpha', () => {
-    // Para IA (targetPlayer=ai, opponent=player): toma del mazo del jugador y lo pone en field[line][player]
+  test('playOpponentTopDeckHere (IA): toma del mazo del jugador y lo coloca en el lado de IA en alpha', () => {
+    // Para IA (targetPlayer=ai, opponent=player): toma del mazo rival (player) y lo pone en field[line][ai]
+    // "esta pila" = la pila del targetPlayer (IA), no la del oponente
     const playerTop = makeCard('PlayerDeckTop', 3);
     GS.player.deck = [playerTop];
     GS.currentEffectLine = 'alpha';
     runAction({ action: 'playOpponentTopDeckHere' }, 'ai');
     expect(GS.player.deck).toHaveLength(0);
-    expect(GS.field['alpha'].player.some(c => c.card === playerTop && c.faceDown)).toBe(true);
+    expect(GS.field['alpha'].ai.some(c => c.card === playerTop && c.faceDown)).toBe(true);
   });
 
   test('playOpponentTopDeckHere (IA): no hace nada si mazo del oponente vacío', () => {
