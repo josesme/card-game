@@ -20,7 +20,8 @@ const CARDS_DATA = {
     // ── Main 2 ──────────────────────────────────────────────────────────────
     "Assimilation": { "edicion": 2, "color": "#4338ca", "abilities": "DEVOLVER. ROBAR. BOCABAJO" },
     "Chaos":        { "edicion": 2, "color": "#a855f7", "abilities": "VOLTEAR. REORGANIZAR. CAMBIAR" },
-    "Clarity":      { "edicion": 2, "color": "#e879f9", "abilities": "REVELAR. ROBAR. BARAJAR" }
+    "Clarity":      { "edicion": 2, "color": "#e879f9", "abilities": "REVELAR. ROBAR. BARAJAR" },
+    "Corruption":   { "edicion": 2, "color": "#16a34a", "abilities": "VOLTEAR. DEVOLVER. DESCARTAR" }
   },
   "Espíritu": [
     {"valor": 0, "nombre": "Espíritu 0", "fase": "Action", "h_inicio": "", "h_accion": "Actualiza. Roba 1 carta.", "h_final": "Sáltate tu Fase de Comprobar Caché."},
@@ -158,6 +159,14 @@ const CARDS_DATA = {
     {"valor": 3, "nombre": "Clarity 3", "fase": "Action", "h_inicio": "", "h_accion": "Revela tu mazo. Roba 1 carta con Valor 5 revelada así. Baraja tu mazo.", "h_final": ""},
     {"valor": 4, "nombre": "Clarity 4", "fase": "Action", "h_inicio": "", "h_accion": "Puedes barajar tu descarte en tu mazo.", "h_final": ""},
     {"valor": 5, "nombre": "Clarity 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""}
+  ],
+  "Corruption": [
+    {"valor": 0, "nombre": "Corruption 0", "fase": "Start",  "h_inicio": "Inicial: Voltea 1 otra carta bocarriba (cubierta o descubierta) en esta pila.", "h_accion": "", "h_final": "Esta carta puede jugarse en el lado de cualquier jugador sin coincidir con los Protocolos."},
+    {"valor": 1, "nombre": "Corruption 1", "fase": "Action", "h_inicio": "", "h_accion": "Devuelve 1 carta.", "h_final": "Cuando una carta vaya a ser devuelta a la mano de tu oponente: En su lugar, colócala bocarriba en lo alto de su mazo."},
+    {"valor": 2, "nombre": "Corruption 2", "fase": "Start",  "h_inicio": "Después de que descartes cartas: Tu oponente descarta 1 carta.", "h_accion": "Roba 1 carta. Descarta 1 carta.", "h_final": ""},
+    {"valor": 3, "nombre": "Corruption 3", "fase": "Action", "h_inicio": "", "h_accion": "Puedes voltear 1 carta cubierta bocarriba.", "h_final": ""},
+    {"valor": 5, "nombre": "Corruption 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""},
+    {"valor": 6, "nombre": "Corruption 6", "fase": "End",    "h_inicio": "Final: Descarta 1 carta o elimina esta carta.", "h_accion": "", "h_final": ""}
   ],
   "Amor": [
     {"valor": 1, "nombre": "Amor 1", "fase": "End",    "h_inicio": "", "h_accion": "Roba la carta superior del mazo de tu oponente.", "h_final": "Final: Puedes dar 1 carta de tu mano a tu oponente. Si lo haces, roba 2 cartas."},
