@@ -3619,24 +3619,15 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
     case 'swapOwnTwoStacks': {
       // Espejo 2: intercambia todas las cartas de una pila propia con otra pila propia
       if (targetPlayer === 'player') {
-        // Simplified: pick the two lines automatically - swap worst with second worst
-        const lineScores = LINES.map(l => ({ l, score: calculateScore(gameState, l, 'player') - calculateScore(gameState, l, 'ai') }))
-          .sort((a, b) => a.score - b.score);
-        if (lineScores.length >= 2 && gameState.field[lineScores[0].l].player.length > 0) {
-          updateStatus('Espejo 2: elige una línea para intercambiar tus cartas (se hará automáticamente con la línea más ventajosa)');
-          const [a, b2] = [lineScores[0].l, lineScores[lineScores.length - 1].l];
-          if (a !== b2) {
-            const tmp = gameState.field[a].player;
-            gameState.field[a].player = gameState.field[b2].player;
-            gameState.field[b2].player = tmp;
-            updateUI();
-          }
-        }
-        processAbilityEffect();
+        // Jugador elige las dos líneas a intercambiar
+        gameState.effectContext = { type: 'rearrange', target: 'player', count: 1, selected: [], swapCards: true };
+        if (typeof highlightEffectTargets === 'function') highlightEffectTargets();
+        updateUI();
       } else {
+        // IA: intercambia la línea con peor diferencia con la de mejor diferencia
         const lineScores = LINES.map(l => ({ l, score: calculateScore(gameState, l, 'ai') - calculateScore(gameState, l, 'player') }))
           .sort((a, b) => a.score - b.score);
-        if (lineScores.length >= 2 && gameState.field[lineScores[0].l].ai.length > 0) {
+        if (lineScores.length >= 2) {
           const [a, b2] = [lineScores[0].l, lineScores[lineScores.length - 1].l];
           if (a !== b2) {
             const tmp = gameState.field[a].ai;
@@ -3875,20 +3866,78 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
     }
 
     case 'luckDraw3PickByValue': {
-      // Suerte 0: di un número, roba 3 cartas, revela 1 que coincida con ese valor
-      draw(targetPlayer, 3);
+      // Suerte 0: declara un número 0-6, roba 3, selecciona 1 al azar — si coincide, la juegas
       if (targetPlayer === 'player') {
-        const valStr = prompt('Suerte 0: indica un Valor (0-6)') || '0';
-        const pickedVal = parseInt(valStr) || 0;
-        const matchIdx = gameState.player.hand.findIndex(c => c.valor === pickedVal);
-        if (matchIdx >= 0) {
-          updateStatus(`Suerte 0: ¡coincide! ${gameState.player.hand[matchIdx].nombre}`);
-        } else {
-          updateStatus(`Suerte 0: no hay carta con Valor ${pickedVal} en tu mano`);
+        const confirmArea = document.getElementById('command-confirm');
+        const confirmMsg = document.getElementById('confirm-msg');
+        const btnYes = document.getElementById('btn-confirm-yes');
+        const btnNo = document.getElementById('btn-confirm-no');
+        if (confirmArea && btnYes && btnNo) {
+          gameState.effectContext = { type: 'confirm' };
+          confirmArea.classList.remove('hidden');
+          confirmMsg.innerHTML = `${triggerCardName || ''}: ¿Qué número declaras? (0–6)<br><select id="luck-num-sel" style="font-size:1.3em;margin-top:8px;padding:2px 8px;">${[0,1,2,3,4,5,6].map(n=>`<option>${n}</option>`).join('')}</select>`;
+          btnYes.onclick = () => {
+            const sel = document.getElementById('luck-num-sel');
+            const declaredVal = parseInt(sel?.value ?? '0');
+            confirmArea.classList.add('hidden');
+            confirmMsg.innerHTML = '';
+            gameState.effectContext = null;
+            // Robar 3 cartas
+            const handBefore = gameState.player.hand.length;
+            draw('player', 3);
+            const drawn = gameState.player.hand.length - handBefore;
+            if (drawn === 0) { processAbilityEffect(); return; }
+            // Seleccionar 1 al azar de las robadas
+            const randomOffset = Math.floor(Math.random() * drawn);
+            const pickedIdx = handBefore + randomOffset;
+            const pickedCard = gameState.player.hand[pickedIdx];
+            if (pickedCard.valor === declaredVal) {
+              // ¡Coincide! Jugar en línea elegida
+              updateStatus(`${triggerCardName}: ¡coincide! ${pickedCard.nombre} (Valor ${declaredVal}) — elige una línea`);
+              const isOwn = gameState.player.protocols && gameState.player.protocols.includes(pickedCard.protocol);
+              const isFaceDown = !isOwn;
+              gameState.effectContext = { type: 'luckPlay_lineSelect', handIdx: pickedIdx, faceDown: isFaceDown };
+              if (typeof highlightSelectableLines === 'function') highlightSelectableLines();
+              updateUI();
+            } else {
+              updateStatus(`${triggerCardName}: no coincide — dijiste ${declaredVal}, carta: ${pickedCard.nombre} (Valor ${pickedCard.valor})`);
+              updateUI();
+              processAbilityEffect();
+            }
+          };
+          btnNo.onclick = () => {
+            confirmArea.classList.add('hidden');
+            confirmMsg.innerHTML = '';
+            gameState.effectContext = null;
+            processAbilityEffect();
+          };
+        } else { processAbilityEffect(); }
+      } else {
+        // IA: declara número aleatorio, roba 3, selecciona 1 al azar, si coincide juega
+        const aiDeclaredVal = Math.floor(Math.random() * 7);
+        const handBefore = gameState.ai.hand.length;
+        draw('ai', 3);
+        const drawn = gameState.ai.hand.length - handBefore;
+        if (drawn > 0) {
+          const randomOffset = Math.floor(Math.random() * drawn);
+          const pickedCard = gameState.ai.hand[handBefore + randomOffset];
+          if (pickedCard.valor === aiDeclaredVal) {
+            updateStatus(`IA — ${triggerCardName}: acierta con valor ${aiDeclaredVal}! Juega ${pickedCard.nombre}`);
+            const handIdx = gameState.ai.hand.indexOf(pickedCard);
+            gameState.ai.hand.splice(handIdx, 1);
+            const isOwn = gameState.ai.protocols && gameState.ai.protocols.includes(pickedCard.protocol);
+            const bestLine = LINES.reduce((best, l) =>
+              calculateScore(gameState, l, 'ai') >= calculateScore(gameState, best, 'ai') ? l : best, LINES[0]);
+            gameState.field[bestLine].ai.push({ card: pickedCard, faceDown: !isOwn });
+            gameState.currentEffectLine = bestLine;
+            if (isOwn) triggerCardEffect(pickedCard, 'onPlay', 'ai');
+            updateUI();
+          } else {
+            updateStatus(`IA — ${triggerCardName}: no coincide (declaró ${aiDeclaredVal}, carta: ${pickedCard.nombre} valor ${pickedCard.valor})`);
+          }
         }
+        processAbilityEffect();
       }
-      updateUI();
-      processAbilityEffect();
       break;
     }
 
@@ -4076,7 +4125,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
     }
 
     case 'copyOpponentCardEffect': {
-      // Espejo 1 onTurnEnd: resuelve el comando central de 1 carta del oponente como si fuera tuyo
+      // Espejo 1 onTurnEnd: opcional — copia el comando central de 1 carta bocarriba del rival
       const availCards = [];
       LINES.forEach(l => {
         gameState.field[l][opponent].forEach(c => {
@@ -4084,13 +4133,49 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
         });
       });
       if (availCards.length === 0) { processAbilityEffect(); break; }
-      const best = availCards.reduce((b, x) => x.card.valor > b.card.valor ? x : b);
-      updateStatus(`Espejo 1: copiando efecto de ${best.card.nombre}`);
-      const prevLine = gameState.currentEffectLine;
-      gameState.currentEffectLine = best.line;
-      triggerCardEffect(best.card, 'onPlay', targetPlayer);
-      gameState.currentEffectLine = prevLine;
-      processAbilityEffect();
+      if (targetPlayer === 'player') {
+        const confirmArea = document.getElementById('command-confirm');
+        const confirmMsg = document.getElementById('confirm-msg');
+        const btnYes = document.getElementById('btn-confirm-yes');
+        const btnNo = document.getElementById('btn-confirm-no');
+        if (confirmArea && btnYes && btnNo) {
+          gameState.effectContext = { type: 'confirm' };
+          confirmArea.classList.remove('hidden');
+          confirmMsg.textContent = `${triggerCardName || ''}: ¿Copias el efecto de una carta del rival?`;
+          btnYes.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            if (availCards.length === 1) {
+              const chosen = availCards[0];
+              updateStatus(`Espejo 1: copiando efecto de ${chosen.card.nombre}`);
+              const prevLine = gameState.currentEffectLine;
+              gameState.currentEffectLine = chosen.line;
+              triggerCardEffect(chosen.card, 'onPlay', 'player');
+              gameState.currentEffectLine = prevLine;
+              processAbilityEffect();
+            } else {
+              // Jugador elige qué carta copiar
+              gameState.effectContext = { type: 'selectCardToCopy', target: 'ai', count: 1, selected: [] };
+              if (typeof highlightEffectTargets === 'function') highlightEffectTargets();
+              updateUI();
+            }
+          };
+          btnNo.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            processAbilityEffect();
+          };
+        } else { processAbilityEffect(); }
+      } else {
+        // IA: elige la carta rival con mayor valor
+        const best = availCards.reduce((b, x) => x.card.valor > b.card.valor ? x : b);
+        updateStatus(`Espejo 1: copiando efecto de ${best.card.nombre}`);
+        const prevLine = gameState.currentEffectLine;
+        gameState.currentEffectLine = best.line;
+        triggerCardEffect(best.card, 'onPlay', targetPlayer);
+        gameState.currentEffectLine = prevLine;
+        processAbilityEffect();
+      }
       break;
     }
 

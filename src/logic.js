@@ -213,6 +213,16 @@ function initLineListeners() {
                 clearSelectionHighlights();
                 updateUI();
                 if (typeof processAbilityEffect === 'function') processAbilityEffect();
+            } else if (gameState.effectContext && gameState.effectContext.type === 'luckPlay_lineSelect') {
+                // Suerte 0: jugar carta aleatoria de la mano si el valor coincide
+                const ctx = gameState.effectContext;
+                const card = gameState.player.hand.splice(ctx.handIdx, 1)[0];
+                gameState.effectContext = null;
+                gameState.field[line].player.push({ card, faceDown: ctx.faceDown });
+                clearSelectionHighlights();
+                updateUI();
+                if (!ctx.faceDown) triggerCardEffect(card, 'onPlay', 'player');
+                if (typeof processAbilityEffect === 'function') processAbilityEffect();
             } else if (gameState.effectContext && gameState.effectContext.type === 'playHandCard_valor1_lineSelect') {
                 // Claridad 2: jugar carta de Valor 1 en línea elegida
                 if (gameState.selectedCardIndex === null) return;
@@ -392,7 +402,9 @@ function isSelectionActive() {
             gameState.effectContext.type === 'pickFromDiscardToPlay_lineSelect' ||
             gameState.effectContext.type === 'pickFromDiscardFaceDown' ||
             gameState.effectContext.type === 'pickFromDiscardFaceDown_lineSelect' ||
-            gameState.effectContext.type === 'rearrange'
+            gameState.effectContext.type === 'rearrange' ||
+            gameState.effectContext.type === 'selectCardToCopy' ||
+            gameState.effectContext.type === 'luckPlay_lineSelect'
         ));
 }
 
@@ -1201,9 +1213,26 @@ function highlightEffectTargets() {
         });
         const banner = document.getElementById('discard-banner');
         if (banner) {
-            banner.textContent = ctx.firstProtocol
-                ? `🔀 Protocolo seleccionado: ${ctx.firstProtocol} — elige el segundo para intercambiar`
-                : `🔀 Elige el primer protocolo a intercambiar`;
+            const msg = ctx.swapCards
+                ? (ctx.firstProtocol ? `🔀 Línea seleccionada: ${ctx.firstProtocol} — elige la segunda para intercambiar pilas` : `🔀 Elige la primera línea a intercambiar`)
+                : (ctx.firstProtocol ? `🔀 Protocolo seleccionado: ${ctx.firstProtocol} — elige el segundo para intercambiar` : `🔀 Elige el primer protocolo a intercambiar`);
+            banner.textContent = msg;
+            banner.classList.add('visible');
+        }
+    } else if (ctx.type === 'selectCardToCopy') {
+        // Espejo 1: resaltar cartas del rival bocarriba con efecto onPlay
+        const opponentSide = gameState.turn === 'player' ? 'ai' : 'player';
+        LINES.forEach(l => {
+            const stack = gameState.field[l][opponentSide];
+            const hasCopyable = typeof CARD_EFFECTS !== 'undefined' &&
+                stack.some(c => !c.faceDown && CARD_EFFECTS[c.card.nombre]?.onPlay);
+            if (!hasCopyable) return;
+            const stackEl = document.querySelector(`#line-${l} .${opponentSide}-stack`);
+            if (stackEl) stackEl.classList.add('targeting');
+        });
+        const banner = document.getElementById('discard-banner');
+        if (banner) {
+            banner.textContent = '🪞 Espejo 1: elige la carta del rival a copiar — haz clic en ella';
             banner.classList.add('visible');
         }
     } else if (ctx.type === 'shift') {
@@ -1452,14 +1481,35 @@ function handleFieldCardClick(line, target, cardIdx) {
             if (firstEl) firstEl.classList.remove('selected');
             if (first !== second) {
                 const owner = (ctx.target === 'opponent' || ctx.target === 'ai') ? 'ai' : 'player';
-                swapProtocols(first, second, owner);
+                if (ctx.swapCards) {
+                    const tmp = gameState.field[first][owner];
+                    gameState.field[first][owner] = gameState.field[second][owner];
+                    gameState.field[second][owner] = tmp;
+                } else {
+                    swapProtocols(first, second, owner);
+                }
                 ctx.selected.push({ first, second });
             } else {
                 ctx.firstProtocol = null;
-                updateStatus("Intercambio cancelado. Elige la primera carta.");
+                updateStatus("Intercambio cancelado. Elige la primera línea.");
                 return;
             }
         }
+    } else if (ctx.type === 'selectCardToCopy') {
+        // Espejo 1: copiar efecto de carta rival elegida
+        const cardObj = gameState.field[line][target][cardIdx];
+        if (cardObj.faceDown) return;
+        if (typeof CARD_EFFECTS === 'undefined' || !CARD_EFFECTS[cardObj.card.nombre]?.onPlay) return;
+        const copyLine = line;
+        gameState.effectContext = null;
+        clearEffectHighlights();
+        updateUI();
+        const prevLine = gameState.currentEffectLine;
+        gameState.currentEffectLine = copyLine;
+        triggerCardEffect(cardObj.card, 'onPlay', 'player');
+        gameState.currentEffectLine = prevLine;
+        if (typeof processAbilityEffect === 'function') processAbilityEffect();
+        return;
     }
 
     if (ctx.selected.length >= ctx.count) {
