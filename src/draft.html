@@ -15,21 +15,33 @@
         html, body {
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
             color: #e0e0e0;
             font-family: 'Space Mono', monospace;
             font-size: 14px;
         }
 
         body {
+            background: url('../images/background.png') no-repeat center center fixed;
+            background-size: cover;
             display: flex;
             align-items: flex-start;
             justify-content: center;
             padding: 20px;
             overflow: auto;
+            position: relative;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 14, 39, 0.75);
+            z-index: 0;
         }
 
         #draft-container {
+            position: relative;
+            z-index: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -38,12 +50,11 @@
             padding-top: 30px;
         }
 
-        h1 {
-            color: #00d4ff;
-            font-size: 2.5em;
+        .title-img {
+            height: auto;
+            max-height: 100px;
+            filter: drop-shadow(0 0 15px rgba(0, 212, 255, 0.4));
             margin-bottom: 10px;
-            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
-            font-family: 'Orbitron', monospace;
         }
 
         .subtitle {
@@ -52,22 +63,57 @@
             font-size: 0.9em;
         }
 
-        .draft-status {
-            color: #aaa;
-            margin-bottom: 30px;
-            font-size: 0.9em;
-            text-align: center;
-            background: rgba(26, 31, 58, 0.8);
-            border: 1px solid #00d4ff;
+        .draft-info-bar {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            gap: 16px;
+            margin-bottom: 20px;
+            background: rgba(26, 31, 58, 0.6);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(0, 212, 255, 0.3);
             border-radius: 8px;
-            padding: 20px;
+            padding: 12px 20px;
+            min-height: 64px;
+        }
+
+        .draft-side {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 0;
+        }
+
+        .draft-side-label {
+            font-size: 0.72em;
+            font-weight: bold;
+            letter-spacing: 1px;
+            opacity: 0.8;
+        }
+
+        .draft-side.player-side .draft-side-label { color: #00d4ff; }
+        .draft-side.ai-side .draft-side-label { color: #ff1744; text-align: right; }
+
+        .draft-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .draft-side.ai-side .draft-badges { justify-content: flex-end; }
+
+        .draft-center {
+            flex: 1;
+            text-align: center;
+            flex-shrink: 0;
         }
 
         .current-turn {
             color: #00d4ff;
             font-weight: bold;
-            font-size: 1.1em;
-            margin-bottom: 10px;
+            font-size: 0.9em;
+            line-height: 1.4;
         }
 
         .protocols-grid {
@@ -131,58 +177,12 @@
             flex: 1;
         }
 
-        .selections-row {
-            display: flex;
-            gap: 100px;
-            margin-bottom: 40px;
-            width: 100%;
-            justify-content: center;
-        }
-
-        .selection-box {
-            text-align: center;
-            min-width: 250px;
-        }
-
-        .selection-label {
-            margin-bottom: 15px;
-            font-size: 1em;
-            font-weight: bold;
-        }
-
-        .selection-label.player {
-            color: #00d4ff;
-        }
-
-        .selection-label.ai {
-            color: #ff1744;
-        }
-
-        .selected-protocols {
-            display: flex;
-            gap: 10px;
-            flex-direction: column;
-            min-height: 120px;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px dashed #555;
-            border-radius: 8px;
-            padding: 15px;
-        }
-
         .protocol-badge {
-            background: rgba(0, 212, 255, 0.2);
-            border: 1px solid #00d4ff;
-            border-radius: 6px;
-            padding: 10px 15px;
-            color: #00d4ff;
+            padding: 4px 10px;
+            border-radius: 4px;
             font-weight: bold;
-            font-size: 0.9em;
-        }
-
-        .protocol-badge.ai {
-            background: rgba(255, 23, 68, 0.2);
-            border-color: #ff1744;
-            color: #ff1744;
+            font-size: 0.8em;
+            border: 1px solid;
         }
 
         .start-button {
@@ -213,38 +213,28 @@
 <body>
 
 <div id="draft-container">
-    <h1>⚡ COMPILE ⚡</h1>
+    <img src="../images/compile.png" class="title-img" alt="COMPILE">
     <p class="subtitle">Selecciona Tus Protocolos</p>
     <p id="difficulty-badge" style="font-family:'Orbitron',monospace; font-size:0.85em; letter-spacing:3px; font-weight:700; margin-bottom:24px; padding:8px 20px; border-radius:6px; display:inline-block;"></p>
 
-    <!-- Status -->
-    <div class="draft-status">
-        <div class="current-turn" id="current-turn">Asignando primer jugador...</div>
-        <div id="draft-info">Preparando draft...</div>
+    <!-- Barra de estado y selecciones -->
+    <div class="draft-info-bar">
+        <div class="draft-side player-side">
+            <div class="draft-side-label">👤 TU SELECCIÓN</div>
+            <div class="draft-badges" id="player-selection"></div>
+        </div>
+        <div class="draft-center">
+            <div class="current-turn" id="current-turn">Asignando primer jugador...</div>
+        </div>
+        <div class="draft-side ai-side">
+            <div class="draft-side-label">🤖 IA</div>
+            <div class="draft-badges" id="ai-selection"></div>
+        </div>
     </div>
 
     <!-- Protocolos Disponibles -->
     <div class="protocols-grid" id="protocols-grid">
         <!-- Generado dinámicamente -->
-    </div>
-
-    <!-- Selecciones -->
-    <div class="selections-row">
-        <!-- JUGADOR -->
-        <div class="selection-box">
-            <div class="selection-label player">👤 TU SELECCIÓN</div>
-            <div class="selected-protocols" id="player-selection">
-                <!-- Protocolos seleccionados -->
-            </div>
-        </div>
-
-        <!-- IA -->
-        <div class="selection-box">
-            <div class="selection-label ai">🤖 IA SELECCIÓN</div>
-            <div class="selected-protocols" id="ai-selection">
-                <!-- Protocolos seleccionados -->
-            </div>
-        </div>
     </div>
 
     <!-- Botón para comenzar -->
@@ -351,50 +341,61 @@ function playerSelectProtocol(protocol) {
 
 // Fuerza base de cada protocolo (standalone)
 const PROTOCOL_STRENGTH = {
-    'Espíritu':  8, // Robar + voltear + cambiar — muy versátil
-    'Muerte':    8, // Eliminación fuerte y consistente
-    'Fuego':     6, // Efectos condicionales (requiere descarte como coste)
-    'Gravedad':  7, // Posicional + cambiar + deck cycling
-    'Vida':      7, // Robar + jugar desde mazo
-    'Luz':       6, // Robar + voltear
-    'Metal':     7, // Prevenir compilado + robar
-    'Plaga':     6, // Forzar descarte rival — disruptivo
-    'Psique':    7, // Manipulación + descarte rival
-    'Velocidad': 6, // Jugar extra + cambiar
-    'Agua':      7, // Devolver + voltear + robar
-    'Oscuridad': 7, // Robar + cambiar + manipular
-    'Apatía':    5, // Estrategia bocabajo — nicho
-    'Odio':      7, // Eliminación (con coste de descarte)
-    'Amor':      6, // Intercambio de mano
+    // Main 1
+    'Espíritu':  8, 'Muerte': 8, 'Fuego': 6, 'Gravedad': 7, 'Vida': 7,
+    'Luz': 6, 'Metal': 7, 'Plaga': 6, 'Psique': 7, 'Velocidad': 6,
+    'Agua': 7, 'Oscuridad': 7, 'Apatía': 5, 'Odio': 7, 'Amor': 6,
+    // Main 2
+    'Asimilación': 8, 'Caos': 7, 'Claridad': 6, 'Corrupción': 7, 'Valor': 7,
+    'Diversidad': 6, 'Miedo': 8, 'Hielo': 7, 'Suerte': 5, 'Espejo': 7,
+    'Paz': 6, 'Humo': 6, 'Tiempo': 7, 'Unidad': 8, 'Guerra': 8
 };
 
 // Sinergia entre pares (ambos se refuerzan mutuamente)
 const PROTOCOL_SYNERGY = {
     'Espíritu':  { 'Vida': 8, 'Psique': 7, 'Agua': 7, 'Amor': 6 },
-    'Muerte':    { 'Odio': 9, 'Fuego': 6, 'Plaga': 5 },
-    'Fuego':     { 'Plaga': 8, 'Odio': 7, 'Muerte': 6 },
-    'Gravedad':  { 'Velocidad': 8, 'Metal': 6, 'Apatía': 6 },
-    'Vida':      { 'Espíritu': 8, 'Agua': 7, 'Amor': 6, 'Luz': 6 },
-    'Luz':       { 'Metal': 7, 'Vida': 6, 'Espíritu': 5 },
-    'Metal':     { 'Luz': 7, 'Gravedad': 6 },
-    'Plaga':     { 'Psique': 8, 'Fuego': 8, 'Odio': 6 },
-    'Psique':    { 'Plaga': 8, 'Espíritu': 7, 'Oscuridad': 7 },
-    'Velocidad': { 'Gravedad': 8, 'Oscuridad': 6 },
-    'Agua':      { 'Espíritu': 7, 'Vida': 7, 'Oscuridad': 6 },
-    'Oscuridad': { 'Psique': 7, 'Velocidad': 6, 'Agua': 6, 'Apatía': 7 },
-    'Apatía':    { 'Oscuridad': 7, 'Gravedad': 6 },
-    'Odio':      { 'Muerte': 9, 'Fuego': 7, 'Plaga': 6 },
-    'Amor':      { 'Vida': 6, 'Espíritu': 6 },
+    'Muerte':    { 'Odio': 9, 'Fuego': 6, 'Plaga': 5, 'Guerra': 7 },
+    'Fuego':     { 'Plaga': 8, 'Odio': 7, 'Muerte': 6, 'Tiempo': 7 },
+    'Gravedad':  { 'Velocidad': 8, 'Metal': 6, 'Apatía': 6, 'Humo': 7 },
+    'Vida':      { 'Espíritu': 8, 'Agua': 7, 'Amor': 6, 'Luz': 6, 'Claridad': 7 },
+    'Luz':       { 'Metal': 7, 'Vida': 6, 'Espíritu': 5, 'Claridad': 8 },
+    'Metal':     { 'Luz': 7, 'Gravedad': 6, 'Espejo': 7 },
+    'Plaga':     { 'Psique': 8, 'Fuego': 8, 'Odio': 6, 'Corrupción': 7 },
+    'Psique':    { 'Plaga': 8, 'Espíritu': 7, 'Oscuridad': 7, 'Miedo': 8 },
+    'Velocidad': { 'Gravedad': 8, 'Oscuridad': 6, 'Tiempo': 7 },
+    'Agua':      { 'Espíritu': 7, 'Vida': 7, 'Oscuridad': 6, 'Asimilación': 7 },
+    'Oscuridad': { 'Psique': 7, 'Velocidad': 6, 'Agua': 6, 'Apatía': 7, 'Humo': 8 },
+    'Apatía':    { 'Oscuridad': 7, 'Gravedad': 6, 'Humo': 7 },
+    'Odio':      { 'Muerte': 9, 'Fuego': 7, 'Plaga': 6, 'Guerra': 8 },
+    'Amor':      { 'Vida': 6, 'Espíritu': 6, 'Paz': 7 },
+    // Main 2
+    'Asimilación': { 'Agua': 7, 'Miedo': 7, 'Corrupción': 6 },
+    'Caos':        { 'Suerte': 8, 'Humo': 7, 'Diversidad': 6 },
+    'Claridad':    { 'Vida': 7, 'Luz': 8, 'Tiempo': 6 },
+    'Corrupción':  { 'Plaga': 7, 'Asimilación': 6, 'Guerra': 7 },
+    'Valor':       { 'Unidad': 7, 'Espejo': 6 },
+    'Diversidad':  { 'Caos': 6, 'Unidad': 7 },
+    'Miedo':       { 'Psique': 8, 'Asimilación': 7, 'Muerte': 7 },
+    'Hielo':       { 'Metal': 6, 'Paz': 7 },
+    'Suerte':      { 'Caos': 8, 'Claridad': 6 },
+    'Espejo':      { 'Metal': 7, 'Valor': 6, 'Hielo': 6 },
+    'Paz':         { 'Amor': 7, 'Hielo': 7 },
+    'Humo':        { 'Oscuridad': 8, 'Apatía': 7, 'Gravedad': 7 },
+    'Tiempo':      { 'Fuego': 7, 'Velocidad': 7, 'Claridad': 6 },
+    'Unidad':      { 'Diversidad': 7, 'Valor': 7 },
+    'Guerra':      { 'Muerte': 7, 'Odio': 8, 'Corrupción': 7 }
 };
 
 // Qué protocolos responden bien a los picks del rival
 const PROTOCOL_COUNTER = {
-    'Metal':     ['Muerte', 'Odio'],    // Previene compilado contra decks de eliminación
-    'Vida':      ['Plaga', 'Psique'],   // Reposición de mano contra descarte
-    'Muerte':    ['Vida', 'Gravedad'],  // Elimina las cartas que esos protocolos juegan
-    'Odio':      ['Espíritu', 'Luz'],   // Elimina cartas con efectos de robar
-    'Psique':    ['Amor', 'Vida'],      // Descarte fuerza a rivales de mano
-    'Metal':     ['Velocidad', 'Fuego'],
+    'Metal':     ['Muerte', 'Odio', 'Guerra'],
+    'Vida':      ['Plaga', 'Psique', 'Corrupción'],
+    'Muerte':    ['Vida', 'Gravedad', 'Unidad'],
+    'Odio':      ['Espíritu', 'Luz', 'Valor'],
+    'Psique':    ['Amor', 'Vida', 'Paz'],
+    'Espejo':    ['Diversidad', 'Suerte'],
+    'Miedo':     ['Velocidad', 'Fuego', 'Caos'],
+    'Hielo':     ['Velocidad', 'Asimilación']
 };
 
 function getDraftSynergy(a, b) {
@@ -484,7 +485,6 @@ function updateDraftDisplay() {
         : 'Draft Completado';
 
     document.getElementById('current-turn').textContent = roundDesc;
-    document.getElementById('draft-info').textContent = `Disponibles: ${draftState.available.length} | Jugador: ${draftState.playerSelected.length}/3 | IA: ${draftState.aiSelected.length}/3`;
 
     // Actualizar grid de protocolos
     updateProtocolsGrid();
@@ -530,17 +530,18 @@ function updateSelections() {
     const playerBox = document.getElementById('player-selection');
     const aiBox = document.getElementById('ai-selection');
 
-    playerBox.innerHTML = draftState.playerSelected.length === 0 
-        ? '<span style="color: #666;">Ninguno aún</span>'
-        : draftState.playerSelected.map(p => 
-            `<div class="protocol-badge">${p}</div>`
-          ).join('');
+    const badge = (p, isAi) => {
+        const color = (PROTOCOL_DEFS[p] && PROTOCOL_DEFS[p].color) || (isAi ? '#ff1744' : '#00d4ff');
+        return `<div class="protocol-badge" style="color:${color};border-color:${color};background:${color}1a">${p}</div>`;
+    };
+
+    playerBox.innerHTML = draftState.playerSelected.length === 0
+        ? '<span style="color:#555;font-size:0.8em">—</span>'
+        : draftState.playerSelected.map(p => badge(p, false)).join('');
 
     aiBox.innerHTML = draftState.aiSelected.length === 0
-        ? '<span style="color: #666;">Ninguno aún</span>'
-        : draftState.aiSelected.map(p => 
-            `<div class="protocol-badge ai">${p}</div>`
-          ).join('');
+        ? '<span style="color:#555;font-size:0.8em">—</span>'
+        : draftState.aiSelected.map(p => badge(p, true)).join('');
 }
 
 // Cargar datos directamente e iniciar draft
@@ -549,6 +550,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const diffDepth = sessionStorage.getItem('aiDifficultyDepth') || '3';
     const diffColor = sessionStorage.getItem('aiDifficultyColor') || '234,179,8';
     const diffIcon  = sessionStorage.getItem('aiDifficultyIcon')  || '⬢';
+    const selectedProtocols = sessionStorage.getItem('selectedProtocols');
+
     const badge = document.getElementById('difficulty-badge');
     if (badge) {
         badge.textContent = `${diffIcon} NIVEL ${diffDepth} — ${diffName}`;
@@ -558,10 +561,19 @@ document.addEventListener('DOMContentLoaded', () => {
         badge.style.textShadow = `0 0 12px rgba(${diffColor}, 0.5)`;
     }
 
-    console.log('🎮 Iniciando con CARDS_DATA integrado');
+    console.log('🎮 Iniciando con CARDS_DATA integrado y selección:', selectedProtocols);
     try {
-        PROTOCOL_DEFS = CARDS_DATA._protocolMeta || {};
-        ALL_PROTOCOLS = Object.keys(PROTOCOL_DEFS);
+        const meta = CARDS_DATA._protocolMeta || {};
+        
+        // Filtrar protocolos según la selección
+        ALL_PROTOCOLS = Object.keys(meta).filter(key => {
+            const proto = meta[key];
+            if (selectedProtocols === '1') return proto.edicion === 1;
+            if (selectedProtocols === '2') return proto.edicion === 2;
+            return true; // 'all' o por defecto
+        });
+
+        PROTOCOL_DEFS = meta;
         draftState.available = [...ALL_PROTOCOLS];
         console.log('✅ Protocolos cargados:', ALL_PROTOCOLS.length);
         initDraft();
