@@ -6,15 +6,11 @@
     <title>COMPILE - Draft de Protocolos</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         html, body {
-            width: 100%;
-            height: 100%;
+            width: 100%; height: 100%;
+            overflow: hidden;
             color: #e0e0e0;
             font-family: 'Space Mono', monospace;
             font-size: 14px;
@@ -23,12 +19,6 @@
         body {
             background: url('../images/background.png') no-repeat center center fixed;
             background-size: cover;
-            display: flex;
-            align-items: flex-start;
-            justify-content: center;
-            padding: 20px;
-            overflow: auto;
-            position: relative;
         }
 
         body::before {
@@ -39,117 +29,85 @@
             z-index: 0;
         }
 
-        #draft-container {
-            position: relative;
+        /* Viewport fijo — recorta cualquier desbordamiento */
+        #draft-viewport {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
             z-index: 1;
+        }
+
+        /* Contenedor que escala — transform-origin arriba-centro */
+        #draft-container {
+            transform-origin: top center;
+            width: 100%;
+            max-width: 1400px;
+            padding: 16px 24px 16px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: 100%;
-            max-width: 1400px;
-            padding-top: 30px;
         }
 
+        /* ── Cabecera ─────────────────────────────────── */
         .title-img {
-            height: auto;
-            max-height: 100px;
-            filter: drop-shadow(0 0 15px rgba(0, 212, 255, 0.4));
-            margin-bottom: 10px;
+            max-height: 64px;
+            filter: drop-shadow(0 0 12px rgba(0, 212, 255, 0.4));
+            margin-bottom: 4px;
         }
 
         .subtitle {
-            color: #888;
-            margin-bottom: 40px;
-            font-size: 0.9em;
-        }
-
-        .draft-info-bar {
-            display: flex;
-            align-items: center;
-            width: 100%;
-            gap: 16px;
-            margin-bottom: 20px;
-            background: rgba(26, 31, 58, 0.6);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(0, 212, 255, 0.3);
-            border-radius: 8px;
-            padding: 12px 20px;
-            min-height: 64px;
-        }
-
-        .draft-side {
-            flex: 2;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            min-width: 0;
-        }
-
-        .draft-side-label {
-            font-size: 0.72em;
-            font-weight: bold;
-            letter-spacing: 1px;
-            opacity: 0.8;
-        }
-
-        .draft-side.player-side .draft-side-label { color: #00d4ff; }
-        .draft-side.ai-side .draft-side-label { color: #ff1744; text-align: right; }
-
-        .draft-badges {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-
-        .draft-side.ai-side .draft-badges { justify-content: flex-end; }
-
-        .draft-center {
-            flex: 1;
-            text-align: center;
-            flex-shrink: 0;
+            color: #666;
+            font-size: 0.8em;
+            margin-bottom: 14px;
         }
 
         .current-turn {
-            color: #00d4ff;
-            font-weight: bold;
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
             font-size: 0.9em;
-            line-height: 1.4;
+            letter-spacing: 1px;
+            color: #00d4ff;
+            margin-bottom: 14px;
         }
 
+        /* ── Grid de protocolos ───────────────────────── */
         .protocols-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            grid-auto-rows: 110px;
-            gap: 15px;
-            margin-bottom: 40px;
+            grid-auto-rows: 100px;
+            gap: 10px;
             width: 100%;
+            margin-bottom: 16px;
         }
 
         .protocol-card {
-            width: 100%;
-            height: 100%;
+            width: 100%; height: 100%;
             border: 2px solid;
             border-radius: 8px;
-            padding: 12px 15px;
-            background: linear-gradient(135deg, rgba(26, 31, 58, 0.9), rgba(10, 14, 39, 0.95));
+            padding: 10px 12px;
+            background: linear-gradient(135deg, rgba(26,31,58,0.9), rgba(10,14,39,0.95));
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             text-align: center;
             color: #e0e0e0;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.25s;
             user-select: none;
             overflow: hidden;
         }
 
         .protocol-card:hover:not(.unavailable) {
-            transform: translateY(-8px);
-            box-shadow: 0 8px 24px rgba(0, 212, 255, 0.4);
+            transform: translateY(-6px);
+            box-shadow: 0 8px 24px rgba(0, 212, 255, 0.35);
         }
 
         .protocol-card.unavailable {
-            opacity: 0.3;
+            opacity: 0.25;
             cursor: not-allowed;
         }
 
@@ -158,87 +116,151 @@
             box-shadow: none;
         }
 
-        .protocol-card.selected {
-            box-shadow: 0 0 20px rgba(0, 255, 65, 0.6);
-            border-color: #00ff41;
+        .protocol-card.selected-player {
+            box-shadow: 0 0 16px rgba(0, 212, 255, 0.5);
+        }
+
+        .protocol-card.selected-ai {
+            box-shadow: 0 0 16px rgba(255, 23, 68, 0.5);
         }
 
         .protocol-name {
-            font-size: 1.5em;
+            font-size: 1.2em;
             font-weight: bold;
-            margin-bottom: 8px;
             font-family: 'Orbitron', monospace;
         }
 
         .protocol-abilities {
-            font-size: 0.9em;
-            color: #aaa;
-            line-height: 1.4;
-            flex: 1;
+            font-size: 0.78em;
+            color: #999;
+            line-height: 1.35;
         }
+
+        /* ── Fila de selecciones (enfrentamiento) ─────── */
+        .selections-row {
+            display: flex;
+            align-items: stretch;
+            width: 100%;
+            gap: 0;
+            margin-bottom: 14px;
+            background: rgba(26, 31, 58, 0.6);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .selection-box {
+            flex: 1;
+            padding: 12px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .selection-box.ai-box {
+            align-items: flex-end;
+            border-left: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .selection-label {
+            font-size: 0.75em;
+            font-weight: bold;
+            letter-spacing: 1px;
+            opacity: 0.8;
+        }
+
+        .selection-label.player { color: #00d4ff; }
+        .selection-label.ai     { color: #ff1744; }
+
+        .selection-slots {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .ai-box .selection-slots { justify-content: flex-end; }
 
         .protocol-badge {
-            padding: 4px 10px;
+            padding: 5px 14px;
             border-radius: 4px;
             font-weight: bold;
-            font-size: 0.8em;
+            font-size: 0.82em;
             border: 1px solid;
+            font-family: 'Orbitron', monospace;
+            white-space: nowrap;
         }
 
+        .slot-empty {
+            width: 80px;
+            height: 30px;
+            border: 1px dashed rgba(255,255,255,0.12);
+            border-radius: 4px;
+        }
+
+        .vs-divider {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 20px;
+            font-family: 'Orbitron', monospace;
+            font-weight: 900;
+            font-size: 1.3em;
+            color: #333;
+            border-left: 1px solid rgba(255,255,255,0.06);
+            border-right: 1px solid rgba(255,255,255,0.06);
+        }
+
+        /* ── Botón inicio ─────────────────────────────── */
         .start-button {
             background: linear-gradient(135deg, #00d4ff, #0099cc);
             color: #0a0e27;
             border: none;
-            padding: 16px 32px;
+            padding: 13px 32px;
             border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 1.1em;
+            font-size: 1em;
             font-family: 'Space Mono', monospace;
             visibility: hidden;
+            transition: box-shadow 0.2s, transform 0.15s;
         }
 
-        .start-button.ready {
-            visibility: visible;
-        }
+        .start-button.ready { visibility: visible; }
 
         .start-button:hover {
             box-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
-            transform: scale(1.05);
+            transform: scale(1.04);
         }
-
-
     </style>
 </head>
 <body>
 
+<div id="draft-viewport">
 <div id="draft-container">
+
     <img src="../images/compile.png" class="title-img" alt="COMPILE">
     <p class="subtitle">Selecciona Tus Protocolos</p>
+    <div class="current-turn" id="current-turn">Asignando primer jugador...</div>
 
-    <!-- Barra de estado y selecciones -->
-    <div class="draft-info-bar">
-        <div class="draft-side player-side">
-            <div class="draft-side-label">👤 TU SELECCIÓN</div>
-            <div class="draft-badges" id="player-selection"></div>
+    <div class="protocols-grid" id="protocols-grid"></div>
+
+    <div class="selections-row">
+        <div class="selection-box player-box">
+            <div class="selection-label player">👤 TU SELECCIÓN</div>
+            <div class="selection-slots" id="player-selection"></div>
         </div>
-        <div class="draft-center">
-            <div class="current-turn" id="current-turn">Asignando primer jugador...</div>
-        </div>
-        <div class="draft-side ai-side">
-            <div class="draft-side-label">🤖 IA</div>
-            <div class="draft-badges" id="ai-selection"></div>
+        <div class="vs-divider">VS</div>
+        <div class="selection-box ai-box">
+            <div class="selection-label ai">🤖 IA</div>
+            <div class="selection-slots" id="ai-selection"></div>
         </div>
     </div>
 
-    <!-- Protocolos Disponibles -->
-    <div class="protocols-grid" id="protocols-grid">
-        <!-- Generado dinámicamente -->
-    </div>
-
-    <!-- Botón para comenzar -->
     <button class="start-button" id="start-game-btn">🎮 COMENZAR JUEGO</button>
 
+</div>
 </div>
 
 <!-- Scripts -->
@@ -258,76 +280,63 @@ let draftState = {
     playerSelected: [],
     aiSelected: [],
     round: 0,
-    firstPlayer: null, // 'player' o 'ai'
+    firstPlayer: null,
     isComplete: false,
     isPlayerTurn: false,
-    selectionsNeeded: 0 // Cuántas selecciones falta en este turno
+    selectionsNeeded: 0
 };
 
 const DRAFT_ROUNDS = [
-    { player: 'first', selections: 1 },
+    { player: 'first',  selections: 1 },
     { player: 'second', selections: 2 },
-    { player: 'first', selections: 2 },
+    { player: 'first',  selections: 2 },
     { player: 'second', selections: 1 }
 ];
 
+// ── Escalado responsive ────────────────────────────────────────────
+function applyDraftScale() {
+    const container = document.getElementById('draft-container');
+    container.style.transform = 'none';
+    const contentH = container.offsetHeight;
+    const viewH    = window.innerHeight;
+    if (contentH > viewH) {
+        container.style.transform = `scale(${(viewH / contentH).toFixed(4)})`;
+    }
+}
+
+// ── Lógica de draft ────────────────────────────────────────────────
 function initDraft() {
-    console.log('🎮 Inicializando Draft System (Mecánica 1-2-2-1)');
-    
-    // 1. Asignar al azar quién es primer jugador
     draftState.firstPlayer = Math.random() > 0.5 ? 'player' : 'ai';
-    
-    console.log(`🎲 Primer jugador: ${draftState.firstPlayer === 'player' ? '👤 JUGADOR' : '🤖 IA'}`);
-    
-    // 2. Mostrar estado inicial
     updateDraftDisplay();
-    
-    // 3. Comenzar ronda 0 (primer jugador elige 1)
     startRound();
 }
 
 function startRound() {
     const roundInfo = DRAFT_ROUNDS[draftState.round];
-    
-    if (!roundInfo) {
-        completeDraft();
-        return;
-    }
+    if (!roundInfo) { completeDraft(); return; }
 
-    const isFirstPlayer = roundInfo.player === 'first';
-    const isPlayerTurn = (draftState.firstPlayer === 'player') === isFirstPlayer;
+    const isFirstPlayer  = roundInfo.player === 'first';
+    const isPlayerTurn   = (draftState.firstPlayer === 'player') === isFirstPlayer;
     const selectionsNeeded = roundInfo.selections;
 
-    draftState.isPlayerTurn = isPlayerTurn;
+    draftState.isPlayerTurn   = isPlayerTurn;
     draftState.selectionsNeeded = selectionsNeeded;
-
-    console.log(`📍 Ronda ${draftState.round + 1}/4: ${isPlayerTurn ? '👤 JUGADOR' : '🤖 IA'} elige ${selectionsNeeded} protocolo(s)`);
 
     updateDraftDisplay();
 
     if (!isPlayerTurn) {
-        // IA elige automáticamente
         setTimeout(() => aiSelectProtocols(selectionsNeeded), 800);
     }
 }
 
 function playerSelectProtocol(protocol) {
-    if (!draftState.isPlayerTurn || draftState.isComplete) {
-        console.warn('❌ No es turno del jugador');
-        return;
-    }
+    if (!draftState.isPlayerTurn || draftState.isComplete) return;
+    if (!draftState.available.includes(protocol)) return;
 
-    if (!draftState.available.includes(protocol)) {
-        console.warn('❌ Protocolo no disponible');
-        return;
-    }
-
-    // Agregar selección
     draftState.playerSelected.push(protocol);
     draftState.available.splice(draftState.available.indexOf(protocol), 1);
     draftState.selectionsNeeded--;
 
-    console.log(`✅ Jugador seleccionó: ${protocol} (${draftState.selectionsNeeded} falta(n))`);
     updateDraftDisplay();
 
     if (draftState.selectionsNeeded === 0) {
@@ -337,37 +346,31 @@ function playerSelectProtocol(protocol) {
 }
 
 // ── Tablas de evaluación estratégica del draft ─────────────────────
-
-// Fuerza base de cada protocolo (standalone)
 const PROTOCOL_STRENGTH = {
-    // Main 1
-    'Espíritu':  8, 'Muerte': 8, 'Fuego': 6, 'Gravedad': 7, 'Vida': 7,
+    'Espíritu': 8, 'Muerte': 8, 'Fuego': 6, 'Gravedad': 7, 'Vida': 7,
     'Luz': 6, 'Metal': 7, 'Plaga': 6, 'Psique': 7, 'Velocidad': 6,
     'Agua': 7, 'Oscuridad': 7, 'Apatía': 5, 'Odio': 7, 'Amor': 6,
-    // Main 2
     'Asimilación': 8, 'Caos': 7, 'Claridad': 6, 'Corrupción': 7, 'Valor': 7,
     'Diversidad': 6, 'Miedo': 8, 'Hielo': 7, 'Suerte': 5, 'Espejo': 7,
     'Paz': 6, 'Humo': 6, 'Tiempo': 7, 'Unidad': 8, 'Guerra': 8
 };
 
-// Sinergia entre pares (ambos se refuerzan mutuamente)
 const PROTOCOL_SYNERGY = {
-    'Espíritu':  { 'Vida': 8, 'Psique': 7, 'Agua': 7, 'Amor': 6 },
-    'Muerte':    { 'Odio': 9, 'Fuego': 6, 'Plaga': 5, 'Guerra': 7 },
-    'Fuego':     { 'Plaga': 8, 'Odio': 7, 'Muerte': 6, 'Tiempo': 7 },
-    'Gravedad':  { 'Velocidad': 8, 'Metal': 6, 'Apatía': 6, 'Humo': 7 },
-    'Vida':      { 'Espíritu': 8, 'Agua': 7, 'Amor': 6, 'Luz': 6, 'Claridad': 7 },
-    'Luz':       { 'Metal': 7, 'Vida': 6, 'Espíritu': 5, 'Claridad': 8 },
-    'Metal':     { 'Luz': 7, 'Gravedad': 6, 'Espejo': 7 },
-    'Plaga':     { 'Psique': 8, 'Fuego': 8, 'Odio': 6, 'Corrupción': 7 },
-    'Psique':    { 'Plaga': 8, 'Espíritu': 7, 'Oscuridad': 7, 'Miedo': 8 },
-    'Velocidad': { 'Gravedad': 8, 'Oscuridad': 6, 'Tiempo': 7 },
-    'Agua':      { 'Espíritu': 7, 'Vida': 7, 'Oscuridad': 6, 'Asimilación': 7 },
-    'Oscuridad': { 'Psique': 7, 'Velocidad': 6, 'Agua': 6, 'Apatía': 7, 'Humo': 8 },
-    'Apatía':    { 'Oscuridad': 7, 'Gravedad': 6, 'Humo': 7 },
-    'Odio':      { 'Muerte': 9, 'Fuego': 7, 'Plaga': 6, 'Guerra': 8 },
-    'Amor':      { 'Vida': 6, 'Espíritu': 6, 'Paz': 7 },
-    // Main 2
+    'Espíritu':    { 'Vida': 8, 'Psique': 7, 'Agua': 7, 'Amor': 6 },
+    'Muerte':      { 'Odio': 9, 'Fuego': 6, 'Plaga': 5, 'Guerra': 7 },
+    'Fuego':       { 'Plaga': 8, 'Odio': 7, 'Muerte': 6, 'Tiempo': 7 },
+    'Gravedad':    { 'Velocidad': 8, 'Metal': 6, 'Apatía': 6, 'Humo': 7 },
+    'Vida':        { 'Espíritu': 8, 'Agua': 7, 'Amor': 6, 'Luz': 6, 'Claridad': 7 },
+    'Luz':         { 'Metal': 7, 'Vida': 6, 'Espíritu': 5, 'Claridad': 8 },
+    'Metal':       { 'Luz': 7, 'Gravedad': 6, 'Espejo': 7 },
+    'Plaga':       { 'Psique': 8, 'Fuego': 8, 'Odio': 6, 'Corrupción': 7 },
+    'Psique':      { 'Plaga': 8, 'Espíritu': 7, 'Oscuridad': 7, 'Miedo': 8 },
+    'Velocidad':   { 'Gravedad': 8, 'Oscuridad': 6, 'Tiempo': 7 },
+    'Agua':        { 'Espíritu': 7, 'Vida': 7, 'Oscuridad': 6, 'Asimilación': 7 },
+    'Oscuridad':   { 'Psique': 7, 'Velocidad': 6, 'Agua': 6, 'Apatía': 7, 'Humo': 8 },
+    'Apatía':      { 'Oscuridad': 7, 'Gravedad': 6, 'Humo': 7 },
+    'Odio':        { 'Muerte': 9, 'Fuego': 7, 'Plaga': 6, 'Guerra': 8 },
+    'Amor':        { 'Vida': 6, 'Espíritu': 6, 'Paz': 7 },
     'Asimilación': { 'Agua': 7, 'Miedo': 7, 'Corrupción': 6 },
     'Caos':        { 'Suerte': 8, 'Humo': 7, 'Diversidad': 6 },
     'Claridad':    { 'Vida': 7, 'Luz': 8, 'Tiempo': 6 },
@@ -385,16 +388,15 @@ const PROTOCOL_SYNERGY = {
     'Guerra':      { 'Muerte': 7, 'Odio': 8, 'Corrupción': 7 }
 };
 
-// Qué protocolos responden bien a los picks del rival
 const PROTOCOL_COUNTER = {
-    'Metal':     ['Muerte', 'Odio', 'Guerra'],
-    'Vida':      ['Plaga', 'Psique', 'Corrupción'],
-    'Muerte':    ['Vida', 'Gravedad', 'Unidad'],
-    'Odio':      ['Espíritu', 'Luz', 'Valor'],
-    'Psique':    ['Amor', 'Vida', 'Paz'],
-    'Espejo':    ['Diversidad', 'Suerte'],
-    'Miedo':     ['Velocidad', 'Fuego', 'Caos'],
-    'Hielo':     ['Velocidad', 'Asimilación']
+    'Metal':   ['Muerte', 'Odio', 'Guerra'],
+    'Vida':    ['Plaga', 'Psique', 'Corrupción'],
+    'Muerte':  ['Vida', 'Gravedad', 'Unidad'],
+    'Odio':    ['Espíritu', 'Luz', 'Valor'],
+    'Psique':  ['Amor', 'Vida', 'Paz'],
+    'Espejo':  ['Diversidad', 'Suerte'],
+    'Miedo':   ['Velocidad', 'Fuego', 'Caos'],
+    'Hielo':   ['Velocidad', 'Asimilación']
 };
 
 function getDraftSynergy(a, b) {
@@ -404,16 +406,10 @@ function getDraftSynergy(a, b) {
 
 function scoreProtocolForDraft(protocol, aiAlready, playerPicked) {
     let score = PROTOCOL_STRENGTH[protocol] || 5;
-
-    // Sinergia con los ya elegidos por la IA (peso alto)
     aiAlready.forEach(p => { score += getDraftSynergy(protocol, p) * 1.8; });
-
-    // Bonus de contrapick respecto a lo que el jugador ha elegido
     playerPicked.forEach(p => {
-        const counters = PROTOCOL_COUNTER[protocol] || [];
-        if (counters.includes(p)) score += 3;
+        if ((PROTOCOL_COUNTER[protocol] || []).includes(p)) score += 3;
     });
-
     return score;
 }
 
@@ -425,21 +421,18 @@ function aiBestPick(available, aiAlready, playerPicked) {
 }
 
 function aiBestPair(available, aiAlready, playerPicked) {
-    // Evalúa todas las combinaciones posibles de 2 y elige la mejor pareja
     let bestPair = null, bestScore = -Infinity;
     for (let i = 0; i < available.length; i++) {
         for (let j = i + 1; j < available.length; j++) {
             const a = available[i], b = available[j];
             const score = scoreProtocolForDraft(a, aiAlready, playerPicked) +
                           scoreProtocolForDraft(b, [...aiAlready, a], playerPicked) +
-                          getDraftSynergy(a, b) * 2; // bonus por sinergia interna del par
+                          getDraftSynergy(a, b) * 2;
             if (score > bestScore) { bestScore = score; bestPair = [a, b]; }
         }
     }
     return bestPair || available.slice(0, 2);
 }
-
-// ───────────────────────────────────────────────────────────────────
 
 function aiSelectProtocols(count) {
     const picks = count === 2
@@ -449,7 +442,6 @@ function aiSelectProtocols(count) {
     picks.forEach(protocol => {
         draftState.aiSelected.push(protocol);
         draftState.available.splice(draftState.available.indexOf(protocol), 1);
-        console.log(`🤖 IA seleccionó: ${protocol}`);
     });
 
     draftState.round++;
@@ -464,31 +456,21 @@ function aiSelectProtocols(count) {
 
 function completeDraft() {
     draftState.isComplete = true;
-    console.log('✅ Draft completado');
-    console.log(`👤 Jugador: ${draftState.playerSelected.join(', ')}`);
-    console.log(`🤖 IA: ${draftState.aiSelected.join(', ')}`);
-
     updateDraftDisplay();
     document.getElementById('start-game-btn').classList.add('ready');
 }
 
+// ── Actualización de UI ────────────────────────────────────────────
 function updateDraftDisplay() {
-    // Estado actual
-    const roundInfo = DRAFT_ROUNDS[draftState.round] || DRAFT_ROUNDS[DRAFT_ROUNDS.length - 1];
+    const roundInfo    = DRAFT_ROUNDS[draftState.round] || DRAFT_ROUNDS[DRAFT_ROUNDS.length - 1];
     const isFirstPlayer = roundInfo && roundInfo.player === 'first';
     const currentPlayer = (draftState.firstPlayer === 'player') === isFirstPlayer ? '👤 JUGADOR' : '🤖 IA';
-
-    const roundNum = draftState.round + 1;
-    const roundDesc = DRAFT_ROUNDS[draftState.round] 
-        ? `Ronda ${roundNum}/4: ${currentPlayer} elige ${DRAFT_ROUNDS[draftState.round].selections} protocolo(s)`
+    const roundDesc = DRAFT_ROUNDS[draftState.round]
+        ? `Ronda ${draftState.round + 1}/4 — ${currentPlayer} elige ${DRAFT_ROUNDS[draftState.round].selections}`
         : 'Draft Completado';
 
     document.getElementById('current-turn').textContent = roundDesc;
-
-    // Actualizar grid de protocolos
     updateProtocolsGrid();
-
-    // Actualizar selecciones
     updateSelections();
 }
 
@@ -497,26 +479,25 @@ function updateProtocolsGrid() {
     grid.innerHTML = '';
 
     ALL_PROTOCOLS.forEach(protocol => {
-        const isAvailable = draftState.available.includes(protocol);
+        const isAvailable      = draftState.available.includes(protocol);
         const isPlayerSelected = draftState.playerSelected.includes(protocol);
-        const isAiSelected = draftState.aiSelected.includes(protocol);
+        const isAiSelected     = draftState.aiSelected.includes(protocol);
 
         const card = document.createElement('div');
         card.className = 'protocol-card';
-        if (!isAvailable) card.classList.add('unavailable');
-        if (isPlayerSelected || isAiSelected) card.classList.add('selected');
+        if (!isAvailable)      card.classList.add('unavailable');
+        if (isPlayerSelected)  card.classList.add('selected-player');
+        if (isAiSelected)      card.classList.add('selected-ai');
 
         const color = PROTOCOL_DEFS[protocol].color;
         card.style.borderColor = color;
-
         card.innerHTML = `
-            <div class="protocol-name" style="color: ${color};">${protocol}</div>
+            <div class="protocol-name" style="color:${color}">${protocol}</div>
             <div class="protocol-abilities">${PROTOCOL_DEFS[protocol].abilities}</div>
         `;
 
         if (isAvailable && draftState.isPlayerTurn && !draftState.isComplete) {
             card.onclick = () => playerSelectProtocol(protocol);
-            card.style.cursor = 'pointer';
         } else {
             card.style.cursor = 'default';
         }
@@ -527,54 +508,55 @@ function updateProtocolsGrid() {
 
 function updateSelections() {
     const playerBox = document.getElementById('player-selection');
-    const aiBox = document.getElementById('ai-selection');
+    const aiBox     = document.getElementById('ai-selection');
 
-    const badge = (p, isAi) => {
-        const color = (PROTOCOL_DEFS[p] && PROTOCOL_DEFS[p].color) || (isAi ? '#ff1744' : '#00d4ff');
-        return `<div class="protocol-badge" style="color:${color};border-color:${color};background:${color}1a">${p}</div>`;
+    const renderSlots = (selected, isAi) => {
+        const slots = [];
+        for (let i = 0; i < 3; i++) {
+            if (selected[i]) {
+                const p     = selected[i];
+                const color = (PROTOCOL_DEFS[p] && PROTOCOL_DEFS[p].color) || (isAi ? '#ff1744' : '#00d4ff');
+                slots.push(`<div class="protocol-badge" style="color:${color};border-color:${color};background:${color}18">${p}</div>`);
+            } else {
+                slots.push(`<div class="slot-empty"></div>`);
+            }
+        }
+        return slots.join('');
     };
 
-    playerBox.innerHTML = draftState.playerSelected.length === 0
-        ? '<span style="color:#555;font-size:0.8em">—</span>'
-        : draftState.playerSelected.map(p => badge(p, false)).join('');
-
-    aiBox.innerHTML = draftState.aiSelected.length === 0
-        ? '<span style="color:#555;font-size:0.8em">—</span>'
-        : draftState.aiSelected.map(p => badge(p, true)).join('');
+    playerBox.innerHTML = renderSlots(draftState.playerSelected, false);
+    aiBox.innerHTML     = renderSlots(draftState.aiSelected, true);
 }
 
-// Cargar datos directamente e iniciar draft
+// ── Inicialización ─────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     const selectedProtocols = sessionStorage.getItem('selectedProtocols');
 
-    console.log('🎮 Iniciando con CARDS_DATA integrado y selección:', selectedProtocols);
     try {
         const meta = CARDS_DATA._protocolMeta || {};
-        
-        // Filtrar protocolos según la selección
         ALL_PROTOCOLS = Object.keys(meta).filter(key => {
             const proto = meta[key];
             if (selectedProtocols === '1') return proto.edicion === 1;
             if (selectedProtocols === '2') return proto.edicion === 2;
-            return true; // 'all' o por defecto
+            return true;
         });
-
         PROTOCOL_DEFS = meta;
         draftState.available = [...ALL_PROTOCOLS];
-        console.log('✅ Protocolos cargados:', ALL_PROTOCOLS.length);
         initDraft();
+        // Escalar tras el primer render
+        requestAnimationFrame(() => requestAnimationFrame(applyDraftScale));
     } catch(e) {
         console.error('❌ Error iniciando draft:', e);
         document.getElementById('current-turn').textContent = '❌ Error: ' + e.message;
     }
 });
 
+window.addEventListener('resize', applyDraftScale);
+
 document.getElementById('start-game-btn').addEventListener('click', function() {
     if (draftState.isComplete) {
-        // Dificultad ya guardada en sessionStorage desde index.html
-        // Guardar protocolos para que logic.js lo recoja
         sessionStorage.setItem('playerProtocols', JSON.stringify(draftState.playerSelected));
-        sessionStorage.setItem('aiProtocols', JSON.stringify(draftState.aiSelected));
+        sessionStorage.setItem('aiProtocols',     JSON.stringify(draftState.aiSelected));
         window.location.href = 'game.html';
     }
 });
