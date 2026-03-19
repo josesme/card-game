@@ -489,11 +489,18 @@ describe('Acciones directas Main 2', () => {
     expect(GS.field['beta'].player[0].faceDown).toBe(true);
   });
 
-  test('flipOpponentSameLine (player): llama a startEffect flip opponent', () => {
-    GS.field['beta'].player = [{ card: makeCard('PC', 2), faceDown: false }];
+  test('flipOpponentSameLine (player): llama a startEffect flip ai (resuelto, no literal)', () => {
+    GS.field['beta'].ai = [{ card: makeCard('AC', 3), faceDown: false }];
     GS.currentEffectLine = 'beta';
     runAction({ action: 'flipOpponentSameLine' }, 'player');
-    expect(global.startEffect).toHaveBeenCalledWith('flip', 'opponent', 1, expect.anything());
+    expect(global.startEffect).toHaveBeenCalledWith('flip', 'ai', 1, expect.anything());
+  });
+
+  test('flipOpponentSameLine (player): sin cartas rival en línea → omite efecto', () => {
+    GS.field['beta'].ai = [];
+    GS.currentEffectLine = 'beta';
+    runAction({ action: 'flipOpponentSameLine' }, 'player');
+    expect(global.startEffect).not.toHaveBeenCalled();
   });
 
   test('discardOwnDeck: mueve todas las cartas del mazo al descarte', () => {

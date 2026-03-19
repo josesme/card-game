@@ -3698,12 +3698,13 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     case 'flipOpponentSameLine': {
       // Espejo 3: voltea 1 carta del oponente en esta misma línea
       const line = gameState.currentEffectLine;
-      if (!line) { processAbilityEffect(); break; }
+      if (!line || gameState.field[line][opponent].length === 0) { processAbilityEffect(); break; }
       if (targetPlayer === 'player') {
-        startEffect('flip', 'opponent', 1, { forceLine: line });
+        startEffect('flip', opponent, 1, { forceLine: line });
       } else {
         const st = gameState.field[line][opponent];
-        if (st.length > 0) { st[st.length - 1].faceDown = !st[st.length - 1].faceDown; updateUI(); }
+        st[st.length - 1].faceDown = !st[st.length - 1].faceDown;
+        updateUI();
         processAbilityEffect();
       }
       break;
