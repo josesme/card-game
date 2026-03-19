@@ -19,7 +19,8 @@ const CARDS_DATA = {
     "Amor":       { "edicion": 1, "color": "#f43f5e", "abilities": "ROBAR. DAR. INTERCAMBIAR" },
     // ── Main 2 ──────────────────────────────────────────────────────────────
     "Assimilation": { "edicion": 2, "color": "#4338ca", "abilities": "DEVOLVER. ROBAR. BOCABAJO" },
-    "Chaos":        { "edicion": 2, "color": "#a855f7", "abilities": "VOLTEAR. REORGANIZAR. CAMBIAR" }
+    "Chaos":        { "edicion": 2, "color": "#a855f7", "abilities": "VOLTEAR. REORGANIZAR. CAMBIAR" },
+    "Clarity":      { "edicion": 2, "color": "#e879f9", "abilities": "REVELAR. ROBAR. BARAJAR" }
   },
   "Espíritu": [
     {"valor": 0, "nombre": "Espíritu 0", "fase": "Action", "h_inicio": "", "h_accion": "Actualiza. Roba 1 carta.", "h_final": "Sáltate tu Fase de Comprobar Caché."},
@@ -149,6 +150,14 @@ const CARDS_DATA = {
     {"valor": 3, "nombre": "Chaos 3", "fase": "Action", "h_inicio": "", "h_accion": "", "h_final": "Esta carta puede jugarse sin coincidir con los Protocolos."},
     {"valor": 4, "nombre": "Chaos 4", "fase": "End",    "h_inicio": "", "h_accion": "", "h_final": "Final: Descarta tu mano. Roba tantas cartas como hayas descartado."},
     {"valor": 5, "nombre": "Chaos 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""}
+  ],
+  "Clarity": [
+    {"valor": 0, "nombre": "Clarity 0", "fase": "Start",  "h_inicio": "El valor total en esta línea se incrementa en 1 por cada carta en tu mano.", "h_accion": "", "h_final": ""},
+    {"valor": 1, "nombre": "Clarity 1", "fase": "Start",  "h_inicio": "Inicial: Revela la carta superior de tu mazo. Puedes descartarla.", "h_accion": "Tu oponente revela su mano.", "h_final": "Si esta carta va a ser cubierta: Primero, roba 3 cartas."},
+    {"valor": 2, "nombre": "Clarity 2", "fase": "Action", "h_inicio": "", "h_accion": "Revela tu mazo. Roba 1 carta con Valor 1 revelada así. Baraja tu mazo. Juega 1 carta con Valor 1.", "h_final": ""},
+    {"valor": 3, "nombre": "Clarity 3", "fase": "Action", "h_inicio": "", "h_accion": "Revela tu mazo. Roba 1 carta con Valor 5 revelada así. Baraja tu mazo.", "h_final": ""},
+    {"valor": 4, "nombre": "Clarity 4", "fase": "Action", "h_inicio": "", "h_accion": "Puedes barajar tu descarte en tu mazo.", "h_final": ""},
+    {"valor": 5, "nombre": "Clarity 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""}
   ],
   "Amor": [
     {"valor": 1, "nombre": "Amor 1", "fase": "End",    "h_inicio": "", "h_accion": "Roba la carta superior del mazo de tu oponente.", "h_final": "Final: Puedes dar 1 carta de tu mano a tu oponente. Si lo haces, roba 2 cartas."},
