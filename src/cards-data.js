@@ -21,7 +21,8 @@ const CARDS_DATA = {
     "Assimilation": { "edicion": 2, "color": "#4338ca", "abilities": "DEVOLVER. ROBAR. BOCABAJO" },
     "Chaos":        { "edicion": 2, "color": "#a855f7", "abilities": "VOLTEAR. REORGANIZAR. CAMBIAR" },
     "Clarity":      { "edicion": 2, "color": "#e879f9", "abilities": "REVELAR. ROBAR. BARAJAR" },
-    "Corruption":   { "edicion": 2, "color": "#16a34a", "abilities": "VOLTEAR. DEVOLVER. DESCARTAR" }
+    "Corruption":   { "edicion": 2, "color": "#16a34a", "abilities": "VOLTEAR. DEVOLVER. DESCARTAR" },
+    "Courage":      { "edicion": 2, "color": "#f97316", "abilities": "ELIMINAR. ROBAR. CAMBIAR" }
   },
   "Espíritu": [
     {"valor": 0, "nombre": "Espíritu 0", "fase": "Action", "h_inicio": "", "h_accion": "Actualiza. Roba 1 carta.", "h_final": "Sáltate tu Fase de Comprobar Caché."},
@@ -167,6 +168,14 @@ const CARDS_DATA = {
     {"valor": 3, "nombre": "Corruption 3", "fase": "Action", "h_inicio": "", "h_accion": "Puedes voltear 1 carta cubierta bocarriba.", "h_final": ""},
     {"valor": 5, "nombre": "Corruption 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""},
     {"valor": 6, "nombre": "Corruption 6", "fase": "End",    "h_inicio": "Final: Descarta 1 carta o elimina esta carta.", "h_accion": "", "h_final": ""}
+  ],
+  "Courage": [
+    {"valor": 0, "nombre": "Courage 0", "fase": "Start",  "h_inicio": "Inicial: Si no tienes cartas en mano, roba 1 carta.", "h_accion": "Roba 1 carta.", "h_final": "Final: Puedes descartar 1 carta. Si lo haces, tu oponente descarta 1 carta."},
+    {"valor": 1, "nombre": "Courage 1", "fase": "Action", "h_inicio": "", "h_accion": "Elimina 1 carta de tu oponente en una línea donde su valor total sea mayor que el tuyo.", "h_final": ""},
+    {"valor": 2, "nombre": "Courage 2", "fase": "Action", "h_inicio": "", "h_accion": "Roba 1 carta.", "h_final": "Final: Si tu oponente tiene un valor total mayor que el tuyo en esta línea, roba 1 carta."},
+    {"valor": 3, "nombre": "Courage 3", "fase": "End",    "h_inicio": "", "h_accion": "", "h_final": "Final: Puedes cambiar esta carta a la línea donde tu oponente tenga su valor total más alto."},
+    {"valor": 5, "nombre": "Courage 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""},
+    {"valor": 6, "nombre": "Courage 6", "fase": "End",    "h_inicio": "Final: Si tu oponente tiene un valor mayor que el tuyo en esta línea, voltea esta carta.", "h_accion": "", "h_final": ""}
   ],
   "Amor": [
     {"valor": 1, "nombre": "Amor 1", "fase": "End",    "h_inicio": "", "h_accion": "Roba la carta superior del mazo de tu oponente.", "h_final": "Final: Puedes dar 1 carta de tu mano a tu oponente. Si lo haces, roba 2 cartas."},
