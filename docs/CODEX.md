@@ -320,10 +320,9 @@ No. Solo la carta superior de una pila está descubierta.
 | Mazo vacío → reconstruir desde descarte | ✅ Implementado |
 | Cartas boca abajo valor = 2 | ✅ Implementado |
 | LIFO para resolución de efectos | ✅ Implementado |
-| Metal 1 bloquea compilación | ✅ Implementado (simplificado) |
+| Metal 1 bloquea compilación (solo si visible al activar) | ✅ Implementado |
 | Espíritu 1 — jugar sin protocolo | ✅ Implementado |
 | Fuego 0 — efecto `onCover` | ✅ Implementado |
 | Odio 2 — se elimina a sí mismo si es el más alto | ✅ Implementado |
-| Velocidad 2 — se desplaza en lugar de eliminarse en compilación | ⚠️ Pendiente verificar |
-| Metal 1 — solo si está visible (descubierto) | ⚠️ Pendiente verificar |
+| Velocidad 2 — se desplaza en lugar de eliminarse en compilación | ✅ Implementado |
 | **Control Component** (fase Verificar Control + reorganización) | ❌ No implementado |
