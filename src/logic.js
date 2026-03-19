@@ -83,6 +83,7 @@ let gameState = {
     pendingLanding: null,                                   // carta en commit queue: aterriza tras resolver onCover
     refreshedThisTurn: null,                                // quién usó Refresh este turno (para Velocidad 1)
     currentTriggerCard: null,                               // nombre de la carta que disparó el efecto activo
+    pendingCheckCompile: null,                              // set en startTurn; avanza a checkCompilePhase cuando la cola de efectos se vacía
 };
 
 function createDeckForPlayer(target) {
@@ -791,13 +792,13 @@ function startTurn(who) {
     gameState.refreshedThisTurn = null;
     updateStatus(`--- Turno de ${who === 'player' ? 'Jugador' : 'IA'} ---`);
 
-    // NUEVO: Disparar efectos de inicio de turno
+    // Disparar efectos de inicio de turno; la fase de compilación esperará a que terminen
+    gameState.pendingCheckCompile = who;
     if (typeof onTurnStartEffects === 'function') {
         onTurnStartEffects(who);
     }
-    
-    // Auto proceed to Check Compile after 1s
-    setTimeout(() => checkCompilePhase(who), 1000);
+    // Si no hubo efectos (cola vacía), avanzar manualmente
+    if (typeof processAbilityEffect === 'function') processAbilityEffect();
 }
 
 function checkCompilePhase(who) {

@@ -1188,11 +1188,15 @@ function processAbilityEffect() {
       landPendingCard();
       return;
     }
-    if (gameState.pendingStartTurn && !gameState.effectContext) {
+    if (gameState.pendingCheckCompile) {
+      const who = gameState.pendingCheckCompile;
+      gameState.pendingCheckCompile = null;
+      setTimeout(() => checkCompilePhase(who), 600);
+    } else if (gameState.pendingStartTurn) {
       const next = gameState.pendingStartTurn;
       gameState.pendingStartTurn = null;
       setTimeout(() => startTurn(next), 500);
-    } else if (gameState.pendingTurnEnd && !gameState.effectContext) {
+    } else if (gameState.pendingTurnEnd) {
       const who = gameState.pendingTurnEnd;
       gameState.pendingTurnEnd = null;
       endTurn(who);
