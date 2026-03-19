@@ -1134,6 +1134,22 @@ function triggerCardEffect(card, trigger, targetPlayer, opts = {}) {
   const cardName = card.nombre;
   const effectDef = CARD_EFFECTS[cardName];
 
+  // Miedo 0: bloquear onPlay del rival si tiene disableOpponentMiddleCommands activo (cualquier carta boca arriba)
+  if (trigger === 'onPlay') {
+    const rival = targetPlayer === 'player' ? 'ai' : 'player';
+    const blocked = LINES.some(l =>
+      gameState.field[l][rival].some(cardObj => {
+        if (cardObj.faceDown) return false;
+        const ef = CARD_EFFECTS[cardObj.card.nombre];
+        return ef && ef.persistent && ef.persistent.disableOpponentMiddleCommands;
+      })
+    );
+    if (blocked) {
+      console.log(`⛔ Miedo 0 activo — onPlay de ${cardName} bloqueado`);
+      return;
+    }
+  }
+
   if (!effectDef || !effectDef[trigger]) {
     console.log(`Sin efecto ${trigger} para ${cardName}`);
     return;
@@ -1331,7 +1347,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
         if (confirmArea && btnYes && btnNo) {
           gameState.effectContext = { type: 'confirm', selected: [], count: 0 };
           confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = '¿Descartas 1 carta para activar el efecto?';
+          confirmMsg.textContent = `${triggerCardName || ''}: ¿Descartas 1 carta para activar el efecto?`;
           btnYes.onclick = () => {
             confirmArea.classList.add('hidden');
             gameState.effectContext = null;
@@ -1422,8 +1438,10 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
           gameState.effectContext = { type: 'confirm' };
           confirmArea.classList.remove('hidden');
           confirmMsg.textContent = target === 'self'
-            ? `¿Quieres voltear ${triggerCardName}?`
-            : flipOpts.filter === 'faceDown' ? '¿Quieres voltear 1 carta bocabajo?' : '¿Quieres voltear 1 carta?';
+            ? `${triggerCardName}: ¿Quieres voltear esta carta?`
+            : flipOpts.filter === 'faceDown'
+              ? `${triggerCardName || ''}: ¿Quieres voltear 1 carta bocabajo?`
+              : `${triggerCardName || ''}: ¿Quieres voltear 1 carta?`;
           btnYes.onclick = () => {
             confirmArea.classList.add('hidden');
             gameState.effectContext = null;
@@ -1923,6 +1941,40 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       break;
     }
 
+    case 'mayShiftOrFlip': {
+      // Miedo 0: elige Cambiar (shift) o Voltear (flip) cualquier carta del campo
+      if (targetPlayer === 'player') {
+        const confirmArea = document.getElementById('command-confirm');
+        const confirmMsg  = document.getElementById('confirm-msg');
+        const btnYes      = document.getElementById('btn-confirm-yes');
+        const btnNo       = document.getElementById('btn-confirm-no');
+        if (confirmArea && btnYes && btnNo) {
+          gameState.effectContext = { type: 'confirm' };
+          confirmArea.classList.remove('hidden');
+          confirmMsg.textContent = `${triggerCardName || 'Miedo 0'}: ¿qué quieres hacer? SÍ = Cambiar carta de línea · NO = Voltear carta`;
+          btnYes.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            startEffect('shift', 'any', 1);
+          };
+          btnNo.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            startEffect('flip', 'any', 1);
+          };
+        } else {
+          startEffect('flip', 'any', 1);
+        }
+      } else {
+        // IA: voltear si el rival tiene cartas boca arriba que dañen; cambiar si tiene ventaja en alguna línea
+        const canFlipOpp = LINES.some(l => { const s = gameState.field[l].player; return s.length > 0 && !s[s.length-1].faceDown; });
+        const canShiftAdv = LINES.filter(l => gameState.field[l].ai.length > 0).length >= 2;
+        const aiAction = (canFlipOpp || !canShiftAdv) ? 'flip' : 'shift';
+        resolveAbilityAction({ action: aiAction, target: 'any', count: 1 }, targetPlayer);
+      }
+      break;
+    }
+
     case 'maySwapOrFlip': {
       // Prerequisite: there must be at least one face-down card to reveal (Luz 2 mechanic)
       const hasFaceDown = LINES.some(l =>
@@ -1941,7 +1993,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
         if (confirmArea && btnYes && btnNo) {
           gameState.effectContext = { type: 'confirm' };
           confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = '¿Qué quieres hacer? SÍ = Cambiar carta de línea · NO = Voltear carta';
+          confirmMsg.textContent = `${triggerCardName || ''}: ¿Qué quieres hacer? SÍ = Cambiar carta de línea · NO = Voltear carta`;
           btnYes.onclick = () => {
             confirmArea.classList.add('hidden');
             gameState.effectContext = null;
@@ -2066,7 +2118,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
         if (confirmArea && btnYes && btnNo) {
           gameState.effectContext = { type: 'confirm' };
           confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = '¿Robas 1 carta? (Si lo haces, elimina 1 carta rival y luego esta carta se destruye)';
+          confirmMsg.textContent = `${triggerCardName || ''}: ¿Robas 1 carta? (Si lo haces, elimina 1 carta rival y luego esta carta se destruye)`;
           btnYes.onclick = () => {
             confirmArea.classList.add('hidden');
             gameState.effectContext = null;
@@ -2245,7 +2297,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
         if (confirmArea && btnYes && btnNo) {
           gameState.effectContext = { type: 'confirm' };
           confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = '¿Qué quieres hacer? SÍ = Descarta 1 carta · NO = Voltea esta carta';
+          confirmMsg.textContent = `${triggerCardName || ''}: ¿Qué quieres hacer? SÍ = Descarta 1 carta · NO = Voltea esta carta`;
           btnYes.onclick = () => {
             confirmArea.classList.add('hidden');
             gameState.effectContext = null;
@@ -2310,7 +2362,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       if (!confirmArea) { draw('player', n + 1); processAbilityEffect(); break; }
       gameState.effectContext = { type: 'confirm', selected: [] };
       confirmArea.classList.remove('hidden');
-      confirmMsg.textContent = `¿Descartas otra carta? Robas ${n + 1} si paras ahora.`;
+      confirmMsg.textContent = `${triggerCardName || ''}: ¿Descartas otra carta? Robas ${n + 1} si paras ahora.`;
       btnYes.onclick = () => {
         confirmArea.classList.add('hidden');
         gameState.effectContext = null;
@@ -2413,7 +2465,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
         if (confirmArea && btnYes && btnNo) {
           gameState.effectContext = { type: 'confirm' };
           confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = '¿Quieres voltear una carta cubierta de esta línea?';
+          confirmMsg.textContent = `${triggerCardName || ''}: ¿Quieres voltear una carta cubierta de esta línea?`;
           btnYes.onclick = () => {
             confirmArea.classList.add('hidden');
             gameState.effectContext = null;
@@ -2764,7 +2816,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
           gameState.effectContext = { type: 'confirm' };
           confirmArea.style.display = 'flex';
           confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = `¿Das 1 carta a tu oponente para robar ${count || 2} cartas?`;
+          confirmMsg.textContent = `${triggerCardName || ''}: ¿Das 1 carta a tu oponente para robar ${count || 2} cartas?`;
           
           btnYes.onclick = () => {
             confirmArea.style.display = 'none';
@@ -2897,7 +2949,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
         if (confirmArea && btnYes && btnNo) {
           gameState.effectContext = { type: 'confirm' };
           confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = `¿Barajes tu descarte (${gameState.player.trash.length} cartas) en tu mazo?`;
+          confirmMsg.textContent = `${triggerCardName || ''}: ¿Barajes tu descarte (${gameState.player.trash.length} cartas) en tu mazo?`;
           btnYes.onclick = () => {
             confirmArea.classList.add('hidden');
             gameState.effectContext = null;
@@ -2999,7 +3051,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
         if (confirmArea && btnYes && btnNo) {
           gameState.effectContext = { type: 'confirm' };
           confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = '¿Descartas una carta? SÍ = descarta 1 · NO = continúa';
+          confirmMsg.textContent = `${triggerCardName || ''}: ¿Descartas una carta? SÍ = descarta 1 · NO = continúa`;
           btnYes.onclick = () => {
             confirmArea.classList.add('hidden');
             gameState.effectContext = null;
@@ -3109,7 +3161,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
         if (confirmArea && btnYes && btnNo) {
           gameState.effectContext = { type: 'confirm' };
           confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = '¿Descartas 1 carta? Si lo haces, tu oponente también descartará 1.';
+          confirmMsg.textContent = `${triggerCardName || ''}: ¿Descartas 1 carta? Si lo haces, tu oponente también descartará 1.`;
           btnYes.onclick = () => {
             confirmArea.classList.add('hidden');
             gameState.effectContext = null;
