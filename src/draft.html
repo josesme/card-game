@@ -298,9 +298,12 @@ function applyDraftScale() {
     const container = document.getElementById('draft-container');
     container.style.transform = 'none';
     const contentH = container.offsetHeight;
-    const viewH    = window.innerHeight;
-    if (contentH > viewH) {
-        container.style.transform = `scale(${(viewH / contentH).toFixed(4)})`;
+    const contentW = container.offsetWidth;
+    const viewH    = window.innerHeight - 20;  // margen vertical
+    const viewW    = window.innerWidth  - 40;  // margen horizontal
+    const scale    = Math.min(viewH / contentH, viewW / contentW);
+    if (Math.abs(scale - 1) > 0.01) {
+        container.style.transform = `scale(${scale.toFixed(4)})`;
     }
 }
 
