@@ -958,6 +958,8 @@ function startEffect(type, target, count, opts = {}) {
                 const stack = gameState.field[l][p];
                 if (opts.coveredOnly) return stack.length >= 2;
                 if (stack.length === 0) return false;
+                // targetAll: buscar en toda la pila (no solo top), p.ej. bocabajos cubiertos
+                if (opts.targetAll && filterCtx.filter === 'faceDown') return stack.some(c => c.faceDown);
                 const topCard = stack[stack.length - 1];
                 if (opts.excludeCardName && topCard.card.nombre === opts.excludeCardName) return false;
                 return cardMatchesFilter(topCard, filterCtx);
@@ -1024,8 +1026,13 @@ function highlightEffectTargets() {
                     if (stack.length < 2) return;
                 } else {
                     if (stack.length === 0) return;
-                    const topCard = stack[stack.length - 1];
-                    if (!cardMatchesFilter(topCard, ctx)) return;
+                    // targetAll con faceDown: resaltar cualquier pila que tenga alguna bocabajo
+                    if (ctx.filter === 'faceDown' && ctx.targetAll) {
+                        if (!stack.some(c => c.faceDown)) return;
+                    } else {
+                        const topCard = stack[stack.length - 1];
+                        if (!cardMatchesFilter(topCard, ctx)) return;
+                    }
                 }
                 const stackEl = document.querySelector(`#line-${l} .${p}-stack`);
                 if (stackEl) stackEl.classList.add('targeting');
@@ -1275,8 +1282,12 @@ function handleFieldCardClick(line, target, cardIdx) {
         highlightSelectableLines();
         return; 
     } else if (ctx.type === 'return') {
-        const cardObj = gameState.field[line][target].splice(cardIdx, 1)[0];
-        gameState[target].hand.push(cardObj.card);
+        // Filter: si hay filtro faceDown con targetAll, validar que la carta clicada sea bocabajo
+        const cardObj = gameState.field[line][target][cardIdx];
+        if (ctx.filter === 'faceDown' && !cardObj.faceDown) return;
+        gameState.field[line][target].splice(cardIdx, 1);
+        const dest = ctx.beneficiary || target;
+        gameState[dest].hand.push(cardObj.card);
         ctx.selected.push(cardObj);
         triggerUncovered(line, target);
     } else if (ctx.type === 'rearrange') {
@@ -1517,12 +1528,29 @@ function resolveEffectAI(type, target, count, opts = {}) {
         }
     } else if (type === 'return') {
         for (let i = 0; i < count; i++) {
-            // Return top card from opponent's highest-score line (remove their biggest threat)
-            const line = aiHighestScoreLine(actualTarget);
-            if (line !== null) {
-                const cardObj = gameState.field[line][actualTarget].pop();
-                gameState[actualTarget].hand.push(cardObj.card);
-                triggerUncovered(line, actualTarget);
+            const dest = opts.beneficiary || actualTarget;
+            if (opts.filter === 'faceDown') {
+                // Buscar cualquier carta bocabajo del target (cubierta o no)
+                let best = null, bestLine = null, bestIdx = -1;
+                LINES.forEach(l => {
+                    gameState.field[l][actualTarget].forEach((c, idx) => {
+                        if (c.faceDown && (!best || c.card.valor > best.card.valor)) {
+                            best = c; bestLine = l; bestIdx = idx;
+                        }
+                    });
+                });
+                if (best) {
+                    gameState.field[bestLine][actualTarget].splice(bestIdx, 1);
+                    gameState[dest].hand.push(best.card);
+                    triggerUncovered(bestLine, actualTarget);
+                }
+            } else {
+                const line = aiHighestScoreLine(actualTarget);
+                if (line !== null) {
+                    const cardObj = gameState.field[line][actualTarget].pop();
+                    gameState[dest].hand.push(cardObj.card);
+                    triggerUncovered(line, actualTarget);
+                }
             }
         }
     }

@@ -3029,13 +3029,15 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
     // ── Cartas faltantes Main 2 ───────────────────────────────────────────────
 
     case 'returnOpponentFaceDown': {
-      // Asimilación 0: devuelve 1 carta bocabajo del oponente a su mano
+      // Asimilación 0: trae a TU mano 1 carta bocabajo (cubierta o no) del oponente
       const hasFD = LINES.some(l => gameState.field[l][opponent].some(c => c.faceDown));
       if (!hasFD) { processAbilityEffect(); break; }
       if (targetPlayer === 'player') {
-        startEffect('return', 'opponent', 1, { filter: 'faceDown' });
+        // beneficiary='player' → la carta va a la mano del jugador, no del oponente
+        // targetAll=true → permite seleccionar cartas cubiertas
+        startEffect('return', 'opponent', 1, { filter: 'faceDown', targetAll: true, beneficiary: 'player' });
       } else {
-        // IA: devuelve la bocabajo rival de mayor valor
+        // IA: roba la bocabajo del jugador de mayor valor (cubierta o top)
         let best = null, bestLine = null, bestIdx = -1;
         LINES.forEach(l => {
           gameState.field[l][opponent].forEach((c, i) => {
@@ -3046,7 +3048,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
         });
         if (best) {
           gameState.field[bestLine][opponent].splice(bestIdx, 1);
-          gameState[opponent].hand.push(best.card);
+          gameState[targetPlayer].hand.push(best.card); // va a la mano de la IA, no del jugador
           updateUI();
         }
         processAbilityEffect();
