@@ -741,7 +741,7 @@ function compileLine(line, who) {
 
     // IA: mover Velocidad 2 a línea aleatoria
     v2AI.forEach(c => {
-        const dest = otherLines[Math.floor(Math.random() * otherLines.length)];
+        const dest = aiPickDestLine([line]) || otherLines[0];
         gameState.field[dest].ai.push(c);
         updateStatus(`IA desplaza Velocidad 2 a ${dest}`);
     });
