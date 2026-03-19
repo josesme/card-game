@@ -4008,46 +4008,40 @@ function applyPersistentValueModifiers(state, line, player) {
     }
   }
 
-  // Bonos: cartas propias bocarriba en esta línea
+  // Bonos: cartas propias bocaarriba en esta línea (fase Start activa aunque estén cubiertas)
   const selfStack = state.field[line][player];
-  if (selfStack.length > 0) {
-    const topCardObj = selfStack[selfStack.length - 1];
-    if (!topCardObj.faceDown) {
-      const effectDef = CARD_EFFECTS[topCardObj.card.nombre];
-      if (effectDef && effectDef.persistent) {
-        const p = effectDef.persistent;
+  const faceDownCount =
+    state.field[line].player.filter(c => c.faceDown).length +
+    state.field[line].ai.filter(c => c.faceDown).length;
+  const oppCardCount = state.field[line][player === 'player' ? 'ai' : 'player'].length;
 
-        // Humo 2: +1 por cada carta bocabajo en esta línea
-        if (p.valueBonusPerFaceDown) {
-          const faceDownCount =
-            state.field[line].player.filter(c => c.faceDown).length +
-            state.field[line].ai.filter(c => c.faceDown).length;
-          totalBonus += p.valueBonusPerFaceDown * faceDownCount;
-        }
+  selfStack.forEach(cardObj => {
+    if (cardObj.faceDown) return; // bocabajo nunca activa bonos persistentes
+    const effectDef = CARD_EFFECTS[cardObj.card.nombre];
+    if (!effectDef || !effectDef.persistent) return;
+    const p = effectDef.persistent;
 
-        // Claridad 0: +1 por cada carta en tu mano
-        if (p.valueBonusPerHandCard) {
-          totalBonus += p.valueBonusPerHandCard * (state[player].hand.length || 0);
-        }
-
-        // Espejo 0: +1 por cada carta del oponente en esta línea
-        if (p.valueBonusPerOpponentCard) {
-          const oppPlayer = player === 'player' ? 'ai' : 'player';
-          totalBonus += p.valueBonusPerOpponentCard * state.field[line][oppPlayer].length;
-        }
-
-        // Diversidad 3: +2 si hay alguna carta bocarriba que no sea Diversidad en esta pila
-        if (p.valueBonusIfNonDiversityFaceUp) {
-          const hasNonDiv = selfStack.some((c, i) =>
-            i !== selfStack.length - 1 &&
-            !c.faceDown &&
-            !c.card.nombre.startsWith('Diversidad')
-          );
-          if (hasNonDiv) totalBonus += p.valueBonusIfNonDiversityFaceUp;
-        }
-      }
+    // Humo 2: +1 por cada carta bocabajo en esta línea
+    if (p.valueBonusPerFaceDown) {
+      totalBonus += p.valueBonusPerFaceDown * faceDownCount;
     }
-  }
+
+    // Claridad 0: +1 por cada carta en tu mano
+    if (p.valueBonusPerHandCard) {
+      totalBonus += p.valueBonusPerHandCard * (state[player].hand.length || 0);
+    }
+
+    // Espejo 0: +1 por cada carta del oponente en esta línea
+    if (p.valueBonusPerOpponentCard) {
+      totalBonus += p.valueBonusPerOpponentCard * oppCardCount;
+    }
+
+    // Diversidad 3: +2 si hay alguna carta bocaarriba que no sea Diversidad en esta pila
+    if (p.valueBonusIfNonDiversityFaceUp) {
+      const hasNonDiv = selfStack.some(c => !c.faceDown && !c.card.nombre.startsWith('Diversidad'));
+      if (hasNonDiv) totalBonus += p.valueBonusIfNonDiversityFaceUp;
+    }
+  });
 
   // Retorna reducción neta; si es negativo, calculateScore lo interpreta como bono
   return totalReduction - totalBonus;
