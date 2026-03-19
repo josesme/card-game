@@ -215,7 +215,6 @@
 <div id="draft-container">
     <img src="../images/compile.png" class="title-img" alt="COMPILE">
     <p class="subtitle">Selecciona Tus Protocolos</p>
-    <p id="difficulty-badge" style="font-family:'Orbitron',monospace; font-size:0.85em; letter-spacing:3px; font-weight:700; margin-bottom:24px; padding:8px 20px; border-radius:6px; display:inline-block;"></p>
 
     <!-- Barra de estado y selecciones -->
     <div class="draft-info-bar">
@@ -546,20 +545,7 @@ function updateSelections() {
 
 // Cargar datos directamente e iniciar draft
 document.addEventListener('DOMContentLoaded', () => {
-    const diffName  = sessionStorage.getItem('aiDifficultyName')  || 'NÚCLEO';
-    const diffDepth = sessionStorage.getItem('aiDifficultyDepth') || '3';
-    const diffColor = sessionStorage.getItem('aiDifficultyColor') || '234,179,8';
-    const diffIcon  = sessionStorage.getItem('aiDifficultyIcon')  || '⬢';
     const selectedProtocols = sessionStorage.getItem('selectedProtocols');
-
-    const badge = document.getElementById('difficulty-badge');
-    if (badge) {
-        badge.textContent = `${diffIcon} NIVEL ${diffDepth} — ${diffName}`;
-        badge.style.color = `rgb(${diffColor})`;
-        badge.style.border = `1px solid rgba(${diffColor}, 0.5)`;
-        badge.style.background = `rgba(${diffColor}, 0.08)`;
-        badge.style.textShadow = `0 0 12px rgba(${diffColor}, 0.5)`;
-    }
 
     console.log('🎮 Iniciando con CARDS_DATA integrado y selección:', selectedProtocols);
     try {
