@@ -314,7 +314,13 @@
     // Fallback for when scripts load late
     window.addEventListener('load', updateGameZoom);
     if (sessionStorage.getItem('fs') === '1') {
-        document.documentElement.requestFullscreen().catch(() => sessionStorage.removeItem('fs'));
+        document.documentElement.requestFullscreen().catch(() => {
+            document.addEventListener('click', function restoreFs() {
+                if (sessionStorage.getItem('fs') === '1' && !document.fullscreenElement)
+                    document.documentElement.requestFullscreen().catch(() => sessionStorage.removeItem('fs'));
+                document.removeEventListener('click', restoreFs);
+            });
+        });
     }
 </script>
 </body>

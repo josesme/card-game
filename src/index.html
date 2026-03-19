@@ -329,7 +329,13 @@ document.addEventListener('fullscreenchange', () => {
     }
 });
 if (sessionStorage.getItem('fs') === '1') {
-    document.documentElement.requestFullscreen().catch(() => sessionStorage.removeItem('fs'));
+    document.documentElement.requestFullscreen().catch(() => {
+        document.addEventListener('click', function restoreFs() {
+            if (sessionStorage.getItem('fs') === '1' && !document.fullscreenElement)
+                document.documentElement.requestFullscreen().catch(() => sessionStorage.removeItem('fs'));
+            document.removeEventListener('click', restoreFs);
+        });
+    });
 }
 
 function applyIndexScale() {
