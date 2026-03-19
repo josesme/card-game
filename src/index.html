@@ -9,29 +9,44 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+            background: url('../images/background.png') no-repeat center center fixed;
+            background-size: cover;
             color: #e0e0e0;
             font-family: 'Space Mono', monospace;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 14, 39, 0.7); /* Oscurece la imagen para legibilidad */
+            z-index: 0;
         }
 
         .container {
+            position: relative;
+            z-index: 1;
             text-align: center;
-            max-width: 740px;
-            padding: 60px 40px;
+            max-width: 800px;
+            padding: 60px 50px;
+            background: rgba(15, 20, 45, 0.5); /* Fondo sutil para el contenido */
+            backdrop-filter: blur(10px); /* Efecto cristal */
+            border-radius: 24px;
+            border: 1px solid rgba(0, 212, 255, 0.15);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
         }
 
-        h1 {
-            color: #00d4ff;
-            font-size: 5em;
-            font-family: 'Orbitron', monospace;
-            font-weight: 900;
-            text-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
-            letter-spacing: 6px;
-            margin-bottom: 12px;
+        .title-img {
+            max-width: 100%;
+            height: auto;
+            max-height: 180px;
+            filter: drop-shadow(0 0 20px rgba(0, 212, 255, 0.4));
+            margin-bottom: 24px;
         }
 
         .tagline {
@@ -57,7 +72,7 @@
         }
 
         .diff-btn {
-            flex: 0 0 calc((740px - 80px - 4 * 14px) / 5);
+            flex: 1;
             background: rgba(0,0,0,0.4);
             border: 1px solid #333;
             color: #666;
@@ -100,9 +115,49 @@
             font-size: 0.95em;
             color: #667;
             height: 3.2em;
-            margin-bottom: 48px;
+            margin-bottom: 24px;
             line-height: 1.6;
             overflow: hidden;
+        }
+
+        /* ── Protocolos ─────────────────────────────── */
+        .protocol-grid {
+            display: flex;
+            gap: 14px;
+            margin-bottom: 48px;
+        }
+
+        .protocol-btn {
+            flex: 1;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid #333;
+            color: #666;
+            padding: 16px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.75em;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+        }
+
+        .protocol-btn:hover {
+            border-color: #666;
+            color: #aaa;
+        }
+
+        .protocol-btn.active {
+            background: rgba(var(--c), 0.12);
+            border-color: rgb(var(--c));
+            color: rgb(var(--c));
+            box-shadow: 0 0 18px rgba(var(--c), 0.3);
+        }
+
+        #proto-all.active {
+            background: linear-gradient(to right, rgba(168, 85, 247, 0.12), rgba(234, 179, 8, 0.12));
+            border-image: linear-gradient(to right, #a855f7, #eab308) 1;
+            color: #e0e0e0;
+            box-shadow: 0 0 18px rgba(168, 85, 247, 0.2);
         }
 
         /* ── Botón jugar ─────────────────────────────── */
@@ -122,29 +177,67 @@
             margin-bottom: 40px;
         }
 
-        .btn-play:hover {
+        .btn-play:hover:not(:disabled) {
             background: rgba(0, 212, 255, 0.15);
             box-shadow: 0 0 28px rgba(0, 212, 255, 0.35);
             transform: translateY(-2px);
+        }
+
+        .btn-play:disabled {
+            border-color: #334;
+            color: #334;
+            cursor: not-allowed;
+            opacity: 0.6;
         }
 
         .version {
             color: #445;
             font-size: 0.8em;
         }
+
+        #btn-fullscreen {
+            position: fixed;
+            top: 12px; right: 16px;
+            background: rgba(0,212,255,0.1);
+            border: 1px solid #00d4ff;
+            color: #00d4ff;
+            border-radius: 8px;
+            padding: 8px 14px;
+            cursor: pointer;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.75em;
+            letter-spacing: 1px;
+            transition: background 0.2s;
+            z-index: 100;
+        }
+        #btn-fullscreen:hover { background: rgba(0,212,255,0.25); }
     </style>
 </head>
 <body>
 
+<button id="btn-fullscreen" onclick="toggleFullscreen()" title="Pantalla completa">⛶ FULLSCREEN</button>
 <div class="container">
-    <h1>COMPILE</h1>
+    <img src="../images/compile.png" class="title-img" alt="COMPILE">
     <p class="tagline">Juego de cartas · IA adaptativa</p>
 
     <p class="diff-label">⚙️ Nivel de compilación</p>
     <div class="diff-grid" id="diff-grid"></div>
     <p class="diff-desc" id="diff-desc"></p>
 
-    <button class="btn-play" id="btn-play">🎮 INICIAR DRAFT</button>
+    <p class="diff-label">🧬 Protocolos disponibles</p>
+    <div class="protocol-grid">
+        <button class="protocol-btn" id="proto-1" style="--c: 168, 85, 247;">
+            <span class="protocol-name">MAIN 1</span>
+        </button>
+        <button class="protocol-btn" id="proto-2" style="--c: 234, 179, 8;">
+            <span class="protocol-name">MAIN 2</span>
+        </button>
+        <button class="protocol-btn" id="proto-all" style="--c: gradient;">
+            <span class="protocol-name">MAIN 1 + 2</span>
+        </button>
+    </div>
+
+    <button class="btn-play" id="btn-play" disabled>🎮 INICIAR DRAFT</button>
 
     <div class="version">v2.1 — 2026</div>
 </div>
@@ -158,40 +251,66 @@ const DIFFICULTY_LEVELS = [
     { id: 5, name: 'SINGULARIDAD', icon: '✦', color: '239,68,68',   depth: 5, desc: 'IA total. Máxima capacidad de cómputo y predicción.' }
 ];
 
-let selected = 3;
+let selectedDifficulty = 3;
+let selectedProtocols = null; // 1, 2, or 'all'
 
 function renderDiff() {
     const grid = document.getElementById('diff-grid');
     grid.innerHTML = '';
     DIFFICULTY_LEVELS.forEach(l => {
         const btn = document.createElement('button');
-        btn.className = 'diff-btn' + (l.id === selected ? ' active' : '');
+        btn.className = 'diff-btn' + (l.id === selectedDifficulty ? ' active' : '');
         btn.style.setProperty('--c', l.color);
         btn.innerHTML = `<span class="diff-icon">${l.icon}</span><span class="diff-name">${l.name}</span>`;
         btn.onclick = () => {
-            selected = l.id;
+            selectedDifficulty = l.id;
             renderDiff();
-            const d = DIFFICULTY_LEVELS.find(x => x.id === selected);
-            const desc = document.getElementById('diff-desc');
-            desc.textContent = d.desc;
-            desc.style.color = `rgb(${d.color})`;
         };
         grid.appendChild(btn);
     });
-    const cur = DIFFICULTY_LEVELS.find(l => l.id === selected);
+    const cur = DIFFICULTY_LEVELS.find(l => l.id === selectedDifficulty);
     const desc = document.getElementById('diff-desc');
     desc.textContent = cur.desc;
     desc.style.color = `rgb(${cur.color})`;
 }
 
+function updateProtocolSelection() {
+    document.querySelectorAll('.protocol-btn').forEach(btn => btn.classList.remove('active'));
+    if (selectedProtocols === 1) document.getElementById('proto-1').classList.add('active');
+    if (selectedProtocols === 2) document.getElementById('proto-2').classList.add('active');
+    if (selectedProtocols === 'all') document.getElementById('proto-all').classList.add('active');
+    
+    document.getElementById('btn-play').disabled = selectedProtocols === null;
+}
+
+document.getElementById('proto-1').onclick = () => { selectedProtocols = 1; updateProtocolSelection(); };
+document.getElementById('proto-2').onclick = () => { selectedProtocols = 2; updateProtocolSelection(); };
+document.getElementById('proto-all').onclick = () => { selectedProtocols = 'all'; updateProtocolSelection(); };
+
 renderDiff();
 
+function toggleFullscreen() {
+    const btn = document.getElementById('btn-fullscreen');
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+        btn.textContent = '✕ SALIR';
+    } else {
+        document.exitFullscreen().catch(() => {});
+        btn.textContent = '⛶ FULLSCREEN';
+    }
+}
+document.addEventListener('fullscreenchange', () => {
+    const btn = document.getElementById('btn-fullscreen');
+    if (!document.fullscreenElement) btn.textContent = '⛶ FULLSCREEN';
+});
+
 document.getElementById('btn-play').addEventListener('click', () => {
-    const diff = DIFFICULTY_LEVELS.find(l => l.id === selected);
+    const diff = DIFFICULTY_LEVELS.find(l => l.id === selectedDifficulty);
     sessionStorage.setItem('aiDifficultyDepth', diff.depth);
     sessionStorage.setItem('aiDifficultyName', diff.name);
     sessionStorage.setItem('aiDifficultyColor', diff.color);
     sessionStorage.setItem('aiDifficultyIcon', diff.icon);
+    sessionStorage.setItem('selectedProtocols', selectedProtocols);
     window.location.href = 'draft.html';
 });
 </script>

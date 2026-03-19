@@ -233,10 +233,28 @@
             box-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
             transform: scale(1.04);
         }
+
+        #btn-fullscreen {
+            position: fixed;
+            top: 12px; right: 16px;
+            background: rgba(0,212,255,0.1);
+            border: 1px solid #00d4ff;
+            color: #00d4ff;
+            border-radius: 8px;
+            padding: 8px 14px;
+            cursor: pointer;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.75em;
+            letter-spacing: 1px;
+            transition: background 0.2s;
+            z-index: 100;
+        }
+        #btn-fullscreen:hover { background: rgba(0,212,255,0.25); }
     </style>
 </head>
 <body>
 
+<button id="btn-fullscreen" onclick="toggleFullscreen()" title="Pantalla completa">⛶ FULLSCREEN</button>
 <div id="draft-viewport">
 <div id="draft-container">
 
@@ -555,6 +573,23 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 window.addEventListener('resize', applyDraftScale);
+
+function toggleFullscreen() {
+    const btn = document.getElementById('btn-fullscreen');
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+        btn.textContent = '✕ SALIR';
+    } else {
+        document.exitFullscreen().catch(() => {});
+        btn.textContent = '⛶ FULLSCREEN';
+    }
+}
+
+document.addEventListener('fullscreenchange', () => {
+    const btn = document.getElementById('btn-fullscreen');
+    if (!document.fullscreenElement) btn.textContent = '⛶ FULLSCREEN';
+    setTimeout(applyDraftScale, 50);
+});
 
 document.getElementById('start-game-btn').addEventListener('click', function() {
     if (draftState.isComplete) {
