@@ -595,7 +595,7 @@ document.getElementById('start-game-btn').addEventListener('click', function() {
     if (draftState.isComplete) {
         sessionStorage.setItem('playerProtocols', JSON.stringify(draftState.playerSelected));
         sessionStorage.setItem('aiProtocols',     JSON.stringify(draftState.aiSelected));
-        window.location.href = 'game.html';
+        window.location.href = '/src/game.html';
     }
 });
 </script>
