@@ -1076,7 +1076,7 @@ const CARD_EFFECTS = {
   'Humo 1': {
     onPlay: [
       { action: 'flip', target: 'self', count: 1 },
-      { action: 'mayShiftSelf' }
+      { action: 'mayShiftLastFlipped' }
     ]
   },
   'Humo 2': {
@@ -1589,6 +1589,57 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
           if (idx !== -1) {
             const [cardObj] = stack.splice(idx, 1);
             gameState.field[dest][targetPlayer].push(cardObj);
+          }
+        }
+        processAbilityEffect();
+      }
+      break;
+    }
+
+    case 'mayShiftLastFlipped': {
+      // Humo 1: opcionalmente cambia de línea la carta que acaba de voltear
+      const flipped = gameState.lastFlippedCard;
+      if (!flipped) { processAbilityEffect(); break; }
+      const { cardObj: flippedCard, line: flippedLine } = flipped;
+      // Verificar que sigue en el campo del jugador
+      const flippedIdx = gameState.field[flippedLine]?.[targetPlayer]?.indexOf(flippedCard);
+      if (flippedIdx === undefined || flippedIdx === -1) { processAbilityEffect(); break; }
+      if (targetPlayer === 'player') {
+        const confirmArea = document.getElementById('command-confirm');
+        const confirmMsg = document.getElementById('confirm-msg');
+        const btnYes = document.getElementById('btn-confirm-yes');
+        const btnNo = document.getElementById('btn-confirm-no');
+        if (confirmArea && btnYes && btnNo) {
+          gameState.effectContext = { type: 'confirm' };
+          confirmArea.classList.remove('hidden');
+          confirmMsg.textContent = `${triggerCardName || ''}: ¿Cambias ${flippedCard.card.nombre} a otra línea?`;
+          btnYes.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = {
+              type: 'shiftSelf', sourceLine: flippedLine, target: 'player',
+              count: 1, selected: [], waitingForLine: true,
+              cardRef: flippedCard
+            };
+            updateStatus(`${triggerCardName}: elige línea destino para ${flippedCard.card.nombre}`);
+            if (typeof highlightSelectableLines === 'function') highlightSelectableLines(flippedLine);
+          };
+          btnNo.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            processAbilityEffect();
+          };
+        } else { processAbilityEffect(); }
+      } else {
+        // IA: mover la carta volteada a la línea que mejore su posición
+        const dest = typeof aiPickDestLine === 'function'
+          ? aiPickDestLine([flippedLine], targetPlayer)
+          : LINES.filter(l => l !== flippedLine)[0];
+        if (dest) {
+          const currentIdx = gameState.field[flippedLine][targetPlayer].indexOf(flippedCard);
+          if (currentIdx !== -1) {
+            gameState.field[flippedLine][targetPlayer].splice(currentIdx, 1);
+            gameState.field[dest][targetPlayer].push(flippedCard);
+            updateUI();
           }
         }
         processAbilityEffect();

@@ -298,10 +298,13 @@ function handleShiftTargetLine(destinationLine) {
     }
 
     if (ctx.type === 'shiftSelf') {
-        // Espíritu 3: mover la carta desde sourceLine a destinationLine (cancelar si misma línea)
+        // Mover la carta desde sourceLine a destinationLine (cancelar si misma línea)
         if (ctx.sourceLine !== destinationLine) {
             const stack = gameState.field[ctx.sourceLine][ctx.target];
-            const idx = stack.findIndex(c => c.card.nombre === 'Espíritu 3');
+            // Buscar por referencia directa si está disponible, si no por nombre
+            const idx = ctx.cardRef
+                ? stack.indexOf(ctx.cardRef)
+                : stack.findIndex(c => c.card.nombre === (ctx.cardName || 'Espíritu 3'));
             if (idx !== -1) {
                 const [cardObj] = stack.splice(idx, 1);
                 gameState.field[destinationLine][ctx.target].push(cardObj);

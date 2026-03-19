@@ -313,7 +313,7 @@ describe('CARD_EFFECTS — Main 2 nuevas entradas', () => {
     test('Humo 1: onPlay=[flip self 1, mayShiftSelf]', () => {
       const ef = ENGINE.CARD_EFFECTS['Humo 1'];
       expect(ef.onPlay[0].action).toBe('flip');
-      expect(ef.onPlay[1].action).toBe('mayShiftSelf');
+      expect(ef.onPlay[1].action).toBe('mayShiftLastFlipped');
     });
     test('Humo 2: persistent.valueBonusPerFaceDown=1', () => {
       expect(ENGINE.CARD_EFFECTS['Humo 2'].persistent.valueBonusPerFaceDown).toBe(1);
