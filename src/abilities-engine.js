@@ -506,7 +506,7 @@ const CARD_EFFECTS = {
 
   'Oscuridad 3': {
     onPlay: [
-      { action: 'playHandFaceDown', target: 'self' }
+      { action: 'playHandFaceDown', target: 'self', excludeCurrentLine: true }
     ]
   },
 
@@ -2613,20 +2613,21 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
     }
 
     case 'playHandFaceDown': {
-      // Oscuridad 3: juega 1 carta de tu mano bocabajo en otra línea
+      // Juega 1 carta de tu mano bocabajo. Si excludeCurrentLine=true, debe ser en otra línea (Oscuridad 3).
+      const excludeLine = actionDef.excludeCurrentLine ? gameState.currentEffectLine : null;
       if (targetPlayer === 'player') {
         if (gameState.player.hand.length === 0) { processAbilityEffect(); break; }
-        const excludeLine = gameState.currentEffectLine;
         gameState.effectContext = { type: 'pickHandFaceDown', excludeLine };
-        updateStatus('Oscuridad 3: elige una carta de tu mano para jugar bocabajo en otra línea');
-        // Resaltar líneas destino disponibles (excluir la línea de Oscuridad 3)
+        const lineMsg = excludeLine ? ' en otra línea' : '';
+        updateStatus(`${triggerCardName || 'Carta'}: elige una carta de tu mano para jugar bocabajo${lineMsg}`);
         if (typeof highlightSelectableLines === 'function') highlightSelectableLines(excludeLine);
       } else {
         if (gameState.ai.hand.length > 0) {
           const cardIdx = aiLowestValueCardIdx('ai') >= 0 ? aiLowestValueCardIdx('ai') : 0;
           const currentLine = gameState.currentEffectLine;
-          const others = LINES.filter(l => l !== currentLine);
-          const dest = aiPickDestLine([currentLine]) || others[0];
+          const dest = excludeLine
+            ? (aiPickDestLine([currentLine]) || LINES.filter(l => l !== currentLine)[0])
+            : (aiPickDestLine([]) || currentLine);
           const movedCard = gameState.ai.hand.splice(cardIdx, 1)[0];
           gameState.field[dest].ai.push({ card: movedCard, faceDown: true });
         }
