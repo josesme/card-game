@@ -82,6 +82,7 @@ let gameState = {
     uncoveredThisTurn: new Set(),                           // IDs de cartas ya activadas por onUncovered este turno
     pendingLanding: null,                                   // carta en commit queue: aterriza tras resolver onCover
     refreshedThisTurn: null,                                // quién usó Refresh este turno (para Velocidad 1)
+    currentTriggerCard: null,                               // nombre de la carta que disparó el efecto activo
 };
 
 function createDeckForPlayer(target) {

@@ -1203,16 +1203,18 @@ function processAbilityEffect() {
   const item = gameState.effectQueue.shift();
   const { effect, targetPlayer, cardName } = item;
 
+  gameState.currentTriggerCard = cardName;
   console.log(`Resolviendo: ${effect.action} para ${cardName} (jugador: ${targetPlayer})`);
 
   // Resolver según el tipo de acción
-  resolveAbilityAction(effect, targetPlayer, cardName);
+  resolveAbilityAction(effect, targetPlayer);
 }
 
 /**
  * Resuelve una acción individual de efecto
  */
-function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
+function resolveAbilityAction(actionDef, targetPlayer) {
+  const triggerCardName = gameState.currentTriggerCard;
   const { action, target, count, ifThenAction, ifThenTarget, ifThenCount } = actionDef;
   const opponent = targetPlayer === 'player' ? 'ai' : 'player';
 
