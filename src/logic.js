@@ -335,7 +335,11 @@ function createFieldCardHTML(card) {
 
 function isSelectionActive() {
     return gameState.selectionMode ||
-        (gameState.effectContext && (gameState.effectContext.waitingForLine || gameState.effectContext.type === 'pickHandFaceDown_lineSelect'));
+        (gameState.effectContext && (
+            gameState.effectContext.waitingForLine ||
+            gameState.effectContext.type === 'pickHandFaceDown_lineSelect' ||
+            gameState.effectContext.type === 'rearrange'
+        ));
 }
 
 function showCardPreview(card) {

@@ -644,8 +644,8 @@ const CARD_EFFECTS = {
 
   // ── COMPILE MAIN 2 ──────────────────────────────────────────────────────────
 
-  // ========== ASSIMILATION ==========
-  'Assimilation 1': {
+  // ========== ASIMILACIÓN ==========
+  'Asimilación 1': {
     onPlay: [
       { action: 'discard', target: 'self', count: 1 },
       { action: 'refresh', target: 'self' }
@@ -659,55 +659,55 @@ const CARD_EFFECTS = {
     ]
   },
 
-  'Assimilation 5': {
+  'Asimilación 5': {
     onPlay: [{ action: 'discard', target: 'self', count: 1 }]
   },
 
-  // ========== CHAOS ==========
-  'Chaos 0': {
+  // ========== CAOS ==========
+  'Caos 0': {
     onPlay: [
       { action: 'flipCoveredInEachLine' },
       { action: 'swapTopDeckCards' }
     ]
   },
 
-  'Chaos 1': {
+  'Caos 1': {
     onPlay: [
       { action: 'rearrangeProtocols', target: 'self' },
       { action: 'rearrangeProtocols', target: 'opponent' }
     ]
   },
 
-  'Chaos 4': {
+  'Caos 4': {
     onTurnEnd: [
       { action: 'discardHandDraw', target: 'self' }
     ]
   },
 
-  'Chaos 5': {
+  'Caos 5': {
     onPlay: [{ action: 'discard', target: 'self', count: 1 }]
   },
 
-  // ========== CLARITY ==========
-  'Clarity 4': {
+  // ========== CLARIDAD ==========
+  'Claridad 4': {
     onPlay: [
       { action: 'mayShuffleDiscardIntoDeck', target: 'self' }
     ]
   },
 
-  'Clarity 5': {
+  'Claridad 5': {
     onPlay: [{ action: 'discard', target: 'self', count: 1 }]
   },
 
-  // ========== CORRUPTION ==========
-  'Corruption 1': {
+  // ========== CORRUPCIÓN ==========
+  'Corrupción 1': {
     onPlay: [
       { action: 'return', target: 'any', count: 1 }
     ]
     // TODO Fase B: persistent onReturn redirect (cuando carta va a mano rival → a mazo rival bocarriba)
   },
 
-  'Corruption 2': {
+  'Corrupción 2': {
     // h_inicio reactive (Fase B): después de descartar → rival descarta 1
     onPlay: [
       { action: 'draw', target: 'self', count: 1 },
@@ -715,54 +715,54 @@ const CARD_EFFECTS = {
     ]
   },
 
-  'Corruption 5': {
+  'Corrupción 5': {
     onPlay: [{ action: 'discard', target: 'self', count: 1 }]
   },
 
-  // ========== COURAGE ==========
-  'Courage 2': {
+  // ========== VALOR ==========
+  'Valor 2': {
     onPlay: [
       { action: 'draw', target: 'self', count: 1 }
     ]
     // TODO Fase B: onTurnEnd condicional (si oponente gana esta línea → roba 1)
   },
 
-  'Courage 5': {
+  'Valor 5': {
     onPlay: [{ action: 'discard', target: 'self', count: 1 }]
   },
 
-  // ========== DIVERSITY ==========
-  'Diversity 5': {
+  // ========== DIVERSIDAD ==========
+  'Diversidad 5': {
     onPlay: [{ action: 'discard', target: 'self', count: 1 }]
   },
 
-  // ========== FEAR ==========
-  'Fear 2': {
+  // ========== MIEDO ==========
+  'Miedo 2': {
     onPlay: [
       { action: 'return', target: 'opponent', count: 1 }
     ]
   },
 
-  'Fear 3': {
+  'Miedo 3': {
     onPlay: [
       // "en esta línea" simplificado en Fase A (cualquier carta del oponente)
       { action: 'shift', target: 'opponent', count: 1 }
     ]
   },
 
-  'Fear 4': {
+  'Miedo 4': {
     onPlay: [
       // TODO Fase B: forzar descarte aleatorio (actualmente el jugador elige)
       { action: 'discard', target: 'opponent', count: 1 }
     ]
   },
 
-  'Fear 5': {
+  'Miedo 5': {
     onPlay: [{ action: 'discard', target: 'self', count: 1 }]
   },
 
-  // ========== ICE ==========
-  'Ice 1': {
+  // ========== HIELO ==========
+  'Hielo 1': {
     onPlay: [
       { action: 'mayShiftSelf' }
     ],
@@ -772,71 +772,71 @@ const CARD_EFFECTS = {
     ]
   },
 
-  'Ice 2': {
+  'Hielo 2': {
     onPlay: [
       { action: 'shift', target: 'any', count: 1 }
     ]
   },
 
-  'Ice 5': {
+  'Hielo 5': {
     onPlay: [{ action: 'discard', target: 'self', count: 1 }]
   },
 
-  // ========== LUCK ==========
-  'Luck 5': {
+  // ========== SUERTE ==========
+  'Suerte 5': {
     onPlay: [{ action: 'discard', target: 'self', count: 1 }]
   },
 
-  // ========== MIRROR ==========
-  'Mirror 4': {
+  // ========== ESPEJO ==========
+  'Espejo 4': {
     // "Después de que tu oponente robe cartas: Roba 1 carta."
     onOpponentDraw: [
       { action: 'draw', target: 'self', count: 1 }
     ]
   },
 
-  'Mirror 5': {
+  'Espejo 5': {
     onPlay: [{ action: 'discard', target: 'self', count: 1 }]
   },
 
-  // ========== PEACE ==========
-  'Peace 2': {
+  // ========== PAZ ==========
+  'Paz 2': {
     onPlay: [
       { action: 'draw', target: 'self', count: 1 },
       { action: 'playHandFaceDown', target: 'self' }
     ]
   },
 
-  'Peace 4': {
+  'Paz 4': {
     // "Después de que descartes cartas durante el turno de tu oponente: Roba 1 carta."
     onForcedDiscard: [
       { action: 'draw', target: 'self', count: 1 }
     ]
   },
 
-  'Peace 5': {
+  'Paz 5': {
     onPlay: [{ action: 'discard', target: 'self', count: 1 }]
   },
 
-  // ========== SMOKE ==========
-  'Smoke 0': {
+  // ========== HUMO ==========
+  'Humo 0': {
     onPlay: [
       { action: 'playTopDeckInFaceDownLines', target: 'self' }
     ]
   },
 
-  'Smoke 3': {
+  'Humo 3': {
     onPlay: [
       { action: 'playHandFaceDown', target: 'self' }
     ]
   },
 
-  'Smoke 5': {
+  'Humo 5': {
     onPlay: [{ action: 'discard', target: 'self', count: 1 }]
   },
 
-  // ========== TIME ==========
-  'Time 2': {
+  // ========== TIEMPO ==========
+  'Tiempo 2': {
     onPlay: [
       { action: 'mayShuffleDiscardIntoDeck', target: 'self' }
     ],
@@ -846,24 +846,24 @@ const CARD_EFFECTS = {
     ]
   },
 
-  'Time 4': {
+  'Tiempo 4': {
     onPlay: [
       { action: 'draw', target: 'self', count: 2 },
       { action: 'discard', target: 'self', count: 2 }
     ]
   },
 
-  'Time 5': {
+  'Tiempo 5': {
     onPlay: [{ action: 'discard', target: 'self', count: 1 }]
   },
 
-  // ========== UNITY ==========
-  'Unity 5': {
+  // ========== UNIDAD ==========
+  'Unidad 5': {
     onPlay: [{ action: 'discard', target: 'self', count: 1 }]
   },
 
-  // ========== WAR ==========
-  'War 0': {
+  // ========== GUERRA ==========
+  'Guerra 0': {
     // "Después de que actualices: Puedes voltear esta carta."
     onRefresh: [
       { action: 'mayFlip', target: 'self', count: 1 }
@@ -874,7 +874,7 @@ const CARD_EFFECTS = {
     ]
   },
 
-  'War 1': {
+  'Guerra 1': {
     // "Después de que tu oponente actualice: Descarta cualquier número de cartas. Actualiza."
     onOpponentRefresh: [
       { action: 'discardAny', target: 'self' },
@@ -882,7 +882,7 @@ const CARD_EFFECTS = {
     ]
   },
 
-  'War 2': {
+  'Guerra 2': {
     onPlay: [
       { action: 'flip', target: 'any', count: 1 }
     ],
@@ -892,7 +892,7 @@ const CARD_EFFECTS = {
     ]
   },
 
-  'War 3': {
+  'Guerra 3': {
     onPlay: [
       { action: 'draw', target: 'self', count: 1 }
     ],
@@ -902,13 +902,13 @@ const CARD_EFFECTS = {
     ]
   },
 
-  'War 4': {
+  'Guerra 4': {
     onPlay: [
       { action: 'discard', target: 'opponent', count: 1 }
     ]
   },
 
-  'War 5': {
+  'Guerra 5': {
     onPlay: [{ action: 'discard', target: 'self', count: 1 }]
   }
 };

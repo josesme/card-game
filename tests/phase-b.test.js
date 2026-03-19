@@ -123,93 +123,93 @@ beforeEach(() => {
 // ─── CARD_EFFECTS ────────────────────────────────────────────────────────────
 describe('CARD_EFFECTS — entradas Fase B', () => {
   test('War 0: onRefresh=mayFlip, onOpponentDraw=mayDelete', () => {
-    const ef = ENGINE.CARD_EFFECTS['War 0'];
+    const ef = ENGINE.CARD_EFFECTS['Guerra 0'];
     expect(ef.onRefresh[0].action).toBe('mayFlip');
     expect(ef.onOpponentDraw[0].action).toBe('mayDelete');
   });
 
   test('War 1: onOpponentRefresh=[discardAny, refresh]', () => {
-    const ef = ENGINE.CARD_EFFECTS['War 1'];
+    const ef = ENGINE.CARD_EFFECTS['Guerra 1'];
     expect(ef.onOpponentRefresh[0].action).toBe('discardAny');
     expect(ef.onOpponentRefresh[1].action).toBe('refresh');
   });
 
   test('War 2: onOpponentCompile=discardHand opponent', () => {
-    const ef = ENGINE.CARD_EFFECTS['War 2'];
+    const ef = ENGINE.CARD_EFFECTS['Guerra 2'];
     expect(ef.onOpponentCompile[0].action).toBe('discardHand');
     expect(ef.onOpponentCompile[0].target).toBe('opponent');
   });
 
   test('War 3: onOpponentDiscard=playHandFaceDown', () => {
-    const ef = ENGINE.CARD_EFFECTS['War 3'];
+    const ef = ENGINE.CARD_EFFECTS['Guerra 3'];
     expect(ef.onOpponentDiscard[0].action).toBe('playHandFaceDown');
   });
 
   test('Mirror 4: onOpponentDraw=draw self 1', () => {
-    const ef = ENGINE.CARD_EFFECTS['Mirror 4'];
+    const ef = ENGINE.CARD_EFFECTS['Espejo 4'];
     expect(ef.onOpponentDraw[0].action).toBe('draw');
     expect(ef.onOpponentDraw[0].count).toBe(1);
   });
 
   test('Assimilation 1: onRefresh + onOpponentRefresh = drawFromOpponentDeck', () => {
-    const ef = ENGINE.CARD_EFFECTS['Assimilation 1'];
+    const ef = ENGINE.CARD_EFFECTS['Asimilación 1'];
     expect(ef.onRefresh[0].action).toBe('drawFromOpponentDeck');
     expect(ef.onOpponentRefresh[0].action).toBe('drawFromOpponentDeck');
   });
 
   test('Ice 1: onOpponentPlayInLine=discard opponent', () => {
-    const ef = ENGINE.CARD_EFFECTS['Ice 1'];
+    const ef = ENGINE.CARD_EFFECTS['Hielo 1'];
     expect(ef.onOpponentPlayInLine[0].action).toBe('discard');
     expect(ef.onOpponentPlayInLine[0].target).toBe('opponent');
   });
 
   test('Chaos 0: onPlay=[flipCoveredInEachLine, swapTopDeckCards]', () => {
-    const ef = ENGINE.CARD_EFFECTS['Chaos 0'];
+    const ef = ENGINE.CARD_EFFECTS['Caos 0'];
     expect(ef.onPlay[0].action).toBe('flipCoveredInEachLine');
     expect(ef.onPlay[1].action).toBe('swapTopDeckCards');
   });
 
   test('Chaos 1: onPlay=[rearrangeProtocols self, rearrangeProtocols opponent]', () => {
-    const ef = ENGINE.CARD_EFFECTS['Chaos 1'];
+    const ef = ENGINE.CARD_EFFECTS['Caos 1'];
     expect(ef.onPlay[0].action).toBe('rearrangeProtocols');
     expect(ef.onPlay[0].target).toBe('self');
     expect(ef.onPlay[1].target).toBe('opponent');
   });
 
   test('Chaos 4: onTurnEnd=discardHandDraw', () => {
-    const ef = ENGINE.CARD_EFFECTS['Chaos 4'];
+    const ef = ENGINE.CARD_EFFECTS['Caos 4'];
     expect(ef.onTurnEnd[0].action).toBe('discardHandDraw');
   });
 
   test('Clarity 4: onPlay=mayShuffleDiscardIntoDeck', () => {
-    const ef = ENGINE.CARD_EFFECTS['Clarity 4'];
+    const ef = ENGINE.CARD_EFFECTS['Claridad 4'];
     expect(ef.onPlay[0].action).toBe('mayShuffleDiscardIntoDeck');
   });
 
   test('Time 2: onPlay=mayShuffleDiscardIntoDeck, onDeckShuffle=drawAndMayShiftSelf', () => {
-    const ef = ENGINE.CARD_EFFECTS['Time 2'];
+    const ef = ENGINE.CARD_EFFECTS['Tiempo 2'];
     expect(ef.onPlay[0].action).toBe('mayShuffleDiscardIntoDeck');
     expect(ef.onDeckShuffle[0].action).toBe('drawAndMayShiftSelf');
   });
 
   test('Peace 2: onPlay=[draw, playHandFaceDown]', () => {
-    const ef = ENGINE.CARD_EFFECTS['Peace 2'];
+    const ef = ENGINE.CARD_EFFECTS['Paz 2'];
     expect(ef.onPlay[0].action).toBe('draw');
     expect(ef.onPlay[1].action).toBe('playHandFaceDown');
   });
 
   test('Peace 4: onForcedDiscard=draw', () => {
-    const ef = ENGINE.CARD_EFFECTS['Peace 4'];
+    const ef = ENGINE.CARD_EFFECTS['Paz 4'];
     expect(ef.onForcedDiscard[0].action).toBe('draw');
   });
 
   test('Smoke 0: onPlay=playTopDeckInFaceDownLines', () => {
-    const ef = ENGINE.CARD_EFFECTS['Smoke 0'];
+    const ef = ENGINE.CARD_EFFECTS['Humo 0'];
     expect(ef.onPlay[0].action).toBe('playTopDeckInFaceDownLines');
   });
 
   test('Smoke 3: onPlay=playHandFaceDown', () => {
-    const ef = ENGINE.CARD_EFFECTS['Smoke 3'];
+    const ef = ENGINE.CARD_EFFECTS['Humo 3'];
     expect(ef.onPlay[0].action).toBe('playHandFaceDown');
   });
 });
@@ -265,14 +265,14 @@ describe('Acciones Fase B (resolución directa)', () => {
     // Realmente en el juego: onOpponentCompile dispara para War 2 owner (ai) con target:opponent→player
     GS.ai.hand = [];
     GS.player.hand = [makeCard('X'), makeCard('Y')];
-    GS.effectQueue = [{ effect: { action: 'discardHand', target: 'opponent' }, targetPlayer: 'ai', cardName: 'War 2' }];
+    GS.effectQueue = [{ effect: { action: 'discardHand', target: 'opponent' }, targetPlayer: 'ai', cardName: 'Guerra 2' }];
     ENGINE.processAbilityEffect();
     // discardHand descarta la mano de targetPlayer (ai), no del resolved opponent
     // Revisamos: en la implementación actual discardHand usa `targetPlayer` directamente
     expect(GS.ai.hand).toHaveLength(0); // ai tenía mano vacía ya
     // Reset y probar con ai teniendo mano
     GS.ai.hand = [makeCard('M1'), makeCard('M2')];
-    GS.effectQueue = [{ effect: { action: 'discardHand', target: 'self' }, targetPlayer: 'ai', cardName: 'War 2' }];
+    GS.effectQueue = [{ effect: { action: 'discardHand', target: 'self' }, targetPlayer: 'ai', cardName: 'Guerra 2' }];
     ENGINE.processAbilityEffect();
     expect(GS.ai.hand).toHaveLength(0);
     expect(GS.ai.trash).toHaveLength(2);
@@ -319,71 +319,71 @@ describe('Hooks reactivos Fase B', () => {
   });
 
   test('onOpponentDrawEffects encola efectos de Mirror 4 (ai)', () => {
-    const mirror4 = makeCard('Mirror 4');
+    const mirror4 = makeCard('Espejo 4');
     GS.field['alpha'].ai = [{ card: mirror4, faceDown: false }];
     ENGINE.onOpponentDrawEffects('player'); // player draws → ai's Mirror 4 reacts
     expect(GS.effectQueue.length).toBeGreaterThan(0);
-    expect(GS.effectQueue[0].cardName).toBe('Mirror 4');
+    expect(GS.effectQueue[0].cardName).toBe('Espejo 4');
     expect(GS.effectQueue[0].effect.action).toBe('draw');
   });
 
   test('onOpponentDrawEffects respeta la guarda _inOpponentDrawEffects', () => {
     GS._inOpponentDrawEffects = true;
-    GS.field['alpha'].ai = [{ card: makeCard('Mirror 4'), faceDown: false }];
+    GS.field['alpha'].ai = [{ card: makeCard('Espejo 4'), faceDown: false }];
     ENGINE.onOpponentDrawEffects('player');
     expect(GS.effectQueue.length).toBe(0);
   });
 
   test('onOpponentCompileEffects encola discardHand de War 2 (ai)', () => {
-    const war2 = makeCard('War 2');
+    const war2 = makeCard('Guerra 2');
     GS.field['beta'].ai = [{ card: war2, faceDown: false }];
     ENGINE.onOpponentCompileEffects('player');
     expect(GS.effectQueue.length).toBeGreaterThan(0);
-    expect(GS.effectQueue[0].cardName).toBe('War 2');
+    expect(GS.effectQueue[0].cardName).toBe('Guerra 2');
     expect(GS.effectQueue[0].effect.action).toBe('discardHand');
   });
 
   test('onOpponentDiscardEffects encola playHandFaceDown de War 3 (ai)', () => {
-    const war3 = makeCard('War 3');
+    const war3 = makeCard('Guerra 3');
     GS.field['gamma'].ai = [{ card: war3, faceDown: false }];
     ENGINE.onOpponentDiscardEffects('player');
     expect(GS.effectQueue.length).toBeGreaterThan(0);
-    expect(GS.effectQueue[0].cardName).toBe('War 3');
+    expect(GS.effectQueue[0].cardName).toBe('Guerra 3');
     expect(GS.effectQueue[0].effect.action).toBe('playHandFaceDown');
   });
 
   test('onOpponentPlayInLineEffects activa Ice 1 solo en la línea correcta', () => {
-    const ice1 = makeCard('Ice 1');
+    const ice1 = makeCard('Hielo 1');
     GS.field['alpha'].ai = [{ card: ice1, faceDown: false }];
     ENGINE.onOpponentPlayInLineEffects('player', 'alpha');
     expect(GS.effectQueue.length).toBe(1);
-    expect(GS.effectQueue[0].cardName).toBe('Ice 1');
+    expect(GS.effectQueue[0].cardName).toBe('Hielo 1');
     GS.effectQueue = [];
     ENGINE.onOpponentPlayInLineEffects('player', 'beta');
     expect(GS.effectQueue.length).toBe(0);
   });
 
   test('onOpponentPlayInLineEffects no activa cartas bocabajo', () => {
-    GS.field['alpha'].ai = [{ card: makeCard('Ice 1'), faceDown: true }];
+    GS.field['alpha'].ai = [{ card: makeCard('Hielo 1'), faceDown: true }];
     ENGINE.onOpponentPlayInLineEffects('player', 'alpha');
     expect(GS.effectQueue.length).toBe(0);
   });
 
   test('onForcedDiscardEffects encola draw de Peace 4 (player)', () => {
-    const peace4 = makeCard('Peace 4');
+    const peace4 = makeCard('Paz 4');
     GS.field['alpha'].player = [{ card: peace4, faceDown: false }];
     ENGINE.onForcedDiscardEffects('player');
     expect(GS.effectQueue.length).toBeGreaterThan(0);
-    expect(GS.effectQueue[0].cardName).toBe('Peace 4');
+    expect(GS.effectQueue[0].cardName).toBe('Paz 4');
     expect(GS.effectQueue[0].effect.action).toBe('draw');
   });
 
   test('onOpponentRefreshEffects encola discardAny+refresh de War 1 (ai)', () => {
-    const war1 = makeCard('War 1');
+    const war1 = makeCard('Guerra 1');
     GS.field['alpha'].ai = [{ card: war1, faceDown: false }];
     ENGINE.onOpponentRefreshEffects('player'); // player refreshes → ai's War 1 fires
     expect(GS.effectQueue.length).toBeGreaterThan(0);
-    expect(GS.effectQueue[0].cardName).toBe('War 1');
+    expect(GS.effectQueue[0].cardName).toBe('Guerra 1');
   });
 });
 
@@ -399,14 +399,14 @@ describe('shuffleDiscardIntoDeck', () => {
 
   test('dispara onDeckShuffle para Time 2 en campo', () => {
     GS.player.trash = [makeCard('T1')];
-    const time2 = makeCard('Time 2');
+    const time2 = makeCard('Tiempo 2');
     GS.field['alpha'].player = [{ card: time2, faceDown: false }];
     // Bloquear processAbilityEffect para inspeccionar la cola
     GS.effectContext = { type: 'test-block' };
     ENGINE.shuffleDiscardIntoDeck('player');
     GS.effectContext = null;
     expect(GS.effectQueue.length).toBeGreaterThan(0);
-    expect(GS.effectQueue[0].cardName).toBe('Time 2');
+    expect(GS.effectQueue[0].cardName).toBe('Tiempo 2');
     expect(GS.effectQueue[0].effect.action).toBe('drawAndMayShiftSelf');
   });
 
