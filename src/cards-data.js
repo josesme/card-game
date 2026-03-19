@@ -18,7 +18,8 @@ const CARDS_DATA = {
     "Odio":       { "edicion": 1, "color": "#b91c1c", "abilities": "ELIMINAR. DESCARTAR" },
     "Amor":       { "edicion": 1, "color": "#f43f5e", "abilities": "ROBAR. DAR. INTERCAMBIAR" },
     // ── Main 2 ──────────────────────────────────────────────────────────────
-    "Assimilation": { "edicion": 2, "color": "#4338ca", "abilities": "DEVOLVER. ROBAR. BOCABAJO" }
+    "Assimilation": { "edicion": 2, "color": "#4338ca", "abilities": "DEVOLVER. ROBAR. BOCABAJO" },
+    "Chaos":        { "edicion": 2, "color": "#a855f7", "abilities": "VOLTEAR. REORGANIZAR. CAMBIAR" }
   },
   "Espíritu": [
     {"valor": 0, "nombre": "Espíritu 0", "fase": "Action", "h_inicio": "", "h_accion": "Actualiza. Roba 1 carta.", "h_final": "Sáltate tu Fase de Comprobar Caché."},
@@ -140,6 +141,14 @@ const CARDS_DATA = {
     {"valor": 4, "nombre": "Assimilation 4", "fase": "Action", "h_inicio": "", "h_accion": "Roba la carta superior del mazo de tu oponente. Tu oponente roba la carta superior de tu mazo.", "h_final": ""},
     {"valor": 5, "nombre": "Assimilation 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""},
     {"valor": 6, "nombre": "Assimilation 6", "fase": "End",    "h_inicio": "", "h_accion": "", "h_final": "Final: Juega bocabajo la carta superior de tu mazo en el lado de tu oponente."}
+  ],
+  "Chaos": [
+    {"valor": 0, "nombre": "Chaos 0", "fase": "Action", "h_inicio": "", "h_accion": "En cada línea, voltea 1 carta cubierta.", "h_final": "Inicial: Roba la carta superior del mazo de tu oponente. Tu oponente roba la carta superior de tu mazo."},
+    {"valor": 1, "nombre": "Chaos 1", "fase": "Action", "h_inicio": "", "h_accion": "Reorganiza tus Protocolos. Reorganiza los Protocolos de tu oponente.", "h_final": ""},
+    {"valor": 2, "nombre": "Chaos 2", "fase": "Action", "h_inicio": "", "h_accion": "Cambia 1 de tus cartas cubiertas.", "h_final": ""},
+    {"valor": 3, "nombre": "Chaos 3", "fase": "Action", "h_inicio": "", "h_accion": "", "h_final": "Esta carta puede jugarse sin coincidir con los Protocolos."},
+    {"valor": 4, "nombre": "Chaos 4", "fase": "End",    "h_inicio": "", "h_accion": "", "h_final": "Final: Descarta tu mano. Roba tantas cartas como hayas descartado."},
+    {"valor": 5, "nombre": "Chaos 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""}
   ],
   "Amor": [
     {"valor": 1, "nombre": "Amor 1", "fase": "End",    "h_inicio": "", "h_accion": "Roba la carta superior del mazo de tu oponente.", "h_final": "Final: Puedes dar 1 carta de tu mano a tu oponente. Si lo haces, roba 2 cartas."},
