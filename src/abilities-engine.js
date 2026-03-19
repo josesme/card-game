@@ -3819,12 +3819,13 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
           confirmMsg.textContent = `${triggerCardName}: está cubierta. ¿Quieres cambiarla a otra línea?`;
           btnYes.onclick = () => {
             confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            // Remove from current line, let player pick destination via shift
-            st.splice(selfIdx, 1);
-            gameState.player.hand.push(cardObj.card); // temporarily to hand for shift UX
-            // Re-introduce as a card to play
-            processAbilityEffect();
+            gameState.effectContext = {
+              type: 'shiftSelf', sourceLine: line, target: 'player',
+              count: 1, selected: [], waitingForLine: true,
+              cardRef: cardObj
+            };
+            updateStatus(`${triggerCardName}: elige línea destino`);
+            if (typeof highlightSelectableLines === 'function') highlightSelectableLines(line);
           };
           btnNo.onclick = () => { confirmArea.classList.add('hidden'); gameState.effectContext = null; processAbilityEffect(); };
         } else { processAbilityEffect(); }
@@ -3855,31 +3856,63 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
     }
 
     case 'luckCallProtocolDiscard': {
-      // Suerte 3: indica un protocolo, descarta top del mazo rival; si coincide, elimina 1 carta
+      // Suerte 3: declara protocolo → descarta top rival → si coincide, elimina 1 carta
       if (gameState[opponent].deck.length === 0) { processAbilityEffect(); break; }
-      const topCard = gameState[opponent].deck.pop();
-      gameState[opponent].trash.push(topCard);
-      const cardProto = topCard.nombre.replace(/ \d+$/, '');
+      // 6 protocolos en juego (3 jugador + 3 rival, sin duplicados)
+      const allProtos = [...new Set([...gameState[targetPlayer].protocols, ...gameState[opponent].protocols])].filter(Boolean);
       if (targetPlayer === 'player') {
-        const guessed = prompt(`Suerte 3: escribe un nombre de Protocolo`) || '';
-        if (guessed.trim().toLowerCase() === cardProto.toLowerCase()) {
-          updateStatus(`¡Acierto! ${topCard.nombre} es de Protocolo ${cardProto} → elimina 1 carta`);
-          gameState.effectQueue.unshift({ effect: { action: 'mayDelete', target: 'any', count: 1 }, targetPlayer, cardName: triggerCardName });
-        } else {
-          updateStatus(`Fallo. La carta era ${topCard.nombre} (${cardProto})`);
-        }
+        const confirmArea = document.getElementById('command-confirm');
+        const confirmMsg = document.getElementById('confirm-msg');
+        const btnYes = document.getElementById('btn-confirm-yes');
+        const btnNo = document.getElementById('btn-confirm-no');
+        if (confirmArea && btnYes && btnNo) {
+          gameState.effectContext = { type: 'confirm' };
+          confirmArea.classList.remove('hidden');
+          const opts = allProtos.map(p => `<option value="${p}">${p}</option>`).join('');
+          confirmMsg.innerHTML = `${triggerCardName || ''}: Declara un Protocolo<br><select id="luck3-proto-sel" style="font-size:1.1em;margin-top:8px;padding:2px 8px;">${opts}</select>`;
+          btnYes.onclick = () => {
+            const sel = document.getElementById('luck3-proto-sel');
+            const declared = sel?.value || allProtos[0];
+            confirmArea.classList.add('hidden');
+            confirmMsg.innerHTML = '';
+            gameState.effectContext = null;
+            // Ahora descarta top del rival
+            const topCard = gameState[opponent].deck.pop();
+            gameState[opponent].trash.push(topCard);
+            if (topCard.protocol === declared) {
+              updateStatus(`${triggerCardName}: ¡Coincide! ${topCard.nombre} es ${declared} → elimina 1 carta`);
+              startEffect('eliminate', 'any', 1);
+            } else {
+              updateStatus(`${triggerCardName}: Fallo — carta era ${topCard.nombre} (${topCard.protocol})`);
+              updateUI();
+              processAbilityEffect();
+            }
+          };
+          btnNo.onclick = () => {
+            confirmArea.classList.add('hidden');
+            confirmMsg.innerHTML = '';
+            gameState.effectContext = null;
+            processAbilityEffect();
+          };
+        } else { processAbilityEffect(); }
       } else {
-        // IA: 50% de acertar simulado
-        if (Math.random() > 0.5) {
-          const lines = LINES.filter(l => gameState.field[l].player.length > 0);
-          if (lines.length > 0) {
-            const removed = gameState.field[lines[0]].player.pop();
-            if (removed) gameState.player.trash.push(removed.card);
-          }
+        // IA: elige el protocolo del oponente con más cartas en su mazo
+        const bestProto = gameState[opponent].protocols.reduce((best, p) => {
+          const cnt = gameState[opponent].deck.filter(c => c.protocol === p).length;
+          const bCnt = gameState[opponent].deck.filter(c => c.protocol === best).length;
+          return cnt > bCnt ? p : best;
+        }, gameState[opponent].protocols[0]);
+        const topCard = gameState[opponent].deck.pop();
+        gameState[opponent].trash.push(topCard);
+        if (topCard.protocol === bestProto) {
+          updateStatus(`IA — ${triggerCardName}: acierta con ${bestProto}! Elimina 1 carta del jugador`);
+          startEffect('eliminate', 'player', 1);
+        } else {
+          updateStatus(`IA — ${triggerCardName}: fallo (declaró ${bestProto}, carta: ${topCard.nombre})`);
+          updateUI();
+          processAbilityEffect();
         }
       }
-      updateUI();
-      processAbilityEffect();
       break;
     }
 
