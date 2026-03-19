@@ -649,8 +649,14 @@ const CARD_EFFECTS = {
     onPlay: [
       { action: 'discard', target: 'self', count: 1 },
       { action: 'refresh', target: 'self' }
+    ],
+    // "Después de que un jugador actualice: Roba la carta superior del mazo de tu oponente"
+    onRefresh: [
+      { action: 'drawFromOpponentDeck' }
+    ],
+    onOpponentRefresh: [
+      { action: 'drawFromOpponentDeck' }
     ]
-    // TODO Fase B: onRefresh trigger (cualquier jugador actualiza → roba top del mazo rival)
   },
 
   'Assimilation 5': {
@@ -658,11 +664,37 @@ const CARD_EFFECTS = {
   },
 
   // ========== CHAOS ==========
+  'Chaos 0': {
+    onPlay: [
+      { action: 'flipCoveredInEachLine' },
+      { action: 'swapTopDeckCards' }
+    ]
+  },
+
+  'Chaos 1': {
+    onPlay: [
+      { action: 'rearrangeProtocols', target: 'self' },
+      { action: 'rearrangeProtocols', target: 'opponent' }
+    ]
+  },
+
+  'Chaos 4': {
+    onTurnEnd: [
+      { action: 'discardHandDraw', target: 'self' }
+    ]
+  },
+
   'Chaos 5': {
     onPlay: [{ action: 'discard', target: 'self', count: 1 }]
   },
 
   // ========== CLARITY ==========
+  'Clarity 4': {
+    onPlay: [
+      { action: 'mayShuffleDiscardIntoDeck', target: 'self' }
+    ]
+  },
+
   'Clarity 5': {
     onPlay: [{ action: 'discard', target: 'self', count: 1 }]
   },
@@ -733,8 +765,11 @@ const CARD_EFFECTS = {
   'Ice 1': {
     onPlay: [
       { action: 'mayShiftSelf' }
+    ],
+    // "Después de que tu oponente juegue una carta en esta línea: Tu oponente descarta 1 carta."
+    onOpponentPlayInLine: [
+      { action: 'discard', target: 'opponent', count: 1 }
     ]
-    // TODO Fase B: onOpponentPlayInLine → rival descarta 1 carta
   },
 
   'Ice 2': {
@@ -753,21 +788,64 @@ const CARD_EFFECTS = {
   },
 
   // ========== MIRROR ==========
+  'Mirror 4': {
+    // "Después de que tu oponente robe cartas: Roba 1 carta."
+    onOpponentDraw: [
+      { action: 'draw', target: 'self', count: 1 }
+    ]
+  },
+
   'Mirror 5': {
     onPlay: [{ action: 'discard', target: 'self', count: 1 }]
   },
 
   // ========== PEACE ==========
+  'Peace 2': {
+    onPlay: [
+      { action: 'draw', target: 'self', count: 1 },
+      { action: 'playHandFaceDown', target: 'self' }
+    ]
+  },
+
+  'Peace 4': {
+    // "Después de que descartes cartas durante el turno de tu oponente: Roba 1 carta."
+    onForcedDiscard: [
+      { action: 'draw', target: 'self', count: 1 }
+    ]
+  },
+
   'Peace 5': {
     onPlay: [{ action: 'discard', target: 'self', count: 1 }]
   },
 
   // ========== SMOKE ==========
+  'Smoke 0': {
+    onPlay: [
+      { action: 'playTopDeckInFaceDownLines', target: 'self' }
+    ]
+  },
+
+  'Smoke 3': {
+    onPlay: [
+      { action: 'playHandFaceDown', target: 'self' }
+    ]
+  },
+
   'Smoke 5': {
     onPlay: [{ action: 'discard', target: 'self', count: 1 }]
   },
 
   // ========== TIME ==========
+  'Time 2': {
+    onPlay: [
+      { action: 'mayShuffleDiscardIntoDeck', target: 'self' }
+    ],
+    // "Después de que barajes tu mazo: Roba 1 carta y puedes cambiar esta carta."
+    onDeckShuffle: [
+      { action: 'drawAndMayShiftSelf' }
+    ]
+  },
+
   'Time 4': {
     onPlay: [
       { action: 'draw', target: 'self', count: 2 },
@@ -785,18 +863,43 @@ const CARD_EFFECTS = {
   },
 
   // ========== WAR ==========
+  'War 0': {
+    // "Después de que actualices: Puedes voltear esta carta."
+    onRefresh: [
+      { action: 'mayFlip', target: 'self', count: 1 }
+    ],
+    // "Después de que tu oponente robe cartas: Puedes eliminar 1 carta."
+    onOpponentDraw: [
+      { action: 'mayDelete', target: 'any', count: 1 }
+    ]
+  },
+
+  'War 1': {
+    // "Después de que tu oponente actualice: Descarta cualquier número de cartas. Actualiza."
+    onOpponentRefresh: [
+      { action: 'discardAny', target: 'self' },
+      { action: 'refresh', target: 'self' }
+    ]
+  },
+
   'War 2': {
     onPlay: [
       { action: 'flip', target: 'any', count: 1 }
+    ],
+    // "Después de que tu oponente compile: Tu oponente descarta su mano."
+    onOpponentCompile: [
+      { action: 'discardHand', target: 'opponent' }
     ]
-    // TODO Fase B: onOpponentCompile → rival descarta mano
   },
 
   'War 3': {
     onPlay: [
       { action: 'draw', target: 'self', count: 1 }
+    ],
+    // "Después de que tu oponente descarte cartas: Puedes jugar 1 carta bocabajo."
+    onOpponentDiscard: [
+      { action: 'playHandFaceDown', target: 'self' }
     ]
-    // TODO Fase B: onOpponentDiscard → puedes jugar 1 carta bocabajo
   },
 
   'War 4': {
@@ -820,7 +923,7 @@ const CARD_EFFECTS = {
  * @param {string} trigger - Tipo de disparador: onPlay, onFlip, onTurnStart, etc.
  * @param {string} targetPlayer - 'player' o 'ai'
  */
-function triggerCardEffect(card, trigger, targetPlayer) {
+function triggerCardEffect(card, trigger, targetPlayer, opts = {}) {
   const cardName = card.nombre;
   const effectDef = CARD_EFFECTS[cardName];
 
@@ -832,11 +935,17 @@ function triggerCardEffect(card, trigger, targetPlayer) {
   const effectList = effectDef[trigger];
   if (!Array.isArray(effectList)) return;
 
-  // LIFO Stack: Agregar los efectos al INICIO de la cola (unshift)
-  // Para que se resuelvan en el orden correcto de la lista, los agregamos en reversa al inicio
   gameState.effectQueue = gameState.effectQueue || [];
-  for (let i = effectList.length - 1; i >= 0; i--) {
-    gameState.effectQueue.unshift({ effect: effectList[i], targetPlayer, cardName });
+  if (opts.deferred) {
+    // Deferred: agregar al FINAL de la cola (para efectos reactivos que van después de los propios)
+    for (let i = 0; i < effectList.length; i++) {
+      gameState.effectQueue.push({ effect: effectList[i], targetPlayer, cardName });
+    }
+  } else {
+    // LIFO Stack: Agregar al INICIO (orden normal)
+    for (let i = effectList.length - 1; i >= 0; i--) {
+      gameState.effectQueue.unshift({ effect: effectList[i], targetPlayer, cardName });
+    }
   }
 
   // Iniciar procesamiento
@@ -962,9 +1071,9 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
 
     case 'refresh':
       while (gameState[targetPlayer].hand.length < 5) {
-        drawCard(targetPlayer);
+        if (!drawCard(targetPlayer)) break;
       }
-      if (typeof onDrawEffects === 'function') onDrawEffects(targetPlayer);
+      if (typeof onOpponentDrawEffects === 'function') onOpponentDrawEffects(targetPlayer);
       processAbilityEffect();
       break;
 
@@ -1209,7 +1318,7 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       // Odio 3: roba 1 carta si eliminaste cartas en el turno anterior
       if (!gameState.eliminatedLastTurn?.[targetPlayer]) { processAbilityEffect(); break; }
       drawCard(targetPlayer);
-      if (targetPlayer === 'player' && typeof onDrawEffects === 'function') onDrawEffects(targetPlayer);
+      if (typeof onOpponentDrawEffects === 'function') onOpponentDrawEffects(targetPlayer);
       processAbilityEffect();
       break;
     }
@@ -2556,6 +2665,159 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       break;
     }
 
+    // ── COMPILE MAIN 2 — Nuevas acciones (Fase B) ────────────────────────────
+
+    case 'discardHand': {
+      // War 2 reactive: descarta toda la mano del jugador objetivo
+      const handSize = gameState[targetPlayer].hand.length;
+      if (handSize > 0) {
+        gameState[targetPlayer].trash.push(...gameState[targetPlayer].hand.splice(0));
+        updateStatus(`${targetPlayer === 'player' ? 'Descartas' : 'IA descarta'} toda la mano (${handSize} cartas)`);
+        updateUI();
+      }
+      processAbilityEffect();
+      break;
+    }
+
+    case 'mayShuffleDiscardIntoDeck': {
+      // Clarity 4, Time 2: baraja descarte en mazo (opcional)
+      if (gameState[targetPlayer].trash.length === 0) { processAbilityEffect(); break; }
+      if (targetPlayer === 'player') {
+        const confirmArea = document.getElementById('command-confirm');
+        const confirmMsg = document.getElementById('confirm-msg');
+        const btnYes = document.getElementById('btn-confirm-yes');
+        const btnNo = document.getElementById('btn-confirm-no');
+        if (confirmArea && btnYes && btnNo) {
+          gameState.effectContext = { type: 'confirm' };
+          confirmArea.classList.remove('hidden');
+          confirmMsg.textContent = `¿Barajes tu descarte (${gameState.player.trash.length} cartas) en tu mazo?`;
+          btnYes.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            shuffleDiscardIntoDeck('player');
+            processAbilityEffect();
+          };
+          btnNo.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            processAbilityEffect();
+          };
+        } else { processAbilityEffect(); }
+      } else {
+        // IA baraja si el mazo tiene menos de 3 cartas
+        if (gameState.ai.deck.length < 3) shuffleDiscardIntoDeck('ai');
+        processAbilityEffect();
+      }
+      break;
+    }
+
+    case 'flipCoveredInEachLine': {
+      // Chaos 0: en cada línea, voltea la primera carta cubierta (bajo otra) bocarriba
+      LINES.forEach(l => {
+        ['player', 'ai'].forEach(p => {
+          const stack = gameState.field[l][p];
+          for (let i = 0; i < stack.length - 1; i++) {
+            if (stack[i].faceDown) { stack[i].faceDown = false; break; }
+          }
+        });
+      });
+      updateUI();
+      processAbilityEffect();
+      break;
+    }
+
+    case 'drawFromOpponentDeck': {
+      // Assimilation 1 reactive: roba carta top del mazo del oponente
+      const opp = targetPlayer === 'player' ? 'ai' : 'player';
+      if (gameState[opp].deck.length === 0 && gameState[opp].trash.length > 0) {
+        gameState[opp].deck = gameState[opp].trash.sort(() => Math.random() - 0.5);
+        gameState[opp].trash = [];
+      }
+      if (gameState[opp].deck.length > 0) {
+        const stolen = gameState[opp].deck.pop();
+        gameState[targetPlayer].hand.push(stolen);
+        updateStatus(`${targetPlayer === 'player' ? 'Robas' : 'IA roba'} la carta top del mazo rival`);
+        updateUI();
+      }
+      processAbilityEffect();
+      break;
+    }
+
+    case 'swapTopDeckCards': {
+      // Chaos 0: cada jugador roba la carta top del mazo rival
+      if (gameState.ai.deck.length > 0) gameState.player.hand.push(gameState.ai.deck.pop());
+      if (gameState.player.deck.length > 0) gameState.ai.hand.push(gameState.player.deck.pop());
+      updateStatus('Intercambio: cada jugador roba la top del mazo rival');
+      updateUI();
+      processAbilityEffect();
+      break;
+    }
+
+    case 'discardHandDraw': {
+      // Chaos 4: descarta mano, roba tantas como descartaste
+      const n = gameState[targetPlayer].hand.length;
+      if (n > 0) {
+        gameState[targetPlayer].trash.push(...gameState[targetPlayer].hand.splice(0));
+        draw(targetPlayer, n);
+        updateStatus(`${targetPlayer === 'player' ? 'Descartas y robas' : 'IA descarta y roba'} ${n} carta${n !== 1 ? 's' : ''}`);
+        updateUI();
+      }
+      processAbilityEffect();
+      break;
+    }
+
+    case 'playTopDeckInFaceDownLines': {
+      // Smoke 0: juega carta top del mazo bocabajo en cada línea con una carta bocabajo
+      LINES.forEach(l => {
+        const hasFaceDown = gameState.field[l][targetPlayer].some(c => c.faceDown);
+        if (hasFaceDown && gameState[targetPlayer].deck.length > 0) {
+          gameState.field[l][targetPlayer].push({ card: gameState[targetPlayer].deck.pop(), faceDown: true });
+        }
+      });
+      updateUI();
+      processAbilityEffect();
+      break;
+    }
+
+    case 'discardAny': {
+      // War 1: descarta cualquier número de cartas (0 a mano completa)
+      // Fase B simplificado: descarta 0 o 1 carta (con confirmación)
+      if (targetPlayer === 'player') {
+        if (gameState.player.hand.length === 0) { processAbilityEffect(); break; }
+        const confirmArea = document.getElementById('command-confirm');
+        const confirmMsg = document.getElementById('confirm-msg');
+        const btnYes = document.getElementById('btn-confirm-yes');
+        const btnNo = document.getElementById('btn-confirm-no');
+        if (confirmArea && btnYes && btnNo) {
+          gameState.effectContext = { type: 'confirm' };
+          confirmArea.classList.remove('hidden');
+          confirmMsg.textContent = '¿Descartas una carta? SÍ = descarta 1 · NO = continúa';
+          btnYes.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            startEffect('discard', 'player', 1);
+          };
+          btnNo.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            processAbilityEffect();
+          };
+        } else { processAbilityEffect(); }
+      } else {
+        if (gameState.ai.hand.length > 4) discard('ai', 1);
+        processAbilityEffect();
+      }
+      break;
+    }
+
+    case 'drawAndMayShiftSelf': {
+      // Time 2 onDeckShuffle: roba 1 carta y puedes cambiar esta carta
+      draw(targetPlayer, 1);
+      gameState.effectQueue.unshift({ effect: { action: 'mayShiftSelf' }, targetPlayer, cardName: triggerCardName });
+      processAbilityEffect();
+      break;
+    }
+
     // Agregar más casos según sea necesario
     default:
       console.warn(`Acción no implementada: ${action}`);
@@ -2758,6 +3020,162 @@ function onRefreshEffects(player) {
 }
 
 // ============================================================================
+// 5b. HOOKS REACTIVOS (Fase B)
+// ============================================================================
+
+/**
+ * Baraja el descarte de `who` en su mazo y dispara onDeckShuffle
+ */
+function shuffleDiscardIntoDeck(who) {
+  const state = gameState[who];
+  if (state.trash.length === 0) return;
+  state.deck.push(...state.trash);
+  state.deck.sort(() => Math.random() - 0.5);
+  state.trash = [];
+  updateStatus(`${who === 'player' ? 'Barajas' : 'IA baraja'} el descarte en el mazo`);
+  updateUI();
+  onDeckShuffleEffects(who);
+}
+
+/**
+ * Dispara onDeckShuffle para cartas bocarriba de `who` cuando baraja su mazo
+ */
+function onDeckShuffleEffects(who) {
+  LINES.forEach(line => {
+    const stack = gameState.field[line][who];
+    stack.forEach(cardObj => {
+      if (cardObj.faceDown) return;
+      const effectDef = CARD_EFFECTS[cardObj.card.nombre];
+      if (effectDef && effectDef.onDeckShuffle) {
+        gameState.currentEffectLine = line;
+        triggerCardEffect(cardObj.card, 'onDeckShuffle', who);
+      }
+    });
+  });
+}
+
+/**
+ * Dispara onOpponentRefresh para cartas del oponente de `who` (quien acaba de actualizar)
+ */
+function onOpponentRefreshEffects(who) {
+  const opponent = who === 'player' ? 'ai' : 'player';
+  LINES.forEach(line => {
+    const stack = gameState.field[line][opponent];
+    stack.forEach(cardObj => {
+      if (cardObj.faceDown) return;
+      const effectDef = CARD_EFFECTS[cardObj.card.nombre];
+      if (effectDef && effectDef.onOpponentRefresh) {
+        gameState.currentEffectLine = line;
+        triggerCardEffect(cardObj.card, 'onOpponentRefresh', opponent);
+      }
+    });
+  });
+}
+
+/**
+ * Dispara onOpponentDraw para cartas del oponente de `who` (quien acaba de robar)
+ * Guarda `_inOpponentDrawEffects` para evitar bucles infinitos (ej: Mirror 4)
+ */
+function onOpponentDrawEffects(who) {
+  if (gameState._inOpponentDrawEffects) return;
+  gameState._inOpponentDrawEffects = true;
+  try {
+    const opponent = who === 'player' ? 'ai' : 'player';
+    LINES.forEach(line => {
+      const stack = gameState.field[line][opponent];
+      stack.forEach(cardObj => {
+        if (cardObj.faceDown) return;
+        const effectDef = CARD_EFFECTS[cardObj.card.nombre];
+        if (effectDef && effectDef.onOpponentDraw) {
+          gameState.currentEffectLine = line;
+          triggerCardEffect(cardObj.card, 'onOpponentDraw', opponent, { deferred: true });
+        }
+      });
+    });
+  } finally {
+    gameState._inOpponentDrawEffects = false;
+  }
+}
+
+/**
+ * Dispara onOpponentCompile para cartas del oponente de `who` (quien acaba de compilar)
+ */
+function onOpponentCompileEffects(who) {
+  const opponent = who === 'player' ? 'ai' : 'player';
+  LINES.forEach(line => {
+    const stack = gameState.field[line][opponent];
+    stack.forEach(cardObj => {
+      if (cardObj.faceDown) return;
+      const effectDef = CARD_EFFECTS[cardObj.card.nombre];
+      if (effectDef && effectDef.onOpponentCompile) {
+        gameState.currentEffectLine = line;
+        triggerCardEffect(cardObj.card, 'onOpponentCompile', opponent, { deferred: true });
+      }
+    });
+  });
+}
+
+/**
+ * Dispara onOpponentDiscard para cartas del oponente de `who` (quien acaba de descartar)
+ * Guarda `_inOpponentDiscardEffects` para evitar bucles
+ */
+function onOpponentDiscardEffects(who) {
+  if (gameState._inOpponentDiscardEffects) return;
+  gameState._inOpponentDiscardEffects = true;
+  try {
+    const opponent = who === 'player' ? 'ai' : 'player';
+    LINES.forEach(line => {
+      const stack = gameState.field[line][opponent];
+      stack.forEach(cardObj => {
+        if (cardObj.faceDown) return;
+        const effectDef = CARD_EFFECTS[cardObj.card.nombre];
+        if (effectDef && effectDef.onOpponentDiscard) {
+          gameState.currentEffectLine = line;
+          triggerCardEffect(cardObj.card, 'onOpponentDiscard', opponent, { deferred: true });
+        }
+      });
+    });
+  } finally {
+    gameState._inOpponentDiscardEffects = false;
+  }
+}
+
+/**
+ * Dispara onOpponentPlayInLine para cartas del oponente de `who` en `line`
+ * (quien acaba de jugar una carta en esa línea)
+ */
+function onOpponentPlayInLineEffects(who, line) {
+  const opponent = who === 'player' ? 'ai' : 'player';
+  const stack = gameState.field[line][opponent];
+  stack.forEach(cardObj => {
+    if (cardObj.faceDown) return;
+    const effectDef = CARD_EFFECTS[cardObj.card.nombre];
+    if (effectDef && effectDef.onOpponentPlayInLine) {
+      gameState.currentEffectLine = line;
+      triggerCardEffect(cardObj.card, 'onOpponentPlayInLine', opponent, { deferred: true });
+    }
+  });
+}
+
+/**
+ * Dispara onForcedDiscard para cartas bocarriba de `who` que fue forzado a descartar
+ * Solo debe llamarse durante el turno del oponente (efectos forzados, no descartes voluntarios)
+ */
+function onForcedDiscardEffects(who) {
+  LINES.forEach(line => {
+    const stack = gameState.field[line][who];
+    stack.forEach(cardObj => {
+      if (cardObj.faceDown) return;
+      const effectDef = CARD_EFFECTS[cardObj.card.nombre];
+      if (effectDef && effectDef.onForcedDiscard) {
+        gameState.currentEffectLine = line;
+        triggerCardEffect(cardObj.card, 'onForcedDiscard', who, { deferred: true });
+      }
+    });
+  });
+}
+
+// ============================================================================
 // 6. INTEGRACIÓN CON CÁLCULO DE VALOR
 // ============================================================================
 
@@ -2817,13 +3235,21 @@ if (typeof window !== 'undefined') {
   window.onCardFlipped = onCardFlipped;
   window.onTurnStartEffects = onTurnStartEffects;
   window.onTurnEndEffects = onTurnEndEffects;
-  window.onDrawEffects = onDrawEffects;
   window.calculateScoreWithModifiers = calculateScoreWithModifiers;
   window.getPersistentModifiers = getPersistentModifiers;
   window.onRefreshEffects = onRefreshEffects;
   window.hasAllowAnyProtocol = hasAllowAnyProtocol;
   window.isPlayBlockedByPersistent = isPlayBlockedByPersistent;
   window.hasForceOpponentFaceDown = hasForceOpponentFaceDown;
+  // Fase B: hooks reactivos
+  window.shuffleDiscardIntoDeck = shuffleDiscardIntoDeck;
+  window.onDeckShuffleEffects = onDeckShuffleEffects;
+  window.onOpponentRefreshEffects = onOpponentRefreshEffects;
+  window.onOpponentDrawEffects = onOpponentDrawEffects;
+  window.onOpponentCompileEffects = onOpponentCompileEffects;
+  window.onOpponentDiscardEffects = onOpponentDiscardEffects;
+  window.onOpponentPlayInLineEffects = onOpponentPlayInLineEffects;
+  window.onForcedDiscardEffects = onForcedDiscardEffects;
 }
 
 /**

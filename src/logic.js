@@ -750,6 +750,9 @@ function compileLine(line, who) {
     if (v2Player.length > 0) {
         gameState.pendingCompileShift = { cards: v2Player, sourceLine: line };
     }
+
+    // Efectos reactivos: cartas del rival que reaccionan a compilar (ej: War 2)
+    if (typeof onOpponentCompileEffects === 'function') onOpponentCompileEffects(who);
 }
 
 function showActionModal(handIndex) {
@@ -1555,8 +1558,11 @@ function draw(target, count) {
     for (let i = 0; i < count; i++) {
         drawCard(target);
     }
-    if (count > 0) gameState.drawnSinceLastCheck[target] = true;
-    updateStatus(`${target === 'player' ? 'Robas' : 'IA roba'} ${count} carta${count !== 1 ? 's' : ''}`);
+    if (count > 0) {
+        gameState.drawnSinceLastCheck[target] = true;
+        updateStatus(`${target === 'player' ? 'Robas' : 'IA roba'} ${count} carta${count !== 1 ? 's' : ''}`);
+        if (typeof onOpponentDrawEffects === 'function') onOpponentDrawEffects(target);
+    }
 }
 
 function discard(target, count) {
@@ -1573,6 +1579,11 @@ function discard(target, count) {
     if (discarded > 0) {
         updateStatus(`${target === 'player' ? 'Descartas' : 'IA descarta'} ${discarded} carta${discarded !== 1 ? 's' : ''}`);
         updateUI();
+        if (typeof onOpponentDiscardEffects === 'function') onOpponentDiscardEffects(target);
+        // onForcedDiscard solo aplica cuando es el turno del oponente (descarte forzado por efecto)
+        if (typeof onForcedDiscardEffects === 'function' && gameState.turn && gameState.turn !== target) {
+            onForcedDiscardEffects(target);
+        }
     }
 }
 
@@ -1720,6 +1731,9 @@ function finalizePlay(targetLine, isFaceDown) {
         console.log(`💤 Face-down play - no effects, updating UI`);
         updateUI();
     }
+
+    // Efectos reactivos: cartas del rival en esta línea (ej: Ice 1)
+    if (typeof onOpponentPlayInLineEffects === 'function') onOpponentPlayInLineEffects('player', targetLine);
     
     if (gameState.pendingPlayCard) {
         gameState.pendingPlayCard = false;
@@ -1963,6 +1977,9 @@ function executeAIMove(move) {
         gameState.currentEffectLine = move.line;
         executeEffect(movedCard, 'ai');
     }
+
+    // Efectos reactivos: cartas del rival en esta línea (ej: Ice 1)
+    if (typeof onOpponentPlayInLineEffects === 'function') onOpponentPlayInLineEffects('ai', move.line);
 }
 
 function endTurn(who) {
@@ -2007,6 +2024,7 @@ function continueEndTurn(who) {
     if (gameState.refreshedThisTurn === who) {
         gameState.refreshedThisTurn = null;
         if (typeof onRefreshEffects === 'function') onRefreshEffects(who);
+        if (typeof onOpponentRefreshEffects === 'function') onOpponentRefreshEffects(who);
     }
 
     // Si onTurnEnd/onRefresh dejó efectos interactivos pendientes, esperar a que se resuelvan

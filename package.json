@@ -6,8 +6,12 @@
   "scripts": {
     "dev": "echo 'Open src/index.html in your browser'",
     "build": "echo 'No build required for this project'",
-    "test": "echo 'Tests coming in Phase 2'",
+    "test": "jest",
     "start": "node server.js"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": ["**/tests/**/*.test.js"]
   },
   "keywords": [
     "card-game",
@@ -28,6 +32,7 @@
     "url": "https://github.com/your-username/compile-card-game/issues"
   },
   "homepage": "https://github.com/your-username/compile-card-game#readme",
-  "devDependencies": {},
-  "dependencies": {}
+  "devDependencies": {
+    "jest": "^30.3.0"
+  }
 }
