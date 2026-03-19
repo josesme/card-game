@@ -640,6 +640,173 @@ const CARD_EFFECTS = {
     onPlay: [
       { action: 'draw', target: 'opponent', count: 2 }
     ]
+  },
+
+  // ── COMPILE MAIN 2 ──────────────────────────────────────────────────────────
+
+  // ========== ASSIMILATION ==========
+  'Assimilation 1': {
+    onPlay: [
+      { action: 'discard', target: 'self', count: 1 },
+      { action: 'refresh', target: 'self' }
+    ]
+    // TODO Fase B: onRefresh trigger (cualquier jugador actualiza → roba top del mazo rival)
+  },
+
+  'Assimilation 5': {
+    onPlay: [{ action: 'discard', target: 'self', count: 1 }]
+  },
+
+  // ========== CHAOS ==========
+  'Chaos 5': {
+    onPlay: [{ action: 'discard', target: 'self', count: 1 }]
+  },
+
+  // ========== CLARITY ==========
+  'Clarity 5': {
+    onPlay: [{ action: 'discard', target: 'self', count: 1 }]
+  },
+
+  // ========== CORRUPTION ==========
+  'Corruption 1': {
+    onPlay: [
+      { action: 'return', target: 'any', count: 1 }
+    ]
+    // TODO Fase B: persistent onReturn redirect (cuando carta va a mano rival → a mazo rival bocarriba)
+  },
+
+  'Corruption 2': {
+    // h_inicio reactive (Fase B): después de descartar → rival descarta 1
+    onPlay: [
+      { action: 'draw', target: 'self', count: 1 },
+      { action: 'discard', target: 'self', count: 1 }
+    ]
+  },
+
+  'Corruption 5': {
+    onPlay: [{ action: 'discard', target: 'self', count: 1 }]
+  },
+
+  // ========== COURAGE ==========
+  'Courage 2': {
+    onPlay: [
+      { action: 'draw', target: 'self', count: 1 }
+    ]
+    // TODO Fase B: onTurnEnd condicional (si oponente gana esta línea → roba 1)
+  },
+
+  'Courage 5': {
+    onPlay: [{ action: 'discard', target: 'self', count: 1 }]
+  },
+
+  // ========== DIVERSITY ==========
+  'Diversity 5': {
+    onPlay: [{ action: 'discard', target: 'self', count: 1 }]
+  },
+
+  // ========== FEAR ==========
+  'Fear 2': {
+    onPlay: [
+      { action: 'return', target: 'opponent', count: 1 }
+    ]
+  },
+
+  'Fear 3': {
+    onPlay: [
+      // "en esta línea" simplificado en Fase A (cualquier carta del oponente)
+      { action: 'shift', target: 'opponent', count: 1 }
+    ]
+  },
+
+  'Fear 4': {
+    onPlay: [
+      // TODO Fase B: forzar descarte aleatorio (actualmente el jugador elige)
+      { action: 'discard', target: 'opponent', count: 1 }
+    ]
+  },
+
+  'Fear 5': {
+    onPlay: [{ action: 'discard', target: 'self', count: 1 }]
+  },
+
+  // ========== ICE ==========
+  'Ice 1': {
+    onPlay: [
+      { action: 'mayShiftSelf' }
+    ]
+    // TODO Fase B: onOpponentPlayInLine → rival descarta 1 carta
+  },
+
+  'Ice 2': {
+    onPlay: [
+      { action: 'shift', target: 'any', count: 1 }
+    ]
+  },
+
+  'Ice 5': {
+    onPlay: [{ action: 'discard', target: 'self', count: 1 }]
+  },
+
+  // ========== LUCK ==========
+  'Luck 5': {
+    onPlay: [{ action: 'discard', target: 'self', count: 1 }]
+  },
+
+  // ========== MIRROR ==========
+  'Mirror 5': {
+    onPlay: [{ action: 'discard', target: 'self', count: 1 }]
+  },
+
+  // ========== PEACE ==========
+  'Peace 5': {
+    onPlay: [{ action: 'discard', target: 'self', count: 1 }]
+  },
+
+  // ========== SMOKE ==========
+  'Smoke 5': {
+    onPlay: [{ action: 'discard', target: 'self', count: 1 }]
+  },
+
+  // ========== TIME ==========
+  'Time 4': {
+    onPlay: [
+      { action: 'draw', target: 'self', count: 2 },
+      { action: 'discard', target: 'self', count: 2 }
+    ]
+  },
+
+  'Time 5': {
+    onPlay: [{ action: 'discard', target: 'self', count: 1 }]
+  },
+
+  // ========== UNITY ==========
+  'Unity 5': {
+    onPlay: [{ action: 'discard', target: 'self', count: 1 }]
+  },
+
+  // ========== WAR ==========
+  'War 2': {
+    onPlay: [
+      { action: 'flip', target: 'any', count: 1 }
+    ]
+    // TODO Fase B: onOpponentCompile → rival descarta mano
+  },
+
+  'War 3': {
+    onPlay: [
+      { action: 'draw', target: 'self', count: 1 }
+    ]
+    // TODO Fase B: onOpponentDiscard → puedes jugar 1 carta bocabajo
+  },
+
+  'War 4': {
+    onPlay: [
+      { action: 'discard', target: 'opponent', count: 1 }
+    ]
+  },
+
+  'War 5': {
+    onPlay: [{ action: 'discard', target: 'self', count: 1 }]
   }
 };
 
