@@ -701,14 +701,16 @@ const CARD_EFFECTS = {
 
   // ========== CORRUPCIÓN ==========
   'Corrupción 1': {
+    persistent: { redirectReturnToTopDeck: true },
     onPlay: [
       { action: 'return', target: 'any', count: 1 }
     ]
-    // TODO Fase B: persistent onReturn redirect (cuando carta va a mano rival → a mazo rival bocarriba)
   },
 
   'Corrupción 2': {
-    // h_inicio reactive (Fase B): después de descartar → rival descarta 1
+    onOwnDiscard: [
+      { action: 'discardRandom', target: 'opponent', count: 1 }
+    ],
     onPlay: [
       { action: 'draw', target: 'self', count: 1 },
       { action: 'discard', target: 'self', count: 1 }
@@ -723,8 +725,10 @@ const CARD_EFFECTS = {
   'Valor 2': {
     onPlay: [
       { action: 'draw', target: 'self', count: 1 }
+    ],
+    onTurnEnd: [
+      { action: 'drawIfOpponentWinsLine' }
     ]
-    // TODO Fase B: onTurnEnd condicional (si oponente gana esta línea → roba 1)
   },
 
   'Valor 5': {
@@ -745,8 +749,7 @@ const CARD_EFFECTS = {
 
   'Miedo 3': {
     onPlay: [
-      // "en esta línea" simplificado en Fase A (cualquier carta del oponente)
-      { action: 'shift', target: 'opponent', count: 1 }
+      { action: 'shift', target: 'opponent', count: 1, forceCurrentLine: true }
     ]
   },
 
@@ -1294,12 +1297,17 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       break;
     }
 
-    case 'shift':
-      startEffect('shift', resolvedTarget, count || 1, {
+    case 'shift': {
+      const shiftOpts = {
         gravityConstraint: actionDef.gravityConstraint || false,
-        effectLine: gameState.currentEffectLine  // capturado ahora, no en el click
-      });
+        effectLine: gameState.currentEffectLine
+      };
+      if (actionDef.forceCurrentLine && gameState.currentEffectLine) {
+        shiftOpts.forceLine = gameState.currentEffectLine;
+      }
+      startEffect('shift', resolvedTarget, count || 1, shiftOpts);
       break;
+    }
 
     case 'return':
       startEffect('return', resolvedTarget, count || 1);
@@ -3474,6 +3482,17 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       break;
     }
 
+    case 'drawIfOpponentWinsLine': {
+      // Valor 2 onTurnEnd: si el oponente tiene mayor valor en esta línea, roba 1 carta
+      const line = gameState.currentEffectLine;
+      if (line && calculateScore(gameState, line, opponent) > calculateScore(gameState, line, targetPlayer)) {
+        draw(targetPlayer, 1);
+        updateStatus(`${triggerCardName}: oponente gana esta línea — ${targetPlayer === 'player' ? 'robas' : 'IA roba'} 1 carta`);
+      }
+      processAbilityEffect();
+      break;
+    }
+
     case 'flipSelfIfOpponentWins': {
       // Valor 6 onTurnEnd: si el oponente gana esta línea, voltea esta carta
       const line = gameState.currentEffectLine;
@@ -4752,6 +4771,50 @@ function isPlayBlockedByPersistent(targetLine, playingPlayer, isFaceDown = false
 // EXPORTS / Disponibilidad Global
 // ============================================================================
 
+/**
+ * Corrupción 1: al devolver una carta a la mano del jugador `dest`,
+ * si el rival de `dest` tiene Corrupción 1 bocarriba, va al tope del mazo bocarriba en su lugar.
+ */
+function applyReturnToHand(dest, card) {
+  const rival = dest === 'player' ? 'ai' : 'player';
+  const redirected = LINES.some(l => {
+    const stack = gameState.field[l][rival];
+    if (stack.length === 0) return false;
+    const top = stack[stack.length - 1];
+    return !top.faceDown && getPersistentModifiers(top.card).redirectReturnToTopDeck;
+  });
+  if (redirected) {
+    gameState[dest].deck.push(card); // tope del mazo = último elemento (pop/push)
+    updateStatus(`Corrupción 1: carta devuelta al tope del mazo bocarriba en lugar de a la mano`);
+  } else {
+    gameState[dest].hand.push(card);
+  }
+}
+
+/**
+ * Dispara onOwnDiscard para cartas bocarriba de `who` (quien acaba de descartar).
+ * Cubre Corrupción 2: "después de que descartes cartas → rival descarta 1".
+ */
+function onOwnDiscardEffects(who) {
+  if (gameState._inOwnDiscardEffects) return;
+  gameState._inOwnDiscardEffects = true;
+  try {
+    LINES.forEach(line => {
+      const stack = gameState.field[line][who];
+      stack.forEach(cardObj => {
+        if (cardObj.faceDown) return;
+        const effectDef = CARD_EFFECTS[cardObj.card.nombre];
+        if (effectDef && effectDef.onOwnDiscard) {
+          gameState.currentEffectLine = line;
+          triggerCardEffect(cardObj.card, 'onOwnDiscard', who, { deferred: true });
+        }
+      });
+    });
+  } finally {
+    gameState._inOwnDiscardEffects = false;
+  }
+}
+
 // Asegurar que estas funciones estén disponibles globalmente para logic.js
 if (typeof window !== 'undefined') {
   window.CARD_EFFECTS = CARD_EFFECTS;
@@ -4776,6 +4839,8 @@ if (typeof window !== 'undefined') {
   window.onOpponentDiscardEffects = onOpponentDiscardEffects;
   window.onOpponentPlayInLineEffects = onOpponentPlayInLineEffects;
   window.onForcedDiscardEffects = onForcedDiscardEffects;
+  window.onOwnDiscardEffects = onOwnDiscardEffects;
+  window.applyReturnToHand = applyReturnToHand;
 }
 
 /**

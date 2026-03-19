@@ -1484,7 +1484,8 @@ function handleFieldCardClick(line, target, cardIdx) {
         if (ctx.filter === 'faceDown' && !cardObj.faceDown) return;
         gameState.field[line][target].splice(cardIdx, 1);
         const dest = ctx.beneficiary || target;
-        gameState[dest].hand.push(cardObj.card);
+        if (typeof applyReturnToHand === 'function') applyReturnToHand(dest, cardObj.card);
+        else gameState[dest].hand.push(cardObj.card);
         ctx.selected.push(cardObj);
         triggerUncovered(line, target);
     } else if (ctx.type === 'rearrange') {
@@ -1759,14 +1760,16 @@ function resolveEffectAI(type, target, count, opts = {}) {
                 });
                 if (best) {
                     gameState.field[bestLine][actualTarget].splice(bestIdx, 1);
-                    gameState[dest].hand.push(best.card);
+                    if (typeof applyReturnToHand === 'function') applyReturnToHand(dest, best.card);
+                    else gameState[dest].hand.push(best.card);
                     triggerUncovered(bestLine, actualTarget);
                 }
             } else {
                 const line = aiHighestScoreLine(actualTarget);
                 if (line !== null) {
                     const cardObj = gameState.field[line][actualTarget].pop();
-                    gameState[dest].hand.push(cardObj.card);
+                    if (typeof applyReturnToHand === 'function') applyReturnToHand(dest, cardObj.card);
+                    else gameState[dest].hand.push(cardObj.card);
                     triggerUncovered(line, actualTarget);
                 }
             }
@@ -1831,6 +1834,8 @@ function discard(target, count) {
         updateStatus(`${target === 'player' ? 'Descartas' : 'IA descarta'} ${discarded} carta${discarded !== 1 ? 's' : ''}`);
         updateUI();
         if (typeof onOpponentDiscardEffects === 'function') onOpponentDiscardEffects(target);
+        // onOwnDiscard: Corrupción 2 reactiva cuando el dueño descarta
+        if (typeof onOwnDiscardEffects === 'function') onOwnDiscardEffects(target);
         // onForcedDiscard solo aplica cuando es el turno del oponente (descarte forzado por efecto)
         if (typeof onForcedDiscardEffects === 'function' && gameState.turn && gameState.turn !== target) {
             onForcedDiscardEffects(target);
