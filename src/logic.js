@@ -176,9 +176,13 @@ function initLineListeners() {
                 finalizePlay(line, !gameState.selectionModeFaceUp);
                 gameState.selectionModeFaceUp = false;
             } else if (gameState.effectContext && gameState.effectContext.type === 'pickHandFaceDown_lineSelect') {
-                // Oscuridad 3: colocar carta seleccionada bocabajo en esta línea
-                if (line === gameState.effectContext.excludeLine) {
-                    updateStatus('Debes elegir una línea diferente a la de Oscuridad 3');
+                const ctx = gameState.effectContext;
+                if (ctx.excludeLine && line === ctx.excludeLine) {
+                    updateStatus('Debes elegir una línea diferente');
+                    return;
+                }
+                if (ctx.allowedLines && !ctx.allowedLines.includes(line)) {
+                    updateStatus('Esa línea no es válida para este efecto');
                     return;
                 }
                 if (gameState.selectedCardIndex === null) return;
@@ -550,11 +554,12 @@ function updateUI() {
             } else if (gameState.effectContext && gameState.effectContext.type === 'reveal') {
                 handleRevealChoice(index);
             } else if (gameState.effectContext && gameState.effectContext.type === 'pickHandFaceDown') {
-                // Oscuridad 3: seleccionar carta de mano
                 gameState.selectedCardIndex = index;
                 gameState.effectContext.type = 'pickHandFaceDown_lineSelect';
                 const card = gameState.player.hand[index];
-                updateStatus(`Oscuridad 3: elige línea destino para "${card.nombre}" (no la línea actual)`);
+                const ctx = gameState.effectContext;
+                const lineHint = ctx.allowedLines ? ' (solo líneas con carta bocabajo)' : ctx.excludeLine ? ' (no la línea actual)' : '';
+                updateStatus(`Elige línea destino para "${card.nombre}"${lineHint}`);
             } else if (gameState.effectContext && gameState.effectContext.type === 'pickFromDiscardToPlay') {
                 // Tiempo 0: elegir carta del descarte para jugar bocarriba
                 const ctx = gameState.effectContext;
@@ -1902,8 +1907,9 @@ function playSelectedCard(isFaceDown) {
     }
 }
 
-function highlightSelectableLines(excludeLine) {
-    LINES.forEach(line => {
+function highlightSelectableLines(excludeLine, allowedLines) {
+    const lines = allowedLines || LINES;
+    lines.forEach(line => {
         if (excludeLine && line === excludeLine) return;
         const lineEl = document.getElementById(`line-${line}`);
         // line-* tiene display:contents, aplicar al padre (grid row visible)

@@ -829,7 +829,7 @@ const CARD_EFFECTS = {
 
   'Humo 3': {
     onPlay: [
-      { action: 'playHandFaceDown', target: 'self' }
+      { action: 'playHandFaceDown', target: 'self', requireFaceDownInLine: true }
     ]
   },
 
@@ -2627,23 +2627,32 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'playHandFaceDown': {
-      // Juega 1 carta de tu mano bocabajo. Si excludeCurrentLine=true, debe ser en otra línea (Oscuridad 3).
+      // Juega 1 carta de mano bocabajo.
+      // excludeCurrentLine: debe ser en otra línea (Oscuridad 3)
+      // requireFaceDownInLine: la línea destino debe tener al menos 1 carta bocabajo (Humo 3)
       const excludeLine = actionDef.excludeCurrentLine ? gameState.currentEffectLine : null;
+      let allowedLines = LINES.filter(l => l !== excludeLine);
+      if (actionDef.requireFaceDownInLine) {
+        allowedLines = allowedLines.filter(l =>
+          ['player', 'ai'].some(p => gameState.field[l][p].some(c => c.faceDown))
+        );
+        if (allowedLines.length === 0) { processAbilityEffect(); break; }
+      }
       if (targetPlayer === 'player') {
         if (gameState.player.hand.length === 0) { processAbilityEffect(); break; }
-        gameState.effectContext = { type: 'pickHandFaceDown', excludeLine };
-        const lineMsg = excludeLine ? ' en otra línea' : '';
+        gameState.effectContext = { type: 'pickHandFaceDown', excludeLine, allowedLines };
+        const lineMsg = excludeLine ? ' en otra línea' : actionDef.requireFaceDownInLine ? ' en una línea con carta bocabajo' : '';
         updateStatus(`${triggerCardName || 'Carta'}: elige una carta de tu mano para jugar bocabajo${lineMsg}`);
-        if (typeof highlightSelectableLines === 'function') highlightSelectableLines(excludeLine);
+        if (typeof highlightSelectableLines === 'function') highlightSelectableLines(excludeLine, allowedLines);
       } else {
         if (gameState.ai.hand.length > 0) {
           const cardIdx = aiLowestValueCardIdx('ai') >= 0 ? aiLowestValueCardIdx('ai') : 0;
-          const currentLine = gameState.currentEffectLine;
-          const dest = excludeLine
-            ? (aiPickDestLine([currentLine]) || LINES.filter(l => l !== currentLine)[0])
-            : (aiPickDestLine([]) || currentLine);
-          const movedCard = gameState.ai.hand.splice(cardIdx, 1)[0];
-          gameState.field[dest].ai.push({ card: movedCard, faceDown: true });
+          const dest = allowedLines.filter(l => !gameState.field[l].compiledBy)
+            .sort((a, b) => calculateScore(gameState, b, 'ai') - calculateScore(gameState, a, 'ai'))[0] || allowedLines[0];
+          if (dest) {
+            const movedCard = gameState.ai.hand.splice(cardIdx, 1)[0];
+            gameState.field[dest].ai.push({ card: movedCard, faceDown: true });
+          }
         }
         processAbilityEffect();
       }
