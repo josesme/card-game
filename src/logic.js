@@ -1079,16 +1079,24 @@ function startEffect(type, target, count, opts = {}) {
         const hasValid = linesToCheck.some(l =>
             targets.some(p => {
                 const stack = gameState.field[l][p];
-                if (opts.coveredOnly) return stack.length >= 2;
+                if (opts.coveredOnly) {
+                    if (stack.length < 2) return false;
+                    // Con filtro + targetAll: verificar que alguna carta cubierta pase el filtro
+                    if (opts.targetAll && filterCtx.filter) {
+                        return stack.slice(0, -1).some(c => cardMatchesFilter(c, filterCtx));
+                    }
+                    return true;
+                }
                 if (stack.length === 0) return false;
-                // targetAll: buscar en toda la pila (no solo top)
+                // targetAll: buscar en toda la pila con filtro genérico
                 if (opts.targetAll) {
-                    if (filterCtx.filter === 'faceDown') return stack.some(c => c.faceDown);
-                    if (filterCtx.filter === 'exactValue') return stack.some(c => c.card.valor === filterCtx.exactVal);
+                    return stack.some(c => {
+                        if (opts.excludeCardName && c.card.nombre === opts.excludeCardName) return false;
+                        return cardMatchesFilter(c, filterCtx);
+                    });
                 }
                 const topCard = stack[stack.length - 1];
                 if (opts.excludeCardName && topCard.card.nombre === opts.excludeCardName) return false;
-                // preventFlip: Hielo 4 no puede ser objetivo de flip
                 if (type === 'flip' && typeof getPersistentModifiers === 'function' && getPersistentModifiers(topCard.card).preventFlip) return false;
                 return cardMatchesFilter(topCard, filterCtx);
             })
@@ -1152,6 +1160,10 @@ function highlightEffectTargets() {
                 const stack = gameState.field[l][p];
                 if (ctx.coveredOnly) {
                     if (stack.length < 2) return;
+                    // Con filtro + targetAll: verificar que alguna carta cubierta pase el filtro
+                    if (ctx.targetAll && ctx.filter) {
+                        if (!stack.slice(0, -1).some(c => cardMatchesFilter(c, ctx))) return;
+                    }
                 } else {
                     if (stack.length === 0) return;
                     if (ctx.targetAll && ctx.filter === 'faceDown') {

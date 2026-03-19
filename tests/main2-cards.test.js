@@ -184,8 +184,8 @@ describe('CARD_EFFECTS — Main 2 nuevas entradas', () => {
     test('Corrupción 0: onTurnStart=flipCoveredInOwnStack', () => {
       expect(ENGINE.CARD_EFFECTS['Corrupción 0'].onTurnStart[0].action).toBe('flipCoveredInOwnStack');
     });
-    test('Corrupción 3: onPlay=mayFlipCovered any', () => {
-      expect(ENGINE.CARD_EFFECTS['Corrupción 3'].onPlay[0].action).toBe('mayFlipCovered');
+    test('Corrupción 3: onPlay=mayFlipCoveredFaceUp', () => {
+      expect(ENGINE.CARD_EFFECTS['Corrupción 3'].onPlay[0].action).toBe('mayFlipCoveredFaceUp');
     });
     test('Corrupción 6: onTurnEnd=optionalDiscardOrDeleteSelf', () => {
       expect(ENGINE.CARD_EFFECTS['Corrupción 6'].onTurnEnd[0].action).toBe('optionalDiscardOrDeleteSelf');
@@ -409,14 +409,24 @@ describe('Acciones directas Main 2', () => {
     expect(global.draw).not.toHaveBeenCalled();
   });
 
-  test('flipCoveredInOwnStack: voltea carta cubierta (la primera bajo top)', () => {
-    const covered = { card: makeCard('Under'), faceDown: true };
+  test('flipCoveredInOwnStack: voltea bocabajo carta cubierta bocarriba (única opción → auto)', () => {
+    // carta cubierta bocarriba → debe quedar bocabajo; top no cambia
+    const covered = { card: makeCard('Under'), faceDown: false };
     const top = { card: makeCard('Top'), faceDown: false };
     GS.field['alpha'].player = [covered, top];
     GS.currentEffectLine = 'alpha';
     runAction({ action: 'flipCoveredInOwnStack' }, 'player');
-    expect(GS.field['alpha'].player[0].faceDown).toBe(false);
+    expect(GS.field['alpha'].player[0].faceDown).toBe(true);
     expect(GS.field['alpha'].player[1].faceDown).toBe(false); // top no cambia
+  });
+
+  test('flipCoveredInOwnStack: no hace nada si la cubierta ya está bocabajo', () => {
+    const covered = { card: makeCard('Under'), faceDown: true }; // bocabajo → se ignora
+    const top = { card: makeCard('Top'), faceDown: false };
+    GS.field['alpha'].player = [covered, top];
+    GS.currentEffectLine = 'alpha';
+    runAction({ action: 'flipCoveredInOwnStack' }, 'player');
+    expect(GS.field['alpha'].player[0].faceDown).toBe(true); // sin cambio
   });
 
   test('flipCoveredInOwnStack: no hace nada si solo hay 1 carta', () => {

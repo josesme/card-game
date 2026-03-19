@@ -957,7 +957,7 @@ const CARD_EFFECTS = {
     onTurnStart: [{ action: 'flipCoveredInOwnStack' }]
   },
   'Corrupción 3': {
-    onPlay: [{ action: 'mayFlipCovered', target: 'any' }]
+    onPlay: [{ action: 'mayFlipCoveredFaceUp' }]
   },
   'Corrupción 6': {
     onTurnEnd: [{ action: 'optionalDiscardOrDeleteSelf' }]
@@ -2501,6 +2501,59 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       break;
     }
 
+    case 'mayFlipCoveredFaceUp': {
+      // Corrupción 3: opcional — voltea bocabajo una carta cubierta bocarriba (propia o rival)
+      const hasCoveredFaceUp = LINES.some(l =>
+        ['player', 'ai'].some(p =>
+          gameState.field[l][p].slice(0, -1).some(c => !c.faceDown)
+        )
+      );
+      if (!hasCoveredFaceUp) { processAbilityEffect(); break; }
+      if (targetPlayer === 'player') {
+        const confirmArea = document.getElementById('command-confirm');
+        const confirmMsg = document.getElementById('confirm-msg');
+        const btnYes = document.getElementById('btn-confirm-yes');
+        const btnNo = document.getElementById('btn-confirm-no');
+        if (confirmArea && btnYes && btnNo) {
+          gameState.effectContext = { type: 'confirm' };
+          confirmArea.classList.remove('hidden');
+          confirmMsg.textContent = `${triggerCardName || ''}: ¿Volteas una carta cubierta bocarriba?`;
+          btnYes.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            startEffect('flip', 'any', 1, { coveredOnly: true, filter: 'faceUp', targetAll: true });
+          };
+          btnNo.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            processAbilityEffect();
+          };
+        } else { processAbilityEffect(); }
+      } else {
+        // IA: voltear la cubierta bocarriba de mayor valor del oponente; si no hay, la propia de mayor valor
+        let bestTarget = null, bestLine = null, bestSide = null, bestIdx = -1;
+        LINES.forEach(l => {
+          gameState.field[l].player.slice(0, -1).forEach((c, i) => {
+            if (!c.faceDown && (!bestTarget || c.card.valor > bestTarget.card.valor)) {
+              bestTarget = c; bestLine = l; bestSide = 'player'; bestIdx = i;
+            }
+          });
+        });
+        if (!bestTarget) {
+          LINES.forEach(l => {
+            gameState.field[l].ai.slice(0, -1).forEach((c, i) => {
+              if (!c.faceDown && (!bestTarget || c.card.valor > bestTarget.card.valor)) {
+                bestTarget = c; bestLine = l; bestSide = 'ai'; bestIdx = i;
+              }
+            });
+          });
+        }
+        if (bestTarget) { gameState.field[bestLine][bestSide][bestIdx].faceDown = true; updateUI(); }
+        processAbilityEffect();
+      }
+      break;
+    }
+
     case 'playHandFaceDown': {
       // Oscuridad 3: juega 1 carta de tu mano bocabajo en otra línea
       if (targetPlayer === 'player') {
@@ -3370,19 +3423,39 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
     }
 
     case 'flipCoveredInOwnStack': {
-      // Corrupción 0 onTurnStart: voltea 1 carta cubierta en esta pila propia
+      // Corrupción 0 onTurnStart: voltea bocabajo 1 carta cubierta bocarriba en esta pila (no sí misma)
       const line = gameState.currentEffectLine;
       if (!line) { processAbilityEffect(); break; }
       const stack = gameState.field[line][targetPlayer];
-      const covIdx = stack.findIndex((c, i) => i < stack.length - 1);
-      if (covIdx >= 0) { stack[covIdx].faceDown = !stack[covIdx].faceDown; updateUI(); }
-      processAbilityEffect();
+      // Índices de cartas cubiertas bocarriba (excluir Corrupción 0 misma)
+      const faceUpCoveredIdx = [];
+      for (let i = 0; i < stack.length - 1; i++) {
+        if (!stack[i].faceDown && stack[i].card.nombre !== 'Corrupción 0') faceUpCoveredIdx.push(i);
+      }
+      if (faceUpCoveredIdx.length === 0) { processAbilityEffect(); break; }
+      if (targetPlayer === 'ai' || faceUpCoveredIdx.length === 1) {
+        const idx = targetPlayer === 'ai'
+          ? faceUpCoveredIdx.reduce((best, i) => stack[i].card.valor > stack[best].card.valor ? i : best, faceUpCoveredIdx[0])
+          : faceUpCoveredIdx[0];
+        stack[idx].faceDown = true;
+        updateUI();
+        processAbilityEffect();
+      } else {
+        // Jugador elige cuál voltear (2+ opciones)
+        startEffect('flip', 'player', 1, { forceLine: line, coveredOnly: true, filter: 'faceUp', excludeCardName: 'Corrupción 0', targetAll: true });
+      }
       break;
     }
 
     case 'optionalDiscardOrDeleteSelf': {
       // Corrupción 6 onTurnEnd: descarta 1 carta o elimina esta carta
       if (targetPlayer === 'player') {
+        if (gameState.player.hand.length === 0) {
+          // Sin cartas en mano: auto-elimina sin modal
+          gameState.effectQueue.unshift({ effect: { action: '_deleteSelf' }, targetPlayer, cardName: triggerCardName });
+          processAbilityEffect();
+          break;
+        }
         const confirmArea = document.getElementById('command-confirm');
         const confirmMsg  = document.getElementById('confirm-msg');
         const btnYes      = document.getElementById('btn-confirm-yes');
@@ -3390,12 +3463,11 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
         if (confirmArea && btnYes && btnNo) {
           gameState.effectContext = { type: 'confirm' };
           confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = 'Corrupción 6: ¿Descartas 1 carta? NO = esta carta es eliminada.';
+          confirmMsg.textContent = `${triggerCardName || ''}: ¿Descartas 1 carta? NO = esta carta es eliminada.`;
           btnYes.onclick = () => {
             confirmArea.classList.add('hidden');
             gameState.effectContext = null;
-            if (gameState.player.hand.length > 0) startEffect('discard', 'player', 1);
-            else processAbilityEffect();
+            startEffect('discard', 'player', 1);
           };
           btnNo.onclick = () => {
             confirmArea.classList.add('hidden');
