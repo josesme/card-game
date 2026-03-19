@@ -211,12 +211,16 @@
             z-index: 100;
         }
         #btn-fullscreen:hover { background: rgba(0,212,255,0.25); }
+
+        #index-container {
+            transform-origin: center center;
+        }
     </style>
 </head>
 <body>
 
 <button id="btn-fullscreen" onclick="toggleFullscreen()" title="Pantalla completa">⛶ FULLSCREEN</button>
-<div class="container">
+<div class="container" id="index-container">
     <img src="../images/compile.png" class="title-img" alt="COMPILE">
     <p class="tagline">Juego de cartas · IA adaptativa</p>
 
@@ -303,6 +307,21 @@ document.addEventListener('fullscreenchange', () => {
     const btn = document.getElementById('btn-fullscreen');
     if (!document.fullscreenElement) btn.textContent = '⛶ FULLSCREEN';
 });
+
+function applyIndexScale() {
+    const container = document.getElementById('index-container');
+    container.style.transform = 'none';
+    const contentH = container.offsetHeight;
+    const contentW = container.offsetWidth;
+    const viewH    = window.innerHeight - 40;
+    const viewW    = window.innerWidth  - 80;
+    const scale    = Math.min(viewH / contentH, viewW / contentW);
+    if (Math.abs(scale - 1) > 0.01) {
+        container.style.transform = `scale(${scale.toFixed(4)})`;
+    }
+}
+window.addEventListener('load', applyIndexScale);
+window.addEventListener('resize', applyIndexScale);
 
 document.getElementById('btn-play').addEventListener('click', () => {
     const diff = DIFFICULTY_LEVELS.find(l => l.id === selectedDifficulty);
