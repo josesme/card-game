@@ -299,7 +299,9 @@
 
     document.addEventListener('fullscreenchange', () => {
         const btn = document.getElementById('btn-fullscreen');
-        if (!document.fullscreenElement) {
+        if (document.fullscreenElement) {
+            btn.textContent = '✕ SALIR';
+        } else {
             btn.textContent = '⛶ FULLSCREEN';
             sessionStorage.removeItem('fs');
         }
@@ -312,8 +314,7 @@
     // Fallback for when scripts load late
     window.addEventListener('load', updateGameZoom);
     if (sessionStorage.getItem('fs') === '1') {
-        document.documentElement.requestFullscreen().catch(() => {});
-        document.getElementById('btn-fullscreen').textContent = '✕ SALIR';
+        document.documentElement.requestFullscreen().catch(() => sessionStorage.removeItem('fs'));
     }
 </script>
 </body>
