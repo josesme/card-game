@@ -16,7 +16,9 @@ const CARDS_DATA = {
     "Oscuridad":  { "edicion": 1, "color": "#64748b", "abilities": "ROBAR. CAMBIAR. MANIPULAR" },
     "Apatía":     { "edicion": 1, "color": "#6b7280", "abilities": "VOLTEAR CARTAS BOCABAJO" },
     "Odio":       { "edicion": 1, "color": "#b91c1c", "abilities": "ELIMINAR. DESCARTAR" },
-    "Amor":       { "edicion": 1, "color": "#f43f5e", "abilities": "ROBAR. DAR. INTERCAMBIAR" }
+    "Amor":       { "edicion": 1, "color": "#f43f5e", "abilities": "ROBAR. DAR. INTERCAMBIAR" },
+    // ── Main 2 ──────────────────────────────────────────────────────────────
+    "Assimilation": { "edicion": 2, "color": "#4338ca", "abilities": "DEVOLVER. ROBAR. BOCABAJO" }
   },
   "Espíritu": [
     {"valor": 0, "nombre": "Espíritu 0", "fase": "Action", "h_inicio": "", "h_accion": "Actualiza. Roba 1 carta.", "h_final": "Sáltate tu Fase de Comprobar Caché."},
@@ -129,6 +131,15 @@ const CARDS_DATA = {
     {"valor": 3, "nombre": "Odio 3", "fase": "Start",  "h_inicio": "Después de que elimines cartas: Roba 1 carta.", "h_accion": "", "h_final": ""},
     {"valor": 4, "nombre": "Odio 4", "fase": "End",    "h_inicio": "", "h_accion": "", "h_final": "Si se cubre esta carta: Primero, elimina la carta cubierta de menor valor en esta línea."},
     {"valor": 5, "nombre": "Odio 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""}
+  ],
+  // ── COMPILE MAIN 2 ──────────────────────────────────────────────────────────
+  "Assimilation": [
+    {"valor": 0, "nombre": "Assimilation 0", "fase": "Action", "h_inicio": "", "h_accion": "Devuelve a tu mano 1 carta bocabajo (cubierta o descubierta) de tu oponente.", "h_final": ""},
+    {"valor": 1, "nombre": "Assimilation 1", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta. Actualiza.", "h_final": "Después de que un jugador actualice: Roba la carta superior del mazo de tu oponente. Descarta 1 carta en su descarte."},
+    {"valor": 2, "nombre": "Assimilation 2", "fase": "End",    "h_inicio": "", "h_accion": "", "h_final": "Final: Juega bocabajo la carta superior del mazo de tu oponente en esta pila."},
+    {"valor": 4, "nombre": "Assimilation 4", "fase": "Action", "h_inicio": "", "h_accion": "Roba la carta superior del mazo de tu oponente. Tu oponente roba la carta superior de tu mazo.", "h_final": ""},
+    {"valor": 5, "nombre": "Assimilation 5", "fase": "Action", "h_inicio": "", "h_accion": "Descarta 1 carta.", "h_final": ""},
+    {"valor": 6, "nombre": "Assimilation 6", "fase": "End",    "h_inicio": "", "h_accion": "", "h_final": "Final: Juega bocabajo la carta superior de tu mazo en el lado de tu oponente."}
   ],
   "Amor": [
     {"valor": 1, "nombre": "Amor 1", "fase": "End",    "h_inicio": "", "h_accion": "Roba la carta superior del mazo de tu oponente.", "h_final": "Final: Puedes dar 1 carta de tu mano a tu oponente. Si lo haces, roba 2 cartas."},
