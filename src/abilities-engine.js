@@ -4189,14 +4189,18 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'compileDiversityIfSixProtocols': {
-      // Diversidad 0: si hay 6+ protocolos distintos en el campo, compila Diversidad
-      const allProtos = new Set();
-      LINES.forEach(l => ['player', 'ai'].forEach(p =>
-        gameState.field[l][p].forEach(c => allProtos.add(c.card.nombre.replace(/ \d+$/, '')))
-      ));
-      if (allProtos.size >= 6 && typeof compileProtocol === 'function') {
-        compileProtocol(targetPlayer, 'Diversidad');
+      // Diversidad 0: si hay 6 protocolos distintos en TUS cartas del campo, compila Diversidad
+      const myProtos = new Set();
+      LINES.forEach(l =>
+        gameState.field[l][targetPlayer].forEach(c => myProtos.add(c.card.nombre.replace(/ \d+$/, '')))
+      );
+      if (myProtos.size >= 6) {
+        if (!gameState[targetPlayer].compiled.includes('Diversidad')) {
+          gameState[targetPlayer].compiled.push('Diversidad');
+        }
+        updateStatus(`${triggerCardName}: 6 protocolos distintos en tu campo — ¡Diversidad compilada!`);
         updateUI();
+        if (typeof checkWinCondition === 'function') checkWinCondition();
       }
       processAbilityEffect();
       break;
