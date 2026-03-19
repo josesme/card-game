@@ -1107,7 +1107,8 @@ const CARD_EFFECTS = {
   },
   'Unidad 1': {
     onTurnStart: [{ action: 'mayShiftSelfIfCovered' }],
-    onPlay: [{ action: 'compileSelfIfFiveOrMoreUnity' }]
+    onPlay: [{ action: 'compileSelfIfFiveOrMoreUnity' }],
+    onTurnEnd: [{ action: 'playUnidadCardsFromHand' }]
   },
   'Unidad 2': {
     onPlay: [{ action: 'drawPerUnityCards' }]
@@ -3782,20 +3783,38 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
     }
 
     case 'compileSelfIfFiveOrMoreUnity': {
-      // Unidad 1 onPlay: si hay 5+ Unidad en el campo, compila Unidad y elimina cartas de esta línea
+      // Unidad 1 onPlay: si hay 5+ Unidad en campo (cualquier lado, cualquier estado), compila esta línea
       const totalUnity = LINES.reduce((acc, l) =>
-        acc + ['player', 'ai'].reduce((a2, p) => a2 + gameState.field[l][p].filter(c => c.card.nombre.startsWith('Unidad')).length, 0), 0);
+        acc + ['player', 'ai'].reduce((a2, p) =>
+          a2 + gameState.field[l][p].filter(c => c.card.nombre.startsWith('Unidad')).length, 0), 0);
       if (totalUnity >= 5) {
         const line = gameState.currentEffectLine;
-        if (line) {
-          ['player', 'ai'].forEach(p => {
-            gameState.field[line][p].forEach(c => gameState[p].trash.push(c.card));
-            gameState.field[line][p] = [];
-          });
-          if (typeof compileProtocol === 'function') compileProtocol(targetPlayer, 'Unidad');
+        if (line && typeof compileLine === 'function') {
+          updateStatus(`${triggerCardName}: 5+ Unidad en campo — compilando ${line} automáticamente`);
+          compileLine(line, targetPlayer);
           updateUI();
         }
       }
+      processAbilityEffect();
+      break;
+    }
+
+    case 'playUnidadCardsFromHand': {
+      // Unidad 1 onTurnEnd: jugar bocarriba todas las cartas Unidad de la mano en esta línea
+      const line = gameState.currentEffectLine;
+      if (!line) { processAbilityEffect(); break; }
+      const hand = gameState[targetPlayer].hand;
+      const unidadCards = hand.filter(c => c.nombre.startsWith('Unidad'));
+      if (unidadCards.length === 0) { processAbilityEffect(); break; }
+      unidadCards.forEach(c => {
+        const idx = hand.indexOf(c);
+        if (idx !== -1) {
+          hand.splice(idx, 1);
+          gameState.field[line][targetPlayer].push({ card: c, faceDown: false });
+        }
+      });
+      updateStatus(`${triggerCardName}: ${unidadCards.length} carta(s) Unidad jugada(s) bocarriba en ${line}`);
+      updateUI();
       processAbilityEffect();
       break;
     }
