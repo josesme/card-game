@@ -910,6 +910,213 @@ const CARD_EFFECTS = {
 
   'Guerra 5': {
     onPlay: [{ action: 'discard', target: 'self', count: 1 }]
+  },
+
+  // ── Cartas faltantes Main 2 ──────────────────────────────────────────────
+
+  // ========== ASIMILACIÓN (faltantes) ==========
+  'Asimilación 0': {
+    onPlay: [{ action: 'returnOpponentFaceDown' }]
+  },
+  'Asimilación 2': {
+    onTurnEnd: [{ action: 'playOpponentTopDeckHere' }]
+  },
+  'Asimilación 4': {
+    onPlay: [{ action: 'swapTopDeckCards' }]
+  },
+  'Asimilación 6': {
+    onTurnEnd: [{ action: 'playOwnTopDeckOpponentSide' }]
+  },
+
+  // ========== CAOS (faltantes) ==========
+  'Caos 2': {
+    onPlay: [{ action: 'mayShiftCovered', target: 'self' }]
+  },
+  'Caos 3': {
+    // "Esta carta puede jugarse sin coincidir con los Protocolos." — regla, no efecto activo
+  },
+
+  // ========== CLARIDAD (faltantes) ==========
+  'Claridad 0': {
+    persistent: { valueBonusPerHandCard: 1 }
+  },
+  'Claridad 1': {
+    onTurnStart: [{ action: 'revealTopDeckMayDiscard' }],
+    onPlay: [{ action: 'revealOpponentHand' }],
+    onCover: [{ action: 'draw', target: 'self', count: 3 }]
+  },
+  'Claridad 2': {
+    onPlay: [{ action: 'searchDeckValue1ThenPlay' }]
+  },
+  'Claridad 3': {
+    onPlay: [{ action: 'searchDeckByValue', value: 5 }]
+  },
+
+  // ========== CORRUPCIÓN (faltantes) ==========
+  'Corrupción 0': {
+    onTurnStart: [{ action: 'flipCoveredInOwnStack' }]
+  },
+  'Corrupción 3': {
+    onPlay: [{ action: 'mayFlipCovered', target: 'any' }]
+  },
+  'Corrupción 6': {
+    onTurnEnd: [{ action: 'optionalDiscardOrDeleteSelf' }]
+  },
+
+  // ========== VALOR (faltantes) ==========
+  'Valor 0': {
+    onTurnStart: [{ action: 'drawIfNoHand' }],
+    onPlay: [{ action: 'draw', target: 'self', count: 1 }],
+    onTurnEnd: [{ action: 'optionalDiscardThenOpponentDiscard' }]
+  },
+  'Valor 1': {
+    onPlay: [{ action: 'deleteInWinningOpponentLine' }]
+  },
+  'Valor 3': {
+    onTurnEnd: [{ action: 'mayShiftSelfToHighestOpponentLine' }]
+  },
+  'Valor 6': {
+    onTurnEnd: [{ action: 'flipSelfIfOpponentWins' }]
+  },
+
+  // ========== DIVERSIDAD (faltantes) ==========
+  'Diversidad 0': {
+    onPlay: [{ action: 'compileDiversityIfSixProtocols' }],
+    onTurnEnd: [{ action: 'playNonDiversityCard' }]
+  },
+  'Diversidad 1': {
+    onPlay: [
+      { action: 'shift', target: 'any', count: 1 },
+      { action: 'drawPerDistinctProtocolsInLine' }
+    ]
+  },
+  'Diversidad 3': {
+    persistent: { valueBonusIfNonDiversityFaceUp: 2 }
+  },
+  'Diversidad 4': {
+    onPlay: [{ action: 'flipCardBelowDistinctProtocolCount' }]
+  },
+  'Diversidad 6': {
+    onTurnEnd: [{ action: 'deleteIfFewDistinctProtocols', minProtocols: 4 }]
+  },
+
+  // ========== MIEDO (faltantes) ==========
+  'Miedo 0': {
+    persistent: { disableOpponentMiddleCommands: true },
+    onPlay: [{ action: 'mayShiftOrFlip', target: 'any' }]
+  },
+  'Miedo 1': {
+    onPlay: [
+      { action: 'draw', target: 'self', count: 2 },
+      { action: 'opponentDiscardAndRedraw', minusN: 1 }
+    ]
+  },
+
+  // ========== HIELO (faltantes) ==========
+  'Hielo 3': {
+    onTurnEnd: [{ action: 'mayShiftSelfIfCovered' }]
+  },
+  'Hielo 4': {
+    persistent: { preventFlip: true }
+  },
+  'Hielo 6': {
+    persistent: { preventDraw: true }
+  },
+
+  // ========== SUERTE (faltantes) ==========
+  'Suerte 0': {
+    onPlay: [{ action: 'luckDraw3PickByValue' }]
+  },
+  'Suerte 1': {
+    onPlay: [{ action: 'luckPlayTopThenFlipNoEffect' }]
+  },
+  'Suerte 2': {
+    onPlay: [{ action: 'luckDiscardTopDraw' }]
+  },
+  'Suerte 3': {
+    onPlay: [{ action: 'luckCallProtocolDiscard' }]
+  },
+  'Suerte 4': {
+    onPlay: [{ action: 'luckDiscardTopDeleteByValue' }]
+  },
+
+  // ========== ESPEJO (faltantes) ==========
+  'Espejo 0': {
+    persistent: { valueBonusPerOpponentCard: 1 }
+  },
+  'Espejo 1': {
+    onTurnEnd: [{ action: 'copyOpponentCardEffect' }]
+  },
+  'Espejo 2': {
+    onPlay: [{ action: 'swapOwnTwoStacks' }]
+  },
+  'Espejo 3': {
+    onPlay: [
+      { action: 'flip', target: 'self', count: 1 },
+      { action: 'flipOpponentSameLine' }
+    ]
+  },
+
+  // ========== PAZ (faltantes) ==========
+  'Paz 1': {
+    onPlay: [
+      { action: 'discardHand', target: 'self' },
+      { action: 'discardHand', target: 'opponent' }
+    ],
+    onTurnEnd: [{ action: 'drawIfEmptyHand', count: 1 }]
+  },
+  'Paz 3': {
+    onPlay: [{ action: 'optionalDiscardThenFlipHighValue' }]
+  },
+  'Paz 6': {
+    onPlay: [{ action: 'flipSelfIfMultipleHandCards' }]
+  },
+
+  // ========== HUMO (faltantes) ==========
+  'Humo 1': {
+    onPlay: [
+      { action: 'flip', target: 'self', count: 1 },
+      { action: 'mayShiftSelf' }
+    ]
+  },
+  'Humo 2': {
+    persistent: { valueBonusPerFaceDown: 1 }
+  },
+  'Humo 4': {
+    onPlay: [{ action: 'shiftCoveredFaceDown' }]
+  },
+
+  // ========== TIEMPO (faltantes) ==========
+  'Tiempo 0': {
+    onPlay: [{ action: 'playFromDiscardThenShuffle' }]
+  },
+  'Tiempo 1': {
+    onPlay: [
+      { action: 'mayFlipCovered', target: 'any' },
+      { action: 'discardOwnDeck' }
+    ]
+  },
+  'Tiempo 3': {
+    onPlay: [{ action: 'playFromDiscardFaceDownOtherLine' }]
+  },
+
+  // ========== UNIDAD (faltantes) ==========
+  'Unidad 0': {
+    onPlay: [{ action: 'mayFlipOrDrawIfUnityOnField' }],
+    onCover: [{ action: 'mayFlipOrDrawIfUnityOnField' }]
+  },
+  'Unidad 1': {
+    onTurnStart: [{ action: 'mayShiftSelfIfCovered' }],
+    onPlay: [{ action: 'compileSelfIfFiveOrMoreUnity' }]
+  },
+  'Unidad 2': {
+    onPlay: [{ action: 'drawPerUnityCards' }]
+  },
+  'Unidad 3': {
+    onPlay: [{ action: 'mayFlipIfUnityOnField' }]
+  },
+  'Unidad 4': {
+    onTurnEnd: [{ action: 'drawUnityFromDeckIfEmptyHand' }]
   }
 };
 
@@ -2818,6 +3025,910 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
       break;
     }
 
+    // ── Cartas faltantes Main 2 ───────────────────────────────────────────────
+
+    case 'returnOpponentFaceDown': {
+      // Asimilación 0: devuelve 1 carta bocabajo del oponente a su mano
+      const hasFD = LINES.some(l => gameState.field[l][opponent].some(c => c.faceDown));
+      if (!hasFD) { processAbilityEffect(); break; }
+      if (targetPlayer === 'player') {
+        startEffect('return', 'opponent', 1, { filter: 'faceDown' });
+      } else {
+        // IA: devuelve la bocabajo rival de mayor valor
+        let best = null, bestLine = null, bestIdx = -1;
+        LINES.forEach(l => {
+          gameState.field[l][opponent].forEach((c, i) => {
+            if (c.faceDown && (!best || c.card.valor > best.card.valor)) {
+              best = c; bestLine = l; bestIdx = i;
+            }
+          });
+        });
+        if (best) {
+          gameState.field[bestLine][opponent].splice(bestIdx, 1);
+          gameState[opponent].hand.push(best.card);
+          updateUI();
+        }
+        processAbilityEffect();
+      }
+      break;
+    }
+
+    case 'playOpponentTopDeckHere': {
+      // Asimilación 2 onTurnEnd: juega bocabajo la carta top del mazo rival en este lado
+      const line = gameState.currentEffectLine;
+      if (line && gameState[opponent].deck.length > 0) {
+        const top = gameState[opponent].deck.pop();
+        gameState.field[line][opponent].push({ card: top, faceDown: true });
+        updateUI();
+      }
+      processAbilityEffect();
+      break;
+    }
+
+    case 'playOwnTopDeckOpponentSide': {
+      // Asimilación 6 onTurnEnd: juega bocabajo tu carta top en el lado rival de esta línea
+      const line = gameState.currentEffectLine;
+      if (line && gameState[targetPlayer].deck.length > 0) {
+        const top = gameState[targetPlayer].deck.pop();
+        gameState.field[line][opponent].push({ card: top, faceDown: true });
+        updateUI();
+      }
+      processAbilityEffect();
+      break;
+    }
+
+    case 'drawIfNoHand': {
+      // Valor 0 onTurnStart: si no tienes cartas en mano, roba 1
+      if (gameState[targetPlayer].hand.length === 0) draw(targetPlayer, 1);
+      processAbilityEffect();
+      break;
+    }
+
+    case 'optionalDiscardThenOpponentDiscard': {
+      // Valor 0 onTurnEnd: puedes descartar 1; si lo haces, oponente descarta 1
+      if (targetPlayer === 'player') {
+        if (gameState.player.hand.length === 0) { processAbilityEffect(); break; }
+        const confirmArea = document.getElementById('command-confirm');
+        const confirmMsg  = document.getElementById('confirm-msg');
+        const btnYes      = document.getElementById('btn-confirm-yes');
+        const btnNo       = document.getElementById('btn-confirm-no');
+        if (confirmArea && btnYes && btnNo) {
+          gameState.effectContext = { type: 'confirm' };
+          confirmArea.classList.remove('hidden');
+          confirmMsg.textContent = '¿Descartas 1 carta? Si lo haces, tu oponente también descartará 1.';
+          btnYes.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            gameState.effectQueue.unshift({ effect: { action: 'discard', target: 'opponent', count: 1 }, targetPlayer, cardName: triggerCardName });
+            startEffect('discard', 'player', 1);
+          };
+          btnNo.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            processAbilityEffect();
+          };
+        } else { processAbilityEffect(); }
+      } else {
+        if (gameState.ai.hand.length > 3) { discard('ai', 1); discard('player', 1); }
+        processAbilityEffect();
+      }
+      break;
+    }
+
+    case 'revealTopDeckMayDiscard': {
+      // Claridad 1 onTurnStart: revela carta top del mazo, puedes descartarla
+      if (gameState[targetPlayer].deck.length === 0) { processAbilityEffect(); break; }
+      const topCard = gameState[targetPlayer].deck[gameState[targetPlayer].deck.length - 1];
+      if (targetPlayer === 'player') {
+        const modal     = document.getElementById('reveal-modal');
+        const container = document.getElementById('reveal-cards-container');
+        const closeBtn  = document.getElementById('btn-reveal-close');
+        if (modal && container && closeBtn && typeof createCardHTML === 'function') {
+          container.innerHTML = `<div style="transform:scale(0.85);transform-origin:top center">${createCardHTML(topCard)}</div>`;
+          const discardBtn = document.createElement('button');
+          discardBtn.textContent = 'Descartar';
+          discardBtn.style.cssText = 'margin-top:10px;padding:8px 16px;background:rgba(255,0,0,0.2);border:1px solid red;color:white;cursor:pointer;border-radius:4px;display:block;';
+          container.appendChild(discardBtn);
+          closeBtn.textContent = 'Mantener';
+          modal.style.display = 'flex';
+          const cleanup = () => { modal.style.display = 'none'; closeBtn.textContent = 'Cerrar'; };
+          closeBtn.onclick = () => { cleanup(); processAbilityEffect(); };
+          discardBtn.onclick = () => {
+            cleanup();
+            gameState.player.deck.pop();
+            gameState.player.trash.push(topCard);
+            updateUI();
+            processAbilityEffect();
+          };
+        } else { processAbilityEffect(); }
+      } else {
+        if (topCard.valor <= 1) { gameState.ai.deck.pop(); gameState.ai.trash.push(topCard); }
+        processAbilityEffect();
+      }
+      break;
+    }
+
+    case 'searchDeckByValue': {
+      // Claridad 3: revela mazo, roba 1 carta con Valor dado, baraja
+      const targetValue = actionDef.value || 5;
+      const deckRef = gameState[targetPlayer].deck;
+      const foundIdx = deckRef.findIndex(c => c.valor === targetValue);
+      if (foundIdx >= 0) {
+        const [drawn] = deckRef.splice(foundIdx, 1);
+        gameState[targetPlayer].hand.push(drawn);
+        updateStatus(`${targetPlayer === 'player' ? 'Robas' : 'IA roba'} ${drawn.nombre} del mazo`);
+      }
+      for (let i = deckRef.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deckRef[i], deckRef[j]] = [deckRef[j], deckRef[i]];
+      }
+      updateUI();
+      processAbilityEffect();
+      break;
+    }
+
+    case 'searchDeckValue1ThenPlay': {
+      // Claridad 2: revela mazo, roba 1 carta con Valor 1, baraja, puedes jugar 1 carta con Valor 1
+      const deckRef = gameState[targetPlayer].deck;
+      const v1Idx = deckRef.findIndex(c => c.valor === 1);
+      if (v1Idx >= 0) {
+        const [drawn] = deckRef.splice(v1Idx, 1);
+        gameState[targetPlayer].hand.push(drawn);
+        updateStatus(`${targetPlayer === 'player' ? 'Robas' : 'IA roba'} ${drawn.nombre} (Valor 1) del mazo`);
+      }
+      for (let i = deckRef.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deckRef[i], deckRef[j]] = [deckRef[j], deckRef[i]];
+      }
+      updateUI();
+      processAbilityEffect();
+      break;
+    }
+
+    case 'deleteInWinningOpponentLine': {
+      // Valor 1: elimina 1 carta del oponente en línea donde su total > el tuyo
+      const winLines = LINES.filter(l => {
+        return calculateScore(gameState, l, opponent) > calculateScore(gameState, l, targetPlayer) &&
+               gameState.field[l][opponent].length > 0;
+      });
+      if (winLines.length === 0) { processAbilityEffect(); break; }
+      if (targetPlayer === 'player') {
+        startEffect('eliminate', 'opponent', 1);
+      } else {
+        const best = winLines.sort((a, b) => calculateScore(gameState, b, 'player') - calculateScore(gameState, a, 'player'))[0];
+        const removed = gameState.field[best].player.pop();
+        if (removed) { gameState.player.trash.push(removed.card); updateUI(); }
+        processAbilityEffect();
+      }
+      break;
+    }
+
+    case 'mayShiftSelfToHighestOpponentLine': {
+      // Valor 3 onTurnEnd: puede cambiar esta carta a la línea donde el oponente tiene más puntos
+      const curLine = gameState.currentEffectLine;
+      if (!curLine) { processAbilityEffect(); break; }
+      const bestLine = LINES.reduce((best, l) =>
+        calculateScore(gameState, l, opponent) > calculateScore(gameState, best, opponent) ? l : best, LINES[0]);
+      if (bestLine === curLine) { processAbilityEffect(); break; }
+      if (targetPlayer === 'player') {
+        const confirmArea = document.getElementById('command-confirm');
+        const confirmMsg  = document.getElementById('confirm-msg');
+        const btnYes      = document.getElementById('btn-confirm-yes');
+        const btnNo       = document.getElementById('btn-confirm-no');
+        if (confirmArea && btnYes && btnNo) {
+          gameState.effectContext = { type: 'confirm' };
+          confirmArea.classList.remove('hidden');
+          confirmMsg.textContent = `Valor 3: ¿Cambias esta carta a ${bestLine} (línea más fuerte del rival)?`;
+          btnYes.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            const srcStack = gameState.field[curLine][targetPlayer];
+            if (srcStack.length > 0) {
+              const cardObj = srcStack.pop();
+              gameState.field[bestLine][targetPlayer].push(cardObj);
+              gameState.currentEffectLine = bestLine;
+              updateUI();
+            }
+            processAbilityEffect();
+          };
+          btnNo.onclick = () => { confirmArea.classList.add('hidden'); gameState.effectContext = null; processAbilityEffect(); };
+        } else { processAbilityEffect(); }
+      } else {
+        if (calculateScore(gameState, bestLine, 'player') > calculateScore(gameState, curLine, 'player')) {
+          const srcStack = gameState.field[curLine].ai;
+          if (srcStack.length > 0) { gameState.field[bestLine].ai.push(srcStack.pop()); updateUI(); }
+        }
+        processAbilityEffect();
+      }
+      break;
+    }
+
+    case 'flipSelfIfOpponentWins': {
+      // Valor 6 onTurnEnd: si el oponente gana esta línea, voltea esta carta
+      const line = gameState.currentEffectLine;
+      if (!line) { processAbilityEffect(); break; }
+      if (calculateScore(gameState, line, opponent) > calculateScore(gameState, line, targetPlayer)) {
+        const stack = gameState.field[line][targetPlayer];
+        const cardObj = stack.find(c => c.card.nombre === triggerCardName);
+        if (cardObj) { cardObj.faceDown = !cardObj.faceDown; updateUI(); }
+      }
+      processAbilityEffect();
+      break;
+    }
+
+    case 'flipCoveredInOwnStack': {
+      // Corrupción 0 onTurnStart: voltea 1 carta cubierta en esta pila propia
+      const line = gameState.currentEffectLine;
+      if (!line) { processAbilityEffect(); break; }
+      const stack = gameState.field[line][targetPlayer];
+      const covIdx = stack.findIndex((c, i) => i < stack.length - 1);
+      if (covIdx >= 0) { stack[covIdx].faceDown = !stack[covIdx].faceDown; updateUI(); }
+      processAbilityEffect();
+      break;
+    }
+
+    case 'optionalDiscardOrDeleteSelf': {
+      // Corrupción 6 onTurnEnd: descarta 1 carta o elimina esta carta
+      if (targetPlayer === 'player') {
+        const confirmArea = document.getElementById('command-confirm');
+        const confirmMsg  = document.getElementById('confirm-msg');
+        const btnYes      = document.getElementById('btn-confirm-yes');
+        const btnNo       = document.getElementById('btn-confirm-no');
+        if (confirmArea && btnYes && btnNo) {
+          gameState.effectContext = { type: 'confirm' };
+          confirmArea.classList.remove('hidden');
+          confirmMsg.textContent = 'Corrupción 6: ¿Descartas 1 carta? NO = esta carta es eliminada.';
+          btnYes.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            if (gameState.player.hand.length > 0) startEffect('discard', 'player', 1);
+            else processAbilityEffect();
+          };
+          btnNo.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            gameState.effectQueue.unshift({ effect: { action: '_deleteSelf' }, targetPlayer, cardName: triggerCardName });
+            processAbilityEffect();
+          };
+        } else { processAbilityEffect(); }
+      } else {
+        if (gameState.ai.hand.length > 0) discard('ai', 1);
+        else { gameState.effectQueue.unshift({ effect: { action: '_deleteSelf' }, targetPlayer, cardName: triggerCardName }); }
+        processAbilityEffect();
+      }
+      break;
+    }
+
+    case 'mayShiftCovered': {
+      // Caos 2: cambia 1 de tus cartas cubiertas
+      const hasCovered = LINES.some(l => gameState.field[l][targetPlayer].length > 1);
+      if (!hasCovered) { processAbilityEffect(); break; }
+      if (targetPlayer === 'player') {
+        startEffect('shift', 'self', 1, { coveredOnly: true });
+      } else {
+        let bestSrc = null, bestLine = null, bestIdx = -1;
+        LINES.forEach(l => {
+          const st = gameState.field[l].ai;
+          for (let i = 0; i < st.length - 1; i++) {
+            if (!bestSrc || st[i].card.valor < bestSrc.card.valor) {
+              bestSrc = st[i]; bestLine = l; bestIdx = i;
+            }
+          }
+        });
+        if (bestSrc) {
+          const destLine = LINES.filter(l => l !== bestLine)
+            .reduce((b, l) => calculateScore(gameState, l, 'ai') > calculateScore(gameState, b, 'ai') ? l : b, LINES.filter(l => l !== bestLine)[0]);
+          gameState.field[bestLine].ai.splice(bestIdx, 1);
+          gameState.field[destLine].ai.push(bestSrc);
+          updateUI();
+        }
+        processAbilityEffect();
+      }
+      break;
+    }
+
+    case 'opponentDiscardAndRedraw': {
+      // Miedo 1: rival descarta mano, roba (mano - N) cartas
+      const minusN = actionDef.minusN || 1;
+      const handSize = gameState[opponent].hand.length;
+      if (handSize > 0) {
+        gameState[opponent].trash.push(...gameState[opponent].hand.splice(0));
+        const toDraw = Math.max(0, handSize - minusN);
+        if (toDraw > 0) draw(opponent, toDraw);
+        updateStatus(`${opponent === 'player' ? 'Descartas' : 'IA descarta'} mano y roba ${toDraw} carta${toDraw !== 1 ? 's' : ''}`);
+        updateUI();
+      }
+      processAbilityEffect();
+      break;
+    }
+
+    case 'drawIfEmptyHand': {
+      // Paz 1 onTurnEnd: si mano vacía, roba N cartas
+      if (gameState[targetPlayer].hand.length === 0) draw(targetPlayer, count || 1);
+      processAbilityEffect();
+      break;
+    }
+
+    case 'optionalDiscardThenFlipHighValue': {
+      // Paz 3: puedes descartar 1 carta; luego voltea 1 con valor > cartas en mano
+      if (targetPlayer === 'player') {
+        const doFlip = () => {
+          const handCount = gameState.player.hand.length;
+          gameState.effectQueue.unshift({ effect: { action: '_flipMinValue', minValue: handCount + 1 }, targetPlayer, cardName: triggerCardName });
+          processAbilityEffect();
+        };
+        if (gameState.player.hand.length === 0) { doFlip(); break; }
+        const confirmArea = document.getElementById('command-confirm');
+        const confirmMsg  = document.getElementById('confirm-msg');
+        const btnYes      = document.getElementById('btn-confirm-yes');
+        const btnNo       = document.getElementById('btn-confirm-no');
+        if (confirmArea && btnYes && btnNo) {
+          gameState.effectContext = { type: 'confirm' };
+          confirmArea.classList.remove('hidden');
+          confirmMsg.textContent = 'Paz 3: ¿Descartas 1 carta? (opcional)';
+          btnYes.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            gameState.effectQueue.unshift({ effect: { action: '_flipMinValue', minValue: -99 }, targetPlayer, cardName: triggerCardName });
+            startEffect('discard', 'player', 1);
+          };
+          btnNo.onclick = () => { confirmArea.classList.add('hidden'); gameState.effectContext = null; doFlip(); };
+        } else { doFlip(); }
+      } else {
+        if (gameState.ai.hand.length > 2) discard('ai', 1);
+        const handCount = gameState.ai.hand.length;
+        let done = false;
+        LINES.forEach(l => {
+          if (done) return;
+          ['player', 'ai'].forEach(p => {
+            if (done) return;
+            const st = gameState.field[l][p];
+            if (st.length > 0 && st[st.length - 1].card.valor > handCount) {
+              st[st.length - 1].faceDown = !st[st.length - 1].faceDown;
+              done = true;
+            }
+          });
+        });
+        processAbilityEffect();
+      }
+      break;
+    }
+
+    case '_flipMinValue': {
+      const minVal = actionDef.minValue !== undefined ? actionDef.minValue : 0;
+      if (targetPlayer === 'player') {
+        startEffect('flip', 'any', 1, { filter: 'minValue', minVal });
+      } else {
+        processAbilityEffect();
+      }
+      break;
+    }
+
+    case 'flipSelfIfMultipleHandCards': {
+      // Paz 6: si tienes más de 1 carta en mano, voltea esta carta
+      if (gameState[targetPlayer].hand.length > 1) {
+        const line = gameState.currentEffectLine;
+        if (line) {
+          const st = gameState.field[line][targetPlayer];
+          if (st.length > 0) { st[st.length - 1].faceDown = !st[st.length - 1].faceDown; updateUI(); }
+        }
+      }
+      processAbilityEffect();
+      break;
+    }
+
+    case 'flipOpponentSameLine': {
+      // Espejo 3: voltea 1 carta del oponente en esta misma línea
+      const line = gameState.currentEffectLine;
+      if (!line) { processAbilityEffect(); break; }
+      if (targetPlayer === 'player') {
+        startEffect('flip', 'opponent', 1, { forceLine: line });
+      } else {
+        const st = gameState.field[line][opponent];
+        if (st.length > 0) { st[st.length - 1].faceDown = !st[st.length - 1].faceDown; updateUI(); }
+        processAbilityEffect();
+      }
+      break;
+    }
+
+    case 'swapOwnTwoStacks': {
+      // Espejo 2: intercambia todas las cartas de una pila propia con otra pila propia
+      if (targetPlayer === 'player') {
+        // Simplified: pick the two lines automatically - swap worst with second worst
+        const lineScores = LINES.map(l => ({ l, score: calculateScore(gameState, l, 'player') - calculateScore(gameState, l, 'ai') }))
+          .sort((a, b) => a.score - b.score);
+        if (lineScores.length >= 2 && gameState.field[lineScores[0].l].player.length > 0) {
+          updateStatus('Espejo 2: elige una línea para intercambiar tus cartas (se hará automáticamente con la línea más ventajosa)');
+          const [a, b2] = [lineScores[0].l, lineScores[lineScores.length - 1].l];
+          if (a !== b2) {
+            const tmp = gameState.field[a].player;
+            gameState.field[a].player = gameState.field[b2].player;
+            gameState.field[b2].player = tmp;
+            updateUI();
+          }
+        }
+        processAbilityEffect();
+      } else {
+        const lineScores = LINES.map(l => ({ l, score: calculateScore(gameState, l, 'ai') - calculateScore(gameState, l, 'player') }))
+          .sort((a, b) => a.score - b.score);
+        if (lineScores.length >= 2 && gameState.field[lineScores[0].l].ai.length > 0) {
+          const [a, b2] = [lineScores[0].l, lineScores[lineScores.length - 1].l];
+          if (a !== b2) {
+            const tmp = gameState.field[a].ai;
+            gameState.field[a].ai = gameState.field[b2].ai;
+            gameState.field[b2].ai = tmp;
+            updateUI();
+          }
+        }
+        processAbilityEffect();
+      }
+      break;
+    }
+
+    case 'mayFlipOrDrawIfUnityOnField': {
+      // Unidad 0: si hay otra carta Unidad en el campo, voltea 1 o roba 1
+      const hasOtherUnity = LINES.some(l =>
+        ['player', 'ai'].some(p =>
+          gameState.field[l][p].some(c => c.card.nombre !== triggerCardName && c.card.nombre.startsWith('Unidad'))
+        )
+      );
+      if (!hasOtherUnity) { processAbilityEffect(); break; }
+      if (targetPlayer === 'player') {
+        const confirmArea = document.getElementById('command-confirm');
+        const confirmMsg  = document.getElementById('confirm-msg');
+        const btnYes      = document.getElementById('btn-confirm-yes');
+        const btnNo       = document.getElementById('btn-confirm-no');
+        if (confirmArea && btnYes && btnNo) {
+          gameState.effectContext = { type: 'confirm' };
+          confirmArea.classList.remove('hidden');
+          confirmMsg.textContent = 'Unidad 0: ¿Volteas 1 carta (SÍ) o Robas 1 carta (NO)?';
+          btnYes.onclick = () => { confirmArea.classList.add('hidden'); gameState.effectContext = null; startEffect('flip', 'any', 1); };
+          btnNo.onclick  = () => { confirmArea.classList.add('hidden'); gameState.effectContext = null; draw('player', 1); processAbilityEffect(); };
+        } else { processAbilityEffect(); }
+      } else {
+        if (gameState.ai.hand.length < 4) { draw('ai', 1); }
+        else {
+          let done = false;
+          LINES.forEach(l => {
+            if (done) return;
+            const st = gameState.field[l].player;
+            if (st.length > 0 && !st[st.length - 1].faceDown) { st[st.length - 1].faceDown = true; done = true; }
+          });
+        }
+        processAbilityEffect();
+      }
+      break;
+    }
+
+    case 'drawPerUnityCards': {
+      // Unidad 2: roba cartas = número de cartas Unidad en el campo
+      const unityCount = LINES.reduce((acc, l) =>
+        acc + ['player', 'ai'].reduce((a2, p) => a2 + gameState.field[l][p].filter(c => c.card.nombre.startsWith('Unidad')).length, 0), 0);
+      if (unityCount > 0) draw(targetPlayer, unityCount);
+      processAbilityEffect();
+      break;
+    }
+
+    case 'mayFlipIfUnityOnField': {
+      // Unidad 3: si hay otra Unidad en el campo, voltea 1 carta bocabajo
+      const hasOtherUnity = LINES.some(l =>
+        ['player', 'ai'].some(p =>
+          gameState.field[l][p].some(c => c.card.nombre !== triggerCardName && c.card.nombre.startsWith('Unidad'))
+        )
+      );
+      if (!hasOtherUnity) { processAbilityEffect(); break; }
+      if (targetPlayer === 'player') {
+        startEffect('flip', 'any', 1, { filter: 'faceDown' });
+      } else {
+        let done = false;
+        LINES.forEach(l => {
+          if (done) return;
+          const st = gameState.field[l].ai;
+          const fd = st.filter(c => c.faceDown);
+          if (fd.length > 0) { fd.sort((a, b) => b.card.valor - a.card.valor)[0].faceDown = false; done = true; }
+        });
+        processAbilityEffect();
+      }
+      break;
+    }
+
+    case 'drawUnityFromDeckIfEmptyHand': {
+      // Unidad 4 onTurnEnd: si mano vacía, busca y roba todas las Unidad del mazo
+      if (gameState[targetPlayer].hand.length > 0) { processAbilityEffect(); break; }
+      const deckRef = gameState[targetPlayer].deck;
+      const unitCards = deckRef.filter(c => c.nombre.startsWith('Unidad'));
+      if (unitCards.length > 0) {
+        unitCards.forEach(c => {
+          const i = deckRef.indexOf(c);
+          if (i >= 0) deckRef.splice(i, 1);
+          gameState[targetPlayer].hand.push(c);
+        });
+        for (let i = deckRef.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [deckRef[i], deckRef[j]] = [deckRef[j], deckRef[i]];
+        }
+        updateStatus(`${targetPlayer === 'player' ? 'Robas' : 'IA roba'} ${unitCards.length} carta${unitCards.length !== 1 ? 's' : ''} Unidad del mazo`);
+        updateUI();
+      }
+      processAbilityEffect();
+      break;
+    }
+
+    case 'compileSelfIfFiveOrMoreUnity': {
+      // Unidad 1 onPlay: si hay 5+ Unidad en el campo, compila Unidad y elimina cartas de esta línea
+      const totalUnity = LINES.reduce((acc, l) =>
+        acc + ['player', 'ai'].reduce((a2, p) => a2 + gameState.field[l][p].filter(c => c.card.nombre.startsWith('Unidad')).length, 0), 0);
+      if (totalUnity >= 5) {
+        const line = gameState.currentEffectLine;
+        if (line) {
+          ['player', 'ai'].forEach(p => {
+            gameState.field[line][p].forEach(c => gameState[p].trash.push(c.card));
+            gameState.field[line][p] = [];
+          });
+          if (typeof compileProtocol === 'function') compileProtocol(targetPlayer, 'Unidad');
+          updateUI();
+        }
+      }
+      processAbilityEffect();
+      break;
+    }
+
+    case 'mayShiftSelfIfCovered': {
+      // Hielo 3, Unidad 1: si esta carta está cubierta, puede cambiarla
+      const line = gameState.currentEffectLine;
+      if (!line) { processAbilityEffect(); break; }
+      const st = gameState.field[line][targetPlayer];
+      const selfIdx = st.findIndex(c => c.card.nombre === triggerCardName);
+      if (selfIdx < 0 || selfIdx === st.length - 1) { processAbilityEffect(); break; }
+      const cardObj = st[selfIdx];
+      if (targetPlayer === 'player') {
+        const confirmArea = document.getElementById('command-confirm');
+        const confirmMsg  = document.getElementById('confirm-msg');
+        const btnYes      = document.getElementById('btn-confirm-yes');
+        const btnNo       = document.getElementById('btn-confirm-no');
+        if (confirmArea && btnYes && btnNo) {
+          gameState.effectContext = { type: 'confirm' };
+          confirmArea.classList.remove('hidden');
+          confirmMsg.textContent = `${triggerCardName}: está cubierta. ¿Quieres cambiarla a otra línea?`;
+          btnYes.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            // Remove from current line, let player pick destination via shift
+            st.splice(selfIdx, 1);
+            gameState.player.hand.push(cardObj.card); // temporarily to hand for shift UX
+            // Re-introduce as a card to play
+            processAbilityEffect();
+          };
+          btnNo.onclick = () => { confirmArea.classList.add('hidden'); gameState.effectContext = null; processAbilityEffect(); };
+        } else { processAbilityEffect(); }
+      } else {
+        const destLine = LINES.filter(l => l !== line)
+          .reduce((b, l) => calculateScore(gameState, l, 'ai') > calculateScore(gameState, b, 'ai') ? l : b, LINES.filter(l => l !== line)[0] || line);
+        if (destLine && destLine !== line) {
+          st.splice(selfIdx, 1);
+          gameState.field[destLine].ai.push(cardObj);
+          updateUI();
+        }
+        processAbilityEffect();
+      }
+      break;
+    }
+
+    case 'luckDiscardTopDraw': {
+      // Suerte 2: descarta carta top del mazo, roba tantas como su valor
+      if (gameState[targetPlayer].deck.length === 0) { processAbilityEffect(); break; }
+      const topCard = gameState[targetPlayer].deck.pop();
+      gameState[targetPlayer].trash.push(topCard);
+      const drawN = topCard.valor;
+      updateStatus(`Suerte 2: ${topCard.nombre} (Valor ${drawN}) → roba ${drawN}`);
+      if (drawN > 0) draw(targetPlayer, drawN);
+      updateUI();
+      processAbilityEffect();
+      break;
+    }
+
+    case 'luckCallProtocolDiscard': {
+      // Suerte 3: indica un protocolo, descarta top del mazo rival; si coincide, elimina 1 carta
+      if (gameState[opponent].deck.length === 0) { processAbilityEffect(); break; }
+      const topCard = gameState[opponent].deck.pop();
+      gameState[opponent].trash.push(topCard);
+      const cardProto = topCard.nombre.replace(/ \d+$/, '');
+      if (targetPlayer === 'player') {
+        const guessed = prompt(`Suerte 3: escribe un nombre de Protocolo`) || '';
+        if (guessed.trim().toLowerCase() === cardProto.toLowerCase()) {
+          updateStatus(`¡Acierto! ${topCard.nombre} es de Protocolo ${cardProto} → elimina 1 carta`);
+          gameState.effectQueue.unshift({ effect: { action: 'mayDelete', target: 'any', count: 1 }, targetPlayer, cardName: triggerCardName });
+        } else {
+          updateStatus(`Fallo. La carta era ${topCard.nombre} (${cardProto})`);
+        }
+      } else {
+        // IA: 50% de acertar simulado
+        if (Math.random() > 0.5) {
+          const lines = LINES.filter(l => gameState.field[l].player.length > 0);
+          if (lines.length > 0) {
+            const removed = gameState.field[lines[0]].player.pop();
+            if (removed) gameState.player.trash.push(removed.card);
+          }
+        }
+      }
+      updateUI();
+      processAbilityEffect();
+      break;
+    }
+
+    case 'luckDiscardTopDeleteByValue': {
+      // Suerte 4: descarta top del mazo; elimina 1 carta con mismo Valor
+      if (gameState[targetPlayer].deck.length === 0) { processAbilityEffect(); break; }
+      const topCard = gameState[targetPlayer].deck.pop();
+      gameState[targetPlayer].trash.push(topCard);
+      const targetVal = topCard.valor;
+      updateStatus(`Suerte 4: ${topCard.nombre} (Valor ${targetVal}) → elimina carta con Valor ${targetVal}`);
+      const hasMatch = LINES.some(l => ['player', 'ai'].some(p => gameState.field[l][p].some(c => c.card.valor === targetVal)));
+      if (hasMatch) {
+        if (targetPlayer === 'player') {
+          startEffect('eliminate', 'any', 1);
+        } else {
+          let done = false;
+          LINES.forEach(l => {
+            if (done) return;
+            const idx = gameState.field[l].player.findIndex(c => c.card.valor === targetVal);
+            if (idx >= 0) {
+              const [removed] = gameState.field[l].player.splice(idx, 1);
+              gameState.player.trash.push(removed.card);
+              done = true;
+            }
+          });
+          updateUI();
+          processAbilityEffect();
+        }
+      } else {
+        updateUI();
+        processAbilityEffect();
+      }
+      break;
+    }
+
+    case 'luckDraw3PickByValue': {
+      // Suerte 0: di un número, roba 3 cartas, revela 1 que coincida con ese valor
+      draw(targetPlayer, 3);
+      if (targetPlayer === 'player') {
+        const valStr = prompt('Suerte 0: indica un Valor (0-6)') || '0';
+        const pickedVal = parseInt(valStr) || 0;
+        const matchIdx = gameState.player.hand.findIndex(c => c.valor === pickedVal);
+        if (matchIdx >= 0) {
+          updateStatus(`Suerte 0: ¡coincide! ${gameState.player.hand[matchIdx].nombre}`);
+        } else {
+          updateStatus(`Suerte 0: no hay carta con Valor ${pickedVal} en tu mano`);
+        }
+      }
+      updateUI();
+      processAbilityEffect();
+      break;
+    }
+
+    case 'luckPlayTopThenFlipNoEffect': {
+      // Suerte 1: juega bocabajo la carta top del mazo, luego voltéala (sin efectos)
+      const line = gameState.currentEffectLine;
+      if (!line || gameState[targetPlayer].deck.length === 0) { processAbilityEffect(); break; }
+      const topCard = gameState[targetPlayer].deck.pop();
+      const cardObj = { card: topCard, faceDown: true };
+      gameState.field[line][targetPlayer].push(cardObj);
+      updateUI();
+      setTimeout(() => {
+        cardObj.faceDown = false;
+        updateStatus(`Suerte 1: ${topCard.nombre} revelada (sin comandos centrales)`);
+        updateUI();
+        processAbilityEffect();
+      }, 400);
+      break;
+    }
+
+    case 'discardOwnDeck': {
+      // Tiempo 1: descarta todo tu mazo
+      const deckSize = gameState[targetPlayer].deck.length;
+      if (deckSize > 0) {
+        gameState[targetPlayer].trash.push(...gameState[targetPlayer].deck.splice(0));
+        updateStatus(`${targetPlayer === 'player' ? 'Descartas' : 'IA descarta'} el mazo (${deckSize} cartas)`);
+        updateUI();
+      }
+      processAbilityEffect();
+      break;
+    }
+
+    case 'playFromDiscardThenShuffle': {
+      // Tiempo 0: juega 1 carta de tu descarte, luego baraja el descarte en el mazo
+      if (gameState[targetPlayer].trash.length === 0) { processAbilityEffect(); break; }
+      // Enqueue the shuffle for after the play
+      gameState.effectQueue.unshift({ effect: { action: '_shuffleDiscardIntoDeck' }, targetPlayer, cardName: triggerCardName });
+      if (targetPlayer === 'player') {
+        updateStatus('Tiempo 0: elige una carta del descarte para jugar');
+        // Simplified: let player pick via the discard pile click (effectContext)
+        gameState.effectContext = { type: 'playFromDiscard', line: gameState.currentEffectLine };
+        highlightEffectTargets();
+      } else {
+        const bestIdx = gameState.ai.trash.reduce((b, c, i) => c.valor > gameState.ai.trash[b].valor ? i : b, 0);
+        const [card] = gameState.ai.trash.splice(bestIdx, 1);
+        const line = gameState.currentEffectLine || LINES[0];
+        gameState.field[line].ai.push({ card, faceDown: false });
+        updateUI();
+        processAbilityEffect();
+      }
+      break;
+    }
+
+    case '_shuffleDiscardIntoDeck': {
+      if (typeof shuffleDiscardIntoDeck === 'function') shuffleDiscardIntoDeck(targetPlayer);
+      processAbilityEffect();
+      break;
+    }
+
+    case 'playFromDiscardFaceDownOtherLine': {
+      // Tiempo 3: revela 1 carta del descarte, juégala bocabajo en otra línea
+      if (gameState[targetPlayer].trash.length === 0) { processAbilityEffect(); break; }
+      if (targetPlayer === 'player') {
+        updateStatus('Tiempo 3: elige una carta del descarte para jugar bocabajo en otra línea');
+        gameState.effectContext = { type: 'playFromDiscardFaceDown', excludeLine: gameState.currentEffectLine };
+        highlightEffectTargets();
+      } else {
+        const bestIdx = gameState.ai.trash.reduce((b, c, i) => c.valor > gameState.ai.trash[b].valor ? i : b, 0);
+        const [card] = gameState.ai.trash.splice(bestIdx, 1);
+        const curLine = gameState.currentEffectLine;
+        const destLine = LINES.filter(l => l !== curLine)[0] || LINES[0];
+        gameState.field[destLine].ai.push({ card, faceDown: true });
+        updateUI();
+        processAbilityEffect();
+      }
+      break;
+    }
+
+    case 'drawPerDistinctProtocolsInLine': {
+      // Diversidad 1: roba cartas = protocolos distintos en esta línea
+      const line = gameState.currentEffectLine;
+      if (!line) { processAbilityEffect(); break; }
+      const protocols = new Set();
+      ['player', 'ai'].forEach(p =>
+        gameState.field[line][p].forEach(c => protocols.add(c.card.nombre.replace(/ \d+$/, '')))
+      );
+      if (protocols.size > 0) draw(targetPlayer, protocols.size);
+      processAbilityEffect();
+      break;
+    }
+
+    case 'flipCardBelowDistinctProtocolCount': {
+      // Diversidad 4: voltea 1 carta con Valor menor que el número de Protocolos distintos en el campo
+      const allProtos = new Set();
+      LINES.forEach(l => ['player', 'ai'].forEach(p =>
+        gameState.field[l][p].forEach(c => allProtos.add(c.card.nombre.replace(/ \d+$/, '')))
+      ));
+      const protoCount = allProtos.size;
+      if (targetPlayer === 'player') {
+        startEffect('flip', 'any', 1, { filter: 'maxValue', maxVal: protoCount - 1 });
+      } else {
+        let done = false;
+        LINES.forEach(l => {
+          if (done) return;
+          const st = gameState.field[l].player;
+          if (st.length > 0 && st[st.length - 1].card.valor < protoCount) {
+            st[st.length - 1].faceDown = !st[st.length - 1].faceDown;
+            done = true;
+          }
+        });
+        processAbilityEffect();
+      }
+      break;
+    }
+
+    case 'deleteIfFewDistinctProtocols': {
+      // Diversidad 6 onTurnEnd: si < minProtocols protocolos distintos, elimina esta carta
+      const minProtos = actionDef.minProtocols || 4;
+      const allProtos = new Set();
+      LINES.forEach(l => ['player', 'ai'].forEach(p =>
+        gameState.field[l][p].forEach(c => allProtos.add(c.card.nombre.replace(/ \d+$/, '')))
+      ));
+      if (allProtos.size < minProtos) {
+        gameState.effectQueue.unshift({ effect: { action: '_deleteSelf' }, targetPlayer, cardName: triggerCardName });
+      }
+      processAbilityEffect();
+      break;
+    }
+
+    case 'compileDiversityIfSixProtocols': {
+      // Diversidad 0: si hay 6+ protocolos distintos en el campo, compila Diversidad
+      const allProtos = new Set();
+      LINES.forEach(l => ['player', 'ai'].forEach(p =>
+        gameState.field[l][p].forEach(c => allProtos.add(c.card.nombre.replace(/ \d+$/, '')))
+      ));
+      if (allProtos.size >= 6 && typeof compileProtocol === 'function') {
+        compileProtocol(targetPlayer, 'Diversidad');
+        updateUI();
+      }
+      processAbilityEffect();
+      break;
+    }
+
+    case 'playNonDiversityCard': {
+      // Diversidad 0 onTurnEnd: puedes jugar 1 carta que no sea Diversidad en esta línea
+      const nonDivCards = gameState[targetPlayer].hand.filter(c => !c.nombre.startsWith('Diversidad'));
+      if (nonDivCards.length === 0) { processAbilityEffect(); break; }
+      if (targetPlayer === 'player') {
+        const confirmArea = document.getElementById('command-confirm');
+        const confirmMsg  = document.getElementById('confirm-msg');
+        const btnYes      = document.getElementById('btn-confirm-yes');
+        const btnNo       = document.getElementById('btn-confirm-no');
+        if (confirmArea && btnYes && btnNo) {
+          gameState.effectContext = { type: 'confirm' };
+          confirmArea.classList.remove('hidden');
+          confirmMsg.textContent = 'Diversidad 0 Final: ¿Juegas 1 carta que no sea Diversidad en esta línea? (auto-elegirá la mejor)';
+          btnYes.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            const best = nonDivCards.reduce((b, c) => c.valor > b.valor ? c : b);
+            const idx = gameState.player.hand.indexOf(best);
+            const [card] = gameState.player.hand.splice(idx, 1);
+            const line = gameState.currentEffectLine || LINES[0];
+            gameState.field[line].player.push({ card, faceDown: false });
+            updateUI();
+            processAbilityEffect();
+          };
+          btnNo.onclick = () => { confirmArea.classList.add('hidden'); gameState.effectContext = null; processAbilityEffect(); };
+        } else { processAbilityEffect(); }
+      } else {
+        const best = nonDivCards.reduce((b, c) => c.valor > b.valor ? c : b);
+        const idx = gameState.ai.hand.indexOf(best);
+        const [card] = gameState.ai.hand.splice(idx, 1);
+        const line = gameState.currentEffectLine || LINES[0];
+        gameState.field[line].ai.push({ card, faceDown: false });
+        updateUI();
+        processAbilityEffect();
+      }
+      break;
+    }
+
+    case 'copyOpponentCardEffect': {
+      // Espejo 1 onTurnEnd: resuelve el comando central de 1 carta del oponente como si fuera tuyo
+      const availCards = [];
+      LINES.forEach(l => {
+        gameState.field[l][opponent].forEach(c => {
+          if (!c.faceDown && CARD_EFFECTS[c.card.nombre]?.onPlay) availCards.push({ card: c.card, line: l });
+        });
+      });
+      if (availCards.length === 0) { processAbilityEffect(); break; }
+      const best = availCards.reduce((b, x) => x.card.valor > b.card.valor ? x : b);
+      updateStatus(`Espejo 1: copiando efecto de ${best.card.nombre}`);
+      const prevLine = gameState.currentEffectLine;
+      gameState.currentEffectLine = best.line;
+      triggerCardEffect(best.card, 'onPlay', targetPlayer);
+      gameState.currentEffectLine = prevLine;
+      processAbilityEffect();
+      break;
+    }
+
+    case 'shiftCoveredFaceDown': {
+      // Humo 4: cambia 1 carta cubierta bocabajo (la deja faceDown al moverla)
+      if (targetPlayer === 'player') {
+        startEffect('shift', 'any', 1, { coveredOnly: true, forceFaceDown: true });
+      } else {
+        let bestSrc = null, bestLine = null, bestIdx = -1;
+        LINES.forEach(l => {
+          const st = gameState.field[l].ai;
+          for (let i = 0; i < st.length - 1; i++) {
+            if (!bestSrc || st[i].card.valor < bestSrc.card.valor) {
+              bestSrc = st[i]; bestLine = l; bestIdx = i;
+            }
+          }
+        });
+        if (bestSrc) {
+          const dest = LINES.filter(l => l !== bestLine)[0] || bestLine;
+          gameState.field[bestLine].ai.splice(bestIdx, 1);
+          bestSrc.faceDown = true;
+          gameState.field[dest].ai.push(bestSrc);
+          updateUI();
+        }
+        processAbilityEffect();
+      }
+      break;
+    }
+
     // Agregar más casos según sea necesario
     default:
       console.warn(`Acción no implementada: ${action}`);
@@ -2896,18 +4007,43 @@ function applyPersistentValueModifiers(state, line, player) {
     }
   }
 
-  // Bonos: cartas propias bocarriba en esta línea (ej: Apatía 0)
+  // Bonos: cartas propias bocarriba en esta línea
   const selfStack = state.field[line][player];
   if (selfStack.length > 0) {
     const topCardObj = selfStack[selfStack.length - 1];
     if (!topCardObj.faceDown) {
       const effectDef = CARD_EFFECTS[topCardObj.card.nombre];
-      if (effectDef && effectDef.persistent && effectDef.persistent.valueBonusPerFaceDown) {
-        // Contar cartas bocabajo en toda la línea (ambos lados)
-        const faceDownCount =
-          state.field[line].player.filter(c => c.faceDown).length +
-          state.field[line].ai.filter(c => c.faceDown).length;
-        totalBonus += effectDef.persistent.valueBonusPerFaceDown * faceDownCount;
+      if (effectDef && effectDef.persistent) {
+        const p = effectDef.persistent;
+
+        // Humo 2: +1 por cada carta bocabajo en esta línea
+        if (p.valueBonusPerFaceDown) {
+          const faceDownCount =
+            state.field[line].player.filter(c => c.faceDown).length +
+            state.field[line].ai.filter(c => c.faceDown).length;
+          totalBonus += p.valueBonusPerFaceDown * faceDownCount;
+        }
+
+        // Claridad 0: +1 por cada carta en tu mano
+        if (p.valueBonusPerHandCard) {
+          totalBonus += p.valueBonusPerHandCard * (state[player].hand.length || 0);
+        }
+
+        // Espejo 0: +1 por cada carta del oponente en esta línea
+        if (p.valueBonusPerOpponentCard) {
+          const oppPlayer = player === 'player' ? 'ai' : 'player';
+          totalBonus += p.valueBonusPerOpponentCard * state.field[line][oppPlayer].length;
+        }
+
+        // Diversidad 3: +2 si hay alguna carta bocarriba que no sea Diversidad en esta pila
+        if (p.valueBonusIfNonDiversityFaceUp) {
+          const hasNonDiv = selfStack.some((c, i) =>
+            i !== selfStack.length - 1 &&
+            !c.faceDown &&
+            !c.card.nombre.startsWith('Diversidad')
+          );
+          if (hasNonDiv) totalBonus += p.valueBonusIfNonDiversityFaceUp;
+        }
       }
     }
   }
