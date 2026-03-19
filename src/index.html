@@ -115,13 +115,19 @@
             box-shadow: 0 0 18px rgba(var(--c), 0.3);
         }
 
+        .diff-desc-wrapper {
+            position: relative;
+            height: 2.8em;
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
         .diff-desc {
+            position: absolute;
+            inset: 0;
             font-size: 0.95em;
             color: #667;
-            height: 2.6em;
-            margin-bottom: 24px;
             line-height: 1.6;
-            overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -234,7 +240,7 @@
 
     <p class="diff-label">⚙️ Nivel de compilación</p>
     <div class="diff-grid" id="diff-grid"></div>
-    <p class="diff-desc" id="diff-desc"></p>
+    <div class="diff-desc-wrapper"><p class="diff-desc" id="diff-desc"></p></div>
 
     <p class="diff-label">🧬 Protocolos disponibles</p>
     <div class="protocol-grid">
@@ -284,7 +290,6 @@ function renderDiff() {
     const desc = document.getElementById('diff-desc');
     desc.textContent = cur.desc;
     desc.style.color = `rgb(${cur.color})`;
-    applyIndexScale();
 }
 
 function updateProtocolSelection() {
