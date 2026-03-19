@@ -3069,14 +3069,21 @@ function resolveAbilityAction(actionDef, targetPlayer, triggerCardName) {
     }
 
     case 'playOwnTopDeckOpponentSide': {
-      // Asimilación 6 onTurnEnd: juega bocabajo tu carta top en el lado rival de esta línea
-      const line = gameState.currentEffectLine;
-      if (line && gameState[targetPlayer].deck.length > 0) {
-        const top = gameState[targetPlayer].deck.pop();
-        gameState.field[line][opponent].push({ card: top, faceDown: true });
+      // Asimilación 6 onTurnEnd: juega bocabajo tu carta top en el lado rival (línea a elegir)
+      if (gameState[targetPlayer].deck.length === 0) { processAbilityEffect(); break; }
+      if (targetPlayer === 'player') {
+        gameState.effectContext = { type: 'playTopDeckFaceDownOpponentChooseLine', owner: 'player', opponent: 'ai' };
+        updateStatus('Asimilación 6: elige la línea donde colocar bocabajo en el lado del rival');
+        if (typeof highlightSelectableLines === 'function') highlightSelectableLines();
+      } else {
+        // IA: elige la línea donde el jugador tiene mayor puntuación (para interferir)
+        const bestLine = LINES.reduce((best, l) =>
+          calculateScore(gameState, l, 'player') > calculateScore(gameState, best, 'player') ? l : best, LINES[0]);
+        const top = gameState.ai.deck.pop();
+        gameState.field[bestLine].player.push({ card: top, faceDown: true });
         updateUI();
+        processAbilityEffect();
       }
-      processAbilityEffect();
       break;
     }
 

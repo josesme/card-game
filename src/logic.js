@@ -215,6 +215,17 @@ function handleShiftTargetLine(destinationLine) {
         return;
     }
 
+    if (ctx.type === 'playTopDeckFaceDownOpponentChooseLine') {
+        // Asimilación 6: juega bocabajo tu carta top en el lado del rival, en la línea elegida
+        if (gameState[ctx.owner].deck.length > 0) {
+            const topCard = gameState[ctx.owner].deck.pop();
+            gameState.field[destinationLine][ctx.opponent].push({ card: topCard, faceDown: true });
+            updateUI();
+        }
+        finishEffect();
+        return;
+    }
+
     if (ctx.type === 'playTopDeckFaceDownChooseLine') {
         console.log(`  → playTopDeckFaceDownChooseLine: sourceLine=${ctx.sourceLine}, dest=${destinationLine}`);
         if (destinationLine === ctx.sourceLine) {
@@ -338,6 +349,7 @@ function isSelectionActive() {
         (gameState.effectContext && (
             gameState.effectContext.waitingForLine ||
             gameState.effectContext.type === 'pickHandFaceDown_lineSelect' ||
+            gameState.effectContext.type === 'playTopDeckFaceDownOpponentChooseLine' ||
             gameState.effectContext.type === 'rearrange'
         ));
 }
