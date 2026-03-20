@@ -904,7 +904,7 @@ const CARD_EFFECTS = {
     ],
     // "Después de que tu oponente descarte cartas: Puedes jugar 1 carta bocabajo."
     onOpponentDiscard: [
-      { action: 'playHandFaceDown', target: 'self' }
+      { action: 'playHandFaceDown', target: 'self', may: true }
     ]
   },
 
@@ -2659,11 +2659,41 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       }
       if (targetPlayer === 'player') {
         if (gameState.player.hand.length === 0) { processAbilityEffect(); break; }
+        if (actionDef.may) {
+          // Opcional: preguntar antes de jugar bocabajo
+          const confirmArea = document.getElementById('command-confirm');
+          const confirmMsg = document.getElementById('confirm-msg');
+          const btnYes = document.getElementById('btn-confirm-yes');
+          const btnNo = document.getElementById('btn-confirm-no');
+          if (confirmArea && btnYes && btnNo) {
+            gameState.effectContext = { type: 'confirm' };
+            confirmArea.classList.remove('hidden');
+            confirmMsg.textContent = `${triggerCardName || 'Carta'}: ¿Jugar 1 carta bocabajo?`;
+            btnYes.onclick = () => {
+              confirmArea.classList.add('hidden');
+              gameState.effectContext = { type: 'pickHandFaceDown', excludeLine, allowedLines };
+              const lineMsg = excludeLine ? ' en otra línea' : '';
+              updateStatus(`${triggerCardName || 'Carta'}: elige una carta de tu mano para jugar bocabajo${lineMsg}`);
+              if (typeof highlightSelectableLines === 'function') highlightSelectableLines(excludeLine, allowedLines);
+            };
+            btnNo.onclick = () => {
+              confirmArea.classList.add('hidden');
+              gameState.effectContext = null;
+              processAbilityEffect();
+            };
+          } else { processAbilityEffect(); }
+          break;
+        }
         gameState.effectContext = { type: 'pickHandFaceDown', excludeLine, allowedLines };
         const lineMsg = excludeLine ? ' en otra línea' : actionDef.requireFaceDownInLine ? ' en una línea con carta bocabajo' : '';
         updateStatus(`${triggerCardName || 'Carta'}: elige una carta de tu mano para jugar bocabajo${lineMsg}`);
         if (typeof highlightSelectableLines === 'function') highlightSelectableLines(excludeLine, allowedLines);
       } else {
+        // IA: si may=true, solo juega si tiene cartas de sobra
+        if (actionDef.may && gameState.ai.hand.length <= 3) {
+          processAbilityEffect();
+          break;
+        }
         if (gameState.ai.hand.length > 0) {
           const cardIdx = aiLowestValueCardIdx('ai') >= 0 ? aiLowestValueCardIdx('ai') : 0;
           const dest = allowedLines.filter(l => !gameState.field[l].compiledBy)
@@ -2946,10 +2976,17 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'drawFromOpponentDeck': {
-      // Amor 1: roba la carta superior del mazo del oponente (va a tu mano)
+      // Roba la carta superior del mazo del oponente (va a tu mano)
+      // Si el mazo rival está vacío, baraja su descarte primero
+      if (gameState[opponent].deck.length === 0 && gameState[opponent].trash.length > 0) {
+        gameState[opponent].deck = gameState[opponent].trash.sort(() => Math.random() - 0.5);
+        gameState[opponent].trash = [];
+      }
       if (gameState[opponent].deck.length > 0) {
         const top = gameState[opponent].deck.pop();
         gameState[targetPlayer].hand.push(top);
+        updateStatus(`${targetPlayer === 'player' ? 'Robas' : 'IA roba'} la carta top del mazo rival`);
+        updateUI();
       }
       processAbilityEffect();
       break;
@@ -3140,22 +3177,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       break;
     }
 
-    case 'drawFromOpponentDeck': {
-      // Assimilation 1 reactive: roba carta top del mazo del oponente
-      const opp = targetPlayer === 'player' ? 'ai' : 'player';
-      if (gameState[opp].deck.length === 0 && gameState[opp].trash.length > 0) {
-        gameState[opp].deck = gameState[opp].trash.sort(() => Math.random() - 0.5);
-        gameState[opp].trash = [];
-      }
-      if (gameState[opp].deck.length > 0) {
-        const stolen = gameState[opp].deck.pop();
-        gameState[targetPlayer].hand.push(stolen);
-        updateStatus(`${targetPlayer === 'player' ? 'Robas' : 'IA roba'} la carta top del mazo rival`);
-        updateUI();
-      }
-      processAbilityEffect();
-      break;
-    }
+    // (drawFromOpponentDeck duplicado eliminado — consolidado arriba)
 
     case 'swapTopDeckCards': {
       // Chaos 0: cada jugador roba la carta top del mazo rival
@@ -3777,8 +3799,8 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'flipOpponentSameLine': {
-      // Espejo 3: voltea 1 carta del oponente en esta misma línea
-      const line = gameState.currentEffectLine;
+      // Espejo 3: voltea 1 carta del oponente en la misma línea donde se volteó la propia
+      const line = (gameState.lastFlippedCard && gameState.lastFlippedCard.line) || gameState.currentEffectLine;
       if (!line || gameState.field[line][opponent].length === 0) { processAbilityEffect(); break; }
       if (targetPlayer === 'player') {
         startEffect('flip', opponent, 1, { forceLine: line });

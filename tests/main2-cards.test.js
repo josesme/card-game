@@ -1203,3 +1203,81 @@ describe('1.5 Unidad 0 — onCoverCondition unityOnly', () => {
     expect(global.draw).toHaveBeenCalledWith('ai', 1);
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// FASE 4 — Limpieza y verificación
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe('4.1 drawFromOpponentDeck consolidado — baraja trash si mazo vacío', () => {
+  test('roba de mazo rival normalmente', () => {
+    resetGS();
+    GS.turn = 'ai';
+    GS.currentEffectLine = 'alpha';
+    const rivalCard = makeCard('Rival-Top', 4);
+    GS.player.deck = [rivalCard];
+    GS.effectQueue = [{ effect: { action: 'drawFromOpponentDeck' }, targetPlayer: 'ai', cardName: 'Asimilación 4' }];
+    ENGINE.processAbilityEffect();
+    expect(GS.ai.hand.some(c => c.nombre === 'Rival-Top')).toBe(true);
+    expect(GS.player.deck.length).toBe(0);
+  });
+
+  test('baraja trash en mazo rival si mazo vacío y roba', () => {
+    resetGS();
+    GS.turn = 'ai';
+    GS.currentEffectLine = 'alpha';
+    GS.player.deck = [];
+    GS.player.trash = [makeCard('Trash1', 1), makeCard('Trash2', 2)];
+    GS.effectQueue = [{ effect: { action: 'drawFromOpponentDeck' }, targetPlayer: 'ai', cardName: 'Asimilación 4' }];
+    ENGINE.processAbilityEffect();
+    expect(GS.ai.hand.length).toBe(1);
+    expect(GS.player.trash.length).toBe(0); // trash se movió al mazo
+  });
+});
+
+describe('4.2 Espejo 3 — flipOpponentSameLine usa línea del flip previo', () => {
+  test('IA: usa lastFlippedCard.line si existe', () => {
+    resetGS();
+    GS.turn = 'ai';
+    GS.currentEffectLine = 'alpha'; // Espejo 3 está en alpha
+    GS.lastFlippedCard = { line: 'beta' }; // flip previo fue en beta
+    const oppCard = { card: makeCard('Opp', 3), faceDown: false };
+    GS.field.beta.player = [oppCard]; // carta del oponente en beta
+    GS.effectQueue = [{ effect: { action: 'flipOpponentSameLine' }, targetPlayer: 'ai', cardName: 'Espejo 3' }];
+    ENGINE.processAbilityEffect();
+    expect(oppCard.faceDown).toBe(true); // volteó en beta, no en alpha
+  });
+
+  test('IA: fallback a currentEffectLine si no hay lastFlippedCard', () => {
+    resetGS();
+    GS.turn = 'ai';
+    GS.currentEffectLine = 'gamma';
+    GS.lastFlippedCard = null;
+    const oppCard = { card: makeCard('Opp', 3), faceDown: false };
+    GS.field.gamma.player = [oppCard];
+    GS.effectQueue = [{ effect: { action: 'flipOpponentSameLine' }, targetPlayer: 'ai', cardName: 'Espejo 3' }];
+    ENGINE.processAbilityEffect();
+    expect(oppCard.faceDown).toBe(true);
+  });
+});
+
+describe('4.3 Guerra 3 — playHandFaceDown con may: true (IA)', () => {
+  test('IA NO juega bocabajo si tiene <=3 cartas y may=true', () => {
+    resetGS();
+    GS.turn = 'ai';
+    GS.currentEffectLine = 'alpha';
+    GS.ai.hand = [makeCard('A', 1), makeCard('B', 2)];
+    GS.effectQueue = [{ effect: { action: 'playHandFaceDown', target: 'self', may: true }, targetPlayer: 'ai', cardName: 'Guerra 3' }];
+    ENGINE.processAbilityEffect();
+    expect(GS.ai.hand.length).toBe(2); // no jugó nada
+  });
+
+  test('IA SÍ juega bocabajo si tiene >3 cartas y may=true', () => {
+    resetGS();
+    GS.turn = 'ai';
+    GS.currentEffectLine = 'alpha';
+    GS.ai.hand = [makeCard('A', 1), makeCard('B', 2), makeCard('C', 3), makeCard('D', 4)];
+    GS.effectQueue = [{ effect: { action: 'playHandFaceDown', target: 'self', may: true }, targetPlayer: 'ai', cardName: 'Guerra 3' }];
+    ENGINE.processAbilityEffect();
+    expect(GS.ai.hand.length).toBe(3); // jugó 1 carta
+  });
+});
