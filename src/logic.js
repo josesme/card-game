@@ -944,10 +944,13 @@ function showActionModal(handIndex) {
     
     // Check if face-up play is legal: card protocol must match the line's protocol
     // ERRATA Espíritu 1: if allowAnyProtocol is active, any line is valid
+    // Unidad 1: cartas Unidad pueden jugarse bocarriba en la línea de Unidad 1
     const lineIndex = gameState.player.protocols.indexOf(card.protocol);
     const targetLine = lineIndex !== -1 ? LINES[lineIndex] : null;
     const forcedFaceDown = typeof hasForceOpponentFaceDown === 'function' && hasForceOpponentFaceDown('player');
-    const canPlayUp = !forcedFaceDown && (targetLine !== null || (typeof hasAllowAnyProtocol === 'function' && hasAllowAnyProtocol('player')));
+    const unityLine = typeof getUnityPlayLine === 'function' ? getUnityPlayLine('player') : null;
+    const canPlayUnity = unityLine && card.nombre.startsWith('Unidad') && targetLine !== unityLine;
+    const canPlayUp = !forcedFaceDown && (targetLine !== null || (typeof hasAllowAnyProtocol === 'function' && hasAllowAnyProtocol('player')) || canPlayUnity);
     
     console.log(`  Protocol: ${card.protocol}, Line: ${targetLine}, CanPlayUp: ${canPlayUp}`);
     
@@ -1890,6 +1893,7 @@ function playSelectedCard(isFaceDown) {
 
     // Face-up play: protocol must match the line (compiled lines allowed)
     // Espíritu 1: si allowAnyProtocol está activo, el jugador elige línea libremente
+    // Unidad 1: cartas Unidad pueden jugarse bocarriba en la línea de Unidad 1
     const idx = gameState.player.protocols.indexOf(card.protocol);
     if (typeof hasAllowAnyProtocol === 'function' && hasAllowAnyProtocol('player')) {
         console.log(`✅ Playing face-up (any protocol allowed): ${card.nombre}`);
@@ -1901,9 +1905,16 @@ function playSelectedCard(isFaceDown) {
         console.log(`✅ Playing face-up: ${card.nombre} on line ${LINES[idx]}`);
         finalizePlay(LINES[idx], false);
     } else {
-        console.error("❌ Illegal face-up play: protocol has no matching line", {
-            protocol: card.protocol,
-        });
+        // Unidad 1: si la carta es Unidad y hay línea con allowUnityPlayInLine, jugar ahí
+        const unityLine = typeof getUnityPlayLine === 'function' ? getUnityPlayLine('player') : null;
+        if (unityLine && card.nombre.startsWith('Unidad')) {
+            console.log(`✅ Playing face-up (Unidad 1 rule): ${card.nombre} on ${unityLine}`);
+            finalizePlay(unityLine, false);
+        } else {
+            console.error("❌ Illegal face-up play: protocol has no matching line", {
+                protocol: card.protocol,
+            });
+        }
     }
 }
 
@@ -2160,11 +2171,14 @@ function generateAIPossibleMoves() {
 
             {
                 // Movimiento bocarriba (si coincide protocolo, compiled lines allowed)
+                // Unidad 1: cartas Unidad pueden jugarse bocarriba en la línea de Unidad 1
                 const lineIndex = gameState.ai.protocols.indexOf(card.protocol);
                 const lineMatchesProtocol = lineIndex !== -1 && LINES[lineIndex] === line;
+                const aiUnityLine = typeof getUnityPlayLine === 'function' ? getUnityPlayLine('ai') : null;
+                const unityMatch = aiUnityLine === line && card.nombre.startsWith('Unidad');
 
                 const aiForcedDown = typeof hasForceOpponentFaceDown === 'function' && hasForceOpponentFaceDown('ai');
-                if (lineMatchesProtocol && !aiForcedDown) {
+                if ((lineMatchesProtocol || unityMatch) && !aiForcedDown) {
                     moves.push({
                         cardIndex,
                         line,

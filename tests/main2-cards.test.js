@@ -936,3 +936,32 @@ describe('mayShiftSelf — genérico para cualquier carta', () => {
     expect(GS.field['alpha'].ai[0].card.nombre).toBe('Agua 1');
   });
 });
+
+// ── Unidad 1: allowUnityPlayInLine (regla pasiva, no auto-juega) ─────────────
+describe('Unidad 1 — allowUnityPlayInLine', () => {
+  test('Unidad 1 tiene persistent.allowUnityPlayInLine y NO tiene onTurnEnd', () => {
+    const ef = ENGINE.CARD_EFFECTS['Unidad 1'];
+    expect(ef.persistent.allowUnityPlayInLine).toBe(true);
+    expect(ef.onTurnEnd).toBeUndefined();
+  });
+
+  test('getUnityPlayLine devuelve la línea donde Unidad 1 está bocarriba', () => {
+    LINES_MOCK.forEach(l => { GS.field[l] = { player: [], ai: [], compiledBy: null }; });
+    GS.field['beta'].player = [{ card: makeCard('Unidad 1', 1), faceDown: false }];
+    const line = ENGINE.getUnityPlayLine('player');
+    expect(line).toBe('beta');
+  });
+
+  test('getUnityPlayLine devuelve null si Unidad 1 está bocabajo', () => {
+    LINES_MOCK.forEach(l => { GS.field[l] = { player: [], ai: [], compiledBy: null }; });
+    GS.field['beta'].player = [{ card: makeCard('Unidad 1', 1), faceDown: true }];
+    const line = ENGINE.getUnityPlayLine('player');
+    expect(line).toBeNull();
+  });
+
+  test('getUnityPlayLine devuelve null si no hay Unidad 1 en el campo', () => {
+    LINES_MOCK.forEach(l => { GS.field[l] = { player: [], ai: [], compiledBy: null }; });
+    const line = ENGINE.getUnityPlayLine('player');
+    expect(line).toBeNull();
+  });
+});

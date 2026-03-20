@@ -1108,9 +1108,9 @@ const CARD_EFFECTS = {
     onCover: [{ action: 'mayFlipOrDrawIfUnityOnField' }]
   },
   'Unidad 1': {
+    persistent: { allowUnityPlayInLine: true },
     onTurnStart: [{ action: 'mayShiftSelfIfCovered' }],
-    onPlay: [{ action: 'compileSelfIfFiveOrMoreUnity' }],
-    onTurnEnd: [{ action: 'playUnidadCardsFromHand' }]
+    onPlay: [{ action: 'compileSelfIfFiveOrMoreUnity' }]
   },
   'Unidad 2': {
     onPlay: [{ action: 'drawPerUnityCards' }]
@@ -4842,6 +4842,7 @@ if (typeof window !== 'undefined') {
   window.getPersistentModifiers = getPersistentModifiers;
   window.onRefreshEffects = onRefreshEffects;
   window.hasAllowAnyProtocol = hasAllowAnyProtocol;
+  window.getUnityPlayLine = getUnityPlayLine;
   window.isPlayBlockedByPersistent = isPlayBlockedByPersistent;
   window.hasForceOpponentFaceDown = hasForceOpponentFaceDown;
   // Fase B: hooks reactivos
@@ -4884,4 +4885,22 @@ function hasAllowAnyProtocol(player) {
       return effectDef && effectDef.persistent && effectDef.persistent.allowAnyProtocol;
     });
   });
+}
+
+/**
+ * Unidad 1: devuelve la línea donde el jugador tiene Unidad 1 bocarriba
+ * con allowUnityPlayInLine activo. Devuelve null si no existe.
+ * Permite jugar cartas Unidad bocarriba en esa línea sin coincidir con protocolo.
+ */
+function getUnityPlayLine(player) {
+  for (const line of LINES) {
+    const stack = gameState.field[line][player];
+    const hasModifier = stack.some(cardObj => {
+      if (cardObj.faceDown) return false;
+      const effectDef = CARD_EFFECTS[cardObj.card.nombre];
+      return effectDef && effectDef.persistent && effectDef.persistent.allowUnityPlayInLine;
+    });
+    if (hasModifier) return line;
+  }
+  return null;
 }
