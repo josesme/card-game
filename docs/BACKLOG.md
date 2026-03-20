@@ -1,23 +1,32 @@
-# 📋 COMPILE - BACKLOG & ROADMAP
+# COMPILE - BACKLOG & ROADMAP
 
 Documento para el seguimiento de bugs, mejoras y nuevas funcionalidades.
 
-## 🐛 Bugs & Tareas Pendientes
-- [ ] **IA:** Mejorar la evaluación de movimientos que disparan efectos complejos (en progreso).
-- [ ] **Lógica:** El efecto tras "borrar caché" (descarte al final de turno) no se dispara correctamente al pasar por la fase de "comprobar caché".
-- [ ] **UI:** Corregir el solapamiento de cartas en stacks muy grandes en pantallas pequeñas.
+## Bugs & Tareas Pendientes
 
-## 🚀 Próximas Versiones
+- [ ] **IA:** Mejorar evaluación de movimientos que disparan efectos complejos.
+- [ ] **UI:** Solapamiento de cartas en stacks grandes en pantallas pequeñas.
+- [ ] **Amor 4:** Revelar cartas propias para razonamiento de IA (pendiente).
+- [ ] **Regla pendiente:** ¿Voltear bocabajo→bocarriba activa onPlay? (diferido).
 
-### v2.2.0 (Próximamente)
+## Completado recientemente
+
+- [x] **Audit Main 2 completo:** 90 cartas auditadas, 12 bugs corregidos, 2 features implementados. Ver `AUDIT-MAIN2.md`.
+- [x] **176 tests pasando** (100% pass rate).
+- [x] **Hooks reactivos:** Solo disparan para carta top, no cubiertas.
+- [x] **Server:** Manejo de EADDRINUSE, EISDIR y cierre limpio.
+- [x] **Docs:** LEEME.md y README.md unificados.
+
+## Próximas Versiones
+
+### v2.2.0 (Polish)
 - [ ] Animaciones de descarte y robo.
 - [ ] Sonidos básicos de interfaz.
-- [ ] Refactorización del sistema de modales para ser más genérico.
+- [ ] Refactorización del sistema de modales.
 
-### v3.0.0 (Fase 3: Control Component)
-- [ ] Implementación de efectos persistentes (duración > 1 turno).
-- [ ] Sistema de restricciones de acción (ej. "no puedes compilar el próximo turno").
-- [ ] Stack de efectos para resolución LIFO.
+### v3.0.0 (Control Component)
+- [ ] Implementación del componente de control (regla avanzada).
+- [ ] Documentación de diseño en `docs/FASE-3-CONTROL.md`.
 
 ### v4.0.0 (Polish & Social)
 - [ ] Sistema de guardado local (localStorage).

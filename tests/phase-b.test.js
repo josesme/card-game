@@ -122,9 +122,9 @@ beforeEach(() => {
 
 // ─── CARD_EFFECTS ────────────────────────────────────────────────────────────
 describe('CARD_EFFECTS — entradas Fase B', () => {
-  test('War 0: onRefresh=mayFlip, onOpponentDraw=mayDelete', () => {
+  test('War 0: onRefresh=mayFlipSelf, onOpponentDraw=mayDelete', () => {
     const ef = ENGINE.CARD_EFFECTS['Guerra 0'];
-    expect(ef.onRefresh[0].action).toBe('mayFlip');
+    expect(ef.onRefresh[0].action).toBe('mayFlipSelf');
     expect(ef.onOpponentDraw[0].action).toBe('mayDelete');
   });
 
@@ -163,10 +163,10 @@ describe('CARD_EFFECTS — entradas Fase B', () => {
     expect(ef.onOpponentPlayInLine[0].target).toBe('opponent');
   });
 
-  test('Chaos 0: onPlay=[flipCoveredInEachLine, swapTopDeckCards]', () => {
+  test('Chaos 0: onPlay=flipCoveredInEachLine, onTurnStart=swapTopDeckCards', () => {
     const ef = ENGINE.CARD_EFFECTS['Caos 0'];
     expect(ef.onPlay[0].action).toBe('flipCoveredInEachLine');
-    expect(ef.onPlay[1].action).toBe('swapTopDeckCards');
+    expect(ef.onTurnStart[0].action).toBe('swapTopDeckCards');
   });
 
   test('Chaos 1: onPlay=[rearrangeProtocols self, rearrangeProtocols opponent]', () => {
