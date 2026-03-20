@@ -35,83 +35,132 @@
             display: none !important;
         }
 
-        /* ── STATUS BAR ─────────────────────────────── */
+        /* ── STATUS BAR (slim, just game status msg) ── */
         #status-bar {
             background: rgba(0,0,0,0.5);
             border: 1px solid #333;
             border-radius: 8px;
-            padding: 10px 20px;
-            margin-bottom: 12px;
+            padding: 6px 16px;
+            margin-bottom: 8px;
+            text-align: center;
+            min-height: 32px;
             display: flex;
             align-items: center;
-            gap: 16px;
-            min-height: 44px;
+            justify-content: center;
         }
 
         #status-bar .status-msg {
-            flex: 1;
-            font-size: 1em;
+            font-size: 0.95em;
             color: #facc15;
             font-weight: bold;
-            text-align: center;
         }
 
-        #status-bar .stat-group {
+        /* ── HAND OVERLAY (slide-up from bottom) ───── */
+        #hand-overlay {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            max-height: 75vh;
+            background: rgba(10,14,39,0.97);
+            border-top: 2px solid #00d4ff;
+            z-index: 950;
             display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-shrink: 0;
-            font-size: 0.85em;
+            flex-direction: column;
+            transform: translateY(100%);
+            transition: transform 0.25s ease;
+            box-shadow: 0 -8px 40px rgba(0,0,0,0.6);
         }
+        #hand-overlay.open { transform: translateY(0); }
 
-        #status-bar .stat-group .stat-label {
-            color: #888;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        #status-bar .stat-group .stat-value {
-            font-family: 'Orbitron', monospace;
-            font-weight: 700;
-            font-size: 1.1em;
-            min-width: 1.5em;
-            text-align: center;
-        }
-
-        #status-bar .stat-divider {
-            width: 1px;
-            height: 1.4em;
-            background: #444;
-            flex-shrink: 0;
-        }
-
-        /* ── PLAYER HAND SECTION ────────────────────── */
-        #hand-section {
-            background: rgba(26, 31, 58, 0.6);
-            border: 1px solid #00d4ff44;
-            border-radius: 10px;
-            padding: 10px 16px;
-        }
-
-        #hand-section .hand-header {
+        #hand-overlay .hand-bar {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 8px;
+            padding: 10px 20px;
+            border-bottom: 1px solid #333;
+            flex-shrink: 0;
         }
 
-        #hand-section .hand-header .hand-title {
+        #hand-overlay .hand-bar .hand-title {
             color: #00d4ff;
             font-size: 0.9em;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
-        #hand-section .hand-header .hand-stats {
+        #hand-overlay .hand-bar .stat-group {
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 0.85em;
+            gap: 8px;
+            font-size: 0.82em;
+        }
+        #hand-overlay .hand-bar .stat-label {
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        #hand-overlay .hand-bar .stat-value {
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            font-size: 1.1em;
+            min-width: 1.5em;
+            text-align: center;
+        }
+        #hand-overlay .hand-bar .stat-divider {
+            width: 1px;
+            height: 1.4em;
+            background: #444;
+            flex-shrink: 0;
+        }
+        .hand-close {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 1.4em;
+            cursor: pointer;
+        }
+        .hand-close:hover { color: #fff; }
+
+        #hand-overlay .hand-content {
+            padding: 12px 20px;
+            overflow-x: auto;
+            overflow-y: visible;
+            flex: 1;
+        }
+
+        /* ── HAND TOGGLE BUTTON ────────────────────── */
+        #hand-toggle {
+            position: fixed;
+            bottom: 12px;
+            left: 12px;
+            z-index: 900;
+            background: rgba(0,212,255,0.15);
+            border: 1px solid #00d4ff;
+            color: #00d4ff;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            cursor: pointer;
+            font-size: 1.4em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        #hand-toggle:hover { background: rgba(0,212,255,0.3); }
+        /* Badge for card count */
+        #hand-toggle .badge {
+            position: absolute;
+            top: -4px; right: -4px;
+            background: #00d4ff;
+            color: #0a0e27;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.5em;
+            font-weight: 900;
+            width: 20px; height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         /* ── LOG TOGGLE ─────────────────────────────── */
@@ -318,30 +367,9 @@
         </button>
     </header>
 
-    <!-- ═══ STATUS BAR ═══ -->
+    <!-- ═══ STATUS BAR (game messages only) ═══ -->
     <div id="status-bar">
-        <div class="stat-group">
-            <span style="color: #ef4444; font-size: 1.2em;">🤖</span>
-            <span class="stat-label">Mano</span>
-            <span id="ai-hand-count" class="stat-value" style="color: #00ff41;">0</span>
-            <span class="stat-divider"></span>
-            <span class="stat-label">Mazo</span>
-            <span id="ai-deck-count" class="stat-value" style="color: #00d4ff;">0</span>
-            <span class="stat-divider"></span>
-            <span class="stat-label">Desc.</span>
-            <span id="ai-trash-count" class="stat-value" style="color: #ef4444;">0</span>
-        </div>
-
         <div class="status-msg" id="game-status">—</div>
-
-        <div class="stat-group">
-            <span style="color: #00d4ff; font-size: 1.2em;">👤</span>
-            <span class="stat-label">Mazo</span>
-            <span id="player-deck-count" class="stat-value" style="color: #00d4ff;">0</span>
-            <span class="stat-divider"></span>
-            <span class="stat-label">Desc.</span>
-            <span id="player-trash-count" class="stat-value" style="color: #ef4444;">0</span>
-        </div>
     </div>
 
     <!-- ═══ GAME BOARD (3 vertical columns) ═══ -->
@@ -415,32 +443,60 @@
 
     </div>
 
-    <!-- ═══ PLAYER HAND ═══ -->
-    <div id="hand-section">
-        <div class="hand-header">
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <span class="hand-title">Tu mano</span>
-                <button id="player-deck-btn" title="Recargar Mazo" style="background: rgba(0,212,255,0.15); color: #00d4ff; border: 1px solid #00d4ff55; padding: 5px 14px; border-radius: 6px; cursor: pointer; font-size: 0.8em; font-weight: bold; font-family: 'Space Mono', monospace;">🔄 Actualizar</button>
-            </div>
-            <div class="hand-stats">
-                <div id="discard-banner"></div>
-                <button id="btn-stop-discard" class="hidden" style="background:#f59e0b;color:#000;border:none;border-radius:5px;padding:4px 14px;cursor:pointer;font-weight:bold;font-size:0.9em;">Detener descarte</button>
-            </div>
-        </div>
-        <div id="command-confirm" class="hidden" style="background: rgba(0,0,0,0.85); border: 1px solid #f59e0b; border-radius: 8px; padding: 12px 16px; margin-bottom: 10px; text-align: center;">
-            <div id="confirm-msg" style="color: #f59e0b; margin-bottom: 10px; font-size: 0.95em;"></div>
-            <button id="btn-confirm-yes" style="background:#16a34a;color:#fff;border:none;border-radius:6px;padding:6px 18px;margin-right:8px;cursor:pointer;font-size:0.9em;">Si</button>
-            <button id="btn-confirm-no" style="background:#dc2626;color:#fff;border:none;border-radius:6px;padding:6px 18px;cursor:pointer;font-size:0.9em;">No</button>
-        </div>
-        <div id="player-hand" style="display: flex; flex-wrap: nowrap; gap: 10px; min-height: 245px; overflow-x: auto; overflow-y: visible; align-items: center; scrollbar-width: thin; scrollbar-color: #00d4ff44 transparent; padding-bottom: 2px;">
-            <!-- Player cards populated by logic.js -->
-        </div>
-    </div>
-
     <!-- Hidden AI hand container (logic.js needs it) -->
     <div id="ai-hand" style="display: none;"></div>
     <!-- Hidden player-hand-col wrapper for ResizeObserver compat -->
     <div id="player-hand-col" style="display: none;"></div>
+    <!-- Hidden hand-section wrapper for logic.js compat -->
+    <div id="hand-section" style="display: none;"></div>
+</div>
+
+<!-- ═══ HAND TOGGLE BUTTON ═══ -->
+<button id="hand-toggle" onclick="document.getElementById('hand-overlay').classList.toggle('open')">
+    🃏<span class="badge" id="hand-count-badge">0</span>
+</button>
+
+<!-- ═══ HAND OVERLAY (slide-up) ═══ -->
+<div id="hand-overlay">
+    <div class="hand-bar">
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <span class="hand-title">Tu mano</span>
+            <button id="player-deck-btn" title="Recargar Mazo" style="background: rgba(0,212,255,0.15); color: #00d4ff; border: 1px solid #00d4ff55; padding: 5px 14px; border-radius: 6px; cursor: pointer; font-size: 0.8em; font-weight: bold; font-family: 'Space Mono', monospace;">🔄 Actualizar</button>
+            <div id="discard-banner"></div>
+            <button id="btn-stop-discard" class="hidden" style="background:#f59e0b;color:#000;border:none;border-radius:5px;padding:4px 14px;cursor:pointer;font-weight:bold;font-size:0.9em;">Detener descarte</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <div class="stat-group">
+                <span style="color: #00d4ff; font-size: 1em;">👤</span>
+                <span class="stat-label">Mazo</span>
+                <span id="player-deck-count" class="stat-value" style="color: #00d4ff;">0</span>
+                <span class="stat-divider"></span>
+                <span class="stat-label">Desc.</span>
+                <span id="player-trash-count" class="stat-value" style="color: #ef4444;">0</span>
+            </div>
+            <div class="stat-group">
+                <span style="color: #ef4444; font-size: 1em;">🤖</span>
+                <span class="stat-label">Mano</span>
+                <span id="ai-hand-count" class="stat-value" style="color: #00ff41;">0</span>
+                <span class="stat-divider"></span>
+                <span class="stat-label">Mazo</span>
+                <span id="ai-deck-count" class="stat-value" style="color: #00d4ff;">0</span>
+                <span class="stat-divider"></span>
+                <span class="stat-label">Desc.</span>
+                <span id="ai-trash-count" class="stat-value" style="color: #ef4444;">0</span>
+            </div>
+            <button class="hand-close" onclick="document.getElementById('hand-overlay').classList.remove('open')">✕</button>
+        </div>
+    </div>
+    <div id="command-confirm" class="hidden" style="background: rgba(0,0,0,0.85); border: 1px solid #f59e0b; border-radius: 8px; padding: 12px 16px; margin: 10px 20px; text-align: center;">
+        <div id="confirm-msg" style="color: #f59e0b; margin-bottom: 10px; font-size: 0.95em;"></div>
+        <button id="btn-confirm-yes" style="background:#16a34a;color:#fff;border:none;border-radius:6px;padding:6px 18px;margin-right:8px;cursor:pointer;font-size:0.9em;">Si</button>
+        <button id="btn-confirm-no" style="background:#dc2626;color:#fff;border:none;border-radius:6px;padding:6px 18px;cursor:pointer;font-size:0.9em;">No</button>
+    </div>
+    <div class="hand-content">
+        <div id="player-hand" style="display: flex; flex-wrap: nowrap; gap: 10px; min-height: 245px; overflow-x: auto; overflow-y: visible; align-items: center; scrollbar-width: thin; scrollbar-color: #00d4ff44 transparent; padding-bottom: 8px;">
+        </div>
+    </div>
 </div>
 
 <!-- CARD PREVIEW PANEL (centro fijo) -->

@@ -543,6 +543,20 @@ function updateUI() {
         aiHandCountEl.textContent = n;
         aiHandCountEl.style.color = n === 0 ? '#ef4444' : '#00ff41';
     }
+    // V2: update hand toggle badge + auto-open for hand interactions
+    const handBadge = document.getElementById('hand-count-badge');
+    if (handBadge) {
+        handBadge.textContent = gameState.player.hand.length;
+        const handOverlay = document.getElementById('hand-overlay');
+        if (handOverlay && gameState.effectContext) {
+            const handTypes = ['discard', 'discardAny', 'discardVariable', 'give', 'reveal',
+                'playNonDiversity', 'pickHandFaceDown', 'pickFromDiscardToPlay',
+                'pickFromDiscardFaceDown', 'pickDeckCard_valor1', 'playHandCard_valor1'];
+            if (handTypes.includes(gameState.effectContext.type)) {
+                handOverlay.classList.add('open');
+            }
+        }
+    }
     
     // Attach events to player hand
     document.querySelectorAll('#player-hand .card').forEach((cardEl, index) => {
@@ -759,10 +773,15 @@ function renderStack(line, target) {
     const stack = gameState.field[line][target];
     const isV2 = stackEl.classList.contains('vertical-stack');
 
-    // V2: set container height based on stack size (overlapping cards)
-    const V2_CARD_H = 245, V2_OFFSET = 100;
+    // V2: dynamic offset — shrinks as stack grows to keep height manageable
+    const V2_CARD_H = 245;
+    let v2Offset = 100;
+    if (isV2 && stack.length > 3) {
+        // Cap total height at ~545px (3-card equivalent), compress offset for 4+ cards
+        v2Offset = Math.max(40, Math.floor((545 - V2_CARD_H) / Math.max(stack.length - 1, 1)));
+    }
     if (isV2) {
-        const totalH = stack.length === 0 ? 0 : (stack.length - 1) * V2_OFFSET + V2_CARD_H;
+        const totalH = stack.length === 0 ? 0 : (stack.length - 1) * v2Offset + V2_CARD_H;
         stackEl.style.minHeight = Math.max(totalH, 260) + 'px';
         stackEl.style.height = totalH + 'px';
     }
@@ -814,7 +833,7 @@ function renderStack(line, target) {
 
         if (isV2) {
             // Position with absolute offset for overlap
-            wrapper.style.top = (idx * V2_OFFSET) + 'px';
+            wrapper.style.top = (idx * v2Offset) + 'px';
             wrapper.style.zIndex = idx + 1;
             // Mark field cards to prevent hand-card hover styles
             domCard.classList.add('card-in-field');
@@ -907,7 +926,13 @@ function actionPhase(who) {
     gameState.phase = 'action';
     console.log(`🎮 ACTION PHASE for ${who} - game is now playable`);
     updateStatus(who === 'player' ? 'Juega una carta o Recarga' : 'IA eligiendo acción...');
-    
+
+    // V2: auto-open hand overlay when player needs to act
+    if (who === 'player') {
+        const overlay = document.getElementById('hand-overlay');
+        if (overlay) overlay.classList.add('open');
+    }
+
     if (who === 'ai') {
         setTimeout(playAITurn, 1500);
     }
