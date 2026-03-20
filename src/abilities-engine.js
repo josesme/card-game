@@ -4341,27 +4341,49 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'compileDiversityIfSixProtocols': {
-      // Diversidad 0: si hay 6 protocolos distintos en TUS cartas del campo, compila Diversidad
-      const myProtos = new Set();
+      // Diversidad 0: si hay 6 protocolos distintos en cartas del campo (ambos lados), compila Diversidad
+      const allFieldProtos = new Set();
       LINES.forEach(l =>
-        gameState.field[l][targetPlayer].forEach(c => myProtos.add(c.card.nombre.replace(/ \d+$/, '')))
+        ['player', 'ai'].forEach(p =>
+          gameState.field[l][p].forEach(c => allFieldProtos.add(c.card.nombre.replace(/ \d+$/, '')))
+        )
       );
-      if (myProtos.size >= 6) {
-        if (!gameState[targetPlayer].compiled.includes('Diversidad')) {
-          gameState[targetPlayer].compiled.push('Diversidad');
+      if (allFieldProtos.size >= 6) {
+        // Compilar la línea donde está Diversidad como protocolo del jugador
+        const diversityLine = LINES.find((l, i) => gameState[targetPlayer].protocols[i] === 'Diversidad');
+        if (diversityLine && !gameState.field[diversityLine].compiledBy) {
+          // Eliminar todas las cartas de esa línea → descarte
+          ['player', 'ai'].forEach(p => {
+            const stack = gameState.field[diversityLine][p];
+            stack.forEach(c => gameState[p].trash.push(c.card));
+            gameState.field[diversityLine][p] = [];
+          });
+          gameState.field[diversityLine].compiledBy = targetPlayer;
+          if (!gameState[targetPlayer].compiled.includes('Diversidad')) {
+            gameState[targetPlayer].compiled.push('Diversidad');
+          }
+          updateStatus(`${triggerCardName}: 6 protocolos distintos en el campo — ¡Diversidad compilada!`);
+          updateUI();
+          if (typeof checkWinCondition === 'function') checkWinCondition();
+        } else if (diversityLine && gameState.field[diversityLine].compiledBy === targetPlayer) {
+          // Recompilar: roba top del mazo rival
+          const opponent = targetPlayer === 'player' ? 'ai' : 'player';
+          if (gameState[opponent].deck.length > 0) {
+            gameState[targetPlayer].hand.push(gameState[opponent].deck.pop());
+          }
+          updateStatus(`${triggerCardName}: Diversidad recompilada — robas del mazo rival`);
+          updateUI();
         }
-        updateStatus(`${triggerCardName}: 6 protocolos distintos en tu campo — ¡Diversidad compilada!`);
-        updateUI();
-        if (typeof checkWinCondition === 'function') checkWinCondition();
       }
       processAbilityEffect();
       break;
     }
 
     case 'playNonDiversityCard': {
-      // Diversidad 0 onTurnEnd: puedes jugar 1 carta que no sea Diversidad en esta línea
+      // Diversidad 0 onTurnEnd: puedes jugar 1 carta que no sea Diversidad en esta línea (bocarriba)
       const nonDivCards = gameState[targetPlayer].hand.filter(c => !c.nombre.startsWith('Diversidad'));
       if (nonDivCards.length === 0) { processAbilityEffect(); break; }
+      const effectLine = gameState.currentEffectLine || LINES[0];
       if (targetPlayer === 'player') {
         const confirmArea = document.getElementById('command-confirm');
         const confirmMsg  = document.getElementById('confirm-msg');
@@ -4370,27 +4392,33 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         if (confirmArea && btnYes && btnNo) {
           gameState.effectContext = { type: 'confirm' };
           confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = 'Diversidad 0 Final: ¿Juegas 1 carta que no sea Diversidad en esta línea? (auto-elegirá la mejor)';
+          confirmMsg.textContent = `Diversidad 0 Final: ¿Jugar 1 carta (no Diversidad) bocarriba en esta línea?`;
           btnYes.onclick = () => {
             confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            const best = nonDivCards.reduce((b, c) => c.valor > b.valor ? c : b);
-            const idx = gameState.player.hand.indexOf(best);
-            const [card] = gameState.player.hand.splice(idx, 1);
-            const line = gameState.currentEffectLine || LINES[0];
-            gameState.field[line].player.push({ card, faceDown: false });
+            gameState.effectContext = {
+              type: 'playNonDiversity',
+              line: effectLine,
+              filter: 'nonDiversity'
+            };
+            updateStatus('Elige una carta de tu mano (no Diversidad) para jugar en esta línea');
             updateUI();
-            processAbilityEffect();
           };
           btnNo.onclick = () => { confirmArea.classList.add('hidden'); gameState.effectContext = null; processAbilityEffect(); };
         } else { processAbilityEffect(); }
       } else {
+        // IA: juega la carta no-Diversidad de mayor valor
         const best = nonDivCards.reduce((b, c) => c.valor > b.valor ? c : b);
         const idx = gameState.ai.hand.indexOf(best);
         const [card] = gameState.ai.hand.splice(idx, 1);
-        const line = gameState.currentEffectLine || LINES[0];
-        gameState.field[line].ai.push({ card, faceDown: false });
+        const cardObj = { card, faceDown: false };
+        gameState.field[effectLine].ai.push(cardObj);
+        updateStatus(`IA juega ${card.nombre} bocarriba en ${effectLine} (Diversidad 0)`);
         updateUI();
+        // Disparar onPlay de la carta jugada
+        if (typeof triggerCardEffect === 'function') {
+          gameState.currentEffectLine = effectLine;
+          triggerCardEffect(card, 'onPlay', 'ai');
+        }
         processAbilityEffect();
       }
       break;

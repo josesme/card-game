@@ -1400,3 +1400,73 @@ describe('revealedPlayerCards — Amor 4 info para IA', () => {
     expect(faceUpExact.length).toBeGreaterThan(0);
   });
 });
+
+// ── Diversidad 0 — compileDiversityIfSixProtocols ─────────────────────────────
+
+describe('Diversidad 0 — compileDiversityIfSixProtocols', () => {
+  beforeEach(() => { getEngine(); resetGS(); });
+
+  test('compila cuando hay 6 protocolos distintos en el campo (ambos lados)', () => {
+    resetGS();
+    GS.turn = 'player';
+    GS.currentEffectLine = LINES_MOCK[0];
+    GS.player.protocols = ['Diversidad', 'Fuego', 'Agua'];
+    GS.player.compiled = [];
+    GS.field = makeEmptyField();
+    GS.field.alpha.player = [{ card: makeCard('Diversidad 0', 0), faceDown: false }];
+    GS.field.alpha.ai = [{ card: makeCard('Metal 1', 1), faceDown: false }];
+    GS.field.beta.player = [{ card: makeCard('Fuego 2', 2), faceDown: false }];
+    GS.field.beta.ai = [{ card: makeCard('Agua 3', 3), faceDown: false }];
+    GS.field.gamma.player = [{ card: makeCard('Luz 4', 4), faceDown: false }];
+    GS.field.gamma.ai = [{ card: makeCard('Espíritu 5', 5), faceDown: false }];
+
+    GS.effectQueue = [{ effect: { action: 'compileDiversityIfSixProtocols' }, targetPlayer: 'player' }];
+    ENGINE.processAbilityEffect();
+    expect(GS.player.compiled).toContain('Diversidad');
+  });
+
+  test('NO compila con menos de 6 protocolos distintos', () => {
+    resetGS();
+    GS.turn = 'player';
+    GS.currentEffectLine = LINES_MOCK[0];
+    GS.player.protocols = ['Diversidad', 'Fuego', 'Agua'];
+    GS.player.compiled = [];
+    GS.field = makeEmptyField();
+    GS.field.alpha.player = [{ card: makeCard('Diversidad 0', 0), faceDown: false }];
+    GS.field.beta.player = [{ card: makeCard('Fuego 2', 2), faceDown: false }];
+    GS.field.gamma.player = [{ card: makeCard('Agua 3', 3), faceDown: false }];
+
+    GS.effectQueue = [{ effect: { action: 'compileDiversityIfSixProtocols' }, targetPlayer: 'player' }];
+    ENGINE.processAbilityEffect();
+    expect(GS.player.compiled).not.toContain('Diversidad');
+  });
+
+  test('cuenta protocolos de AMBOS lados (no solo del jugador)', () => {
+    resetGS();
+    GS.turn = 'player';
+    GS.currentEffectLine = LINES_MOCK[0];
+    GS.player.protocols = ['Diversidad', 'Fuego', 'Agua'];
+    GS.player.compiled = [];
+    GS.field = makeEmptyField();
+    GS.field.alpha.player = [
+      { card: makeCard('Diversidad 0', 0), faceDown: false },
+      { card: makeCard('Metal 1', 1), faceDown: false },
+    ];
+    GS.field.beta.player = [
+      { card: makeCard('Fuego 2', 2), faceDown: false },
+      { card: makeCard('Agua 3', 3), faceDown: false },
+    ];
+    GS.field.gamma.player = [{ card: makeCard('Luz 4', 4), faceDown: false }];
+
+    // 5 protocolos → no compila
+    GS.effectQueue = [{ effect: { action: 'compileDiversityIfSixProtocols' }, targetPlayer: 'player' }];
+    ENGINE.processAbilityEffect();
+    expect(GS.player.compiled).not.toContain('Diversidad');
+
+    // Añadir 6º protocolo del lado AI → compila
+    GS.field.gamma.ai = [{ card: makeCard('Espíritu 5', 5), faceDown: false }];
+    GS.effectQueue = [{ effect: { action: 'compileDiversityIfSixProtocols' }, targetPlayer: 'player' }];
+    ENGINE.processAbilityEffect();
+    expect(GS.player.compiled).toContain('Diversidad');
+  });
+});

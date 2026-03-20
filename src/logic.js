@@ -629,6 +629,25 @@ function updateUI() {
                 gameState.effectContext.type = 'playHandCard_valor1_lineSelect';
                 updateStatus(`Claridad 2: elige la línea donde jugar "${card.nombre}"`);
                 updateUI();
+            } else if (gameState.effectContext && gameState.effectContext.type === 'playNonDiversity') {
+                // Diversidad 0: jugador elige carta no-Diversidad para jugar bocarriba
+                const card = gameState.player.hand[index];
+                if (!card || card.nombre.startsWith('Diversidad')) {
+                    updateStatus('Solo puedes elegir cartas que no sean Diversidad');
+                    return;
+                }
+                const ctx = gameState.effectContext;
+                const [played] = gameState.player.hand.splice(index, 1);
+                const cardObj = { card: played, faceDown: false };
+                gameState.field[ctx.line].player.push(cardObj);
+                gameState.effectContext = null;
+                updateStatus(`Juegas ${played.nombre} bocarriba en ${ctx.line} (Diversidad 0)`);
+                updateUI();
+                if (typeof triggerCardEffect === 'function') {
+                    gameState.currentEffectLine = ctx.line;
+                    triggerCardEffect(played, 'onPlay', 'player');
+                }
+                if (typeof processAbilityEffect === 'function') processAbilityEffect();
             } else if (gameState.effectContext) {
                 console.log(`   → Blocked: effectContext=${gameState.effectContext.type}`);
             } else {
@@ -1308,6 +1327,14 @@ function highlightEffectTargets() {
         const banner = document.getElementById('discard-banner');
         if (banner) {
             banner.textContent = `👁️ Selecciona 1 carta de tu mano para REVELAR al oponente`;
+            banner.classList.add('visible');
+        }
+    } else if (ctx.type === 'playNonDiversity') {
+        const hand = document.getElementById('player-hand');
+        hand.classList.add('targeting');
+        const banner = document.getElementById('discard-banner');
+        if (banner) {
+            banner.textContent = `🃏 Elige 1 carta (no Diversidad) de tu mano para jugar bocarriba`;
             banner.classList.add('visible');
         }
     } else if (ctx.type === 'confirm') {
