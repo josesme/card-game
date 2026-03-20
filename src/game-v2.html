@@ -9,18 +9,22 @@
     <style>
         body {
             padding: 0;
-            overflow: auto;
+            margin: 0;
+            overflow: hidden;
             background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
             color: #e0e0e0;
             font-family: 'Space Mono', monospace;
+            height: 100vh;
         }
 
         #game-container {
-            padding: 12px 20px;
+            padding: 8px 20px 0;
             max-width: 1500px;
             margin: 0 auto;
             display: flex;
             flex-direction: column;
+            height: calc(100vh - 42px); /* reserve space for hand-bar */
+            overflow: hidden;
         }
 
         #btn-fullscreen:hover {
@@ -37,29 +41,24 @@
 
         /* status-bar hidden in v2, kept for id compat */
 
-        /* ── HAND OVERLAY (slide-up from bottom) ───── */
+        /* ── HAND OVERLAY (bar always visible, content slides up) ── */
         #hand-overlay {
             position: fixed;
             bottom: 0; left: 0; right: 0;
-            max-height: 75vh;
-            background: rgba(10,14,39,0.97);
-            border-top: 2px solid #00d4ff;
             z-index: 950;
             display: flex;
             flex-direction: column;
-            transform: translateY(100%);
-            transition: transform 0.25s ease;
-            box-shadow: 0 -8px 40px rgba(0,0,0,0.6);
         }
-        #hand-overlay.open { transform: translateY(0); }
 
         #hand-overlay .hand-bar {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            padding: 10px 20px;
-            border-bottom: 1px solid #333;
+            gap: 14px;
+            padding: 8px 20px;
+            background: rgba(10,14,39,0.97);
+            border-top: 2px solid #00d4ff;
             flex-shrink: 0;
+            cursor: pointer;
         }
 
         #hand-overlay .hand-bar .hand-title {
@@ -93,56 +92,19 @@
             background: #444;
             flex-shrink: 0;
         }
-        .hand-close {
-            background: none;
-            border: none;
-            color: #888;
-            font-size: 1.4em;
-            cursor: pointer;
-        }
-        .hand-close:hover { color: #fff; }
 
         #hand-overlay .hand-content {
-            padding: 12px 20px;
+            max-height: 0;
+            overflow: hidden;
+            background: rgba(10,14,39,0.97);
+            transition: max-height 0.3s ease;
+            padding: 0 20px;
+        }
+        #hand-overlay.open .hand-content {
+            max-height: 70vh;
             overflow-x: auto;
             overflow-y: visible;
-            flex: 1;
-        }
-
-        /* ── HAND TOGGLE BUTTON ────────────────────── */
-        #hand-toggle {
-            position: fixed;
-            bottom: 12px;
-            left: 12px;
-            z-index: 900;
-            background: rgba(0,212,255,0.15);
-            border: 1px solid #00d4ff;
-            color: #00d4ff;
-            border-radius: 50%;
-            width: 48px;
-            height: 48px;
-            cursor: pointer;
-            font-size: 1.4em;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s;
-        }
-        #hand-toggle:hover { background: rgba(0,212,255,0.3); }
-        /* Badge for card count */
-        #hand-toggle .badge {
-            position: absolute;
-            top: -4px; right: -4px;
-            background: #00d4ff;
-            color: #0a0e27;
-            font-family: 'Orbitron', monospace;
-            font-size: 0.5em;
-            font-weight: 900;
-            width: 20px; height: 20px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            padding: 12px 20px;
         }
 
         /* ── LOG TOGGLE ─────────────────────────────── */
@@ -207,8 +169,9 @@
         .battle-field {
             display: flex;
             gap: 8px;
-            margin-bottom: 12px;
             justify-content: center;
+            flex: 1;
+            min-height: 0;
         }
 
         .battle-column {
@@ -221,6 +184,7 @@
             gap: 4px;
             flex: 1;
             min-width: 0;
+            overflow: hidden;
         }
 
         /* Proto row: both protocols side by side */
@@ -271,6 +235,11 @@
             align-items: flex-start;
             flex: 1;
             gap: 0;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: #00d4ff33 transparent;
         }
 
         /* Vertical stacks */
@@ -419,11 +388,6 @@
     <div id="hand-section" style="display: none;"></div>
 </div>
 
-<!-- ═══ HAND TOGGLE BUTTON ═══ -->
-<button id="hand-toggle" onclick="document.getElementById('hand-overlay').classList.toggle('open')">
-    🃏<span class="badge" id="hand-count-badge">0</span>
-</button>
-
 <!-- ═══ HAND OVERLAY (slide-up) ═══ -->
 <div id="hand-overlay">
     <div class="hand-bar">
@@ -451,7 +415,7 @@
             <span class="stat-label">Desc.</span>
             <span id="ai-trash-count" class="stat-value" style="color: #ef4444;">0</span>
         </div>
-        <button class="hand-close" onclick="document.getElementById('hand-overlay').classList.remove('open')">✕</button>
+        <span id="hand-count-badge" style="color:#00d4ff; font-family:'Orbitron',monospace; font-weight:700; font-size:0.9em;"></span>
     </div>
     <div id="command-confirm" class="hidden" style="background: rgba(0,0,0,0.85); border: 1px solid #f59e0b; border-radius: 8px; padding: 12px 16px; margin: 10px 20px; text-align: center;">
         <div id="confirm-msg" style="color: #f59e0b; margin-bottom: 10px; font-size: 0.95em;"></div>
@@ -636,18 +600,25 @@
         });
     }
 
-    // Close hand overlay and log when clicking outside
-    document.addEventListener('click', function(e) {
-        // Don't close if click is on a card (field or modal) or inside a modal
-        const isCard = e.target.closest('.card, .card-field-wrapper, .field-card, #action-modal, #command-confirm-modal, #reveal-modal, #game-over-modal');
+    // Hand overlay: hover to open/close
+    (function() {
+        const overlay = document.getElementById('hand-overlay');
+        if (!overlay) return;
+        const bar = overlay.querySelector('.hand-bar');
 
-        const handOverlay = document.getElementById('hand-overlay');
-        const handToggle = document.getElementById('hand-toggle');
-        if (handOverlay && handOverlay.classList.contains('open')) {
-            if (!handOverlay.contains(e.target) && !handToggle.contains(e.target) && !isCard) {
-                handOverlay.classList.remove('open');
-            }
-        }
+        // Hover on bar opens
+        bar.addEventListener('mouseenter', () => overlay.classList.add('open'));
+
+        // Leaving the entire overlay closes (with small delay to avoid flicker)
+        let closeTimer;
+        overlay.addEventListener('mouseleave', () => {
+            closeTimer = setTimeout(() => overlay.classList.remove('open'), 200);
+        });
+        overlay.addEventListener('mouseenter', () => clearTimeout(closeTimer));
+    })();
+
+    // Close log when clicking outside
+    document.addEventListener('click', function(e) {
         const logOverlay = document.getElementById('log-overlay');
         const logToggle = document.getElementById('log-toggle');
         if (logOverlay && logOverlay.classList.contains('open')) {

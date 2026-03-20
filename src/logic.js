@@ -543,20 +543,9 @@ function updateUI() {
         aiHandCountEl.textContent = n;
         aiHandCountEl.style.color = n === 0 ? '#ef4444' : '#00ff41';
     }
-    // V2: update hand toggle badge + auto-open for hand interactions
+    // V2: update hand count badge
     const handBadge = document.getElementById('hand-count-badge');
-    if (handBadge) {
-        handBadge.textContent = gameState.player.hand.length;
-        const handOverlay = document.getElementById('hand-overlay');
-        if (handOverlay && gameState.effectContext) {
-            const handTypes = ['discard', 'discardAny', 'discardVariable', 'give', 'reveal',
-                'playNonDiversity', 'pickHandFaceDown', 'pickFromDiscardToPlay',
-                'pickFromDiscardFaceDown', 'pickDeckCard_valor1', 'playHandCard_valor1'];
-            if (handTypes.includes(gameState.effectContext.type)) {
-                handOverlay.classList.add('open');
-            }
-        }
-    }
+    if (handBadge) handBadge.textContent = gameState.player.hand.length;
     
     // Attach events to player hand
     document.querySelectorAll('#player-hand .card').forEach((cardEl, index) => {
@@ -926,12 +915,6 @@ function actionPhase(who) {
     gameState.phase = 'action';
     console.log(`🎮 ACTION PHASE for ${who} - game is now playable`);
     updateStatus(who === 'player' ? 'Juega una carta o Recarga' : 'IA eligiendo acción...');
-
-    // V2: auto-open hand overlay when player needs to act
-    if (who === 'player') {
-        const overlay = document.getElementById('hand-overlay');
-        if (overlay) overlay.classList.add('open');
-    }
 
     if (who === 'ai') {
         setTimeout(playAITurn, 1500);
