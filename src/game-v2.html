@@ -59,10 +59,6 @@
             border-top: 2px solid #00d4ff;
             flex-shrink: 0;
             cursor: pointer;
-            max-width: 1500px;
-            margin: 0 auto;
-            width: 100%;
-            box-sizing: border-box;
         }
 
         #hand-overlay .hand-bar .hand-title {
@@ -99,10 +95,6 @@
             background: rgba(10,14,39,0.97);
             transition: max-height 0.3s ease;
             padding: 0 20px;
-            max-width: 1500px;
-            margin: 0 auto;
-            width: 100%;
-            box-sizing: border-box;
         }
         #hand-overlay.open .hand-content {
             max-height: 70vh;
@@ -114,7 +106,7 @@
         /* ── LOG TOGGLE ─────────────────────────────── */
         #log-toggle {
             position: fixed;
-            bottom: 12px;
+            bottom: 52px;
             right: 12px;
             z-index: 900;
             background: rgba(0,212,255,0.15);
@@ -305,11 +297,11 @@
     <header style="text-align: center; margin-bottom: 10px; position: relative; display: flex; align-items: center; justify-content: center;">
         <div style="position: absolute; left: 0; display: flex; gap: 8px;">
             <button class="nav-btn" onclick="window.location.href='/src/draft.html'">NUEVO DRAFT</button>
-            <button class="nav-btn" onclick="window.location.href='/src/index.html'">SALIR</button>
+            <button class="nav-btn" onclick="window.location.href='/src/index.html'">ABANDONAR</button>
         </div>
         <img src="../images/compile.png" alt="COMPILE" style="height: auto; max-height: 50px; filter: drop-shadow(0 0 12px rgba(0, 212, 255, 0.4));">
-        <button id="btn-fullscreen" onclick="toggleFullscreen()" title="Pantalla completa" style="position: absolute; right: 0; background: rgba(0,212,255,0.1); border: 1px solid #00d4ff; color: #00d4ff; border-radius: 8px; padding: 8px 14px; cursor: pointer; font-family: 'Orbitron', monospace; font-size: 0.75em; letter-spacing: 1px; transition: background 0.2s;">
-            ⛶ FULLSCREEN
+        <button id="btn-fullscreen" onclick="toggleFullscreen()" title="Pantalla completa" style="position: absolute; right: 0; background: rgba(0,212,255,0.1); border: 1px solid #00d4ff; color: #00d4ff; border-radius: 8px; padding: 8px 14px; cursor: pointer; font-size: 1.1em; transition: background 0.2s;">
+            ⛶
         </button>
     </header>
 
@@ -567,11 +559,11 @@
         const btn = document.getElementById('btn-fullscreen');
         if (!document.fullscreenElement) {
             document.documentElement.requestFullscreen().catch(() => {});
-            btn.textContent = '✕ SALIR';
+            btn.textContent = '✕';
             sessionStorage.setItem('fs', '1');
         } else {
             document.exitFullscreen().catch(() => {});
-            btn.textContent = '⛶ FULLSCREEN';
+            btn.textContent = '⛶';
             sessionStorage.removeItem('fs');
         }
     }
@@ -579,9 +571,9 @@
     document.addEventListener('fullscreenchange', () => {
         const btn = document.getElementById('btn-fullscreen');
         if (document.fullscreenElement) {
-            btn.textContent = '✕ SALIR';
+            btn.textContent = '✕';
         } else {
-            btn.textContent = '⛶ FULLSCREEN';
+            btn.textContent = '⛶';
             sessionStorage.removeItem('fs');
         }
         setTimeout(updateGameZoom, 50);
