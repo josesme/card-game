@@ -224,13 +224,17 @@
             font-size: 1em;
             font-family: 'Orbitron', monospace;
             letter-spacing: 1px;
-            visibility: hidden;
             transition: background 0.2s, transform 0.15s;
         }
 
-        .start-button.ready { visibility: visible; }
+        .start-button:disabled {
+            border-color: #334;
+            color: #334;
+            cursor: not-allowed;
+            background: transparent;
+        }
 
-        .start-button:hover {
+        .start-button:hover:not(:disabled) {
             background: rgba(0,212,255,0.25);
             transform: scale(1.04);
         }
@@ -294,8 +298,8 @@
     </div>
 
     <div style="display: flex; gap: 12px; justify-content: center; align-items: center;">
-        <button class="start-button" style="visibility: visible;" onclick="window.location.href='/src/index.html'">← VOLVER</button>
-        <button class="start-button" id="start-game-btn">🎮 COMENZAR JUEGO</button>
+        <button class="start-button" onclick="window.location.href='/src/index.html'">← VOLVER</button>
+        <button class="start-button" id="start-game-btn" disabled>🎮 COMENZAR JUEGO</button>
     </div>
 
 </div>
@@ -504,7 +508,7 @@ function completeDraft() {
     draftState.playerSelected = draftState.playerSelected.slice(0, 3);
     draftState.aiSelected = draftState.aiSelected.slice(0, 3);
     updateDraftDisplay();
-    document.getElementById('start-game-btn').classList.add('ready');
+    document.getElementById('start-game-btn').disabled = false;
 }
 
 // ── Actualización de UI ────────────────────────────────────────────
