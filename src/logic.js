@@ -758,14 +758,38 @@ function renderStack(line, target) {
     stackEl.innerHTML = '';
     
     const stack = gameState.field[line][target];
+    const isV2 = !!stackEl.classList.contains('vertical-stack');
+
     stack.forEach((cardObj, idx) => {
         const cEl = document.createElement('div');
-        
-        if (cardObj.faceDown) {
+        const isUncovered = idx === stack.length - 1;
+
+        if (isV2 && isUncovered) {
+            // V2: top card as full card (like hand cards)
+            cEl.innerHTML = cardObj.faceDown
+                ? createCardHTML(null, true)
+                : createCardHTML(cardObj.card);
+        } else if (isV2 && !isUncovered) {
+            // V2: covered card as slim strip
+            if (cardObj.faceDown) {
+                cEl.innerHTML = `<div class="covered-strip face-down" style="border-color:#4a5568;" title="Carta bocabajo">
+                    <span class="field-card-value" style="color:#94a3b8">2</span>
+                    <span class="field-card-name" style="color:#94a3b8">???</span>
+                </div>`;
+            } else {
+                const color = PROTOCOL_DEFS[cardObj.card.protocol] ? PROTOCOL_DEFS[cardObj.card.protocol].color : '#00d4ff';
+                cEl.innerHTML = `<div class="covered-strip" data-id="${cardObj.card.id}" style="border-color:${color};" title="${cardObj.card.nombre}">
+                    <span class="field-card-value" style="color:${color}">${cardObj.card.valor}</span>
+                    <span class="field-card-name" style="color:${color}">${cardObj.card.nombre}</span>
+                </div>`;
+            }
+        } else if (cardObj.faceDown) {
+            // V1: chip face-down
             cEl.innerHTML = `<div class="field-card face-down" title="Carta bocabajo">
                 <span class="field-card-value" style="color:#94a3b8">2</span>
             </div>`;
         } else {
+            // V1: chip face-up
             cEl.innerHTML = createFieldCardHTML(cardObj.card);
         }
 
@@ -775,8 +799,6 @@ function renderStack(line, target) {
             domCard.addEventListener('mouseenter', () => showCardPreview(cardObj.card));
             domCard.addEventListener('mouseleave', hideCardPreview);
         }
-
-        const isUncovered = idx === stack.length - 1;
 
         // Add click handler for effects (eliminate/flip/shift/return)
         domCard.onclick = (e) => {
