@@ -37,30 +37,38 @@ const server = http.createServer((req, res) => {
   }
 
   const extname = String(path.extname(filePath)).toLowerCase();
-  if (!extname) {
-    filePath += '/index.html';
+
+  function serve(fp) {
+    const ct = MIME_TYPES[String(path.extname(fp)).toLowerCase()] || 'application/octet-stream';
+    fs.readFile(fp, (error, content) => {
+      if (error) {
+        if (error.code === 'EISDIR') {
+          res.writeHead(302, { 'Location': req.url + '/' });
+          res.end();
+        } else if (error.code === 'ENOENT') {
+          res.writeHead(404, { 'Content-Type': 'text/html' });
+          res.end('404 Not Found', 'utf-8');
+        } else {
+          res.writeHead(500);
+          res.end('Error: ' + error.code, 'utf-8');
+        }
+      } else {
+        res.writeHead(200, { 'Content-Type': ct });
+        res.end(content, 'utf-8');
+      }
+    });
   }
 
-  const contentType = MIME_TYPES[String(path.extname(filePath)).toLowerCase()] || 'application/octet-stream';
+  // Sin extensión: probar .html primero, luego /index.html
+  if (!extname) {
+    const htmlPath = filePath + '.html';
+    fs.access(htmlPath, fs.constants.F_OK, (err) => {
+      serve(err ? filePath + '/index.html' : htmlPath);
+    });
+    return;
+  }
 
-  fs.readFile(filePath, (error, content) => {
-    if (error) {
-      if (error.code === 'EISDIR') {
-        // Era un directorio, redirigir con trailing slash
-        res.writeHead(302, { 'Location': req.url + '/' });
-        res.end();
-      } else if (error.code === 'ENOENT') {
-        res.writeHead(404, { 'Content-Type': 'text/html' });
-        res.end('404 Not Found', 'utf-8');
-      } else {
-        res.writeHead(500);
-        res.end('Error: ' + error.code, 'utf-8');
-      }
-    } else {
-      res.writeHead(200, { 'Content-Type': contentType });
-      res.end(content, 'utf-8');
-    }
-  });
+  serve(filePath);
 });
 
 server.on('error', (err) => {
