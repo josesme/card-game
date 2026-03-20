@@ -1904,12 +1904,42 @@ function playSelectedCard(isFaceDown) {
         updateStatus("Espíritu 1: elige línea para colocar la carta bocarriba...");
         highlightSelectableLines();
     } else if (cardPlaysAnywhere) {
-        // Caos 3: esta carta puede jugarse en cualquier línea
-        console.log(`✅ Playing face-up (playAnywhere): ${card.nombre}`);
-        gameState.selectionMode = true;
-        gameState.selectionModeFaceUp = true;
-        updateStatus(`${card.nombre}: elige línea para colocar la carta bocarriba...`);
-        highlightSelectableLines();
+        const cardOnAnySide = typeof canPlayOnAnySide === 'function' && canPlayOnAnySide(card);
+        if (cardOnAnySide) {
+            // Corrupción 0: preguntar lado antes de elegir línea
+            console.log(`✅ Playing face-up (playOnAnySide): ${card.nombre}`);
+            const confirmArea = document.getElementById('command-confirm');
+            const confirmMsg = document.getElementById('confirm-msg');
+            const btnYes = document.getElementById('btn-confirm-yes');
+            const btnNo = document.getElementById('btn-confirm-no');
+            if (confirmArea && btnYes && btnNo) {
+                confirmArea.classList.remove('hidden');
+                confirmMsg.textContent = `${card.nombre}: ¿Jugar en tu lado (SÍ) o en el lado rival (NO)?`;
+                btnYes.onclick = () => {
+                    confirmArea.classList.add('hidden');
+                    gameState.selectionMode = true;
+                    gameState.selectionModeFaceUp = true;
+                    gameState.playOnSide = 'player';
+                    updateStatus(`${card.nombre}: elige línea en tu lado...`);
+                    highlightSelectableLines();
+                };
+                btnNo.onclick = () => {
+                    confirmArea.classList.add('hidden');
+                    gameState.selectionMode = true;
+                    gameState.selectionModeFaceUp = true;
+                    gameState.playOnSide = 'opponent';
+                    updateStatus(`${card.nombre}: elige línea en el lado rival...`);
+                    highlightSelectableLines();
+                };
+            }
+        } else {
+            // Caos 3: esta carta puede jugarse en cualquier línea (lado propio)
+            console.log(`✅ Playing face-up (playAnywhere): ${card.nombre}`);
+            gameState.selectionMode = true;
+            gameState.selectionModeFaceUp = true;
+            updateStatus(`${card.nombre}: elige línea para colocar la carta bocarriba...`);
+            highlightSelectableLines();
+        }
     } else if (idx !== -1) {
         console.log(`✅ Playing face-up: ${card.nombre} on line ${LINES[idx]}`);
         finalizePlay(LINES[idx], false);
@@ -1943,7 +1973,11 @@ function clearSelectionHighlights() {
 }
 
 function finalizePlay(targetLine, isFaceDown) {
-    console.log(`🎲 finalizePlay: line=${targetLine}, faceDown=${isFaceDown}`);
+    // Corrupción 0: playOnSide indica en qué lado se juega la carta
+    const targetSide = gameState.playOnSide === 'opponent' ? 'ai' : 'player';
+    gameState.playOnSide = null; // consumir
+
+    console.log(`🎲 finalizePlay: line=${targetLine}, faceDown=${isFaceDown}, side=${targetSide}`);
 
     // Psique 1: jugador forzado a jugar bocabajo
     if (!isFaceDown && typeof hasForceOpponentFaceDown === 'function' && hasForceOpponentFaceDown('player')) {
@@ -1967,9 +2001,9 @@ function finalizePlay(targetLine, isFaceDown) {
     const playedCard = { card: card, faceDown: isFaceDown };
 
     // Detectar carta que quedará cubierta (commit queue: onCover debe resolver antes de aterrizar)
-    const playerStack = gameState.field[targetLine].player;
-    const topCardBeforePush = (playerStack.length > 0 && !playerStack[playerStack.length - 1].faceDown)
-        ? playerStack[playerStack.length - 1] : null;
+    const targetStack = gameState.field[targetLine][targetSide];
+    const topCardBeforePush = (targetStack.length > 0 && !targetStack[targetStack.length - 1].faceDown)
+        ? targetStack[targetStack.length - 1] : null;
     const topHasOnCover = topCardBeforePush &&
         typeof CARD_EFFECTS !== 'undefined' &&
         CARD_EFFECTS[topCardBeforePush.card.nombre]?.onCover;
@@ -1981,9 +2015,9 @@ function finalizePlay(targetLine, isFaceDown) {
 
     if (topHasOnCover) {
         // Commit queue: carta entra en cola, aterriza solo tras resolver onCover
-        gameState.pendingLanding = { line: targetLine, cardObj: playedCard, owner: 'player', isFaceDown };
+        gameState.pendingLanding = { line: targetLine, cardObj: playedCard, owner: targetSide, isFaceDown };
         gameState.currentEffectLine = targetLine;
-        triggerCardEffect(topCardBeforePush.card, 'onCover', 'player');
+        triggerCardEffect(topCardBeforePush.card, 'onCover', targetSide);
         // Si onCover fue no-interactivo y ya se resolvió, finishEffect lo aterrizará
         // Si hay efectos pendientes, pendingLanding espera en finishEffect
         if (gameState.effectContext || gameState.effectQueue.length > 0) {
@@ -1995,10 +2029,10 @@ function finalizePlay(targetLine, isFaceDown) {
     // Sin onCover: aterriza inmediatamente (flujo original)
     if (topCardBeforePush) {
         gameState.currentEffectLine = targetLine;
-        triggerCardEffect(topCardBeforePush.card, 'onCover', 'player');
+        triggerCardEffect(topCardBeforePush.card, 'onCover', targetSide);
     }
-    gameState.field[targetLine].player.push(playedCard);
-    checkDeleteOnCover(targetLine, 'player');
+    gameState.field[targetLine][targetSide].push(playedCard);
+    checkDeleteOnCover(targetLine, targetSide);
     updateUI(); // Sincronizar DOM antes de disparar efectos (necesario para efectos interactivos como Agua 4)
 
     console.log(`✅ Card played: ${card.nombre} on ${targetLine} (${isFaceDown ? 'face-down' : 'face-up'})`);
@@ -2199,6 +2233,19 @@ function generateAIPossibleMoves() {
                     });
                 }
 
+                // Corrupción 0: puede jugarse bocarriba en el lado del rival
+                const cardOnAnySide = typeof canPlayOnAnySide === 'function' && canPlayOnAnySide(card);
+                if (cardOnAnySide && !aiForcedDown) {
+                    moves.push({
+                        cardIndex,
+                        line,
+                        faceUp: true,
+                        card,
+                        type: 'face-up-opponent-side',
+                        targetSide: 'player',
+                    });
+                }
+
                 // Movimiento bocabajo (si Metal 2 del jugador no lo bloquea)
                 if (!(typeof isPlayBlockedByPersistent === 'function' && isPlayBlockedByPersistent(line, 'ai', true))) {
                   moves.push({
@@ -2239,25 +2286,29 @@ function executeAIMove(move) {
 
     const movedCard = gameState.ai.hand.splice(move.cardIndex, 1)[0];
 
+    // Corrupción 0: la IA puede jugar en el lado del rival
+    const landSide = move.targetSide || 'ai';
+
     // Disparar onCover en la carta que quedará cubierta (si existe)
-    const aiStack = gameState.field[move.line].ai;
-    if (aiStack.length > 0) {
-        const topCard = aiStack[aiStack.length - 1];
+    const targetStack = gameState.field[move.line][landSide];
+    if (targetStack.length > 0) {
+        const topCard = targetStack[targetStack.length - 1];
         if (!topCard.faceDown) {
             gameState.currentEffectLine = move.line;
-            triggerCardEffect(topCard.card, 'onCover', 'ai');
+            triggerCardEffect(topCard.card, 'onCover', landSide);
         }
     }
 
-    gameState.field[move.line].ai.push({
+    gameState.field[move.line][landSide].push({
         card: movedCard,
         faceDown: !move.faceUp
     });
-    checkDeleteOnCover(move.line, 'ai');
+    checkDeleteOnCover(move.line, landSide);
     updateUI();
 
+    const sideText = landSide !== 'ai' ? ' (lado rival)' : '';
     const faceText = move.faceUp ? 'bocarriba' : 'bocabajo';
-    updateStatus(`IA jugó ${movedCard.nombre} ${faceText} en ${move.line}`);
+    updateStatus(`IA jugó ${movedCard.nombre} ${faceText} en ${move.line}${sideText}`);
     
     // Ejecutar efectos si es bocarriba
     if (move.faceUp) {

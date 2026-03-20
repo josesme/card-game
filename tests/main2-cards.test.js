@@ -983,3 +983,28 @@ describe('Caos 3 — playAnywhere', () => {
     expect(ENGINE.canPlayAnywhere(card)).toBe(false);
   });
 });
+
+// ── Corrupción 0: playOnAnySide + playAnywhere ───────────────────────────────
+describe('Corrupción 0 — playOnAnySide', () => {
+  test('Corrupción 0 tiene playAnywhere y playOnAnySide', () => {
+    const ef = ENGINE.CARD_EFFECTS['Corrupción 0'];
+    expect(ef.playAnywhere).toBe(true);
+    expect(ef.playOnAnySide).toBe(true);
+  });
+
+  test('canPlayAnywhere devuelve true para Corrupción 0', () => {
+    expect(ENGINE.canPlayAnywhere(makeCard('Corrupción 0', 0))).toBe(true);
+  });
+
+  test('canPlayOnAnySide devuelve true para Corrupción 0', () => {
+    expect(ENGINE.canPlayOnAnySide(makeCard('Corrupción 0', 0))).toBe(true);
+  });
+
+  test('canPlayOnAnySide devuelve false para Caos 3', () => {
+    expect(ENGINE.canPlayOnAnySide(makeCard('Caos 3', 3))).toBe(false);
+  });
+
+  test('canPlayOnAnySide devuelve false para carta normal', () => {
+    expect(ENGINE.canPlayOnAnySide(makeCard('Fuego 2', 2))).toBe(false);
+  });
+});

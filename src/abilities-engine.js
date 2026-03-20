@@ -957,6 +957,8 @@ const CARD_EFFECTS = {
 
   // ========== CORRUPCIÓN (faltantes) ==========
   'Corrupción 0': {
+    playAnywhere: true,
+    playOnAnySide: true,
     onTurnStart: [{ action: 'flipCoveredInOwnStack' }]
   },
   'Corrupción 3': {
@@ -4845,6 +4847,7 @@ if (typeof window !== 'undefined') {
   window.hasAllowAnyProtocol = hasAllowAnyProtocol;
   window.getUnityPlayLine = getUnityPlayLine;
   window.canPlayAnywhere = canPlayAnywhere;
+  window.canPlayOnAnySide = canPlayOnAnySide;
   window.isPlayBlockedByPersistent = isPlayBlockedByPersistent;
   window.hasForceOpponentFaceDown = hasForceOpponentFaceDown;
   // Fase B: hooks reactivos
@@ -4896,6 +4899,14 @@ function hasAllowAnyProtocol(player) {
 function canPlayAnywhere(card) {
   const effectDef = CARD_EFFECTS[card.nombre];
   return !!(effectDef && effectDef.playAnywhere);
+}
+
+/**
+ * Corrupción 0: devuelve true si la carta puede jugarse en el lado de cualquier jugador.
+ */
+function canPlayOnAnySide(card) {
+  const effectDef = CARD_EFFECTS[card.nombre];
+  return !!(effectDef && effectDef.playOnAnySide);
 }
 
 /**
