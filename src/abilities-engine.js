@@ -3520,26 +3520,26 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'flipCoveredInOwnStack': {
-      // Corrupción 0 onTurnStart: voltea bocabajo 1 carta cubierta bocarriba en esta pila (no sí misma)
+      // Corrupción 0 onTurnStart: voltea bocarriba→bocabajo 1 otra carta (cubierta o descubierta) en esta pila
       const line = gameState.currentEffectLine;
       if (!line) { processAbilityEffect(); break; }
       const stack = gameState.field[line][targetPlayer];
-      // Índices de cartas cubiertas bocarriba (excluir Corrupción 0 misma)
-      const faceUpCoveredIdx = [];
-      for (let i = 0; i < stack.length - 1; i++) {
-        if (!stack[i].faceDown && stack[i].card.nombre !== 'Corrupción 0') faceUpCoveredIdx.push(i);
+      // Índices de cartas bocarriba que no sean Corrupción 0 (cubierta o descubierta)
+      const faceUpIdx = [];
+      for (let i = 0; i < stack.length; i++) {
+        if (!stack[i].faceDown && stack[i].card.nombre !== 'Corrupción 0') faceUpIdx.push(i);
       }
-      if (faceUpCoveredIdx.length === 0) { processAbilityEffect(); break; }
-      if (targetPlayer === 'ai' || faceUpCoveredIdx.length === 1) {
+      if (faceUpIdx.length === 0) { processAbilityEffect(); break; }
+      if (targetPlayer === 'ai' || faceUpIdx.length === 1) {
         const idx = targetPlayer === 'ai'
-          ? faceUpCoveredIdx.reduce((best, i) => stack[i].card.valor > stack[best].card.valor ? i : best, faceUpCoveredIdx[0])
-          : faceUpCoveredIdx[0];
+          ? faceUpIdx.reduce((best, i) => stack[i].card.valor > stack[best].card.valor ? i : best, faceUpIdx[0])
+          : faceUpIdx[0];
         stack[idx].faceDown = true;
         updateUI();
         processAbilityEffect();
       } else {
         // Jugador elige cuál voltear (2+ opciones)
-        startEffect('flip', 'player', 1, { forceLine: line, coveredOnly: true, filter: 'faceUp', excludeCardName: 'Corrupción 0', targetAll: true });
+        startEffect('flip', 'player', 1, { forceLine: line, filter: 'faceUp', excludeCardName: 'Corrupción 0', targetAll: true });
       }
       break;
     }

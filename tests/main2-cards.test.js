@@ -416,24 +416,25 @@ describe('Acciones directas Main 2', () => {
     expect(global.draw).not.toHaveBeenCalled();
   });
 
-  test('flipCoveredInOwnStack: voltea bocabajo carta cubierta bocarriba (única opción → auto)', () => {
-    // carta cubierta bocarriba → debe quedar bocabajo; top no cambia
-    const covered = { card: makeCard('Under'), faceDown: false };
-    const top = { card: makeCard('Top'), faceDown: false };
-    GS.field['alpha'].player = [covered, top];
+  test('flipCoveredInOwnStack: voltea la única carta bocarriba que no sea Corrupción 0 (auto)', () => {
+    // Corrupción 0 + 1 otra carta bocarriba → auto-voltea la otra
+    const corr0 = { card: makeCard('Corrupción 0', 0), faceDown: false };
+    const other = { card: makeCard('Under', 3), faceDown: false };
+    GS.field['alpha'].player = [corr0, other];
     GS.currentEffectLine = 'alpha';
     runAction({ action: 'flipCoveredInOwnStack' }, 'player');
-    expect(GS.field['alpha'].player[0].faceDown).toBe(true);
-    expect(GS.field['alpha'].player[1].faceDown).toBe(false); // top no cambia
+    expect(GS.field['alpha'].player[1].faceDown).toBe(true);   // Under volteada
+    expect(GS.field['alpha'].player[0].faceDown).toBe(false);   // Corrupción 0 intacta
   });
 
-  test('flipCoveredInOwnStack: no hace nada si la cubierta ya está bocabajo', () => {
+  test('flipCoveredInOwnStack: no hace nada si todas las cartas (excepto Corrupción 0) están bocabajo', () => {
+    const corr0 = { card: makeCard('Corrupción 0', 0), faceDown: false };
     const covered = { card: makeCard('Under'), faceDown: true }; // bocabajo → se ignora
-    const top = { card: makeCard('Top'), faceDown: false };
-    GS.field['alpha'].player = [covered, top];
+    GS.field['alpha'].player = [covered, corr0];
     GS.currentEffectLine = 'alpha';
     runAction({ action: 'flipCoveredInOwnStack' }, 'player');
-    expect(GS.field['alpha'].player[0].faceDown).toBe(true); // sin cambio
+    expect(GS.field['alpha'].player[0].faceDown).toBe(true);  // sin cambio
+    expect(GS.field['alpha'].player[1].faceDown).toBe(false); // Corrupción 0 intacta
   });
 
   test('flipCoveredInOwnStack: no hace nada si solo hay 1 carta', () => {
@@ -809,5 +810,69 @@ describe('Miedo 0 — bloqueo onPlay por turno', () => {
     ENGINE.triggerCardEffect(testCard, 'onPlay', 'player');
     // Player juega su propia carta — no debe bloquearse
     expect(GS.player.hand.length).toBe(1);
+  });
+});
+
+// ── Corrupción 0: flipCoveredInOwnStack incluye cartas cubiertas y descubiertas ──
+describe('Corrupción 0 — flipCoveredInOwnStack', () => {
+  function resetGS() {
+    LINES_MOCK.forEach(l => { GS.field[l] = { player: [], ai: [], compiledBy: null }; });
+    GS.player.hand = []; GS.player.deck = []; GS.player.trash = [];
+    GS.ai.hand = []; GS.ai.deck = []; GS.ai.trash = [];
+    GS.effectQueue = [];
+    GS.effectContext = null;
+    GS.currentEffectLine = null;
+  }
+
+  function runAction(effect, target) {
+    GS.effectQueue = [{ effect, targetPlayer: target, cardName: 'Corrupción 0' }];
+    GS.currentTriggerCard = 'Corrupción 0';
+    ENGINE.processAbilityEffect();
+  }
+
+  test('IA voltea la carta top (descubierta) si es la única bocarriba aparte de Corrupción 0', () => {
+    resetGS();
+    // Pila: Corrupción 0 (cubierta, bocarriba) + OtraCard (top, bocarriba)
+    GS.field['alpha'].ai = [
+      { card: makeCard('Corrupción 0', 0), faceDown: false },
+      { card: makeCard('Fuego 2', 2), faceDown: false }
+    ];
+    GS.currentEffectLine = 'alpha';
+    runAction({ action: 'flipCoveredInOwnStack' }, 'ai');
+    // Fuego 2 (top) debe haberse volteado bocabajo
+    expect(GS.field['alpha'].ai[1].faceDown).toBe(true);
+    // Corrupción 0 no se toca
+    expect(GS.field['alpha'].ai[0].faceDown).toBe(false);
+  });
+
+  test('IA elige la carta de mayor valor entre cubiertas y descubiertas', () => {
+    resetGS();
+    // Pila: Carta1 (valor 1, cubierta) + Corrupción 0 (cubierta) + Carta5 (top, valor 5)
+    GS.field['beta'].ai = [
+      { card: makeCard('Agua 1', 1), faceDown: false },
+      { card: makeCard('Corrupción 0', 0), faceDown: false },
+      { card: makeCard('Fuego 5', 5), faceDown: false }
+    ];
+    GS.currentEffectLine = 'beta';
+    runAction({ action: 'flipCoveredInOwnStack' }, 'ai');
+    // IA debería voltear Fuego 5 (mayor valor)
+    expect(GS.field['beta'].ai[2].faceDown).toBe(true);
+    // Las demás no se tocan
+    expect(GS.field['beta'].ai[0].faceDown).toBe(false);
+    expect(GS.field['beta'].ai[1].faceDown).toBe(false);
+  });
+
+  test('no voltea cartas ya bocabajo ni a Corrupción 0 misma', () => {
+    resetGS();
+    // Solo Corrupción 0 bocarriba + 1 carta bocabajo → no hay objetivo válido
+    GS.field['gamma'].ai = [
+      { card: makeCard('Corrupción 0', 0), faceDown: false },
+      { card: makeCard('Agua 2', 2), faceDown: true }
+    ];
+    GS.currentEffectLine = 'gamma';
+    runAction({ action: 'flipCoveredInOwnStack' }, 'ai');
+    // Nada cambia
+    expect(GS.field['gamma'].ai[0].faceDown).toBe(false);
+    expect(GS.field['gamma'].ai[1].faceDown).toBe(true);
   });
 });
