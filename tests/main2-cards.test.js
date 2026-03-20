@@ -1008,3 +1008,198 @@ describe('Corrupción 0 — playOnAnySide', () => {
     expect(ENGINE.canPlayOnAnySide(makeCard('Fuego 2', 2))).toBe(false);
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// FASE 2 — Tests de correcciones moderadas
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe('2.1 Caos 0 — swapTopDeckCards en onTurnStart (no onPlay)', () => {
+  test('Caos 0 tiene swapTopDeckCards en onTurnStart', () => {
+    const ef = ENGINE.CARD_EFFECTS['Caos 0'];
+    expect(ef.onTurnStart).toBeDefined();
+    expect(ef.onTurnStart.some(a => a.action === 'swapTopDeckCards')).toBe(true);
+  });
+
+  test('Caos 0 NO tiene swapTopDeckCards en onPlay', () => {
+    const ef = ENGINE.CARD_EFFECTS['Caos 0'];
+    if (ef.onPlay) {
+      expect(ef.onPlay.some(a => a.action === 'swapTopDeckCards')).toBe(false);
+    }
+  });
+
+  test('swapTopDeckCards: cada jugador roba top del mazo rival', () => {
+    resetGS();
+    GS.turn = 'ai';
+    GS.currentEffectLine = 'alpha';
+    const pCard = makeCard('P-top', 5);
+    const aCard = makeCard('A-top', 3);
+    GS.player.deck = [pCard];
+    GS.ai.deck = [aCard];
+    GS.effectQueue = [{ effect: { action: 'swapTopDeckCards' }, targetPlayer: 'ai', cardName: 'Caos 0' }];
+    ENGINE.processAbilityEffect();
+    // El jugador recibe la top del mazo AI, la AI recibe la top del mazo del jugador
+    expect(GS.player.hand.some(c => c.nombre === 'A-top')).toBe(true);
+    expect(GS.ai.hand.some(c => c.nombre === 'P-top')).toBe(true);
+  });
+});
+
+describe('2.2 Guerra 1 — discardAny (0 a N descartes)', () => {
+  test('Guerra 1 tiene discardAny en onOpponentRefresh', () => {
+    const ef = ENGINE.CARD_EFFECTS['Guerra 1'];
+    expect(ef.onOpponentRefresh).toBeDefined();
+    expect(ef.onOpponentRefresh.some(a => a.action === 'discardAny')).toBe(true);
+  });
+
+  test('discardAny IA: descarta 1 si tiene >4 cartas', () => {
+    resetGS();
+    GS.turn = 'ai';
+    GS.currentEffectLine = 'alpha';
+    GS.ai.hand = [makeCard('A', 1), makeCard('B', 2), makeCard('C', 3), makeCard('D', 4), makeCard('E', 5)];
+    GS.effectQueue = [{ effect: { action: 'discardAny', target: 'self' }, targetPlayer: 'ai', cardName: 'Guerra 1' }];
+    ENGINE.processAbilityEffect();
+    expect(GS.ai.hand.length).toBe(4);
+    expect(GS.ai.trash.length).toBe(1);
+  });
+
+  test('discardAny IA: no descarta si tiene <=4 cartas', () => {
+    resetGS();
+    GS.turn = 'ai';
+    GS.currentEffectLine = 'alpha';
+    GS.ai.hand = [makeCard('A', 1), makeCard('B', 2)];
+    GS.effectQueue = [{ effect: { action: 'discardAny', target: 'self' }, targetPlayer: 'ai', cardName: 'Guerra 1' }];
+    ENGINE.processAbilityEffect();
+    expect(GS.ai.hand.length).toBe(2);
+    expect(GS.ai.trash.length).toBe(0);
+  });
+
+  test('discardAny jugador: llama startEffect con tipo discardAny', () => {
+    resetGS();
+    GS.turn = 'player';
+    GS.currentEffectLine = 'alpha';
+    GS.player.hand = [makeCard('X', 1), makeCard('Y', 2)];
+    global.startEffect.mockClear();
+    GS.effectQueue = [{ effect: { action: 'discardAny', target: 'self' }, targetPlayer: 'player', cardName: 'Guerra 1' }];
+    ENGINE.processAbilityEffect();
+    expect(global.startEffect).toHaveBeenCalledWith('discardAny', 'player', 2);
+  });
+});
+
+describe('2.3 Espejo 1 — copyOpponentCardEffect mantiene línea propia', () => {
+  test('Espejo 1 tiene copyOpponentCardEffect en onTurnEnd', () => {
+    const ef = ENGINE.CARD_EFFECTS['Espejo 1'];
+    expect(ef.onTurnEnd).toBeDefined();
+    expect(ef.onTurnEnd.some(a => a.action === 'copyOpponentCardEffect')).toBe(true);
+  });
+});
+
+describe('2.4 Guerra 0 — mayFlipSelf', () => {
+  test('Guerra 0 tiene mayFlipSelf en onRefresh', () => {
+    const ef = ENGINE.CARD_EFFECTS['Guerra 0'];
+    expect(ef.onRefresh).toBeDefined();
+    expect(ef.onRefresh.some(a => a.action === 'mayFlipSelf')).toBe(true);
+  });
+
+  test('mayFlipSelf IA: voltea Guerra 0 bocabajo', () => {
+    resetGS();
+    GS.turn = 'ai';
+    GS.currentEffectLine = 'alpha';
+    const guerraCard = { card: makeCard('Guerra 0', 0), faceDown: false };
+    GS.field.alpha.ai = [guerraCard];
+    GS.effectQueue = [{ effect: { action: 'mayFlipSelf' }, targetPlayer: 'ai', cardName: 'Guerra 0' }];
+    ENGINE.processAbilityEffect();
+    expect(guerraCard.faceDown).toBe(true);
+  });
+});
+
+describe('2.5 Miedo 3 — shift con targetAll', () => {
+  test('Miedo 3 tiene targetAll: true en shift', () => {
+    const ef = ENGINE.CARD_EFFECTS['Miedo 3'];
+    const shiftAction = ef.onPlay.find(a => a.action === 'shift');
+    expect(shiftAction).toBeDefined();
+    expect(shiftAction.targetAll).toBe(true);
+  });
+});
+
+describe('2.6 Paz 3 — minValue dinámico en optionalDiscardThenFlipHighValue', () => {
+  test('Paz 3 tiene optionalDiscardThenFlipHighValue en onPlay', () => {
+    const ef = ENGINE.CARD_EFFECTS['Paz 3'];
+    expect(ef.onPlay).toBeDefined();
+    expect(ef.onPlay.some(a => a.action === 'optionalDiscardThenFlipHighValue')).toBe(true);
+  });
+
+  test('IA voltea carta con valor > cartas en mano', () => {
+    resetGS();
+    GS.turn = 'ai';
+    GS.currentEffectLine = 'alpha';
+    GS.ai.hand = [makeCard('H1', 1), makeCard('H2', 2)]; // 2 cartas → minVal = 2+1 = 3 tras descartar
+    // Tras descartar, la IA tendrá 1 carta → valor > 2 (hand.length + 1 = 2, pero el código descarta si >2)
+    // Mejor: IA tiene 4 cartas, descarta si >2 → sí, luego handCount = 3, voltea si valor > 3
+    GS.ai.hand = [makeCard('H1', 1), makeCard('H2', 2), makeCard('H3', 3)];
+    const highCard = { card: makeCard('HighVal', 5), faceDown: false };
+    GS.field.alpha.player = [highCard];
+    GS.effectQueue = [{ effect: { action: 'optionalDiscardThenFlipHighValue' }, targetPlayer: 'ai', cardName: 'Paz 3' }];
+    ENGINE.processAbilityEffect();
+    // IA descarta si tiene > 2 cartas → descarta 1, queda con 2
+    // handCount = 2, voltea si valor > 2 → HighVal (5) se voltea
+    expect(highCard.faceDown).toBe(true);
+  });
+});
+
+describe('2.7 Asimilación 1 — discardToOpponentTrash', () => {
+  test('Asimilación 1 tiene drawFromOpponentDeck + discardToOpponentTrash en onRefresh', () => {
+    const ef = ENGINE.CARD_EFFECTS['Asimilación 1'];
+    expect(ef.onRefresh).toBeDefined();
+    const drawOp = ef.onRefresh.filter(a => a.action === 'drawFromOpponentDeck');
+    const discardOp = ef.onRefresh.filter(a => a.action === 'discardToOpponentTrash');
+    expect(drawOp.length).toBeGreaterThanOrEqual(1);
+    expect(discardOp.length).toBeGreaterThanOrEqual(1);
+  });
+
+  test('discardToOpponentTrash IA: descarta carta de menor valor al trash del oponente', () => {
+    resetGS();
+    GS.turn = 'ai';
+    GS.currentEffectLine = 'alpha';
+    GS.ai.hand = [makeCard('Caro', 5), makeCard('Barato', 1)];
+    GS.effectQueue = [{ effect: { action: 'discardToOpponentTrash' }, targetPlayer: 'ai', cardName: 'Asimilación 1' }];
+    ENGINE.processAbilityEffect();
+    // IA descarta la de menor valor (Barato) al trash del oponente
+    expect(GS.ai.hand.length).toBe(1);
+    expect(GS.player.trash.length).toBe(1);
+    expect(GS.player.trash[0].nombre).toBe('Barato');
+  });
+});
+
+describe('1.5 Unidad 0 — onCoverCondition unityOnly', () => {
+  test('Unidad 0 tiene onCoverCondition unityOnly', () => {
+    const ef = ENGINE.CARD_EFFECTS['Unidad 0'];
+    expect(ef.onCoverCondition).toBe('unityOnly');
+  });
+
+  test('Unidad 0 onCover se bloquea si carta cubriente no es Unidad', () => {
+    resetGS();
+    GS.turn = 'player';
+    GS.currentEffectLine = 'alpha';
+    GS.coveringCard = makeCard('Fuego 2', 2);
+    const u0 = { card: makeCard('Unidad 0', 0), faceDown: false };
+    GS.field.alpha.player = [u0];
+    // triggerCardEffect con onCover + carta no-Unidad → no debería encolar
+    ENGINE.triggerCardEffect(u0.card, 'onCover', 'player');
+    expect(GS.effectQueue.length).toBe(0);
+  });
+
+  test('Unidad 0 onCover se activa si carta cubriente es Unidad (IA roba si hay otra Unidad)', () => {
+    resetGS();
+    GS.turn = 'ai';
+    GS.currentEffectLine = 'alpha';
+    GS.coveringCard = makeCard('Unidad 3', 3);
+    const u0 = { card: makeCard('Unidad 0', 0), faceDown: false };
+    GS.field.alpha.ai = [u0];
+    // Otra carta Unidad en el campo para que el efecto no se salte
+    GS.field.beta.ai = [{ card: makeCard('Unidad 2', 2), faceDown: false }];
+    GS.ai.deck = [makeCard('Bonus', 5)];
+    global.draw.mockClear();
+    ENGINE.triggerCardEffect(u0.card, 'onCover', 'ai');
+    // La IA debería robar (hand < 4 y hay otra Unidad) → confirma que el efecto se ejecutó
+    expect(global.draw).toHaveBeenCalledWith('ai', 1);
+  });
+});

@@ -548,7 +548,7 @@ function updateUI() {
     document.querySelectorAll('#player-hand .card').forEach((cardEl, index) => {
         cardEl.onclick = () => {
             console.log(`🖱️ Card clicked at index ${index}. gameState.turn=${gameState.turn}, phase=${gameState.phase}, effectContext=${gameState.effectContext ? gameState.effectContext.type : 'none'}`);
-            if (gameState.effectContext && (gameState.effectContext.type === 'discard' || gameState.effectContext.type === 'discardVariable' || gameState.effectContext.type === 'give')) {
+            if (gameState.effectContext && (gameState.effectContext.type === 'discard' || gameState.effectContext.type === 'discardAny' || gameState.effectContext.type === 'discardVariable' || gameState.effectContext.type === 'give')) {
                 console.log(`   → Handling discard/give choice`);
                 handleDiscardChoice(index);
             } else if (gameState.effectContext && gameState.effectContext.type === 'reveal') {
@@ -1087,7 +1087,7 @@ function startEffect(type, target, count, opts = {}) {
     // Determine if this should be interactive or automatic
     let isAIResolving = false;
     
-    if (type === 'discard' || type === 'give' || type === 'reveal') {
+    if (type === 'discard' || type === 'discardAny' || type === 'give' || type === 'reveal') {
         // Acciones sobre la mano: el dueño de la mano elige.
         isAIResolving = (target === 'ai');
     } else {
@@ -1101,7 +1101,7 @@ function startEffect(type, target, count, opts = {}) {
     }
 
     // Si es descarte/dar del jugador, limitar count a cartas disponibles
-    if ((type === 'discard' || type === 'give') && target === 'player') {
+    if ((type === 'discard' || type === 'discardAny' || type === 'give') && target === 'player') {
         if (gameState.player.hand.length === 0) {
             console.log(`⏭️ Descarte omitido — mano vacía`);
             if (typeof processAbilityEffect === 'function') processAbilityEffect();
@@ -1152,7 +1152,7 @@ function startEffect(type, target, count, opts = {}) {
     console.log(`🎯 startEffect: type=${type}, target=${target}, count=${count}`);
 
     let actionVerb = 'VOLTEAR';
-    if (type === 'discard') actionVerb = 'DESCARTAR';
+    if (type === 'discard' || type === 'discardAny') actionVerb = 'DESCARTAR';
     else if (type === 'give') actionVerb = 'DAR AL OPONENTE';
     else if (type === 'eliminate') actionVerb = 'ELIMINAR';
     else if (type === 'return') actionVerb = 'DEVOLVER';
@@ -1179,6 +1179,16 @@ function highlightEffectTargets() {
         }
         const stopBtn = document.getElementById('btn-stop-discard');
         if (stopBtn) stopBtn.classList.toggle('hidden', ctx.selected.length < 1);
+    } else if (ctx.type === 'discardAny') {
+        const hand = document.getElementById('player-hand');
+        hand.classList.add('targeting', 'discard-mode');
+        const banner = document.getElementById('discard-banner');
+        if (banner) {
+            banner.textContent = `🗑 Guerra 1: ${ctx.selected.length} descartada${ctx.selected.length !== 1 ? 's' : ''} — haz clic para descartar más o pulsa LISTO`;
+            banner.classList.add('visible');
+        }
+        const stopBtn = document.getElementById('btn-stop-discard');
+        if (stopBtn) stopBtn.classList.remove('hidden'); // visible desde el inicio (0 descartes válido)
     } else if (ctx.type === 'discard' || ctx.type === 'give') {
         const hand = document.getElementById('player-hand');
         hand.classList.add('targeting', 'discard-mode');
@@ -1361,11 +1371,15 @@ function clearEffectHighlights() {
 
 function handleDiscardChoice(handIndex) {
     const ctx = gameState.effectContext;
-    if (!ctx || (ctx.type !== 'discard' && ctx.type !== 'give' && ctx.type !== 'discardVariable')) return;
+    if (!ctx || (ctx.type !== 'discard' && ctx.type !== 'discardAny' && ctx.type !== 'give' && ctx.type !== 'discardVariable')) return;
 
     const card = gameState.player.hand.splice(handIndex, 1)[0];
     if (ctx.type === 'give') {
         gameState.ai.hand.push(card);
+    } else if (gameState._discardToOpponentTrash) {
+        // Asimilación 1: descarta al trash del oponente
+        gameState.ai.trash.push(card);
+        gameState._discardToOpponentTrash = false;
     } else {
         gameState.player.trash.push(card);
         gameState.discardedSinceLastCheck.player = true;
@@ -1375,6 +1389,16 @@ function handleDiscardChoice(handIndex) {
     if (ctx.type === 'discardVariable') {
         if (gameState.player.hand.length === 0) {
             finalizeDiscardVariable();
+        } else {
+            highlightEffectTargets();
+            updateUI();
+        }
+        return;
+    }
+
+    if (ctx.type === 'discardAny') {
+        if (gameState.player.hand.length === 0) {
+            finishEffect();
         } else {
             highlightEffectTargets();
             updateUI();
@@ -2017,6 +2041,7 @@ function finalizePlay(targetLine, isFaceDown) {
         // Commit queue: carta entra en cola, aterriza solo tras resolver onCover
         gameState.pendingLanding = { line: targetLine, cardObj: playedCard, owner: targetSide, isFaceDown };
         gameState.currentEffectLine = targetLine;
+        gameState.coveringCard = card; // carta que va a cubrir
         triggerCardEffect(topCardBeforePush.card, 'onCover', targetSide);
         // Si onCover fue no-interactivo y ya se resolvió, finishEffect lo aterrizará
         // Si hay efectos pendientes, pendingLanding espera en finishEffect
@@ -2029,7 +2054,9 @@ function finalizePlay(targetLine, isFaceDown) {
     // Sin onCover: aterriza inmediatamente (flujo original)
     if (topCardBeforePush) {
         gameState.currentEffectLine = targetLine;
+        gameState.coveringCard = card; // carta que va a cubrir
         triggerCardEffect(topCardBeforePush.card, 'onCover', targetSide);
+        gameState.coveringCard = null;
     }
     gameState.field[targetLine][targetSide].push(playedCard);
     checkDeleteOnCover(targetLine, targetSide);
@@ -2073,7 +2100,14 @@ function finalizePlay(targetLine, isFaceDown) {
 }
 
 const btnStopDiscard = document.getElementById('btn-stop-discard');
-if (btnStopDiscard) btnStopDiscard.onclick = () => finalizeDiscardVariable();
+if (btnStopDiscard) btnStopDiscard.onclick = () => {
+    const ctx = gameState.effectContext;
+    if (ctx && ctx.type === 'discardAny') {
+        finishEffect();
+    } else {
+        finalizeDiscardVariable();
+    }
+};
 
 ui.btnRefresh.onclick = () => {
     console.log('🔘 btnRefresh clicked - checking conditions...');
@@ -2295,7 +2329,9 @@ function executeAIMove(move) {
         const topCard = targetStack[targetStack.length - 1];
         if (!topCard.faceDown) {
             gameState.currentEffectLine = move.line;
+            gameState.coveringCard = movedCard; // carta que va a cubrir
             triggerCardEffect(topCard.card, 'onCover', landSide);
+            gameState.coveringCard = null;
         }
     }
 

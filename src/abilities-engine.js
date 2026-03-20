@@ -650,12 +650,14 @@ const CARD_EFFECTS = {
       { action: 'discard', target: 'self', count: 1 },
       { action: 'refresh', target: 'self' }
     ],
-    // "Después de que un jugador actualice: Roba la carta superior del mazo de tu oponente"
+    // "Después de que un jugador actualice: Roba la carta superior del mazo de tu oponente. Descarta 1 carta en su descarte."
     onRefresh: [
-      { action: 'drawFromOpponentDeck' }
+      { action: 'drawFromOpponentDeck' },
+      { action: 'discardToOpponentTrash', target: 'self', count: 1 }
     ],
     onOpponentRefresh: [
-      { action: 'drawFromOpponentDeck' }
+      { action: 'drawFromOpponentDeck' },
+      { action: 'discardToOpponentTrash', target: 'self', count: 1 }
     ]
   },
 
@@ -665,9 +667,11 @@ const CARD_EFFECTS = {
 
   // ========== CAOS ==========
   'Caos 0': {
+    onTurnStart: [
+      { action: 'swapTopDeckCards' }    // "Inicial: Roba top del mazo rival, rival roba top del tuyo"
+    ],
     onPlay: [
-      { action: 'flipCoveredInEachLine' },
-      { action: 'swapTopDeckCards' }
+      { action: 'flipCoveredInEachLine' }  // "En cada línea, voltea 1 carta cubierta"
     ]
   },
 
@@ -749,7 +753,7 @@ const CARD_EFFECTS = {
 
   'Miedo 3': {
     onPlay: [
-      { action: 'shift', target: 'opponent', count: 1, forceCurrentLine: true }
+      { action: 'shift', target: 'opponent', count: 1, forceCurrentLine: true, targetAll: true }
     ]
   },
 
@@ -868,7 +872,7 @@ const CARD_EFFECTS = {
   'Guerra 0': {
     // "Después de que actualices: Puedes voltear esta carta."
     onRefresh: [
-      { action: 'mayFlip', target: 'self', count: 1 }
+      { action: 'mayFlipSelf' }
     ],
     // "Después de que tu oponente robe cartas: Puedes eliminar 1 carta."
     onOpponentDraw: [
@@ -1108,7 +1112,8 @@ const CARD_EFFECTS = {
   // ========== UNIDAD (faltantes) ==========
   'Unidad 0': {
     onPlay: [{ action: 'mayFlipOrDrawIfUnityOnField' }],
-    onCover: [{ action: 'mayFlipOrDrawIfUnityOnField' }]
+    onCover: [{ action: 'mayFlipOrDrawIfUnityOnField' }],
+    onCoverCondition: 'unityOnly'  // solo dispara si la carta que cubre es Unidad
   },
   'Unidad 1': {
     persistent: { allowUnityPlayInLine: true },
@@ -1161,6 +1166,15 @@ function triggerCardEffect(card, trigger, targetPlayer, opts = {}) {
   if (!effectDef || !effectDef[trigger]) {
     console.log(`Sin efecto ${trigger} para ${cardName}`);
     return;
+  }
+
+  // Unidad 0: onCover solo dispara si la carta que cubre es Unidad
+  if (trigger === 'onCover' && effectDef.onCoverCondition === 'unityOnly') {
+    const covering = gameState.coveringCard;
+    if (!covering || !covering.nombre.startsWith('Unidad')) {
+      console.log(`⏭️ onCover de ${cardName} ignorado — carta que cubre no es Unidad`);
+      return;
+    }
   }
 
   const effectList = effectDef[trigger];
@@ -3182,30 +3196,13 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'discardAny': {
-      // War 1: descarta cualquier número de cartas (0 a mano completa)
-      // Fase B simplificado: descarta 0 o 1 carta (con confirmación)
+      // Guerra 1: descarta cualquier número de cartas (0 a toda la mano)
       if (targetPlayer === 'player') {
         if (gameState.player.hand.length === 0) { processAbilityEffect(); break; }
-        const confirmArea = document.getElementById('command-confirm');
-        const confirmMsg = document.getElementById('confirm-msg');
-        const btnYes = document.getElementById('btn-confirm-yes');
-        const btnNo = document.getElementById('btn-confirm-no');
-        if (confirmArea && btnYes && btnNo) {
-          gameState.effectContext = { type: 'confirm' };
-          confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = `${triggerCardName || ''}: ¿Descartas una carta? SÍ = descarta 1 · NO = continúa`;
-          btnYes.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            startEffect('discard', 'player', 1);
-          };
-          btnNo.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            processAbilityEffect();
-          };
-        } else { processAbilityEffect(); }
+        // Usa discardAny como tipo de effectContext — botón STOP visible desde el inicio
+        startEffect('discardAny', 'player', gameState.player.hand.length);
       } else {
+        // IA: descarta si tiene más de 4 cartas (heurística simple)
         if (gameState.ai.hand.length > 4) discard('ai', 1);
         processAbilityEffect();
       }
@@ -3627,6 +3624,28 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       break;
     }
 
+    case 'discardToOpponentTrash': {
+      // Asimilación 1: descarta 1 carta propia al descarte del oponente
+      if (gameState[targetPlayer].hand.length === 0) { processAbilityEffect(); break; }
+      if (targetPlayer === 'player') {
+        // Jugador elige qué carta descartar (va al trash del oponente)
+        gameState._discardToOpponentTrash = true;
+        startEffect('discard', 'player', count || 1);
+      } else {
+        // IA: descarta la carta de menor valor al trash del rival
+        const hand = gameState.ai.hand;
+        if (hand.length > 0) {
+          const minIdx = hand.reduce((best, c, i) => c.valor < hand[best].valor ? i : best, 0);
+          const card = hand.splice(minIdx, 1)[0];
+          gameState[opponent].trash.push(card);
+          updateStatus(`IA descarta ${card.nombre} al descarte del jugador`);
+          updateUI();
+        }
+        processAbilityEffect();
+      }
+      break;
+    }
+
     case 'drawIfEmptyHand': {
       // Paz 1 onTurnEnd: si mano vacía, roba N cartas
       if (gameState[targetPlayer].hand.length === 0) draw(targetPlayer, count || 1);
@@ -3654,7 +3673,8 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           btnYes.onclick = () => {
             confirmArea.classList.add('hidden');
             gameState.effectContext = null;
-            gameState.effectQueue.unshift({ effect: { action: '_flipMinValue', minValue: -99 }, targetPlayer, cardName: triggerCardName });
+            // minValue 'dynamic': se calcula tras el descarte como handCount + 1
+            gameState.effectQueue.unshift({ effect: { action: '_flipMinValue', minValue: 'dynamic' }, targetPlayer, cardName: triggerCardName });
             startEffect('discard', 'player', 1);
           };
           btnNo.onclick = () => { confirmArea.classList.add('hidden'); gameState.effectContext = null; doFlip(); };
@@ -3680,10 +3700,64 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case '_flipMinValue': {
-      const minVal = actionDef.minValue !== undefined ? actionDef.minValue : 0;
+      // 'dynamic': calcular tras el descarte como handCount + 1
+      const minVal = actionDef.minValue === 'dynamic'
+        ? gameState[targetPlayer].hand.length + 1
+        : (actionDef.minValue !== undefined ? actionDef.minValue : 0);
       if (targetPlayer === 'player') {
         startEffect('flip', 'any', 1, { filter: 'minValue', minVal });
       } else {
+        // IA: voltea la primera carta con valor > minVal
+        let done = false;
+        LINES.forEach(l => {
+          if (done) return;
+          ['player', 'ai'].forEach(p => {
+            if (done) return;
+            const st = gameState.field[l][p];
+            if (st.length > 0 && st[st.length - 1].card.valor > minVal) {
+              st[st.length - 1].faceDown = !st[st.length - 1].faceDown;
+              done = true;
+            }
+          });
+        });
+        processAbilityEffect();
+      }
+      break;
+    }
+
+    case 'mayFlipSelf': {
+      // Guerra 0: puedes voltear ESTA carta (opcional)
+      const line = gameState.currentEffectLine;
+      if (!line) { processAbilityEffect(); break; }
+      const st = gameState.field[line][targetPlayer];
+      const selfCard = st.find(c => c.card.nombre === triggerCardName);
+      if (!selfCard) { processAbilityEffect(); break; }
+      if (targetPlayer === 'player') {
+        const confirmArea = document.getElementById('command-confirm');
+        const confirmMsg = document.getElementById('confirm-msg');
+        const btnYes = document.getElementById('btn-confirm-yes');
+        const btnNo = document.getElementById('btn-confirm-no');
+        if (confirmArea && btnYes && btnNo) {
+          gameState.effectContext = { type: 'confirm' };
+          confirmArea.classList.remove('hidden');
+          confirmMsg.textContent = `${triggerCardName}: ¿Voltear esta carta?`;
+          btnYes.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            selfCard.faceDown = !selfCard.faceDown;
+            updateUI();
+            processAbilityEffect();
+          };
+          btnNo.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            processAbilityEffect();
+          };
+        } else { processAbilityEffect(); }
+      } else {
+        // IA: voltea si está bocarriba (para ocultarla) — decisión simple
+        selfCard.faceDown = !selfCard.faceDown;
+        updateUI();
         processAbilityEffect();
       }
       break;
@@ -4304,10 +4378,8 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             if (availCards.length === 1) {
               const chosen = availCards[0];
               updateStatus(`Espejo 1: copiando efecto de ${chosen.card.nombre}`);
-              const prevLine = gameState.currentEffectLine;
-              gameState.currentEffectLine = chosen.line;
+              // "como si estuviera en esta carta" → mantener línea de Espejo 1
               triggerCardEffect(chosen.card, 'onPlay', 'player');
-              gameState.currentEffectLine = prevLine;
               processAbilityEffect();
             } else {
               // Jugador elige qué carta copiar
@@ -4326,10 +4398,8 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         // IA: elige la carta rival con mayor valor
         const best = availCards.reduce((b, x) => x.card.valor > b.card.valor ? x : b);
         updateStatus(`Espejo 1: copiando efecto de ${best.card.nombre}`);
-        const prevLine = gameState.currentEffectLine;
-        gameState.currentEffectLine = best.line;
+        // "como si estuviera en esta carta" → mantener línea de Espejo 1
         triggerCardEffect(best.card, 'onPlay', targetPlayer);
-        gameState.currentEffectLine = prevLine;
         processAbilityEffect();
       }
       break;
