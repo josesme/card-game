@@ -965,3 +965,21 @@ describe('Unidad 1 — allowUnityPlayInLine', () => {
     expect(line).toBeNull();
   });
 });
+
+// ── Caos 3: playAnywhere ─────────────────────────────────────────────────────
+describe('Caos 3 — playAnywhere', () => {
+  test('Caos 3 tiene playAnywhere: true', () => {
+    const ef = ENGINE.CARD_EFFECTS['Caos 3'];
+    expect(ef.playAnywhere).toBe(true);
+  });
+
+  test('canPlayAnywhere devuelve true para Caos 3', () => {
+    const card = makeCard('Caos 3', 3);
+    expect(ENGINE.canPlayAnywhere(card)).toBe(true);
+  });
+
+  test('canPlayAnywhere devuelve false para una carta normal', () => {
+    const card = makeCard('Fuego 2', 2);
+    expect(ENGINE.canPlayAnywhere(card)).toBe(false);
+  });
+});

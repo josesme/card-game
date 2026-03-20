@@ -950,7 +950,8 @@ function showActionModal(handIndex) {
     const forcedFaceDown = typeof hasForceOpponentFaceDown === 'function' && hasForceOpponentFaceDown('player');
     const unityLine = typeof getUnityPlayLine === 'function' ? getUnityPlayLine('player') : null;
     const canPlayUnity = unityLine && card.nombre.startsWith('Unidad') && targetLine !== unityLine;
-    const canPlayUp = !forcedFaceDown && (targetLine !== null || (typeof hasAllowAnyProtocol === 'function' && hasAllowAnyProtocol('player')) || canPlayUnity);
+    const cardPlayAnywhere = typeof canPlayAnywhere === 'function' && canPlayAnywhere(card);
+    const canPlayUp = !forcedFaceDown && (targetLine !== null || (typeof hasAllowAnyProtocol === 'function' && hasAllowAnyProtocol('player')) || canPlayUnity || cardPlayAnywhere);
     
     console.log(`  Protocol: ${card.protocol}, Line: ${targetLine}, CanPlayUp: ${canPlayUp}`);
     
@@ -1895,11 +1896,19 @@ function playSelectedCard(isFaceDown) {
     // Espíritu 1: si allowAnyProtocol está activo, el jugador elige línea libremente
     // Unidad 1: cartas Unidad pueden jugarse bocarriba en la línea de Unidad 1
     const idx = gameState.player.protocols.indexOf(card.protocol);
+    const cardPlaysAnywhere = typeof canPlayAnywhere === 'function' && canPlayAnywhere(card);
     if (typeof hasAllowAnyProtocol === 'function' && hasAllowAnyProtocol('player')) {
         console.log(`✅ Playing face-up (any protocol allowed): ${card.nombre}`);
         gameState.selectionMode = true;
         gameState.selectionModeFaceUp = true;
         updateStatus("Espíritu 1: elige línea para colocar la carta bocarriba...");
+        highlightSelectableLines();
+    } else if (cardPlaysAnywhere) {
+        // Caos 3: esta carta puede jugarse en cualquier línea
+        console.log(`✅ Playing face-up (playAnywhere): ${card.nombre}`);
+        gameState.selectionMode = true;
+        gameState.selectionModeFaceUp = true;
+        updateStatus(`${card.nombre}: elige línea para colocar la carta bocarriba...`);
         highlightSelectableLines();
     } else if (idx !== -1) {
         console.log(`✅ Playing face-up: ${card.nombre} on line ${LINES[idx]}`);
@@ -2172,13 +2181,15 @@ function generateAIPossibleMoves() {
             {
                 // Movimiento bocarriba (si coincide protocolo, compiled lines allowed)
                 // Unidad 1: cartas Unidad pueden jugarse bocarriba en la línea de Unidad 1
+                // Caos 3 (playAnywhere): puede jugarse bocarriba en cualquier línea
                 const lineIndex = gameState.ai.protocols.indexOf(card.protocol);
                 const lineMatchesProtocol = lineIndex !== -1 && LINES[lineIndex] === line;
                 const aiUnityLine = typeof getUnityPlayLine === 'function' ? getUnityPlayLine('ai') : null;
                 const unityMatch = aiUnityLine === line && card.nombre.startsWith('Unidad');
+                const cardPlaysAnywhere = typeof canPlayAnywhere === 'function' && canPlayAnywhere(card);
 
                 const aiForcedDown = typeof hasForceOpponentFaceDown === 'function' && hasForceOpponentFaceDown('ai');
-                if ((lineMatchesProtocol || unityMatch) && !aiForcedDown) {
+                if ((lineMatchesProtocol || unityMatch || cardPlaysAnywhere) && !aiForcedDown) {
                     moves.push({
                         cardIndex,
                         line,

@@ -935,7 +935,8 @@ const CARD_EFFECTS = {
     onPlay: [{ action: 'shiftCovered', target: 'self', count: 1 }]
   },
   'Caos 3': {
-    // "Esta carta puede jugarse sin coincidir con los Protocolos." — regla, no efecto activo
+    // "Esta carta puede jugarse sin coincidir con los Protocolos."
+    playAnywhere: true
   },
 
   // ========== CLARIDAD (faltantes) ==========
@@ -4843,6 +4844,7 @@ if (typeof window !== 'undefined') {
   window.onRefreshEffects = onRefreshEffects;
   window.hasAllowAnyProtocol = hasAllowAnyProtocol;
   window.getUnityPlayLine = getUnityPlayLine;
+  window.canPlayAnywhere = canPlayAnywhere;
   window.isPlayBlockedByPersistent = isPlayBlockedByPersistent;
   window.hasForceOpponentFaceDown = hasForceOpponentFaceDown;
   // Fase B: hooks reactivos
@@ -4885,6 +4887,15 @@ function hasAllowAnyProtocol(player) {
       return effectDef && effectDef.persistent && effectDef.persistent.allowAnyProtocol;
     });
   });
+}
+
+/**
+ * Caos 3 (y similares): devuelve true si la carta tiene playAnywhere
+ * (puede jugarse bocarriba en cualquier línea sin coincidir con protocolo).
+ */
+function canPlayAnywhere(card) {
+  const effectDef = CARD_EFFECTS[card.nombre];
+  return !!(effectDef && effectDef.playAnywhere);
 }
 
 /**
