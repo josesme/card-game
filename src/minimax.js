@@ -263,28 +263,47 @@ class MiniMax {
     const moves = [];
     const handCount = (gameState.player.hand || []).length;
     const LINES = ['izquierda', 'centro', 'derecha'];
+    const revealed = gameState.revealedPlayerCards || [];
 
     if (handCount === 0) {
       if (gameState.player.deck.length > 0) moves.push({ action: 'refresh' });
       return moves;
     }
 
-    const estimatedValue = this._estimatePlayerCardValue(gameState);
-    const estimatedCard = { valor: estimatedValue, nombre: '??', protocol: null };
-
-    LINES.forEach(line => {
-      if (this.isLineBlocked(gameState, line, 'player')) return;
-
-      // Face-down play: always possible when holding cards
-      moves.push({ line, faceUp: false, card: estimatedCard, estimated: true });
-
-      // Face-up play: only on matching protocol line (public info)
-      gameState.player.protocols.forEach((protocol, idx) => {
-        if (LINES[idx] === line) {
-          moves.push({ line, faceUp: true, card: { valor: estimatedValue, nombre: '??', protocol }, estimated: true });
+    // Generar movimientos exactos para cartas reveladas
+    const usedRevealed = new Set();
+    revealed.forEach(card => {
+      LINES.forEach(line => {
+        if (this.isLineBlocked(gameState, line, 'player')) return;
+        // Face-down: cualquier línea
+        if (!usedRevealed.has(card.nombre + '_fd_' + line)) {
+          moves.push({ line, faceUp: false, card: { valor: 2, nombre: card.nombre, protocol: card.protocolo }, estimated: false });
+          usedRevealed.add(card.nombre + '_fd_' + line);
         }
+        // Face-up: solo en línea de su protocolo
+        gameState.player.protocols.forEach((protocol, idx) => {
+          if (LINES[idx] === line && card.protocolo === protocol) {
+            moves.push({ line, faceUp: true, card, estimated: false });
+          }
+        });
       });
     });
+
+    // Generar movimientos estimados para cartas no reveladas
+    const unknownCount = handCount - revealed.length;
+    if (unknownCount > 0) {
+      const estimatedValue = this._estimatePlayerCardValue(gameState);
+      const estimatedCard = { valor: estimatedValue, nombre: '??', protocol: null };
+      LINES.forEach(line => {
+        if (this.isLineBlocked(gameState, line, 'player')) return;
+        moves.push({ line, faceUp: false, card: estimatedCard, estimated: true });
+        gameState.player.protocols.forEach((protocol, idx) => {
+          if (LINES[idx] === line) {
+            moves.push({ line, faceUp: true, card: { valor: estimatedValue, nombre: '??', protocol }, estimated: true });
+          }
+        });
+      });
+    }
 
     if (gameState.player.deck.length > 0 && handCount < 5) {
       moves.push({ action: 'refresh' });
@@ -311,6 +330,11 @@ class MiniMax {
       });
     });
     (gameState.player.trash || []).forEach(c => {
+      const idx = pool.indexOf(c.valor);
+      if (idx !== -1) pool.splice(idx, 1);
+    });
+    // Excluir cartas reveladas (ya generan movimientos exactos)
+    (gameState.revealedPlayerCards || []).forEach(c => {
       const idx = pool.indexOf(c.valor);
       if (idx !== -1) pool.splice(idx, 1);
     });

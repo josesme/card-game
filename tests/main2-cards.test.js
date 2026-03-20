@@ -1328,3 +1328,75 @@ describe('Hooks reactivos solo disparan para carta top (no cubierta)', () => {
     expect(GS.effectQueue.length).toBe(0);
   });
 });
+
+// ── revealedPlayerCards — Amor 4 info para IA ─────────────────────────────────
+
+describe('revealedPlayerCards — Amor 4 info para IA', () => {
+  beforeEach(() => { getEngine(); resetGS(); });
+
+  test('revealedPlayerCards se inicializa vacío en gameState', () => {
+    // El array debe existir (logic.js lo define)
+    expect(Array.isArray(GS.revealedPlayerCards || [])).toBe(true);
+  });
+
+  test('_estimatePlayerCardValue excluye cartas reveladas del pool', () => {
+    const MiniMax = require('../src/minimax.js');
+    const mm = new MiniMax();
+    const REAL_LINES = ['izquierda', 'centro', 'derecha'];
+    const field = {};
+    REAL_LINES.forEach(l => { field[l] = { player: [], ai: [], compiledBy: null }; });
+
+    const gs = {
+      player: { hand: [], deck: [], trash: [], protocols: ['TestA', 'TestB', 'TestC'] },
+      ai: { hand: [], deck: [], trash: [] },
+      field,
+      revealedPlayerCards: [],
+    };
+
+    // Sin cartas reveladas: pool = [0,1,2,3,4,5] × 3 → media 2.5
+    const baseEst = mm._estimatePlayerCardValue(gs);
+    expect(baseEst).toBeCloseTo(2.5, 1);
+
+    // Con carta revelada valor 5: se quita un 5 del pool → media baja
+    gs.revealedPlayerCards = [{ nombre: 'TestA 5', valor: 5, protocolo: 'TestA' }];
+    const revealedEst = mm._estimatePlayerCardValue(gs);
+    expect(revealedEst).toBeLessThan(baseEst);
+  });
+
+  test('generatePlayerMoves genera movimientos exactos para cartas reveladas', () => {
+    const MiniMax = require('../src/minimax.js');
+    const mm = new MiniMax();
+    const REAL_LINES = ['izquierda', 'centro', 'derecha'];
+    const field = {};
+    REAL_LINES.forEach(l => { field[l] = { player: [], ai: [], compiledBy: null }; });
+
+    const gs = {
+      player: {
+        hand: [
+          { nombre: 'TestA 3', valor: 3, protocolo: 'TestA' },
+          { nombre: 'TestB 2', valor: 2, protocolo: 'TestB' },
+        ],
+        deck: [{ nombre: 'x', valor: 1 }],
+        trash: [],
+        protocols: ['TestA', 'TestB', 'TestC'],
+      },
+      ai: { hand: [], deck: [], trash: [] },
+      field,
+      revealedPlayerCards: [],
+    };
+
+    // Sin reveladas: solo movimientos estimados
+    const movesBase = mm.generatePlayerMoves(gs);
+    const exactBase = movesBase.filter(m => m.estimated === false);
+    expect(exactBase.length).toBe(0);
+
+    // Con 1 carta revelada: movimientos exactos para ella
+    gs.revealedPlayerCards = [{ nombre: 'TestA 3', valor: 3, protocolo: 'TestA' }];
+    const movesRevealed = mm.generatePlayerMoves(gs);
+    const exactRevealed = movesRevealed.filter(m => m.estimated === false);
+    expect(exactRevealed.length).toBeGreaterThan(0);
+    // Debe incluir face-up en línea izquierda (protocolo TestA = idx 0)
+    const faceUpExact = exactRevealed.filter(m => m.faceUp && m.card.valor === 3);
+    expect(faceUpExact.length).toBeGreaterThan(0);
+  });
+});

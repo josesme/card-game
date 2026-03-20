@@ -84,6 +84,7 @@ let gameState = {
     refreshedThisTurn: null,                                // quién usó Refresh este turno (para Velocidad 1)
     currentTriggerCard: null,                               // nombre de la carta que disparó el efecto activo
     pendingCheckCompile: null,                              // set en startTurn; avanza a checkCompilePhase cuando la cola de efectos se vacía
+    revealedPlayerCards: [],                                // cartas reveladas por Amor 4 — visibles para la IA
 };
 
 function createDeckForPlayer(target) {
@@ -795,6 +796,10 @@ function startTurn(who) {
     gameState.eliminatedLastTurn = { player: gameState.eliminatedSinceLastCheck.player, ai: gameState.eliminatedSinceLastCheck.ai };
     gameState.eliminatedSinceLastCheck = { player: false, ai: false };
     gameState.refreshedThisTurn = null;
+    // Limpiar cartas reveladas que ya no están en la mano del jugador
+    gameState.revealedPlayerCards = gameState.revealedPlayerCards.filter(
+        rc => gameState.player.hand.some(h => h.nombre === rc.nombre)
+    );
     updateStatus(`--- Turno de ${who === 'player' ? 'Jugador' : 'IA'} ---`);
 
     // Disparar efectos de inicio de turno; la fase de compilación esperará a que terminen
@@ -1425,21 +1430,13 @@ function handleRevealChoice(handIndex) {
     const ctx = gameState.effectContext;
     if (!ctx || ctx.type !== 'reveal') return;
     const card = gameState.player.hand[handIndex]; // no se elimina de la mano, solo se muestra
-    finishEffect();
-    // Mostrar la carta revelada en el modal y luego continuar la cola (flip)
-    const modal = document.getElementById('reveal-modal');
-    const container = document.getElementById('reveal-cards-container');
-    const closeBtn = document.getElementById('btn-reveal-close');
-    if (modal && container && closeBtn && typeof createCardHTML === 'function') {
-        container.innerHTML = `<div style="transform: scale(0.85); transform-origin: top center;">${createCardHTML(card)}</div>`;
-        modal.style.display = 'flex';
-        closeBtn.onclick = () => {
-            modal.style.display = 'none';
-            processAbilityEffect();
-        };
-    } else {
-        processAbilityEffect();
+    // Registrar carta revelada para que la IA la tenga en cuenta
+    if (!gameState.revealedPlayerCards.some(c => c.nombre === card.nombre)) {
+        gameState.revealedPlayerCards.push(card);
     }
+    updateStatus(`Revelas: ${card.nombre}`);
+    finishEffect();
+    processAbilityEffect();
 }
 
 function finalizeDiscardVariable() {
