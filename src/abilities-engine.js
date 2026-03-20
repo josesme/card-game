@@ -3162,9 +3162,11 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'playTopDeckInFaceDownLines': {
-      // Smoke 0: juega carta top del mazo bocabajo en cada línea con una carta bocabajo
+      // Smoke 0: juega carta top del mazo bocabajo en cada línea con una carta bocabajo (de cualquier jugador)
+      const opponent0 = targetPlayer === 'player' ? 'ai' : 'player';
       LINES.forEach(l => {
-        const hasFaceDown = gameState.field[l][targetPlayer].some(c => c.faceDown);
+        const hasFaceDown = gameState.field[l][targetPlayer].some(c => c.faceDown)
+                         || gameState.field[l][opponent0].some(c => c.faceDown);
         if (hasFaceDown && gameState[targetPlayer].deck.length > 0) {
           gameState.field[l][targetPlayer].push({ card: gameState[targetPlayer].deck.pop(), faceDown: true });
         }

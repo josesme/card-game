@@ -311,6 +311,11 @@ describe('CARD_EFFECTS — Main 2 nuevas entradas', () => {
   });
 
   describe('Humo', () => {
+    test('Humo 0: onPlay=playTopDeckInFaceDownLines (target self)', () => {
+      const ef = ENGINE.CARD_EFFECTS['Humo 0'];
+      expect(ef.onPlay[0].action).toBe('playTopDeckInFaceDownLines');
+      expect(ef.onPlay[0].target).toBe('self');
+    });
     test('Humo 1: onPlay=[flip self 1, mayShiftSelf]', () => {
       const ef = ENGINE.CARD_EFFECTS['Humo 1'];
       expect(ef.onPlay[0].action).toBe('flip');
@@ -579,6 +584,29 @@ describe('Modificadores persistentes — calculateScoreWithModifiers', () => {
     GS.player.hand = [];
     const score = ENGINE.calculateScoreWithModifiers(GS, 'alpha', 'player');
     expect(score).toBe(1);
+  });
+
+  test('Humo 0: juega en líneas con bocabajo propio y rival', () => {
+    // Resetear estado usando el mismo objeto GS (el motor tiene su referencia)
+    LINES_MOCK.forEach(l => { GS.field[l] = { player: [], ai: [], compiledBy: null }; });
+    GS.player.hand = []; GS.player.deck = []; GS.player.trash = [];
+    GS.ai.hand = []; GS.ai.deck = []; GS.ai.trash = [];
+    GS.effectQueue = []; GS.effectContext = null;
+    // alpha: carta bocabajo del player
+    GS.field['alpha'].player = [{ card: makeCard('A', 1), faceDown: true }];
+    // beta: carta bocabajo del rival (ai)
+    GS.field['beta'].ai = [{ card: makeCard('B', 1), faceDown: true }];
+    // gamma: sin bocabajo — no debe jugar aquí
+    GS.field['gamma'].player = [{ card: makeCard('C', 1), faceDown: false }];
+    // Mazo del player con 2 cartas
+    GS.player.deck = [makeCard('D1', 1), makeCard('D2', 1)];
+    GS.effectQueue = [{ effect: { action: 'playTopDeckInFaceDownLines', target: 'self' }, targetPlayer: 'player' }];
+    ENGINE.processAbilityEffect();
+    // Debe haber jugado en alpha y beta (1 carta nueva en cada una del player)
+    expect(GS.field['alpha'].player.length).toBe(2); // la bocabajo original + la nueva
+    expect(GS.field['beta'].player.length).toBe(1);  // nueva carta del player
+    expect(GS.field['gamma'].player.length).toBe(1); // sin cambio
+    expect(GS.player.deck.length).toBe(0);
   });
 
   test('Humo 2: +1 por carta bocabajo en la línea', () => {
