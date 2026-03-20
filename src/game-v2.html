@@ -673,10 +673,13 @@
 
     // Close hand overlay and log when clicking outside
     document.addEventListener('click', function(e) {
+        // Don't close if click is on a card (field or modal) or inside a modal
+        const isCard = e.target.closest('.card, .card-field-wrapper, .field-card, #action-modal, #command-confirm-modal, #reveal-modal, #game-over-modal');
+
         const handOverlay = document.getElementById('hand-overlay');
         const handToggle = document.getElementById('hand-toggle');
         if (handOverlay && handOverlay.classList.contains('open')) {
-            if (!handOverlay.contains(e.target) && !handToggle.contains(e.target)) {
+            if (!handOverlay.contains(e.target) && !handToggle.contains(e.target) && !isCard) {
                 handOverlay.classList.remove('open');
             }
         }
