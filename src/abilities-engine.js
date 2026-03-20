@@ -4662,14 +4662,14 @@ function onTurnEndEffects(player) {
 function onRefreshEffects(player) {
   LINES.forEach(line => {
     const stack = gameState.field[line][player];
-    stack.forEach(cardObj => {
-      if (cardObj.faceDown) return;
-      const effectDef = CARD_EFFECTS[cardObj.card.nombre];
-      if (effectDef && effectDef.onRefresh) {
-        gameState.currentEffectLine = line;
-        triggerCardEffect(cardObj.card, 'onRefresh', player);
-      }
-    });
+    if (stack.length === 0) return;
+    const top = stack[stack.length - 1];
+    if (top.faceDown) return;
+    const effectDef = CARD_EFFECTS[top.card.nombre];
+    if (effectDef && effectDef.onRefresh) {
+      gameState.currentEffectLine = line;
+      triggerCardEffect(top.card, 'onRefresh', player);
+    }
   });
 }
 
@@ -4697,14 +4697,14 @@ function shuffleDiscardIntoDeck(who) {
 function onDeckShuffleEffects(who) {
   LINES.forEach(line => {
     const stack = gameState.field[line][who];
-    stack.forEach(cardObj => {
-      if (cardObj.faceDown) return;
-      const effectDef = CARD_EFFECTS[cardObj.card.nombre];
-      if (effectDef && effectDef.onDeckShuffle) {
-        gameState.currentEffectLine = line;
-        triggerCardEffect(cardObj.card, 'onDeckShuffle', who);
-      }
-    });
+    if (stack.length === 0) return;
+    const top = stack[stack.length - 1];
+    if (top.faceDown) return;
+    const effectDef = CARD_EFFECTS[top.card.nombre];
+    if (effectDef && effectDef.onDeckShuffle) {
+      gameState.currentEffectLine = line;
+      triggerCardEffect(top.card, 'onDeckShuffle', who);
+    }
   });
 }
 
@@ -4715,14 +4715,14 @@ function onOpponentRefreshEffects(who) {
   const opponent = who === 'player' ? 'ai' : 'player';
   LINES.forEach(line => {
     const stack = gameState.field[line][opponent];
-    stack.forEach(cardObj => {
-      if (cardObj.faceDown) return;
-      const effectDef = CARD_EFFECTS[cardObj.card.nombre];
-      if (effectDef && effectDef.onOpponentRefresh) {
-        gameState.currentEffectLine = line;
-        triggerCardEffect(cardObj.card, 'onOpponentRefresh', opponent);
-      }
-    });
+    if (stack.length === 0) return;
+    const top = stack[stack.length - 1];
+    if (top.faceDown) return;
+    const effectDef = CARD_EFFECTS[top.card.nombre];
+    if (effectDef && effectDef.onOpponentRefresh) {
+      gameState.currentEffectLine = line;
+      triggerCardEffect(top.card, 'onOpponentRefresh', opponent);
+    }
   });
 }
 
@@ -4737,14 +4737,14 @@ function onOpponentDrawEffects(who) {
     const opponent = who === 'player' ? 'ai' : 'player';
     LINES.forEach(line => {
       const stack = gameState.field[line][opponent];
-      stack.forEach(cardObj => {
-        if (cardObj.faceDown) return;
-        const effectDef = CARD_EFFECTS[cardObj.card.nombre];
-        if (effectDef && effectDef.onOpponentDraw) {
-          gameState.currentEffectLine = line;
-          triggerCardEffect(cardObj.card, 'onOpponentDraw', opponent, { deferred: true });
-        }
-      });
+      if (stack.length === 0) return;
+      const top = stack[stack.length - 1];
+      if (top.faceDown) return;
+      const effectDef = CARD_EFFECTS[top.card.nombre];
+      if (effectDef && effectDef.onOpponentDraw) {
+        gameState.currentEffectLine = line;
+        triggerCardEffect(top.card, 'onOpponentDraw', opponent, { deferred: true });
+      }
     });
   } finally {
     gameState._inOpponentDrawEffects = false;
@@ -4758,14 +4758,14 @@ function onOpponentCompileEffects(who) {
   const opponent = who === 'player' ? 'ai' : 'player';
   LINES.forEach(line => {
     const stack = gameState.field[line][opponent];
-    stack.forEach(cardObj => {
-      if (cardObj.faceDown) return;
-      const effectDef = CARD_EFFECTS[cardObj.card.nombre];
-      if (effectDef && effectDef.onOpponentCompile) {
-        gameState.currentEffectLine = line;
-        triggerCardEffect(cardObj.card, 'onOpponentCompile', opponent, { deferred: true });
-      }
-    });
+    if (stack.length === 0) return;
+    const top = stack[stack.length - 1];
+    if (top.faceDown) return;
+    const effectDef = CARD_EFFECTS[top.card.nombre];
+    if (effectDef && effectDef.onOpponentCompile) {
+      gameState.currentEffectLine = line;
+      triggerCardEffect(top.card, 'onOpponentCompile', opponent, { deferred: true });
+    }
   });
 }
 
@@ -4780,14 +4780,14 @@ function onOpponentDiscardEffects(who) {
     const opponent = who === 'player' ? 'ai' : 'player';
     LINES.forEach(line => {
       const stack = gameState.field[line][opponent];
-      stack.forEach(cardObj => {
-        if (cardObj.faceDown) return;
-        const effectDef = CARD_EFFECTS[cardObj.card.nombre];
-        if (effectDef && effectDef.onOpponentDiscard) {
-          gameState.currentEffectLine = line;
-          triggerCardEffect(cardObj.card, 'onOpponentDiscard', opponent, { deferred: true });
-        }
-      });
+      if (stack.length === 0) return;
+      const top = stack[stack.length - 1];
+      if (top.faceDown) return;
+      const effectDef = CARD_EFFECTS[top.card.nombre];
+      if (effectDef && effectDef.onOpponentDiscard) {
+        gameState.currentEffectLine = line;
+        triggerCardEffect(top.card, 'onOpponentDiscard', opponent, { deferred: true });
+      }
     });
   } finally {
     gameState._inOpponentDiscardEffects = false;
@@ -4801,14 +4801,14 @@ function onOpponentDiscardEffects(who) {
 function onOpponentPlayInLineEffects(who, line) {
   const opponent = who === 'player' ? 'ai' : 'player';
   const stack = gameState.field[line][opponent];
-  stack.forEach(cardObj => {
-    if (cardObj.faceDown) return;
-    const effectDef = CARD_EFFECTS[cardObj.card.nombre];
-    if (effectDef && effectDef.onOpponentPlayInLine) {
-      gameState.currentEffectLine = line;
-      triggerCardEffect(cardObj.card, 'onOpponentPlayInLine', opponent, { deferred: true });
-    }
-  });
+  if (stack.length === 0) return;
+  const top = stack[stack.length - 1];
+  if (top.faceDown) return;
+  const effectDef = CARD_EFFECTS[top.card.nombre];
+  if (effectDef && effectDef.onOpponentPlayInLine) {
+    gameState.currentEffectLine = line;
+    triggerCardEffect(top.card, 'onOpponentPlayInLine', opponent, { deferred: true });
+  }
 }
 
 /**
@@ -4818,14 +4818,14 @@ function onOpponentPlayInLineEffects(who, line) {
 function onForcedDiscardEffects(who) {
   LINES.forEach(line => {
     const stack = gameState.field[line][who];
-    stack.forEach(cardObj => {
-      if (cardObj.faceDown) return;
-      const effectDef = CARD_EFFECTS[cardObj.card.nombre];
-      if (effectDef && effectDef.onForcedDiscard) {
-        gameState.currentEffectLine = line;
-        triggerCardEffect(cardObj.card, 'onForcedDiscard', who, { deferred: true });
-      }
-    });
+    if (stack.length === 0) return;
+    const top = stack[stack.length - 1];
+    if (top.faceDown) return;
+    const effectDef = CARD_EFFECTS[top.card.nombre];
+    if (effectDef && effectDef.onForcedDiscard) {
+      gameState.currentEffectLine = line;
+      triggerCardEffect(top.card, 'onForcedDiscard', who, { deferred: true });
+    }
   });
 }
 
@@ -4910,14 +4910,14 @@ function onOwnDiscardEffects(who) {
   try {
     LINES.forEach(line => {
       const stack = gameState.field[line][who];
-      stack.forEach(cardObj => {
-        if (cardObj.faceDown) return;
-        const effectDef = CARD_EFFECTS[cardObj.card.nombre];
-        if (effectDef && effectDef.onOwnDiscard) {
-          gameState.currentEffectLine = line;
-          triggerCardEffect(cardObj.card, 'onOwnDiscard', who, { deferred: true });
-        }
-      });
+      if (stack.length === 0) return;
+      const top = stack[stack.length - 1];
+      if (top.faceDown) return;
+      const effectDef = CARD_EFFECTS[top.card.nombre];
+      if (effectDef && effectDef.onOwnDiscard) {
+        gameState.currentEffectLine = line;
+        triggerCardEffect(top.card, 'onOwnDiscard', who, { deferred: true });
+      }
     });
   } finally {
     gameState._inOwnDiscardEffects = false;

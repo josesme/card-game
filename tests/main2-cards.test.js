@@ -1281,3 +1281,50 @@ describe('4.3 Guerra 3 — playHandFaceDown con may: true (IA)', () => {
     expect(GS.ai.hand.length).toBe(3); // jugó 1 carta
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Hooks reactivos — solo carta top (no cubiertas)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe('Hooks reactivos solo disparan para carta top (no cubierta)', () => {
+  test('onOpponentDiscardEffects NO dispara para carta cubierta bocarriba', () => {
+    resetGS();
+    GS.turn = 'ai'; // oponente del player descarta
+    // Guerra 3 cubierta por Guerra 4 en alpha del player
+    const guerra3 = { card: makeCard('Guerra 3', 3), faceDown: false };
+    const guerra4 = { card: makeCard('Guerra 4', 4), faceDown: false };
+    GS.field.alpha.player = [guerra3, guerra4]; // guerra3 cubierta, guerra4 top
+    GS.player.hand = [makeCard('X', 1)];
+    global.startEffect.mockClear();
+    ENGINE.onOpponentDiscardEffects('ai'); // ai descartó → dispara hooks del player
+    // Guerra 3 está cubierta → NO debe disparar playHandFaceDown
+    expect(global.startEffect).not.toHaveBeenCalled();
+    expect(GS.effectQueue.length).toBe(0);
+  });
+
+  test('onOpponentDiscardEffects SÍ dispara para carta top bocarriba (IA)', () => {
+    resetGS();
+    GS.turn = 'player'; // player descartó → hooks de la IA
+    // Guerra 3 IA es top en alpha
+    const guerra3 = { card: makeCard('Guerra 3', 3), faceDown: false };
+    GS.field.alpha.ai = [guerra3];
+    GS.ai.hand = [makeCard('A', 1), makeCard('B', 2), makeCard('C', 3), makeCard('D', 4)];
+    const handBefore = GS.ai.hand.length;
+    ENGINE.onOpponentDiscardEffects('player');
+    // Guerra 3 IA con >3 cartas + may:true → la IA juega 1 bocabajo
+    ENGINE.processAbilityEffect();
+    expect(GS.ai.hand.length).toBe(handBefore - 1);
+  });
+
+  test('onOpponentRefreshEffects NO dispara para carta cubierta', () => {
+    resetGS();
+    GS.turn = 'player';
+    // Guerra 1 cubierta por otra carta en beta del ai
+    const guerra1 = { card: makeCard('Guerra 1', 1), faceDown: false };
+    const other = { card: makeCard('Fuego 2', 2), faceDown: false };
+    GS.field.beta.ai = [guerra1, other]; // guerra1 cubierta
+    ENGINE.onOpponentRefreshEffects('player');
+    // Guerra 1 cubierta → NO debe disparar discardAny
+    expect(GS.effectQueue.length).toBe(0);
+  });
+});
