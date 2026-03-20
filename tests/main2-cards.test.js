@@ -876,3 +876,63 @@ describe('Corrupción 0 — flipCoveredInOwnStack', () => {
     expect(GS.field['gamma'].ai[1].faceDown).toBe(true);
   });
 });
+
+// ── mayShiftSelf: genérico (no hardcodeado a Espíritu 3) ─────────────────────
+describe('mayShiftSelf — genérico para cualquier carta', () => {
+  function resetGS() {
+    LINES_MOCK.forEach(l => { GS.field[l] = { player: [], ai: [], compiledBy: null }; });
+    GS.player.hand = []; GS.player.deck = []; GS.player.trash = [];
+    GS.ai.hand = []; GS.ai.deck = []; GS.ai.trash = [];
+    GS.effectQueue = [];
+    GS.effectContext = null;
+    GS.currentEffectLine = null;
+    GS.currentTriggerCard = null;
+  }
+
+  test('IA mueve Hielo 1 (no Espíritu 3) a otra línea', () => {
+    resetGS();
+    const hielo1 = { card: makeCard('Hielo 1', 1), faceDown: false };
+    GS.field['alpha'].ai = [hielo1];
+    GS.currentEffectLine = 'alpha';
+    GS.currentTriggerCard = 'Hielo 1';
+    GS.effectQueue = [{ effect: { action: 'mayShiftSelf' }, targetPlayer: 'ai', cardName: 'Hielo 1' }];
+    ENGINE.processAbilityEffect();
+    // Hielo 1 ya no está en alpha
+    expect(GS.field['alpha'].ai.length).toBe(0);
+    // Está en otra línea (beta, por aiPickDestLine mock)
+    const found = LINES_MOCK.some(l => GS.field[l].ai.some(c => c.card.nombre === 'Hielo 1'));
+    expect(found).toBe(true);
+  });
+
+  test('IA mueve Tiempo 2 via drawAndMayShiftSelf', () => {
+    resetGS();
+    const tiempo2 = { card: makeCard('Tiempo 2', 2), faceDown: false };
+    // Usar alpha como source (aiPickDestLine mock devuelve 'beta', así el move es alpha→beta)
+    GS.field['alpha'].ai = [tiempo2];
+    GS.ai.deck = [makeCard('X', 1)];
+    GS.currentEffectLine = 'alpha';
+    GS.currentTriggerCard = 'Tiempo 2';
+    GS.effectQueue = [{ effect: { action: 'drawAndMayShiftSelf' }, targetPlayer: 'ai', cardName: 'Tiempo 2' }];
+    ENGINE.processAbilityEffect();
+    // Roba 1 carta
+    expect(GS.ai.hand.length).toBe(1);
+    // Tiempo 2 ya no está en alpha
+    expect(GS.field['alpha'].ai.length).toBe(0);
+    // Está en beta (destino del mock)
+    expect(GS.field['beta'].ai.some(c => c.card.nombre === 'Tiempo 2')).toBe(true);
+  });
+
+  test('IA no mueve si la carta no está en la línea (nombre incorrecto)', () => {
+    resetGS();
+    // Carta con nombre distinto al triggerCardName — no debe encontrarla
+    const other = { card: makeCard('Agua 1', 1), faceDown: false };
+    GS.field['alpha'].ai = [other];
+    GS.currentEffectLine = 'alpha';
+    GS.currentTriggerCard = 'Hielo 1';
+    GS.effectQueue = [{ effect: { action: 'mayShiftSelf' }, targetPlayer: 'ai', cardName: 'Hielo 1' }];
+    ENGINE.processAbilityEffect();
+    // Agua 1 sigue en alpha (no se movió porque no es Hielo 1)
+    expect(GS.field['alpha'].ai.length).toBe(1);
+    expect(GS.field['alpha'].ai[0].card.nombre).toBe('Agua 1');
+  });
+});

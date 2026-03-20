@@ -1572,12 +1572,12 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'mayShiftSelf': {
-      // Espíritu 3: mover esta carta a otra línea (aunque esté cubierta)
+      // Genérico: mover esta carta a otra línea (aunque esté cubierta)
+      // Usado por Espíritu 3, Hielo 1, Tiempo 2 (via drawAndMayShiftSelf)
       const selfLine = gameState.currentEffectLine;
       if (!selfLine) { processAbilityEffect(); break; }
       if (actionDef.condition === 'drawnSinceLastCheck') {
         if (!gameState.drawnLastTurn?.[targetPlayer]) { processAbilityEffect(); break; }
-        // No consumir — el snapshot se resetea al inicio de cada turno
       }
       if (targetPlayer === 'player') {
         const confirmArea = document.getElementById('command-confirm');
@@ -1587,11 +1587,11 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         if (confirmArea && btnYes && btnNo) {
           gameState.effectContext = { type: 'confirm' };
           confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = '¿Quieres mover Espíritu 3 a otra línea?';
+          confirmMsg.textContent = `¿Quieres mover ${triggerCardName} a otra línea?`;
           btnYes.onclick = () => {
             confirmArea.classList.add('hidden');
             gameState.effectContext = { type: 'shiftSelf', sourceLine: selfLine, target: 'player', count: 1, selected: [], waitingForLine: true };
-            updateStatus('Espíritu 3: elige línea destino');
+            updateStatus(`${triggerCardName}: elige línea destino`);
             highlightSelectableLines(selfLine);
           };
           btnNo.onclick = () => {
@@ -1603,12 +1603,12 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           processAbilityEffect();
         }
       } else {
-        // IA: mover a línea aleatoria distinta
+        // IA: mover a línea distinta
         const otherLines = LINES.filter(l => l !== selfLine);
         if (otherLines.length > 0) {
           const dest = aiPickDestLine([selfLine]) || otherLines[0];
           const stack = gameState.field[selfLine][targetPlayer];
-          const idx = stack.findIndex(c => c.card.nombre === 'Espíritu 3');
+          const idx = stack.findIndex(c => c.card.nombre === triggerCardName);
           if (idx !== -1) {
             const [cardObj] = stack.splice(idx, 1);
             gameState.field[dest][targetPlayer].push(cardObj);
