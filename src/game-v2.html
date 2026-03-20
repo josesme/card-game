@@ -53,12 +53,16 @@
         #hand-overlay .hand-bar {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 12px;
             padding: 8px 20px;
             background: rgba(10,14,39,0.97);
             border-top: 2px solid #00d4ff;
             flex-shrink: 0;
             cursor: pointer;
+            max-width: 1500px;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         #hand-overlay .hand-bar .hand-title {
@@ -71,26 +75,22 @@
         #hand-overlay .hand-bar .stat-group {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 5px;
             font-size: 0.82em;
+            flex-shrink: 0;
         }
         #hand-overlay .hand-bar .stat-label {
             color: #888;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            font-size: 0.85em;
         }
         #hand-overlay .hand-bar .stat-value {
             font-family: 'Orbitron', monospace;
             font-weight: 700;
             font-size: 1.1em;
-            min-width: 1.5em;
+            min-width: 1.2em;
             text-align: center;
-        }
-        #hand-overlay .hand-bar .stat-divider {
-            width: 1px;
-            height: 1.4em;
-            background: #444;
-            flex-shrink: 0;
         }
 
         #hand-overlay .hand-content {
@@ -99,6 +99,10 @@
             background: rgba(10,14,39,0.97);
             transition: max-height 0.3s ease;
             padding: 0 20px;
+            max-width: 1500px;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
         }
         #hand-overlay.open .hand-content {
             max-height: 70vh;
@@ -391,31 +395,27 @@
 <!-- ═══ HAND OVERLAY (slide-up) ═══ -->
 <div id="hand-overlay">
     <div class="hand-bar">
-        <span class="hand-title">Tu mano</span>
-        <button id="player-deck-btn" title="Recargar Mazo" style="background: rgba(0,212,255,0.15); color: #00d4ff; border: 1px solid #00d4ff55; padding: 5px 14px; border-radius: 6px; cursor: pointer; font-size: 0.8em; font-weight: bold; font-family: 'Space Mono', monospace;">🔄 Actualizar</button>
-        <div id="discard-banner"></div>
-        <button id="btn-stop-discard" class="hidden" style="background:#f59e0b;color:#000;border:none;border-radius:5px;padding:4px 14px;cursor:pointer;font-weight:bold;font-size:0.9em;">Detener descarte</button>
         <div class="stat-group">
             <span style="color: #00d4ff; font-size: 1em;">👤</span>
             <span class="stat-label">Mazo</span>
             <span id="player-deck-count" class="stat-value" style="color: #00d4ff;">0</span>
-            <span class="stat-divider"></span>
             <span class="stat-label">Desc.</span>
             <span id="player-trash-count" class="stat-value" style="color: #ef4444;">0</span>
         </div>
-        <div id="game-status" style="flex: 1; text-align: center; color: #facc15; font-weight: bold; font-size: 0.9em;">—</div>
+        <button id="player-deck-btn" title="Recargar Mazo" style="background: rgba(0,212,255,0.15); color: #00d4ff; border: 1px solid #00d4ff55; padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8em; font-weight: bold; font-family: 'Space Mono', monospace;">🔄 Actualizar</button>
+        <div id="discard-banner"></div>
+        <button id="btn-stop-discard" class="hidden" style="background:#f59e0b;color:#000;border:none;border-radius:5px;padding:4px 14px;cursor:pointer;font-weight:bold;font-size:0.9em;">Detener descarte</button>
+        <div id="game-status" style="flex: 1; text-align: center; color: #facc15; font-weight: bold; font-size: 0.85em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">—</div>
         <div class="stat-group">
             <span style="color: #ef4444; font-size: 1em;">🤖</span>
             <span class="stat-label">Mano</span>
             <span id="ai-hand-count" class="stat-value" style="color: #00ff41;">0</span>
-            <span class="stat-divider"></span>
             <span class="stat-label">Mazo</span>
             <span id="ai-deck-count" class="stat-value" style="color: #00d4ff;">0</span>
-            <span class="stat-divider"></span>
             <span class="stat-label">Desc.</span>
             <span id="ai-trash-count" class="stat-value" style="color: #ef4444;">0</span>
         </div>
-        <span id="hand-count-badge" style="color:#00d4ff; font-family:'Orbitron',monospace; font-weight:700; font-size:0.9em;"></span>
+        <span id="hand-count-badge" style="display:none;"></span>
     </div>
     <div id="command-confirm" class="hidden" style="background: rgba(0,0,0,0.85); border: 1px solid #f59e0b; border-radius: 8px; padding: 12px 16px; margin: 10px 20px; text-align: center;">
         <div id="confirm-msg" style="color: #f59e0b; margin-bottom: 10px; font-size: 0.95em;"></div>
@@ -423,7 +423,7 @@
         <button id="btn-confirm-no" style="background:#dc2626;color:#fff;border:none;border-radius:6px;padding:6px 18px;cursor:pointer;font-size:0.9em;">No</button>
     </div>
     <div class="hand-content">
-        <div id="player-hand" style="display: flex; flex-wrap: nowrap; gap: 10px; min-height: 245px; overflow-x: auto; overflow-y: visible; align-items: center; scrollbar-width: thin; scrollbar-color: #00d4ff44 transparent; padding-bottom: 8px;">
+        <div id="player-hand" style="display: flex; flex-wrap: nowrap; gap: 10px; min-height: 245px; overflow-x: auto; overflow-y: visible; align-items: center; justify-content: center; scrollbar-width: thin; scrollbar-color: #00d4ff44 transparent; padding-bottom: 8px;">
         </div>
     </div>
 </div>
