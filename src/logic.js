@@ -480,22 +480,105 @@ function hideCardPreview() {
     }
 }
 
+// Mapa protocolo español → nombre fichero imagen inglés
+const PROTOCOL_IMG_MAP = {
+    // Main 1
+    'Espíritu': { en: 'spirit', ed: 1 },
+    'Muerte':   { en: 'death',  ed: 1 },
+    'Fuego':    { en: 'fire',   ed: 1 },
+    'Gravedad': { en: 'gravity', ed: 1 },
+    'Vida':     { en: 'life',   ed: 1 },
+    'Luz':      { en: 'light',  ed: 1 },
+    'Metal':    { en: 'metal',  ed: 1 },
+    'Plaga':    { en: 'plague', ed: 1 },
+    'Psique':   { en: 'psychic', ed: 1 },
+    'Velocidad':{ en: 'speed',  ed: 1 },
+    'Agua':     { en: 'water',  ed: 1 },
+    'Oscuridad':{ en: 'darkness', ed: 1 },
+    'Apatía':   { en: 'apathy', ed: 1 },
+    'Odio':     { en: 'hate',   ed: 1 },
+    'Amor':     { en: 'love',   ed: 1 },
+    // Main 2
+    'Asimilación': { en: 'assimilation', ed: 2 },
+    'Caos':        { en: 'chaos',   ed: 2 },
+    'Claridad':    { en: 'clarity', ed: 2 },
+    'Corrupción':  { en: 'corruption', ed: 2 },
+    'Valor':       { en: 'courage', ed: 2 },
+    'Diversidad':  { en: 'diversity', ed: 2 },
+    'Miedo':       { en: 'fear',   ed: 2 },
+    'Hielo':       { en: 'ice',    ed: 2 },
+    'Suerte':      { en: 'luck',   ed: 2 },
+    'Espejo':      { en: 'mirror', ed: 2 },
+    'Paz':         { en: 'peace',  ed: 2 },
+    'Humo':        { en: 'smoke',  ed: 2 },
+    'Tiempo':      { en: 'time',   ed: 2 },
+    'Unidad':      { en: 'unity',  ed: 2 },
+    'Guerra':      { en: 'war',    ed: 2 },
+};
+
+function getCardImageUrl(protocol, valor) {
+    const info = PROTOCOL_IMG_MAP[protocol];
+    if (!info) return '';
+    const folder = info.ed === 1 ? 'Main_1' : 'Main_2';
+    return `../images/cards/${folder}/${info.en}_${valor}.jpg`;
+}
+
+function getCardBackUrl(protocol) {
+    const info = PROTOCOL_IMG_MAP[protocol];
+    if (!info) return '../images/cards/Main_2/dorso.webp';
+    return info.ed === 1
+        ? '../images/cards/Main_1/rear.jpg'
+        : '../images/cards/Main_2/dorso.webp';
+}
+
+// Detectar si estamos en v2
+const _isV2Layout = !!document.querySelector('.vertical-stack');
+
 function createCardHTML(card, faceDown = false) {
     if (faceDown) {
+        if (_isV2Layout) {
+            const backUrl = card ? getCardBackUrl(card.protocol) : '../images/cards/Main_2/dorso.webp';
+            return `<div class="card face-down card-img" style="background-image: url('${backUrl}');">
+            </div>`;
+        }
         return `<div class="card face-down">
             <div class="card-back-value">2</div>
             <div class="card-back-title">COMPILE</div>
         </div>`;
     }
     if (!card) return '';
-    
+
     const color = PROTOCOL_DEFS[card.protocol] ? PROTOCOL_DEFS[card.protocol].color : 'var(--accent-glow)';
-    
+
     // Usamos campos segmentados del JSON
     const startText = card.h_inicio || '';
     const actionText = card.h_accion || '';
     const endText = card.h_final || '';
-    
+
+    // V2: carta con imagen de fondo
+    if (_isV2Layout) {
+        const imgUrl = getCardImageUrl(card.protocol, card.valor);
+        return `
+        <div class="card card-img" data-id="${card.id}" style="border-color: ${color}; box-shadow: 0 0 15px ${color}33; background-image: url('${imgUrl}');">
+            <div class="card-img-header">
+                <span class="card-img-value" style="color: ${color}">${card.valor}</span>
+                <span class="card-img-name">${card.nombre.replace(/\s+\d+$/, '')}</span>
+            </div>
+            <div class="card-img-body">
+                <div class="card-img-zone${startText ? '' : ' empty'}">
+                    <div class="card-img-zone-text">${startText}</div>
+                </div>
+                <div class="card-img-zone${actionText ? '' : ' empty'}">
+                    <div class="card-img-zone-text">${actionText}</div>
+                </div>
+                <div class="card-img-zone${endText ? '' : ' empty'}">
+                    <div class="card-img-zone-text">${endText}</div>
+                </div>
+            </div>
+        </div>
+        `;
+    }
+
     return `
         <div class="card" data-id="${card.id}" style="border-color: ${color}; box-shadow: 0 0 15px ${color}33;">
             <div class="card-header">

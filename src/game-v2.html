@@ -274,6 +274,72 @@
             height: 245px;
             font-size: 1em;
         }
+        /* ── Card with image background (v2) ────── */
+        .card.card-img {
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .card.card-img.face-down {
+            border-color: #444 !important;
+            box-shadow: none !important;
+        }
+
+        .card-img-header {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 6px;
+            background: rgba(10,14,39,0.75);
+            flex-shrink: 0;
+        }
+        .card-img-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5em;
+            font-weight: 900;
+            min-width: 22px;
+            text-align: center;
+        }
+        .card-img-name {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.7em;
+            font-weight: 700;
+            color: #f0f0f0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card-img-body {
+            margin-top: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            background: rgba(10,14,39,0.8);
+            padding: 3px 5px 4px;
+        }
+        .card-img-zone {
+            padding: 2px 3px;
+            border-left: 2px solid rgba(255,255,255,0.15);
+        }
+        .card-img-zone.empty {
+            display: none;
+        }
+        .card-img-zone-text {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.55em;
+            line-height: 1.25;
+            color: #e0e6ee;
+        }
+
         /* Compiled line indicator */
         .battle-column.compiled-player { border-color: #00d4ff; box-shadow: 0 0 12px #00d4ff44; }
         .battle-column.compiled-ai { border-color: #ef4444; box-shadow: 0 0 12px #ef444444; }
