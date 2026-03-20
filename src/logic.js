@@ -555,26 +555,11 @@ function createCardHTML(card, faceDown = false) {
     const actionText = card.h_accion || '';
     const endText = card.h_final || '';
 
-    // V2: carta con imagen de fondo
+    // V2: carta con imagen de fondo (solo imagen, sin overlay de texto)
     if (_isV2Layout) {
         const imgUrl = getCardImageUrl(card.protocol, card.valor);
         return `
         <div class="card card-img" data-id="${card.id}" style="border-color: ${color}; box-shadow: 0 0 15px ${color}33; background-image: url('${imgUrl}');">
-            <div class="card-img-header">
-                <span class="card-img-value" style="color: ${color}">${card.valor}</span>
-                <span class="card-img-name">${card.nombre.replace(/\s+\d+$/, '')}</span>
-            </div>
-            <div class="card-img-body">
-                <div class="card-img-zone${startText ? '' : ' empty'}">
-                    <div class="card-img-zone-text">${startText}</div>
-                </div>
-                <div class="card-img-zone${actionText ? '' : ' empty'}">
-                    <div class="card-img-zone-text">${actionText}</div>
-                </div>
-                <div class="card-img-zone${endText ? '' : ' empty'}">
-                    <div class="card-img-zone-text">${endText}</div>
-                </div>
-            </div>
         </div>
         `;
     }
