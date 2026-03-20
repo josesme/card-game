@@ -537,7 +537,7 @@
         new MutationObserver(() => {
             const last = log.querySelector('.log-latest');
             if (last) {
-                const txt = last.textContent.trim();
+                const txt = last.textContent.trim().replace(/^[•➔⚡🎴💀🔄🗑️💧☣️]\s*/, '');
                 bar.textContent = txt;
                 bar.style.color = last.style.color || '#facc15';
             }
@@ -598,15 +598,40 @@
         if (!overlay) return;
         const bar = overlay.querySelector('.hand-bar');
 
+        function hasActiveModal() {
+            const ids = ['action-modal', 'command-confirm-modal', 'reveal-modal'];
+            return ids.some(id => {
+                const el = document.getElementById(id);
+                return el && !el.classList.contains('hidden') && el.style.display !== 'none';
+            });
+        }
+
         // Hover on bar opens
         bar.addEventListener('mouseenter', () => overlay.classList.add('open'));
 
         // Leaving the entire overlay closes (with small delay to avoid flicker)
+        // BUT not if there's an active modal requiring player action
         let closeTimer;
         overlay.addEventListener('mouseleave', () => {
-            closeTimer = setTimeout(() => overlay.classList.remove('open'), 200);
+            closeTimer = setTimeout(() => {
+                if (!hasActiveModal()) overlay.classList.remove('open');
+            }, 200);
         });
         overlay.addEventListener('mouseenter', () => clearTimeout(closeTimer));
+    })();
+
+    // Auto-open hand when action modals appear
+    (function() {
+        const overlay = document.getElementById('hand-overlay');
+        if (!overlay) return;
+        ['action-modal', 'command-confirm-modal', 'reveal-modal'].forEach(id => {
+            const modal = document.getElementById(id);
+            if (!modal) return;
+            new MutationObserver(() => {
+                const visible = !modal.classList.contains('hidden') && modal.style.display !== 'none';
+                if (visible) overlay.classList.add('open');
+            }).observe(modal, { attributes: true, attributeFilter: ['class', 'style'] });
+        });
     })();
 
     // Close log when clicking outside
