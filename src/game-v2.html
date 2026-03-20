@@ -289,36 +289,27 @@
             box-shadow: none !important;
         }
 
-        /* Contenedor de zonas de texto — posicionado sobre las cajas de la imagen */
-        .card-img-body {
+        /* Zonas de texto — posición absoluta fija por slot (Inicio/Acción/Final) */
+        .card-img-zone {
             position: absolute;
             left: 5%;
             right: 10%;
             display: flex;
-            flex-direction: column;
-            gap: 3px;
-        }
-        /* Ajuste vertical según nº de zonas con contenido */
-        .card.zones-1 .card-img-body { top: 47%; bottom: 30%; }
-        .card.zones-2 .card-img-body { top: 35%; bottom: 5%; }
-        .card.zones-3 .card-img-body { top: 25%; bottom: 5%; }
-
-        .card-img-zone {
-            flex: 1;
-            display: flex;
             align-items: center;
             padding: 3px 6px;
-            background: rgba(10,14,39,0.82);
+            background: rgba(10,14,39,0.85);
             border-radius: 3px;
-            min-height: 0;
             overflow: hidden;
         }
+        .card-img-zone.slot-start  { top: 26%; bottom: 52%; }
+        .card-img-zone.slot-action { top: 50%; bottom: 30%; }
+        .card-img-zone.slot-end    { top: 72%; bottom: 4%;  }
+
         .card-img-zone-text {
             font-family: 'Space Mono', monospace;
             font-size: 0.55em;
             line-height: 1.25;
             color: #e0e6ee;
-            overflow: hidden;
         }
 
 

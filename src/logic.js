@@ -555,16 +555,14 @@ function createCardHTML(card, faceDown = false) {
     const actionText = card.h_accion || '';
     const endText = card.h_final || '';
 
-    // V2: carta con imagen de fondo + zonas de texto español superpuestas
+    // V2: carta con imagen de fondo + zonas de texto español en slots fijos
     if (_isV2Layout) {
         const imgUrl = getCardImageUrl(card.protocol, card.valor);
-        const zones = [];
-        if (startText) zones.push(`<div class="card-img-zone"><div class="card-img-zone-text">${startText}</div></div>`);
-        if (actionText) zones.push(`<div class="card-img-zone"><div class="card-img-zone-text">${actionText}</div></div>`);
-        if (endText) zones.push(`<div class="card-img-zone"><div class="card-img-zone-text">${endText}</div></div>`);
         return `
-        <div class="card card-img zones-${zones.length}" data-id="${card.id}" style="border-color: ${color}; box-shadow: 0 0 15px ${color}33; background-image: url('${imgUrl}');">
-            <div class="card-img-body">${zones.join('')}</div>
+        <div class="card card-img" data-id="${card.id}" style="border-color: ${color}; box-shadow: 0 0 15px ${color}33; background-image: url('${imgUrl}');">
+            ${startText  ? `<div class="card-img-zone slot-start"><div class="card-img-zone-text">${startText}</div></div>` : ''}
+            ${actionText ? `<div class="card-img-zone slot-action"><div class="card-img-zone-text">${actionText}</div></div>` : ''}
+            ${endText    ? `<div class="card-img-zone slot-end"><div class="card-img-zone-text">${endText}</div></div>` : ''}
         </div>
         `;
     }
