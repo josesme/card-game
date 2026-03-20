@@ -387,18 +387,18 @@
 <!-- ═══ HAND OVERLAY (slide-up) ═══ -->
 <div id="hand-overlay">
     <div class="hand-bar">
-        <div class="stat-group">
+        <div style="display: flex; align-items: center; gap: 8px; width: 220px; flex-shrink: 0;">
             <span style="color: #00d4ff; font-size: 1em;">👤</span>
             <span class="stat-label">Mazo</span>
             <span id="player-deck-count" class="stat-value" style="color: #00d4ff;">0</span>
             <span class="stat-label">Desc.</span>
             <span id="player-trash-count" class="stat-value" style="color: #ef4444;">0</span>
+            <button id="player-deck-btn" title="Recargar Mazo" style="background: rgba(0,212,255,0.15); color: #00d4ff; border: 1px solid #00d4ff55; padding: 3px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75em; font-weight: bold; font-family: 'Space Mono', monospace;">🔄</button>
         </div>
-        <button id="player-deck-btn" title="Recargar Mazo" style="background: rgba(0,212,255,0.15); color: #00d4ff; border: 1px solid #00d4ff55; padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8em; font-weight: bold; font-family: 'Space Mono', monospace;">🔄 Actualizar</button>
         <div id="discard-banner"></div>
         <button id="btn-stop-discard" class="hidden" style="background:#f59e0b;color:#000;border:none;border-radius:5px;padding:4px 14px;cursor:pointer;font-weight:bold;font-size:0.9em;">Detener descarte</button>
-        <div id="game-status" style="flex: 1; text-align: center; color: #facc15; font-weight: bold; font-size: 0.85em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">—</div>
-        <div class="stat-group">
+        <div id="game-status" style="flex: 1; text-align: center; color: #facc15; font-weight: bold; font-size: 0.85em;">—</div>
+        <div style="display: flex; align-items: center; gap: 8px; width: 220px; flex-shrink: 0; justify-content: flex-end;">
             <span style="color: #ef4444; font-size: 1em;">🤖</span>
             <span class="stat-label">Mano</span>
             <span id="ai-hand-count" class="stat-value" style="color: #00ff41;">0</span>
