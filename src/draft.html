@@ -270,7 +270,6 @@
 </head>
 <body>
 
-<button class="nav-btn" style="left: 16px;" onclick="window.location.href='/src/index.html'">← VOLVER</button>
 <button id="btn-fullscreen" onclick="toggleFullscreen()" title="Pantalla completa">⛶ FULLSCREEN</button>
 <div id="draft-viewport">
 <div id="draft-container">
@@ -293,7 +292,10 @@
         </div>
     </div>
 
-    <button class="start-button" id="start-game-btn">🎮 COMENZAR JUEGO</button>
+    <div style="display: flex; gap: 12px; justify-content: center; align-items: center;">
+        <button class="start-button" style="visibility: visible; background: rgba(0,212,255,0.1); color: #00d4ff; border: 1px solid #00d4ff;" onclick="window.location.href='/src/index.html'">← VOLVER</button>
+        <button class="start-button" id="start-game-btn">🎮 COMENZAR JUEGO</button>
+    </div>
 
 </div>
 </div>

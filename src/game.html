@@ -39,10 +39,6 @@
 <div id="game-container">
     <!-- HEADER -->
     <header style="text-align: center; margin-bottom: 30px; position: relative; display: flex; align-items: center; justify-content: center;">
-        <div style="position: absolute; left: 0; display: flex; gap: 8px;">
-            <button onclick="window.location.href='/src/index.html'" style="background: rgba(0,212,255,0.1); border: 1px solid #00d4ff; color: #00d4ff; border-radius: 8px; padding: 8px 14px; cursor: pointer; font-family: 'Orbitron', monospace; font-size: 0.75em; letter-spacing: 1px; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.25)'" onmouseout="this.style.background='rgba(0,212,255,0.1)'">INICIO</button>
-            <button onclick="window.location.href='/src/draft.html'" style="background: rgba(0,212,255,0.1); border: 1px solid #00d4ff; color: #00d4ff; border-radius: 8px; padding: 8px 14px; cursor: pointer; font-family: 'Orbitron', monospace; font-size: 0.75em; letter-spacing: 1px; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,212,255,0.25)'" onmouseout="this.style.background='rgba(0,212,255,0.1)'">DRAFT</button>
-        </div>
         <img src="../images/compile.png" alt="COMPILE" style="height: auto; max-height: 60px; filter: drop-shadow(0 0 12px rgba(0, 212, 255, 0.4));">
         <button id="btn-fullscreen" onclick="toggleFullscreen()" title="Pantalla completa" style="position: absolute; right: 0; background: rgba(0,212,255,0.1); border: 1px solid #00d4ff; color: #00d4ff; border-radius: 8px; padding: 8px 14px; cursor: pointer; font-family: 'Orbitron', monospace; font-size: 0.75em; letter-spacing: 1px; transition: background 0.2s;">
             ⛶ FULLSCREEN
@@ -170,6 +166,11 @@
         </div>
     </div>
 
+    <!-- NAV BUTTONS -->
+    <div style="display: flex; gap: 12px; justify-content: center; align-items: center; margin-top: 20px;">
+        <button class="start-button" style="visibility: visible; background: rgba(0,212,255,0.1); color: #00d4ff; border: 1px solid #00d4ff; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-family: 'Orbitron', monospace; font-size: 0.85em; letter-spacing: 1px;" onclick="window.location.href='/src/index.html'">INICIO</button>
+        <button class="start-button" style="visibility: visible; background: rgba(0,212,255,0.1); color: #00d4ff; border: 1px solid #00d4ff; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-family: 'Orbitron', monospace; font-size: 0.85em; letter-spacing: 1px;" onclick="window.location.href='/src/draft.html'">NUEVO DRAFT</button>
+    </div>
 
 </div>
 
