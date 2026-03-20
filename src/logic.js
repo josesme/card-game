@@ -758,31 +758,25 @@ function renderStack(line, target) {
     stackEl.innerHTML = '';
     
     const stack = gameState.field[line][target];
-    const isV2 = !!stackEl.classList.contains('vertical-stack');
+    const isV2 = stackEl.classList.contains('vertical-stack');
+
+    // V2: set container height based on stack size (overlapping cards)
+    const V2_CARD_H = 245, V2_OFFSET = 100;
+    if (isV2) {
+        const totalH = stack.length === 0 ? 0 : (stack.length - 1) * V2_OFFSET + V2_CARD_H;
+        stackEl.style.minHeight = Math.max(totalH, 260) + 'px';
+        stackEl.style.height = totalH + 'px';
+    }
 
     stack.forEach((cardObj, idx) => {
         const cEl = document.createElement('div');
         const isUncovered = idx === stack.length - 1;
 
-        if (isV2 && isUncovered) {
-            // V2: top card as full card (like hand cards)
+        if (isV2) {
+            // V2: all cards rendered as full cards, overlapping vertically
             cEl.innerHTML = cardObj.faceDown
                 ? createCardHTML(null, true)
                 : createCardHTML(cardObj.card);
-        } else if (isV2 && !isUncovered) {
-            // V2: covered card as slim strip
-            if (cardObj.faceDown) {
-                cEl.innerHTML = `<div class="covered-strip face-down" style="border-color:#4a5568;" title="Carta bocabajo">
-                    <span class="field-card-value" style="color:#94a3b8">2</span>
-                    <span class="field-card-name" style="color:#94a3b8">???</span>
-                </div>`;
-            } else {
-                const color = PROTOCOL_DEFS[cardObj.card.protocol] ? PROTOCOL_DEFS[cardObj.card.protocol].color : '#00d4ff';
-                cEl.innerHTML = `<div class="covered-strip" data-id="${cardObj.card.id}" style="border-color:${color};" title="${cardObj.card.nombre}">
-                    <span class="field-card-value" style="color:${color}">${cardObj.card.valor}</span>
-                    <span class="field-card-name" style="color:${color}">${cardObj.card.nombre}</span>
-                </div>`;
-            }
         } else if (cardObj.faceDown) {
             // V1: chip face-down
             cEl.innerHTML = `<div class="field-card face-down" title="Carta bocabajo">
@@ -796,8 +790,11 @@ function renderStack(line, target) {
         const domCard = cEl.firstElementChild;
 
         if (!cardObj.faceDown) {
-            domCard.addEventListener('mouseenter', () => showCardPreview(cardObj.card));
-            domCard.addEventListener('mouseleave', hideCardPreview);
+            // V2: no hover preview needed — cards are already visible
+            if (!isV2) {
+                domCard.addEventListener('mouseenter', () => showCardPreview(cardObj.card));
+                domCard.addEventListener('mouseleave', hideCardPreview);
+            }
         }
 
         // Add click handler for effects (eliminate/flip/shift/return)
@@ -813,12 +810,21 @@ function renderStack(line, target) {
             }
         };
 
-        domCard.style.zIndex = idx;
+        const wrapper = document.createElement('div');
+        wrapper.className = 'card-field-wrapper';
+
+        if (isV2) {
+            // Position with absolute offset for overlap
+            wrapper.style.top = (idx * V2_OFFSET) + 'px';
+            wrapper.style.zIndex = idx + 1;
+            // Mark field cards to prevent hand-card hover styles
+            domCard.classList.add('card-in-field');
+        } else {
+            domCard.style.zIndex = idx;
+        }
 
         if (isUncovered) domCard.classList.add('uncovered');
 
-        const wrapper = document.createElement('div');
-        wrapper.className = 'card-field-wrapper';
         wrapper.appendChild(domCard);
         stackEl.appendChild(wrapper);
     });
