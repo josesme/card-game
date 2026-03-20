@@ -4,14 +4,28 @@ Versión digital del juego de cartas **COMPILE**, donde compites contra una IA e
 
 ## Cómo ejecutar
 
+### Opción 1: Sin terminal (la más fácil)
+
+1. Descomprime `compile-project-git.tar.gz`
+2. Abre la carpeta `compile-project/`
+3. Haz doble clic en `launcher.html` (o `JUGAR.html`)
+4. El juego abre en tu navegador — clic en "JUGAR AHORA"
+
+No necesitas terminal, Python, Git ni Node.js.
+
+### Opción 2: Con servidor local (recomendado para desarrollo)
+
 ```bash
-# Servidor local con npx (recomendado)
 npx serve . -p 8000
 # Abre: http://localhost:8000/src/
-
-# Alternativa con npm
-npm run dev
 ```
+
+### Opción 3: Con scripts
+
+- **Windows:** doble clic en `START.bat`
+- **Mac/Linux:** doble clic en `START.sh` (o `./START.sh`)
+
+Espera a que diga "Iniciando servidor..." y abre `http://localhost:8000`.
 
 ## Cómo Jugar
 
@@ -44,16 +58,22 @@ Se muestran los 15 protocolos disponibles. Tú y la IA elegís alternativamente:
 
 ```
 compile-project/
+├── launcher.html         # Doble clic para jugar sin servidor
+├── JUGAR.html            # Alternativa a launcher.html
+├── START.bat             # Lanzador Windows
+├── START.sh              # Lanzador Mac/Linux
 ├── src/
 │   ├── index.html          # Pantalla principal y selección de dificultad
 │   ├── draft.html          # Fase de selección de protocolos
 │   ├── game.html           # Mesa de juego
-│   ├── logic.js            # Motor del juego (~2400 líneas)
-│   ├── abilities-engine.js # Motor de habilidades (~2700 líneas)
-│   ├── minimax.js          # IA minimax con alpha-beta (~675 líneas)
-│   ├── ai-evaluator.js     # Evaluador de posición para IA (~405 líneas)
-│   ├── cards-data.js       # Datos de las 90 cartas (15 protocolos × 6)
-│   └── style.css           # Estilos globales (~1275 líneas)
+│   ├── logic.js            # Motor del juego
+│   ├── abilities-engine.js # Motor de habilidades de cartas
+│   ├── minimax.js          # IA minimax con alpha-beta
+│   ├── ai-evaluator.js     # Evaluador de posición para IA
+│   ├── cards-data.js       # Datos de las 180 cartas (Main 1 + Main 2)
+│   └── style.css           # Estilos globales
+├── tests/
+│   └── main2-cards.test.js # Tests del motor de habilidades
 ├── docs/
 │   ├── CODEX.md            # Fuente única de verdad: reglas, erratas, FAQ
 │   └── BACKLOG.md          # Backlog de tareas pendientes
@@ -65,7 +85,7 @@ compile-project/
 | Componente | Estado |
 |---|---|
 | Motor de juego (ciclo de turno, compilación, mano) | ✅ Completo |
-| 90 cartas con efectos (15 protocolos × 6 cartas) | ✅ Completo |
+| 180 cartas con efectos (Main 1 + Main 2, 30 protocolos × 6) | ✅ Completo |
 | Draft con selección alternada 1-2-2-1 | ✅ Completo |
 | IA minimax con alpha-beta pruning (5 niveles) | ✅ Completo |
 | Evaluador de posición (7 métricas) | ✅ Completo |
@@ -77,11 +97,16 @@ compile-project/
 
 | Métrica | Valor |
 |---|---|
-| Protocolos | 15 |
-| Cartas totales | 90 (6 por protocolo) |
-| Líneas de código | ~8500 |
+| Protocolos | 30 (15 Main 1 + 15 Main 2) |
+| Cartas totales | 180 (6 por protocolo) |
 | Niveles de dificultad | 5 |
 | Métricas del evaluador IA | 7 |
+
+## Solución de problemas
+
+- **Página en blanco:** pulsa F5 o abre `launcher.html`
+- **No puedo hacer clic:** espera a que cargue y pulsa Ctrl+F5
+- **La IA no juega:** abre F12 > Console para ver los logs
 
 ## Documentación
 
