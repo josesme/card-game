@@ -1137,6 +1137,19 @@ const CARD_EFFECTS = {
 
 /**
  * Inicia la resolución de un conjunto de efectos para una carta
+/**
+ * Voltea una carta y dispara onPlay si pasó de bocabajo a bocarriba (top de pila).
+ * Regla CODEX: "Cuando un texto activo entra en juego (al voltearse boca arriba)"
+ */
+function flipAndTrigger(cardObj, line, owner) {
+  const wasFaceDown = cardObj.faceDown;
+  cardObj.faceDown = !cardObj.faceDown;
+  if (wasFaceDown && typeof triggerFlipFaceUp === 'function') {
+    triggerFlipFaceUp(cardObj, line, owner);
+  }
+}
+
+/**
  * @param {Object} card - La carta que dispara el efecto
  * @param {string} trigger - Tipo de disparador: onPlay, onFlip, onTurnStart, etc.
  * @param {string} targetPlayer - 'player' o 'ai'
@@ -1305,7 +1318,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         LINES.forEach(line => {
           const stack = gameState.field[line][targetPlayer];
           const cardObj = stack.find(c => c.card.nombre === triggerCardName);
-          if (cardObj) { cardObj.faceDown = !cardObj.faceDown; flipped = true; }
+          if (cardObj) { flipAndTrigger(cardObj, line, targetPlayer); flipped = true; }
         });
       }
       if (flipped) {
@@ -1947,7 +1960,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           const stack = gameState.field[l][actualTarget];
           const cardObj = stack[stack.length - 1];
           gameState.lastFlippedCard = { cardObj, line: l };
-          cardObj.faceDown = !cardObj.faceDown;
+          flipAndTrigger(cardObj, l, actualTarget);
         }
         processAbilityEffect();
       }
@@ -1982,7 +1995,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           const stack = gameState.field[l][actualTarget2];
           const cardObj = stack[stack.length - 1];
           gameState.lastFlippedCard = { cardObj, line: l };
-          cardObj.faceDown = !cardObj.faceDown;
+          flipAndTrigger(cardObj, l, actualTarget2);
         }
         processAbilityEffect();
       }
@@ -2148,7 +2161,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           LINES.forEach(line => {
             const stack = gameState.field[line][targetPlayer];
             const self = stack.find(c => c.card.nombre === triggerCardName);
-            if (self) self.faceDown = !self.faceDown;
+            if (self) flipAndTrigger(self, line, targetPlayer);
           });
         }
         processAbilityEffect();
@@ -2577,7 +2590,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         if (hasCoveredOwn) {
           const covered = gameState.field[line].ai.slice(0, -1);
           const bestIdx = covered.reduce((b, c, i) => c.card.valor > covered[b].card.valor ? i : b, 0);
-          gameState.field[line].ai[bestIdx].faceDown = !gameState.field[line].ai[bestIdx].faceDown;
+          flipAndTrigger(gameState.field[line].ai[bestIdx], line, 'ai');
         } else if (hasCoveredOpp) {
           const coveredOpp = gameState.field[line].player.slice(0, -1);
           // Voltear la de mayor valor bocaarriba → bocabajo para reducir puntuación rival
@@ -2869,7 +2882,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           const stack = gameState.field[l][opponent];
           const cardObj = stack[stack.length - 1];
           gameState.lastFlippedCard = { cardObj, line: l };
-          cardObj.faceDown = !cardObj.faceDown;
+          flipAndTrigger(cardObj, l, opponent);
         }
         processAbilityEffect();
       }
@@ -3168,7 +3181,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           const stack = gameState.field[l][p];
           // Cualquier carta que no sea la top está cubierta — voltea la inmediatamente bajo la top
           if (stack.length >= 2) {
-            stack[stack.length - 2].faceDown = !stack[stack.length - 2].faceDown;
+            flipAndTrigger(stack[stack.length - 2], l, p);
           }
         });
       });
@@ -3535,7 +3548,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       if (calculateScore(gameState, line, opponent) > calculateScore(gameState, line, targetPlayer)) {
         const stack = gameState.field[line][targetPlayer];
         const cardObj = stack.find(c => c.card.nombre === triggerCardName);
-        if (cardObj) { cardObj.faceDown = !cardObj.faceDown; updateUI(); }
+        if (cardObj) { flipAndTrigger(cardObj, line, targetPlayer); updateUI(); }
       }
       processAbilityEffect();
       break;
@@ -3711,7 +3724,9 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             if (done) return;
             const st = gameState.field[l][p];
             if (st.length > 0 && st[st.length - 1].card.valor > handCount) {
+              const wasFaceDown = st[st.length - 1].faceDown;
               st[st.length - 1].faceDown = !st[st.length - 1].faceDown;
+              if (wasFaceDown && typeof triggerFlipFaceUp === 'function') triggerFlipFaceUp(st[st.length - 1], l, p);
               done = true;
             }
           });
@@ -3737,7 +3752,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             if (done) return;
             const st = gameState.field[l][p];
             if (st.length > 0 && st[st.length - 1].card.valor > minVal) {
-              st[st.length - 1].faceDown = !st[st.length - 1].faceDown;
+              flipAndTrigger(st[st.length - 1], l, p);
               done = true;
             }
           });
@@ -3766,7 +3781,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           btnYes.onclick = () => {
             confirmArea.classList.add('hidden');
             gameState.effectContext = null;
-            selfCard.faceDown = !selfCard.faceDown;
+            flipAndTrigger(selfCard, line, targetPlayer);
             updateUI();
             processAbilityEffect();
           };
@@ -3778,7 +3793,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         } else { processAbilityEffect(); }
       } else {
         // IA: voltea si está bocarriba (para ocultarla) — decisión simple
-        selfCard.faceDown = !selfCard.faceDown;
+        flipAndTrigger(selfCard, line, targetPlayer);
         updateUI();
         processAbilityEffect();
       }
@@ -3791,7 +3806,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         const line = gameState.currentEffectLine;
         if (line) {
           const st = gameState.field[line][targetPlayer];
-          if (st.length > 0) { st[st.length - 1].faceDown = !st[st.length - 1].faceDown; updateUI(); }
+          if (st.length > 0) { flipAndTrigger(st[st.length - 1], line, targetPlayer); updateUI(); }
         }
       }
       processAbilityEffect();
@@ -3806,7 +3821,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         startEffect('flip', opponent, 1, { forceLine: line });
       } else {
         const st = gameState.field[line][opponent];
-        st[st.length - 1].faceDown = !st[st.length - 1].faceDown;
+        flipAndTrigger(st[st.length - 1], line, opponent);
         updateUI();
         processAbilityEffect();
       }
@@ -3898,7 +3913,12 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           if (done) return;
           const st = gameState.field[l].ai;
           const fd = st.filter(c => c.faceDown);
-          if (fd.length > 0) { fd.sort((a, b) => b.card.valor - a.card.valor)[0].faceDown = false; done = true; }
+          if (fd.length > 0) {
+            const flipped = fd.sort((a, b) => b.card.valor - a.card.valor)[0];
+            flipped.faceDown = false;
+            if (typeof triggerFlipFaceUp === 'function') triggerFlipFaceUp(flipped, l, 'ai');
+            done = true;
+          }
         });
         processAbilityEffect();
       }
@@ -4297,7 +4317,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           if (done) return;
           const st = gameState.field[l].player;
           if (st.length > 0 && st[st.length - 1].card.valor < protoCount) {
-            st[st.length - 1].faceDown = !st[st.length - 1].faceDown;
+            flipAndTrigger(st[st.length - 1], l, 'player');
             done = true;
           }
         });

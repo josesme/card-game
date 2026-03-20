@@ -1485,8 +1485,10 @@ function handleFieldCardClick(line, target, cardIdx) {
             updateStatus(`${cardObj.card.nombre} no puede ser volteada`);
             return;
         }
+        const wasFaceDown = cardObj.faceDown;
         cardObj.faceDown = !cardObj.faceDown;
         gameState.lastFlippedCard = { cardObj, line };
+        if (wasFaceDown) triggerFlipFaceUp(cardObj, line, target);
         ctx.selected.push(cardObj);
     } else if (ctx.type === 'shift') {
         const cardObj = gameState.field[line][target][cardIdx];
@@ -1756,11 +1758,18 @@ function resolveEffectAI(type, target, count, opts = {}) {
                 const stack = gameState.field[line][actualTarget];
                 if (actualTarget === 'player') {
                     // Flip top card of opponent's best line (face-up→face-down hurts them)
-                    stack[stack.length - 1].faceDown = !stack[stack.length - 1].faceDown;
+                    const topCard = stack[stack.length - 1];
+                    topCard.faceDown = !topCard.faceDown;
+                    // Si pasó de bocabajo a bocarriba, disparar onPlay
+                    if (!topCard.faceDown) triggerFlipFaceUp(topCard, line, actualTarget);
                 } else {
                     // Flip our own face-down card in best line (activate its value)
                     const fdIdx = [...stack].reverse().findIndex(c => c.faceDown);
-                    if (fdIdx >= 0) stack[stack.length - 1 - fdIdx].faceDown = false;
+                    if (fdIdx >= 0) {
+                        const flipped = stack[stack.length - 1 - fdIdx];
+                        flipped.faceDown = false;
+                        triggerFlipFaceUp(flipped, line, actualTarget);
+                    }
                 }
             }
         }
@@ -1886,12 +1895,31 @@ function triggerUncovered(line, owner) {
     }
 }
 
+/**
+ * Dispara onPlay si una carta acaba de voltearse bocarriba y es la top de su pila.
+ * Regla CODEX: "Cuando un texto activo entra en juego (al jugarse, voltearse boca arriba o descubrirse)"
+ */
+function triggerFlipFaceUp(cardObj, line, owner) {
+    if (cardObj.faceDown) return; // solo si quedó bocarriba
+    const stack = gameState.field[line][owner];
+    if (stack.length === 0) return;
+    if (stack[stack.length - 1] !== cardObj) return; // solo top (descubierta)
+    if (typeof triggerCardEffect !== 'function') return;
+    const cardId = cardObj.card.id;
+    if (gameState.uncoveredThisTurn.has(cardId)) return;
+    gameState.uncoveredThisTurn.add(cardId);
+    gameState.currentEffectLine = line;
+    triggerCardEffect(cardObj.card, 'onPlay', owner);
+}
+
 function flipCardInField(cardId) {
     LINES.forEach(line => {
         ['player', 'ai'].forEach(p => {
             gameState.field[line][p].forEach(cardObj => {
                 if (cardObj.card.id === cardId) {
+                    const wasFaceDown = cardObj.faceDown;
                     cardObj.faceDown = !cardObj.faceDown;
+                    if (wasFaceDown) triggerFlipFaceUp(cardObj, line, p);
                 }
             });
         });

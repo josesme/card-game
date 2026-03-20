@@ -113,6 +113,16 @@ Durante la fase "Verificar Compilación": si tienes **valor ≥ 10** en una lín
 - Una carta cubierta **no puede descubrirse** mientras está en una pila. Solo la carta superior está descubierta.
 - El valor y el comando superior (Persistent) son siempre visibles aunque la carta esté cubierta.
 
+### Activación del Comando Central
+El comando central (texto del medio) de una carta se activa en **3 casos**:
+1. **Al jugarse boca arriba** — durante la fase de acción.
+2. **Al voltearse de bocabajo a bocarriba** — por cualquier efecto de volteo.
+3. **Al descubrirse** — cuando la carta que la cubría es eliminada, desplazada o devuelta.
+
+> **Excepción:** Suerte 1 voltea la carta "sin comandos centrales" (regla de carta).
+
+> Solo se activa si la carta es la **descubierta** (top de la pila). Una carta cubierta que se voltea bocarriba no activa su comando central.
+
 ### Resolución de Efectos (LIFO)
 - Cuando un texto activo entra en juego (al jugarse, voltearse boca arriba o descubrirse), se resuelve **interrumpiendo cualquier otro texto hasta completarse**.
 - **Último en entrar, primero en salir (LIFO).**
