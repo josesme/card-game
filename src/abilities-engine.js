@@ -1137,19 +1137,21 @@ function triggerCardEffect(card, trigger, targetPlayer, opts = {}) {
   const cardName = card.nombre;
   const effectDef = CARD_EFFECTS[cardName];
 
-  // Miedo 0: bloquear onPlay del rival si tiene disableOpponentMiddleCommands activo (cualquier carta boca arriba)
+  // Miedo 0: bloquear onPlay del rival solo durante el turno del dueño de Miedo 0
   if (trigger === 'onPlay') {
     const rival = targetPlayer === 'player' ? 'ai' : 'player';
-    const blocked = LINES.some(l =>
-      gameState.field[l][rival].some(cardObj => {
-        if (cardObj.faceDown) return false;
-        const ef = CARD_EFFECTS[cardObj.card.nombre];
-        return ef && ef.persistent && ef.persistent.disableOpponentMiddleCommands;
-      })
-    );
-    if (blocked) {
-      console.log(`⛔ Miedo 0 activo — onPlay de ${cardName} bloqueado`);
-      return;
+    if (gameState.turn === rival) {
+      const blocked = LINES.some(l =>
+        gameState.field[l][rival].some(cardObj => {
+          if (cardObj.faceDown) return false;
+          const ef = CARD_EFFECTS[cardObj.card.nombre];
+          return ef && ef.persistent && ef.persistent.disableOpponentMiddleCommands;
+        })
+      );
+      if (blocked) {
+        console.log(`⛔ Miedo 0 activo — onPlay de ${cardName} bloqueado (turno de ${rival})`);
+        return;
+      }
     }
   }
 

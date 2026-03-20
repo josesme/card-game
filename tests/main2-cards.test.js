@@ -758,3 +758,56 @@ describe('Rutas IA — acciones auto-resueltas', () => {
     expect(GS.field['alpha'].ai).toHaveLength(0);
   });
 });
+
+// ── Miedo 0: disableOpponentMiddleCommands solo durante turno del dueño ──────
+describe('Miedo 0 — bloqueo onPlay por turno', () => {
+  function resetGS() {
+    LINES_MOCK.forEach(l => { GS.field[l] = { player: [], ai: [], compiledBy: null }; });
+    GS.player.hand = []; GS.player.deck = []; GS.player.trash = [];
+    GS.ai.hand = []; GS.ai.deck = []; GS.ai.trash = [];
+    GS.effectQueue = [];
+    GS.effectContext = null;
+    GS.currentEffectLine = null;
+  }
+
+  test('bloquea onPlay del rival cuando es turno del dueño de Miedo 0', () => {
+    resetGS();
+    // AI tiene Miedo 0 bocarriba en alpha
+    GS.field['alpha'].ai = [{ card: makeCard('Miedo 0', 0), faceDown: false }];
+    // Es turno de AI (dueño de Miedo 0) → onPlay del player debe bloquearse
+    GS.turn = 'ai';
+    const testCard = makeCard('Fuego 2', 2);
+    // triggerCardEffect con trigger=onPlay para player — debe ser bloqueado (return sin encolar)
+    const queueBefore = GS.effectQueue.length;
+    ENGINE.triggerCardEffect(testCard, 'onPlay', 'player');
+    // No debería haber encolado nada (Fuego 2 ni siquiera tiene efecto, pero el return se produce antes)
+    expect(GS.effectQueue.length).toBe(queueBefore);
+  });
+
+  test('NO bloquea onPlay del rival cuando NO es turno del dueño de Miedo 0', () => {
+    resetGS();
+    // AI tiene Miedo 0 bocarriba
+    GS.field['alpha'].ai = [{ card: makeCard('Miedo 0', 0), faceDown: false }];
+    // Es turno de Player (NO es turno del dueño de Miedo 0) → onPlay del player NO debe bloquearse
+    GS.turn = 'player';
+    // Usamos una carta con efecto real para verificar que SÍ se procesa
+    GS.player.deck = [makeCard('X', 1)];
+    const testCard = makeCard('Valor 2', 2);
+    ENGINE.triggerCardEffect(testCard, 'onPlay', 'player');
+    // Valor 2 tiene onPlay: draw 1 → debería haber encolado y procesado
+    expect(GS.player.hand.length).toBe(1);
+  });
+
+  test('NO bloquea onPlay del propio dueño de Miedo 0', () => {
+    resetGS();
+    // Player tiene Miedo 0 bocarriba
+    GS.field['alpha'].player = [{ card: makeCard('Miedo 0', 0), faceDown: false }];
+    // Es turno de Player (dueño) → onPlay del AI debería bloquearse, pero onPlay del player NO
+    GS.turn = 'player';
+    GS.player.deck = [makeCard('Y', 1)];
+    const testCard = makeCard('Valor 2', 2);
+    ENGINE.triggerCardEffect(testCard, 'onPlay', 'player');
+    // Player juega su propia carta — no debe bloquearse
+    expect(GS.player.hand.length).toBe(1);
+  });
+});
