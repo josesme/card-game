@@ -369,6 +369,7 @@ function startRound() {
 
 function playerSelectProtocol(protocol) {
     if (!draftState.isPlayerTurn || draftState.isComplete) return;
+    if (draftState.selectionsNeeded <= 0) return;
     if (!draftState.available.includes(protocol)) return;
 
     draftState.playerSelected.push(protocol);
@@ -378,6 +379,7 @@ function playerSelectProtocol(protocol) {
     updateDraftDisplay();
 
     if (draftState.selectionsNeeded === 0) {
+        draftState.isPlayerTurn = false; // bloquear clicks inmediatamente
         draftState.round++;
         setTimeout(() => startRound(), 500);
     }
@@ -494,6 +496,10 @@ function aiSelectProtocols(count) {
 
 function completeDraft() {
     draftState.isComplete = true;
+    draftState.isPlayerTurn = false;
+    // Protección: truncar a máximo 3 protocolos por jugador
+    draftState.playerSelected = draftState.playerSelected.slice(0, 3);
+    draftState.aiSelected = draftState.aiSelected.slice(0, 3);
     updateDraftDisplay();
     document.getElementById('start-game-btn').classList.add('ready');
 }
