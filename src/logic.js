@@ -481,14 +481,13 @@ function hideCardPreview() {
 }
 
 function createCardHTML(card, faceDown = false) {
-    if (!card) return '';
-    
     if (faceDown) {
         return `<div class="card face-down">
             <div class="card-back-value">2</div>
             <div class="card-back-title">COMPILE</div>
         </div>`;
     }
+    if (!card) return '';
     
     const color = PROTOCOL_DEFS[card.protocol] ? PROTOCOL_DEFS[card.protocol].color : 'var(--accent-glow)';
     
