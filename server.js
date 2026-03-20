@@ -52,6 +52,24 @@ const server = http.createServer((req, res) => {
   });
 });
 
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Error: el puerto ${PORT} ya está en uso.`);
+    console.error('Cierra la instancia anterior o usa otro puerto.');
+    process.exit(1);
+  }
+  throw err;
+});
+
+process.on('SIGINT', () => {
+  console.log('\nCerrando servidor...');
+  server.close(() => process.exit(0));
+});
+
+process.on('SIGTERM', () => {
+  server.close(() => process.exit(0));
+});
+
 server.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}/`);
 });
