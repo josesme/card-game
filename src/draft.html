@@ -250,10 +250,27 @@
             z-index: 100;
         }
         #btn-fullscreen:hover { background: rgba(0,212,255,0.25); }
+        .nav-btn {
+            position: fixed;
+            top: 12px;
+            background: rgba(0,212,255,0.1);
+            border: 1px solid #00d4ff;
+            color: #00d4ff;
+            border-radius: 8px;
+            padding: 8px 14px;
+            cursor: pointer;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.75em;
+            letter-spacing: 1px;
+            transition: background 0.2s;
+            z-index: 100;
+        }
+        .nav-btn:hover { background: rgba(0,212,255,0.25); }
     </style>
 </head>
 <body>
 
+<button class="nav-btn" style="left: 16px;" onclick="window.location.href='/src/index.html'">← VOLVER</button>
 <button id="btn-fullscreen" onclick="toggleFullscreen()" title="Pantalla completa">⛶ FULLSCREEN</button>
 <div id="draft-viewport">
 <div id="draft-container">
