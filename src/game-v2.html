@@ -670,6 +670,24 @@
             });
         });
     }
+
+    // Close hand overlay and log when clicking outside
+    document.addEventListener('click', function(e) {
+        const handOverlay = document.getElementById('hand-overlay');
+        const handToggle = document.getElementById('hand-toggle');
+        if (handOverlay && handOverlay.classList.contains('open')) {
+            if (!handOverlay.contains(e.target) && !handToggle.contains(e.target)) {
+                handOverlay.classList.remove('open');
+            }
+        }
+        const logOverlay = document.getElementById('log-overlay');
+        const logToggle = document.getElementById('log-toggle');
+        if (logOverlay && logOverlay.classList.contains('open')) {
+            if (!logOverlay.contains(e.target) && !logToggle.contains(e.target)) {
+                logOverlay.classList.remove('open');
+            }
+        }
+    });
 </script>
 </body>
 </html>
