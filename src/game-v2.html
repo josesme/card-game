@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>COMPILE - Mesa de Juego (v2)</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&family=Teko:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="design-tokens.css">
     <link rel="stylesheet" href="style.css">
     <style>
         body {
@@ -28,7 +29,7 @@
         }
 
         #btn-fullscreen:hover {
-            background: rgba(0,212,255,0.25) !important;
+            background: rgba(255,217,61,0.2) !important;
         }
 
         :fullscreen body, :-webkit-full-screen body {
@@ -52,7 +53,7 @@
 
         #hand-overlay .hand-bar {
             background: rgba(10,14,39,0.97);
-            border-top: 2px solid #00d4ff;
+            border-top: 2px solid var(--player-primary);
             flex-shrink: 0;
             cursor: pointer;
             padding: 8px 20px;
@@ -66,7 +67,7 @@
         }
 
         #hand-overlay .hand-bar .hand-title {
-            color: #00d4ff;
+            color: var(--player-primary);
             font-size: 0.9em;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -113,9 +114,9 @@
             bottom: 52px;
             right: 12px;
             z-index: 900;
-            background: rgba(0,212,255,0.15);
-            border: 1px solid #00d4ff;
-            color: #00d4ff;
+            background: rgba(255,217,61,0.1);
+            border: 1px solid var(--player-primary);
+            color: var(--player-primary);
             border-radius: 50%;
             width: 44px;
             height: 44px;
@@ -126,7 +127,7 @@
             justify-content: center;
             transition: background 0.2s;
         }
-        #log-toggle:hover { background: rgba(0,212,255,0.3); }
+        #log-toggle:hover { background: rgba(255,217,61,0.2); }
 
         #log-overlay {
             position: fixed;
@@ -134,7 +135,7 @@
             width: 340px;
             height: 100%;
             background: rgba(10,14,39,0.97);
-            border-left: 2px solid #00d4ff;
+            border-left: 2px solid var(--player-primary);
             z-index: 901;
             display: flex;
             flex-direction: column;
@@ -151,7 +152,7 @@
             border-bottom: 1px solid #333;
         }
         #log-overlay .log-header span {
-            color: #00d4ff;
+            color: var(--player-primary);
             font-size: 1em;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -199,33 +200,68 @@
             text-align: center;
             flex: 1;
             min-width: 0;
+            position: relative;
+            overflow: hidden;
         }
         .proto-box.player {
-            border: 2px solid #00d4ff;
+            border: 2px solid var(--player-primary);
             background: linear-gradient(135deg, rgba(26,31,58,0.85), rgba(30,41,59,0.7));
-            box-shadow: 0 0 10px #00d4ff22;
+            box-shadow: 0 0 10px var(--player-primary)22;
         }
         .proto-box.player .proto-card-name {
             font-family: 'Orbitron', monospace;
             font-weight: bold;
             font-size: 0.7em;
-            color: #00d4ff;
+            color: var(--player-primary);
         }
         .proto-box.ai {
-            border: 2px solid #ef4444;
+            border: 2px solid var(--ai-primary);
             background: linear-gradient(135deg, rgba(26,31,58,0.85), rgba(30,41,59,0.7));
-            box-shadow: 0 0 10px #ef444422;
+            box-shadow: 0 0 10px var(--ai-primary)22;
         }
         .proto-box.ai .proto-card-name {
             font-family: 'Orbitron', monospace;
             font-weight: bold;
             font-size: 0.7em;
-            color: #ef4444;
+            color: var(--ai-primary);
         }
         .proto-box .proto-card-status {
             font-size: 0.55em;
             color: #aaa;
             line-height: 1.2;
+        }
+
+        /* Proto box con imagen de cabecera de carta */
+        .proto-box.proto-img {
+            background-size: cover;
+            background-position: top center;
+            padding: 0;
+            height: 42px;
+            border: none;
+            box-shadow: none !important;
+        }
+        .proto-box.proto-img .proto-card-name {
+            display: none;
+        }
+        .proto-box.proto-img .proto-card-status {
+            display: none;
+        }
+        .proto-box.proto-img .proto-score {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Teko', sans-serif;
+            font-size: 2.6em;
+            font-weight: 700;
+            color: #F5F5F5;
+            text-shadow: 0 0 10px rgba(0,0,0,0.8);
+            z-index: 1;
+            background: #3a3f4a;
+            padding: 6px 13px 0px;
+            margin-bottom: -2px;
+            border-radius: 4px;
+            line-height: 1.1;
         }
 
         /* Line container: player | separator | AI side by side */
@@ -239,7 +275,7 @@
             overflow-y: auto;
             overflow-x: hidden;
             scrollbar-width: thin;
-            scrollbar-color: #00d4ff33 transparent;
+            scrollbar-color: rgba(255,217,61,0.2) transparent;
         }
 
         /* Vertical stacks */
@@ -250,12 +286,40 @@
             min-height: 260px;
         }
 
+        .ai-stack.vertical-stack::after {
+            content: '';
+            position: absolute;
+            bottom: -450px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 60%;
+            background: url('../images/Background/IA.png') center bottom / contain no-repeat;
+            opacity: 0.07;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .player-stack.vertical-stack::after {
+            content: '';
+            position: absolute;
+            bottom: -450px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 60%;
+            background: url('../images/Background/Human.png') center bottom / contain no-repeat;
+            opacity: 0.07;
+            pointer-events: none;
+            z-index: 0;
+        }
+
         /* Cards inside stacks: absolute positioned for overlap */
         .vertical-stack .card-field-wrapper {
             position: absolute;
             left: 50%;
             transform: translateX(-50%);
-            width: 185px;
+            width: 209px;
         }
 
         /* Vertical separator between player and AI */
@@ -270,10 +334,17 @@
 
         /* ── Field cards (full size like hand) ──────── */
         .vertical-stack .card {
-            width: 185px;
-            height: 245px;
+            width: 209px;
+            height: 277px;
             font-size: 1em;
         }
+        /* ── Hand cards larger in v2 ───────────── */
+        #hand-overlay #player-hand .card {
+            width: 215px;
+            height: 300px;
+            font-size: 1.16em;
+        }
+
         /* ── Card with image background (v2) ────── */
         .card.card-img {
             background-size: cover;
@@ -282,6 +353,8 @@
             position: relative;
             padding: 0;
             overflow: hidden;
+            border: none !important;
+            box-shadow: none !important;
         }
 
         .card.card-img.face-down {
@@ -293,7 +366,7 @@
         .card-img-zone {
             position: absolute;
             left: 5%;
-            right: 10%;
+            right: 5%;
             display: flex;
             align-items: center;
             padding: 4px 6px;
@@ -304,9 +377,9 @@
             box-sizing: border-box;
             overflow: hidden;
         }
-        .card-img-zone.slot-start  { top: 26%; bottom: 52%; }
-        .card-img-zone.slot-action { top: 50%; bottom: 30%; }
-        .card-img-zone.slot-end    { top: 72%; bottom: 4%;  }
+        .card-img-zone.slot-start  { top: calc(24% - 6px); height: calc(24% + 1px); }
+        .card-img-zone.slot-action { top: calc(50% - 8px); height: calc(24% + 1px); }
+        .card-img-zone.slot-end    { top: calc(74% - 2px); height: calc(24% + 1px); }
 
         .card-img-zone-text {
             font-family: 'Space Mono', monospace;
@@ -317,14 +390,14 @@
 
 
         /* Compiled line indicator */
-        .battle-column.compiled-player { border-color: #00d4ff; box-shadow: 0 0 12px #00d4ff44; }
-        .battle-column.compiled-ai { border-color: #ef4444; box-shadow: 0 0 12px #ef444444; }
+        .battle-column.compiled-player { border-color: var(--player-primary); box-shadow: 0 0 12px rgba(255,217,61,0.27); }
+        .battle-column.compiled-ai { border-color: var(--ai-primary); box-shadow: 0 0 12px rgba(114,46,154,0.27); }
 
         /* ── NAV BUTTONS ────────────────────────────── */
         .nav-btn {
-            background: rgba(0,212,255,0.1);
-            border: 1px solid #00d4ff;
-            color: #00d4ff;
+            background: rgba(255,217,61,0.1);
+            border: 1px solid var(--player-primary);
+            color: var(--player-primary);
             border-radius: 8px;
             padding: 8px 14px;
             cursor: pointer;
@@ -333,7 +406,7 @@
             letter-spacing: 1px;
             transition: background 0.2s;
         }
-        .nav-btn:hover { background: rgba(0,212,255,0.25); }
+        .nav-btn:hover { background: rgba(255,217,61,0.2); }
     </style>
 </head>
 <body>
@@ -345,8 +418,8 @@
             <button class="nav-btn" onclick="window.location.href='/src/draft.html'">NUEVO DRAFT</button>
             <button class="nav-btn" onclick="window.location.href='/src/index.html'">ABANDONAR</button>
         </div>
-        <img src="../images/compile.png" alt="COMPILE" style="height: auto; max-height: 50px; filter: drop-shadow(0 0 12px rgba(0, 212, 255, 0.4));">
-        <button id="btn-fullscreen" onclick="toggleFullscreen()" title="Pantalla completa" style="position: absolute; right: 0; background: rgba(0,212,255,0.1); border: 1px solid #00d4ff; color: #00d4ff; border-radius: 8px; padding: 8px 14px; cursor: pointer; font-size: 1.1em; transition: background 0.2s;">
+        <img src="../images/Background/Compile.png" alt="COMPILE" style="height: auto; max-height: 50px; filter: drop-shadow(0 0 12px rgba(255,217,61,0.4));">
+        <button id="btn-fullscreen" onclick="toggleFullscreen()" title="Pantalla completa" style="position: absolute; right: 0; background: rgba(255,217,61,0.1); border: 1px solid var(--player-primary); color: var(--player-primary); border-radius: 8px; padding: 8px 14px; cursor: pointer; font-size: 1.1em; transition: background 0.2s;">
             ⛶
         </button>
     </header>
@@ -435,24 +508,24 @@
     <div class="hand-bar">
       <div class="hand-bar-inner">
         <div style="display: flex; align-items: center; gap: 8px; width: 220px; flex-shrink: 0;">
-            <span style="color: #00d4ff; font-size: 1em;">👤</span>
+            <span style="color: var(--player-primary); font-size: 1em;">👤</span>
             <span class="stat-label">Mazo</span>
-            <span id="player-deck-count" class="stat-value" style="color: #00d4ff;">0</span>
+            <span id="player-deck-count" class="stat-value" style="color: var(--player-primary);">0</span>
             <span class="stat-label">Desc.</span>
-            <span id="player-trash-count" class="stat-value" style="color: #ef4444;">0</span>
-            <button id="player-deck-btn" title="Recargar Mazo" style="background: rgba(0,212,255,0.15); color: #00d4ff; border: 1px solid #00d4ff55; padding: 3px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75em; font-weight: bold; font-family: 'Space Mono', monospace;">🔄</button>
+            <span id="player-trash-count" class="stat-value" style="color: var(--player-accent);">0</span>
+            <button id="player-deck-btn" title="Recargar Mazo" style="background: rgba(255,217,61,0.15); color: var(--player-primary); border: 1px solid rgba(255,217,61,0.33); padding: 5px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: bold; font-family: 'Space Mono', monospace; text-transform: uppercase; letter-spacing: 0.5px;">Actualizar</button>
         </div>
         <div id="discard-banner"></div>
         <button id="btn-stop-discard" class="hidden" style="background:#f59e0b;color:#000;border:none;border-radius:5px;padding:4px 14px;cursor:pointer;font-weight:bold;font-size:0.9em;">Detener descarte</button>
         <div id="game-status" style="flex: 1; text-align: center; color: #facc15; font-weight: bold; font-size: 0.85em;">—</div>
         <div style="display: flex; align-items: center; gap: 8px; width: 220px; flex-shrink: 0; justify-content: flex-end;">
-            <span style="color: #ef4444; font-size: 1em;">🤖</span>
+            <span style="color: var(--ai-primary); font-size: 1em;">🤖</span>
             <span class="stat-label">Mano</span>
             <span id="ai-hand-count" class="stat-value" style="color: #00ff41;">0</span>
             <span class="stat-label">Mazo</span>
-            <span id="ai-deck-count" class="stat-value" style="color: #00d4ff;">0</span>
+            <span id="ai-deck-count" class="stat-value" style="color: var(--ai-primary);">0</span>
             <span class="stat-label">Desc.</span>
-            <span id="ai-trash-count" class="stat-value" style="color: #ef4444;">0</span>
+            <span id="ai-trash-count" class="stat-value" style="color: var(--ai-accent);">0</span>
         </div>
         <span id="hand-count-badge" style="display:none;"></span>
       </div>
@@ -565,7 +638,7 @@
     </div>
     <!-- game-log-box wrapper for logic.js compat -->
     <div id="game-log-box" style="flex: 1; padding: 12px; overflow: hidden; display: flex; flex-direction: column;">
-        <div id="game-log" style="flex: 1; overflow-y: auto; min-height: 0; display: flex; flex-direction: column; gap: 4px; scrollbar-width: thin; scrollbar-color: #00d4ff33 transparent;">
+        <div id="game-log" style="flex: 1; overflow-y: auto; min-height: 0; display: flex; flex-direction: column; gap: 4px; scrollbar-width: thin; scrollbar-color: rgba(255,217,61,0.2) transparent;">
         </div>
     </div>
 </div>

@@ -354,7 +354,12 @@ function initProtocolDisplay() {
             if (statusEl) statusEl.textContent = '';
             pCard.style.borderColor = pColor;
             pCard.style.boxShadow = `0 0 18px ${pColor}44`;
-            if (!pCard.dataset.stackHover) {
+            if (_isV2Layout) {
+                const imgUrl = getCardImageUrl(pProto, 0);
+                if (imgUrl) pCard.classList.add('proto-img');
+                if (imgUrl) pCard.style.backgroundImage = `url('${imgUrl}')`;
+            }
+            if (!_isV2Layout && !pCard.dataset.stackHover) {
                 pCard.dataset.stackHover = '1';
                 pCard.style.cursor = 'pointer';
                 pCard.addEventListener('mouseenter', () => showStackPreview(line, 'player'));
@@ -372,7 +377,12 @@ function initProtocolDisplay() {
             if (statusEl) statusEl.textContent = '';
             aCard.style.borderColor = aColor;
             aCard.style.boxShadow = `0 0 18px ${aColor}44`;
-            if (!aCard.dataset.stackHover) {
+            if (_isV2Layout) {
+                const imgUrl = getCardImageUrl(aProto, 0);
+                if (imgUrl) aCard.classList.add('proto-img');
+                if (imgUrl) aCard.style.backgroundImage = `url('${imgUrl}')`;
+            }
+            if (!_isV2Layout && !aCard.dataset.stackHover) {
                 aCard.dataset.stackHover = '1';
                 aCard.style.cursor = 'pointer';
                 aCard.addEventListener('mouseenter', () => showStackPreview(line, 'ai'));
@@ -834,15 +844,15 @@ function renderStack(line, target) {
     const isV2 = stackEl.classList.contains('vertical-stack');
 
     // V2: dynamic offset — shrinks as stack grows to keep height manageable
-    const V2_CARD_H = 245;
+    const V2_CARD_H = 277;
+    const V2_EXTRA_GAP = 20; // extra gap from 2nd card onwards
     let v2Offset = 100;
     if (isV2 && stack.length > 3) {
-        // Cap total height at ~545px (3-card equivalent), compress offset for 4+ cards
-        v2Offset = Math.max(40, Math.floor((545 - V2_CARD_H) / Math.max(stack.length - 1, 1)));
+        v2Offset = Math.max(40, Math.floor((600 - V2_CARD_H) / Math.max(stack.length - 1, 1)));
     }
     if (isV2) {
-        const totalH = stack.length === 0 ? 0 : (stack.length - 1) * v2Offset + V2_CARD_H;
-        stackEl.style.minHeight = Math.max(totalH, 260) + 'px';
+        const totalH = stack.length === 0 ? 0 : (stack.length - 1) * (v2Offset + V2_EXTRA_GAP) + V2_CARD_H;
+        stackEl.style.minHeight = Math.max(totalH, 280) + 'px';
         stackEl.style.height = totalH + 'px';
     }
 
@@ -893,7 +903,7 @@ function renderStack(line, target) {
 
         if (isV2) {
             // Position with absolute offset for overlap
-            wrapper.style.top = (idx * v2Offset) + 'px';
+            wrapper.style.top = (idx * (v2Offset + 20)) + 'px';
             wrapper.style.zIndex = idx + 1;
             // Mark field cards to prevent hand-card hover styles
             domCard.classList.add('card-in-field');

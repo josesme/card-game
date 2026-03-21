@@ -1,0 +1,45 @@
+/* ============================================================================
+   COMPILE - Design Tokens / Hoja de estilos consistente
+   ============================================================================
+   Paleta base: https://coolors.co/palette/ffe863-ffe150-ffd93d-facb2e-f5bd1f-722e9a-682a92-5d2689-522882-47297b
+
+   Amarillos → Jugador humano
+   Morados  → IA
+   ============================================================================ */
+
+:root {
+    /* ── Jugador (Amarillos) ──────────────────────────── */
+    --player-100: #FFE863;
+    --player-200: #FFE150;
+    --player-300: #FFD93D;
+    --player-400: #FACB2E;
+    --player-500: #F5BD1F;
+
+    /* ── IA (Morados) ─────────────────────────────────── */
+    --ai-100: #722E9A;
+    --ai-200: #682A92;
+    --ai-300: #5D2689;
+    --ai-400: #522882;
+    --ai-500: #47297B;
+
+    /* ── Uso semántico ────────────────────────────────── */
+    --player-primary:    var(--player-300);
+    --player-accent:     var(--player-500);
+    --player-glow:       var(--player-100);
+    --player-border:     var(--player-400);
+    --player-text:       var(--player-300);
+
+    --ai-primary:        var(--ai-100);
+    --ai-accent:         var(--ai-500);
+    --ai-glow:           var(--ai-100);
+    --ai-border:         var(--ai-300);
+    --ai-text:           var(--ai-100);
+
+    /* ── Neutrales (existentes) ───────────────────────── */
+    --bg-dark:           #0a0e27;
+    --bg-card:           #1a1f3a;
+    --bg-overlay:        rgba(10, 14, 39, 0.85);
+    --text-primary:      #e0e0e0;
+    --text-secondary:    #888;
+    --border-subtle:     #333;
+}
