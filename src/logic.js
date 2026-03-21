@@ -355,7 +355,7 @@ function initProtocolDisplay() {
             pCard.style.borderColor = pColor;
             pCard.style.boxShadow = `0 0 18px ${pColor}44`;
             if (_isV2Layout) {
-                const imgUrl = getCardImageUrl(pProto, 0);
+                const imgUrl = getCardImageUrl(pProto, 1);
                 if (imgUrl) pCard.classList.add('proto-img');
                 if (imgUrl) pCard.style.backgroundImage = `url('${imgUrl}')`;
             }
@@ -378,7 +378,7 @@ function initProtocolDisplay() {
             aCard.style.borderColor = aColor;
             aCard.style.boxShadow = `0 0 18px ${aColor}44`;
             if (_isV2Layout) {
-                const imgUrl = getCardImageUrl(aProto, 0);
+                const imgUrl = getCardImageUrl(aProto, 1);
                 if (imgUrl) aCard.classList.add('proto-img');
                 if (imgUrl) aCard.style.backgroundImage = `url('${imgUrl}')`;
             }
@@ -622,7 +622,7 @@ function updateUI() {
     if (aiHandCountEl) {
         const n = gameState.ai.hand.length;
         aiHandCountEl.textContent = n;
-        aiHandCountEl.style.color = n === 0 ? '#ef4444' : '#00ff41';
+        aiHandCountEl.style.color = n === 0 ? '#ef4444' : '#722E9A';
     }
     // V2: update hand count badge
     const handBadge = document.getElementById('hand-count-badge');
