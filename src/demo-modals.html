@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COMPILE - Demo: Effect Overlay</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&family=Teko:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="design-tokens.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0b0f1a;
+            color: #e0e0e0;
+            font-family: 'Space Mono', monospace;
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        h1 {
+            font-family: 'Orbitron', monospace;
+            color: var(--player-primary);
+            font-size: 1.4em;
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+        }
+        .subtitle {
+            color: #888;
+            font-size: 0.78em;
+            margin-bottom: 32px;
+        }
+
+        /* ── BOTONES DE DEMO ── */
+        .demo-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 40px;
+            padding: 16px;
+            background: rgba(26,31,58,0.5);
+            border: 1px solid #333;
+            border-radius: 8px;
+        }
+        .demo-controls button {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.78em;
+            padding: 10px 18px;
+            border: 1px solid;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.2s;
+        }
+        .demo-controls button:hover { transform: translateY(-1px); }
+        .btn-select  { background: rgba(0,212,255,0.12); color: #00d4ff; border-color: #00d4ff; }
+        .btn-reveal  { background: rgba(244,114,182,0.12); color: #f472b6; border-color: #f472b6; }
+        .btn-notify  { background: rgba(250,204,21,0.12); color: #facc15; border-color: #facc15; }
+        .btn-confirm { background: rgba(99,102,241,0.12); color: #818cf8; border-color: #818cf8; }
+
+        /* ── FONDO SIMULADO (mesa de juego) ── */
+        .game-bg {
+            background: rgba(26,31,58,0.3);
+            border: 1px solid #222;
+            border-radius: 12px;
+            height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #444;
+            font-size: 0.85em;
+            position: relative;
+            overflow: hidden;
+        }
+        .game-bg-text {
+            text-align: center;
+            line-height: 1.8;
+        }
+
+        /* ============================================================
+           EFFECT OVERLAY — el nuevo sistema unificado
+           ============================================================ */
+        .effect-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.72);
+            backdrop-filter: blur(3px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+        .effect-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .effect-panel {
+            background: rgba(16,20,42,0.97);
+            border: 2px solid var(--border-subtle);
+            border-radius: 14px;
+            max-width: 620px;
+            width: 94%;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 48px rgba(0,0,0,0.6);
+            animation: panel-enter 0.3s ease-out;
+        }
+        @keyframes panel-enter {
+            from { transform: translateY(20px) scale(0.97); opacity: 0; }
+            to   { transform: translateY(0) scale(1); opacity: 1; }
+        }
+
+        /* ── Header ── */
+        .effect-header {
+            padding: 18px 22px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .effect-header-text {
+            flex: 1;
+        }
+        .effect-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.85em;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+        .effect-subtitle {
+            font-size: 0.72em;
+            color: #888;
+            margin-top: 3px;
+        }
+        .effect-source {
+            font-size: 0.68em;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #aaa;
+            white-space: nowrap;
+        }
+
+        /* ── Card Grid ── */
+        .effect-cards {
+            padding: 18px 22px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .effect-card {
+            width: 120px;
+            height: 168px;
+            border-radius: 8px;
+            border: 2px solid var(--border-subtle);
+            background: var(--bg-card);
+            cursor: default;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .effect-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: top center;
+            display: block;
+            border-radius: 6px;
+        }
+
+        /* Card states */
+        .effect-card.selectable {
+            cursor: pointer;
+            border-color: #00d4ff;
+            box-shadow: 0 0 10px rgba(0,212,255,0.25);
+        }
+        .effect-card.selectable:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 0 20px rgba(0,212,255,0.5);
+            border-color: #00d4ff;
+        }
+        .effect-card.selected {
+            border-color: var(--player-primary);
+            box-shadow: 0 0 16px rgba(255,217,61,0.5);
+            transform: translateY(-4px);
+        }
+        .effect-card.selected::after {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 18px;
+            height: 18px;
+            background: var(--player-primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .effect-card.readonly {
+            opacity: 0.9;
+            cursor: default;
+        }
+        .effect-card.dimmed {
+            opacity: 0.35;
+            cursor: default;
+        }
+
+        /* ── Info strip (between cards and actions) ── */
+        .effect-info {
+            padding: 0 22px;
+            text-align: center;
+        }
+        .effect-counter {
+            font-size: 0.72em;
+            color: #888;
+            padding: 8px 0;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .effect-counter strong {
+            color: var(--player-primary);
+            font-family: 'Orbitron', monospace;
+        }
+
+        /* ── Actions footer ── */
+        .effect-actions {
+            padding: 14px 22px 18px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .effect-btn {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.78em;
+            font-weight: 700;
+            padding: 11px 28px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.5px;
+        }
+        .effect-btn:hover { transform: translateY(-1px); }
+
+        .effect-btn-primary {
+            background: var(--player-primary);
+            color: var(--bg-dark);
+            border: 1px solid var(--player-border);
+        }
+        .effect-btn-primary:disabled {
+            background: rgba(255,255,255,0.08);
+            color: #555;
+            border-color: var(--border-subtle);
+            cursor: not-allowed;
+            transform: none;
+        }
+        .effect-btn-secondary {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-subtle);
+        }
+        .effect-btn-secondary:hover {
+            border-color: #555;
+            color: var(--text-primary);
+        }
+        .effect-btn-danger {
+            background: rgba(239,68,68,0.12);
+            color: #ef4444;
+            border: 1px solid rgba(239,68,68,0.3);
+        }
+        .effect-btn-danger:disabled {
+            background: rgba(255,255,255,0.08);
+            color: #555;
+            border-color: var(--border-subtle);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ── NOTIFY (toast) ── */
+        .effect-notify {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            z-index: 1001;
+            background: rgba(16,20,42,0.97);
+            border: 2px solid var(--border-subtle);
+            border-radius: 14px;
+            padding: 28px 36px;
+            text-align: center;
+            max-width: 400px;
+            width: 85%;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 48px rgba(0,0,0,0.6);
+        }
+        .effect-notify.active {
+            opacity: 1;
+            pointer-events: all;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        .effect-notify .notify-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.9em;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+        .effect-notify .notify-detail {
+            font-size: 0.75em;
+            color: #888;
+            margin-bottom: 4px;
+        }
+        .effect-notify .notify-card-row {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin: 14px 0 4px;
+        }
+        .effect-notify .notify-card-mini {
+            width: 72px;
+            height: 100px;
+            border-radius: 6px;
+            border: 2px solid;
+            background: var(--bg-card);
+            overflow: hidden;
+        }
+        .effect-notify .notify-card-mini img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: top center;
+            display: block;
+            border-radius: 4px;
+        }
+
+        /* Color themes for overlay types */
+        .theme-select .effect-header  { border-bottom-color: rgba(0,212,255,0.2); }
+
+        .theme-select .effect-title   { color: #00d4ff; }
+        .theme-select .effect-panel   { border-color: rgba(0,212,255,0.3); }
+
+        .theme-reveal .effect-header  { border-bottom-color: rgba(244,114,182,0.2); }
+
+        .theme-reveal .effect-title   { color: #f472b6; }
+        .theme-reveal .effect-panel   { border-color: rgba(244,114,182,0.3); }
+
+        .theme-discard .effect-header { border-bottom-color: rgba(239,68,68,0.2); }
+
+        .theme-discard .effect-title  { color: #ef4444; }
+        .theme-discard .effect-panel  { border-color: rgba(239,68,68,0.3); }
+
+        .theme-confirm .effect-header { border-bottom-color: rgba(129,140,248,0.2); }
+
+        .theme-confirm .effect-title  { color: #818cf8; }
+        .theme-confirm .effect-panel  { border-color: rgba(129,140,248,0.3); }
+
+        .theme-ai .effect-header      { border-bottom-color: rgba(155,77,202,0.2); }
+
+        .theme-ai .effect-title        { color: #B76EE0; }
+        .theme-ai .notify-title        { color: #B76EE0; }
+        .theme-ai                      { border-color: rgba(155,77,202,0.4) !important; }
+
+        .theme-player .notify-title    { color: var(--player-primary); }
+        .theme-player                  { border-color: rgba(255,217,61,0.3) !important; }
+
+        /* ── Confirm mode (minimal: just question + 2 buttons) ── */
+        .effect-confirm-body {
+            padding: 24px 22px;
+            text-align: center;
+        }
+        .effect-confirm-body .confirm-text {
+            font-size: 0.85em;
+            color: #ccc;
+            line-height: 1.6;
+        }
+
+        /* ── Section label ── */
+        .demo-section {
+            color: #555;
+            font-size: 0.7em;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin: 32px 0 12px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>EFFECT OVERLAY</h1>
+<p class="subtitle">Demo de los 3 modos del sistema unificado de feedback visual</p>
+
+<div class="demo-controls">
+    <button class="btn-select" onclick="showSelectDiscard()">Descartar 2</button>
+    <button class="btn-select" onclick="showSelectFromDeck()">Elegir del mazo</button>
+    <button class="btn-select" onclick="showSelectEliminate()">Eliminar carta</button>
+    <button class="btn-reveal" onclick="showRevealHand()">Ver mano rival</button>
+    <button class="btn-reveal" onclick="showRevealDeck()">Revelar tope mazo</button>
+    <button class="btn-notify" onclick="showNotifyAI()">IA elimina carta</button>
+    <button class="btn-notify" onclick="showNotifyDraw()">IA roba 2</button>
+    <button class="btn-confirm" onclick="showConfirm()">Confirmar accion</button>
+</div>
+
+<div class="game-bg">
+    <div class="game-bg-text">
+        (Mesa de juego)<br>
+        Los overlays se muestran sobre este fondo
+    </div>
+</div>
+
+<!-- ============================================================
+     OVERLAY: MODO SELECCION
+     ============================================================ -->
+<div id="overlay-select" class="effect-overlay">
+    <div class="effect-panel">
+        <div class="effect-header">
+
+            <div class="effect-header-text">
+                <div class="effect-title" id="select-title"></div>
+                <div class="effect-subtitle" id="select-subtitle"></div>
+            </div>
+            <div class="effect-source" id="select-source"></div>
+        </div>
+        <div class="effect-cards" id="select-cards"></div>
+        <div class="effect-info">
+            <div class="effect-counter" id="select-counter"></div>
+        </div>
+        <div class="effect-actions" id="select-actions"></div>
+    </div>
+</div>
+
+<!-- ============================================================
+     OVERLAY: MODO REVELAR
+     ============================================================ -->
+<div id="overlay-reveal" class="effect-overlay">
+    <div class="effect-panel">
+        <div class="effect-header">
+
+            <div class="effect-header-text">
+                <div class="effect-title" id="reveal-title"></div>
+                <div class="effect-subtitle" id="reveal-subtitle"></div>
+            </div>
+            <div class="effect-source" id="reveal-source"></div>
+        </div>
+        <div class="effect-cards" id="reveal-cards"></div>
+        <div class="effect-actions">
+            <button class="effect-btn effect-btn-primary" onclick="closeOverlay('overlay-reveal')">Continuar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     OVERLAY: MODO CONFIRMAR
+     ============================================================ -->
+<div id="overlay-confirm" class="effect-overlay">
+    <div class="effect-panel">
+        <div class="effect-header">
+
+            <div class="effect-header-text">
+                <div class="effect-title" id="confirm-title"></div>
+                <div class="effect-subtitle" id="confirm-subtitle"></div>
+            </div>
+            <div class="effect-source" id="confirm-source"></div>
+        </div>
+        <div class="effect-confirm-body">
+            <div class="confirm-text" id="confirm-text"></div>
+        </div>
+        <div class="effect-actions">
+            <button class="effect-btn effect-btn-primary" onclick="closeOverlay('overlay-confirm')">Aceptar</button>
+            <button class="effect-btn effect-btn-secondary" onclick="closeOverlay('overlay-confirm')">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     NOTIFY (toast de IA / feedback rapido)
+     ============================================================ -->
+<div id="notify-toast" class="effect-notify"></div>
+
+
+<script>
+// ── Image map & helper ──
+const PROTOCOL_IMG_MAP = {
+    'Espíritu': { en: 'spirit', ed: 1 },
+    'Muerte':   { en: 'death',  ed: 1 },
+    'Fuego':    { en: 'fire',   ed: 1 },
+    'Gravedad': { en: 'gravity', ed: 1 },
+    'Vida':     { en: 'life',   ed: 1 },
+    'Luz':      { en: 'light',  ed: 1 },
+    'Metal':    { en: 'metal',  ed: 1 },
+    'Plaga':    { en: 'plague', ed: 1 },
+    'Psique':   { en: 'psychic', ed: 1 },
+    'Velocidad':{ en: 'speed',  ed: 1 },
+    'Agua':     { en: 'water',  ed: 1 },
+    'Oscuridad':{ en: 'darkness', ed: 1 },
+    'Apatía':   { en: 'apathy', ed: 1 },
+    'Odio':     { en: 'hate',   ed: 1 },
+    'Amor':     { en: 'love',   ed: 1 },
+    'Hielo':    { en: 'ice',    ed: 2 },
+    'Tiempo':   { en: 'time',   ed: 2 },
+    'Claridad': { en: 'clarity', ed: 2 },
+    'Guerra':   { en: 'war',    ed: 2 },
+};
+
+function getCardImageUrl(proto, valor) {
+    const info = PROTOCOL_IMG_MAP[proto];
+    if (!info) return '';
+    const folder = info.ed === 1 ? 'Main_1' : 'Main_2';
+    return `../images/cards/${folder}/${info.en}_${valor}.jpg`;
+}
+
+// ── Datos fake para la demo ──
+const FAKE_CARDS = {
+    hand: [
+        { nombre: 'Fuego 3', valor: 3, proto: 'Fuego', color: '#ef4444' },
+        { nombre: 'Agua 2',  valor: 2, proto: 'Agua',  color: '#3b82f6' },
+        { nombre: 'Luz 4',   valor: 4, proto: 'Luz',   color: '#fbbf24' },
+        { nombre: 'Metal 1', valor: 1, proto: 'Metal', color: '#94a3b8' },
+        { nombre: 'Muerte 5',valor: 5, proto: 'Muerte',color: '#6b7280' },
+    ],
+    deck: [
+        { nombre: 'Psique 3', valor: 3, proto: 'Psique', color: '#e879f9' },
+        { nombre: 'Vida 2',   valor: 2, proto: 'Vida',   color: '#4ade80' },
+        { nombre: 'Odio 4',   valor: 4, proto: 'Odio',   color: '#f87171' },
+    ],
+    opponent: [
+        { nombre: 'Plaga 2',     valor: 2, proto: 'Plaga',     color: '#84cc16' },
+        { nombre: 'Velocidad 3', valor: 3, proto: 'Velocidad', color: '#22d3ee' },
+        { nombre: 'Espíritu 1',  valor: 1, proto: 'Espíritu',  color: '#c084fc' },
+        { nombre: 'Gravedad 4',  valor: 4, proto: 'Gravedad',  color: '#a78bfa' },
+    ]
+};
+
+function makeCardHTML(card, cls = '') {
+    const imgUrl = getCardImageUrl(card.proto, card.valor);
+    return `<div class="effect-card ${cls}">
+        <img src="${imgUrl}" alt="${card.nombre}">
+    </div>`;
+}
+
+function closeOverlay(id) {
+    document.getElementById(id).classList.remove('active');
+    // Remove theme classes
+    const el = document.getElementById(id);
+    el.className = el.className.replace(/theme-\w+/g, '').trim();
+    if (!el.classList.contains('effect-overlay') && !el.classList.contains('effect-notify'))
+        el.classList.add('effect-overlay');
+}
+
+function closeNotify() {
+    document.getElementById('notify-toast').classList.remove('active');
+    document.getElementById('notify-toast').className = 'effect-notify';
+}
+
+// ══════════════════════════════════════════
+// MODO SELECCION
+// ══════════════════════════════════════════
+
+function showSelectDiscard() {
+    const ov = document.getElementById('overlay-select');
+    ov.className = 'effect-overlay theme-discard';
+
+    document.getElementById('select-title').textContent = 'DESCARTAR';
+    document.getElementById('select-subtitle').textContent = 'Elige 2 cartas de tu mano para descartar';
+    document.getElementById('select-source').textContent = 'Tiempo 4';
+
+    let selected = new Set();
+    const count = 2;
+
+    function render() {
+        document.getElementById('select-cards').innerHTML = FAKE_CARDS.hand.map((c, i) =>
+            makeCardHTML(c, selected.has(i) ? 'selected' : 'selectable')
+        ).join('');
+
+        // click handlers
+        document.querySelectorAll('#select-cards .effect-card').forEach((el, i) => {
+            el.onclick = () => {
+                if (selected.has(i)) selected.delete(i);
+                else if (selected.size < count) selected.add(i);
+                render();
+            };
+        });
+
+        document.getElementById('select-counter').innerHTML =
+            `Seleccionadas: <strong>${selected.size}</strong> / ${count}`;
+
+        document.getElementById('select-actions').innerHTML = `
+            <button class="effect-btn effect-btn-danger" ${selected.size < count ? 'disabled' : ''}
+                onclick="closeOverlay('overlay-select')">Descartar</button>
+            `;
+    }
+    render();
+    ov.classList.add('active');
+}
+
+function showSelectFromDeck() {
+    const ov = document.getElementById('overlay-select');
+    ov.className = 'effect-overlay theme-select';
+
+    document.getElementById('select-title').textContent = 'ELEGIR DEL MAZO';
+    document.getElementById('select-subtitle').textContent = 'Elige 1 carta para jugar';
+    document.getElementById('select-source').textContent = 'Tiempo 0';
+
+    let selected = new Set();
+
+    function render() {
+        document.getElementById('select-cards').innerHTML = FAKE_CARDS.deck.map((c, i) =>
+            makeCardHTML(c, selected.has(i) ? 'selected' : 'selectable')
+        ).join('');
+
+        document.querySelectorAll('#select-cards .effect-card').forEach((el, i) => {
+            el.onclick = () => {
+                selected.clear();
+                selected.add(i);
+                render();
+            };
+        });
+
+        document.getElementById('select-counter').innerHTML =
+            `Seleccionadas: <strong>${selected.size}</strong> / 1`;
+
+        document.getElementById('select-actions').innerHTML = `
+            <button class="effect-btn effect-btn-primary" ${selected.size < 1 ? 'disabled' : ''}
+                onclick="closeOverlay('overlay-select')">Jugar carta</button>
+            <button class="effect-btn effect-btn-secondary"
+                onclick="closeOverlay('overlay-select')">Cancelar</button>
+            `;
+    }
+    render();
+    ov.classList.add('active');
+}
+
+function showSelectEliminate() {
+    const ov = document.getElementById('overlay-select');
+    ov.className = 'effect-overlay theme-select';
+
+    document.getElementById('select-title').textContent = 'ELIMINAR';
+    document.getElementById('select-subtitle').textContent = 'Elige 1 carta descubierta del rival para eliminar';
+    document.getElementById('select-source').textContent = 'Muerte 3';
+
+    // Simulated opponent field cards
+    const fieldCards = [
+        { nombre: 'Plaga 2', valor: 2, proto: 'Plaga', color: '#84cc16' },
+        { nombre: 'Odio 4',  valor: 4, proto: 'Odio',  color: '#f87171' },
+        { nombre: 'Hielo 3', valor: 3, proto: 'Hielo', color: '#93c5fd' },
+    ];
+
+    let selected = new Set();
+
+    function render() {
+        document.getElementById('select-cards').innerHTML = fieldCards.map((c, i) =>
+            makeCardHTML(c, selected.has(i) ? 'selected' : 'selectable')
+        ).join('');
+
+        document.querySelectorAll('#select-cards .effect-card').forEach((el, i) => {
+            el.onclick = () => {
+                selected.clear();
+                selected.add(i);
+                render();
+            };
+        });
+
+        document.getElementById('select-counter').innerHTML =
+            selected.size > 0 ? `<strong>${fieldCards[[...selected][0]].nombre}</strong> sera eliminada` : 'Elige una carta';
+
+        document.getElementById('select-actions').innerHTML = `
+            <button class="effect-btn effect-btn-danger" ${selected.size < 1 ? 'disabled' : ''}
+                onclick="closeOverlay('overlay-select')">Eliminar</button>
+            `;
+    }
+    render();
+    ov.classList.add('active');
+}
+
+// ══════════════════════════════════════════
+// MODO REVELAR
+// ══════════════════════════════════════════
+
+function showRevealHand() {
+    const ov = document.getElementById('overlay-reveal');
+    ov.className = 'effect-overlay theme-reveal';
+
+    document.getElementById('reveal-title').textContent = 'MANO DEL RIVAL';
+    document.getElementById('reveal-subtitle').textContent = '4 cartas en mano';
+    document.getElementById('reveal-source').textContent = 'Luz 4';
+
+    document.getElementById('reveal-cards').innerHTML = FAKE_CARDS.opponent.map(c =>
+        makeCardHTML(c, 'readonly')
+    ).join('');
+
+    ov.classList.add('active');
+}
+
+function showRevealDeck() {
+    const ov = document.getElementById('overlay-reveal');
+    ov.className = 'effect-overlay theme-reveal';
+
+    document.getElementById('reveal-title').textContent = 'TOPE DEL MAZO';
+    document.getElementById('reveal-subtitle').textContent = 'Puedes descartar esta carta';
+    document.getElementById('reveal-source').textContent = 'Claridad 1';
+
+    const topCard = { nombre: 'Gravedad 4', valor: 4, proto: 'Gravedad', color: '#a78bfa' };
+    document.getElementById('reveal-cards').innerHTML = makeCardHTML(topCard, 'readonly');
+
+    // Override actions for this variant
+    ov.querySelector('.effect-actions').innerHTML = `
+        <button class="effect-btn effect-btn-danger" onclick="closeOverlay('overlay-reveal')">Descartar</button>
+        <button class="effect-btn effect-btn-primary" onclick="closeOverlay('overlay-reveal')">Mantener</button>
+    `;
+
+    ov.classList.add('active');
+}
+
+// ══════════════════════════════════════════
+// MODO CONFIRMAR
+// ══════════════════════════════════════════
+
+function showConfirm() {
+    const ov = document.getElementById('overlay-confirm');
+    ov.className = 'effect-overlay theme-confirm';
+
+    document.getElementById('confirm-title').textContent = 'BARAJAR DESCARTE';
+    document.getElementById('confirm-subtitle').textContent = 'Accion opcional';
+    document.getElementById('confirm-source').textContent = 'Claridad 4';
+    document.getElementById('confirm-text').textContent =
+        '¿Quieres barajar tu descarte en tu mazo? Tu descarte tiene 7 cartas.';
+
+    ov.classList.add('active');
+}
+
+// ══════════════════════════════════════════
+// MODO NOTIFICACION (toast — acciones de IA)
+// ══════════════════════════════════════════
+
+function showNotifyAI() {
+    const toast = document.getElementById('notify-toast');
+    toast.className = 'effect-notify theme-ai';
+
+    const card = { nombre: 'Fuego 3', valor: 3, proto: 'Fuego', color: '#ef4444' };
+    const imgUrl = getCardImageUrl(card.proto, card.valor);
+    toast.innerHTML = `
+
+        <div class="notify-title">IA ELIMINA</div>
+        <div class="notify-detail">Linea 2 · tu carta</div>
+        <div class="notify-card-row">
+            <div class="notify-card-mini" style="border-color: ${card.color}44">
+                <img src="${imgUrl}" alt="${card.nombre}">
+            </div>
+        </div>
+    `;
+
+    toast.classList.add('active');
+    setTimeout(closeNotify, 2800);
+}
+
+function showNotifyDraw() {
+    const toast = document.getElementById('notify-toast');
+    toast.className = 'effect-notify theme-ai';
+
+    toast.innerHTML = `
+
+        <div class="notify-title">IA ROBA 2 CARTAS</div>
+        <div class="notify-detail">Efecto de Velocidad 3</div>
+    `;
+
+    toast.classList.add('active');
+    setTimeout(closeNotify, 2200);
+}
+
+</script>
+
+</body>
+</html>
