@@ -6,6 +6,7 @@ Documento para el seguimiento de bugs, mejoras y nuevas funcionalidades.
 
 - [ ] **IA:** Mejorar evaluación de movimientos que disparan efectos complejos.
 - [ ] **UI:** Solapamiento de cartas en stacks grandes en pantallas pequeñas.
+- [ ] **UX:** Selección de cartas desde mazo/descarte (Tiempo 0/3, Claridad 2, etc.) debe mostrarse en modal tipo "revelar" en vez de añadirse a la mano. Actualmente no queda claro cuáles son las cartas a elegir y el scroll no permite verlas todas.
 - [x] **Amor 4:** IA usa cartas reveladas del jugador para tomar decisiones.
 - [x] **Comando central:** Voltear bocabajo→bocarriba y descubrirse activan onPlay (implementado).
 

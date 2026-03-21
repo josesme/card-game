@@ -402,11 +402,6 @@ body::before {
     z-index: 100;
 }
 
-.card.card-in-field:hover {
-    transform: translateY(-8px) scale(1);
-    box-shadow: 0 8px 24px rgba(0, 212, 255, 0.3);
-    z-index: auto;
-}
 
 .card.face-down {
     background: linear-gradient(135deg, #1a1f3a 0%, #0d1117 100%);
@@ -650,9 +645,6 @@ body::before {
     color: #e0e0e0;
 }
 
-.field-card:hover {
-    transform: translateY(-2px);
-}
 
 .field-card.face-down {
     border-color: #4a5568;

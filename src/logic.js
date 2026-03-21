@@ -887,6 +887,12 @@ function renderStack(line, target) {
 
         // Add click handler for effects (eliminate/flip/shift/return)
         domCard.onclick = (e) => {
+            // In selectionMode or line-select effects, let click bubble to line handler
+            if (gameState.selectionMode) return;
+            if (gameState.effectContext && (
+                gameState.effectContext.type?.endsWith('_lineSelect') ||
+                gameState.effectContext.waitingForLine
+            )) return;
             e.stopPropagation();
             if (gameState.effectContext) {
                 // Rule: Only uncovered cards can be manipulated unless "all" or coveredOnly is specified
