@@ -1273,6 +1273,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         gameState.discardedSinceLastCheck[opp] = false; // consumir el flag
       }
       draw(resolvedTarget, count || 1);
+      updateUI();
       processAbilityEffect();
       break;
     }

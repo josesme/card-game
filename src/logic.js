@@ -1997,14 +1997,18 @@ function resolveEffectAI(type, target, count, opts = {}) {
 }
 
 function draw(target, count) {
+    let drawn = 0;
     for (let i = 0; i < count; i++) {
-        drawCard(target);
+        if (drawCard(target)) drawn++;
     }
-    if (count > 0) {
+    if (drawn > 0) {
         gameState.drawnSinceLastCheck[target] = true;
-        updateStatus(`${target === 'player' ? 'Robas' : 'IA roba'} ${count} carta${count !== 1 ? 's' : ''}`);
+        updateStatus(`${target === 'player' ? 'Robas' : 'IA roba'} ${drawn} carta${drawn !== 1 ? 's' : ''}`);
         if (typeof onOpponentDrawEffects === 'function') onOpponentDrawEffects(target);
+    } else if (count > 0) {
+        updateStatus(`${target === 'player' ? 'No puedes robar' : 'IA no puede robar'} — mazo y descarte vacíos`);
     }
+    return drawn;
 }
 
 function discard(target, count) {

@@ -419,8 +419,8 @@
             50% { box-shadow: 0 0 20px rgba(255,217,61,0.9), 0 0 50px rgba(255,217,61,0.5), 0 0 80px rgba(255,217,61,0.25), inset 0 0 30px rgba(255,217,61,0.4); border-color: var(--player-100); }
         }
         @keyframes pulse-ai {
-            0%, 100% { box-shadow: 0 0 10px rgba(114,46,154,0.5), 0 0 30px rgba(114,46,154,0.3), 0 0 60px rgba(114,46,154,0.15), inset 0 0 15px rgba(114,46,154,0.2); border-color: var(--ai-primary); }
-            50% { box-shadow: 0 0 20px rgba(114,46,154,0.9), 0 0 50px rgba(114,46,154,0.5), 0 0 80px rgba(114,46,154,0.25), inset 0 0 30px rgba(114,46,154,0.4); border-color: var(--ai-100); }
+            0%, 100% { box-shadow: 0 0 12px rgba(155,77,202,0.6), 0 0 35px rgba(155,77,202,0.4), 0 0 65px rgba(155,77,202,0.2), inset 0 0 20px rgba(155,77,202,0.3); border-color: #9B4DCA; }
+            50% { box-shadow: 0 0 25px rgba(155,77,202,1), 0 0 55px rgba(155,77,202,0.6), 0 0 90px rgba(155,77,202,0.3), inset 0 0 35px rgba(155,77,202,0.5); border-color: #B76EE0; }
         }
         @keyframes shimmer-compiled {
             0% { background-position: -200% 0; }
@@ -442,7 +442,7 @@
             pointer-events: none;
         }
         .proto-box.compiled-ai {
-            border: 3px solid var(--ai-primary) !important;
+            border: 3px solid #9B4DCA !important;
             animation: pulse-ai 1.5s ease-in-out infinite;
             position: relative;
             overflow: hidden;
@@ -451,7 +451,7 @@
             content: "";
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(120deg, transparent 30%, rgba(114,46,154,0.25) 50%, transparent 70%);
+            background: linear-gradient(120deg, transparent 30%, rgba(155,77,202,0.35) 50%, transparent 70%);
             background-size: 200% 100%;
             animation: shimmer-compiled 8s linear infinite;
             pointer-events: none;
