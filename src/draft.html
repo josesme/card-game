@@ -18,7 +18,7 @@
         }
 
         body {
-            background: url('../images/Background/Background.png') no-repeat center center fixed;
+            background: url('../images/Background/Compile_2.png') no-repeat center center fixed;
             background-size: cover;
         }
 
@@ -249,9 +249,7 @@
             border-radius: 8px;
             padding: 8px 14px;
             cursor: pointer;
-            font-family: 'Orbitron', monospace;
-            font-size: 0.75em;
-            letter-spacing: 1px;
+            font-size: 1.1em;
             transition: background 0.2s;
             z-index: 100;
         }
@@ -276,7 +274,7 @@
 </head>
 <body>
 
-<button id="btn-fullscreen" onclick="toggleFullscreen()" title="Pantalla completa">⛶ FULLSCREEN</button>
+<button id="btn-fullscreen" onclick="toggleFullscreen()" title="Pantalla completa">⛶</button>
 <div id="draft-viewport">
 <div id="draft-container">
 
@@ -622,7 +620,7 @@ function toggleFullscreen() {
         sessionStorage.setItem('fs', '1');
     } else {
         document.exitFullscreen().catch(() => {});
-        btn.textContent = '⛶ FULLSCREEN';
+        btn.textContent = '⛶';
         sessionStorage.removeItem('fs');
     }
 }
@@ -632,7 +630,7 @@ document.addEventListener('fullscreenchange', () => {
     if (document.fullscreenElement) {
         btn.textContent = '✕ SALIR';
     } else {
-        btn.textContent = '⛶ FULLSCREEN';
+        btn.textContent = '⛶';
         sessionStorage.removeItem('fs');
     }
     setTimeout(applyDraftScale, 50);

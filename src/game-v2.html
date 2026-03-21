@@ -185,6 +185,7 @@
             gap: 4px;
             flex: 1;
             min-width: 0;
+            min-height: 0;
             overflow: hidden;
         }
 
@@ -236,7 +237,7 @@
             background-size: cover;
             background-position: top center;
             padding: 0;
-            height: 42px;
+            height: 36px;
             border: none;
             box-shadow: none !important;
         }
@@ -268,7 +269,7 @@
         .line-container {
             display: flex;
             flex-direction: row;
-            align-items: flex-start;
+            align-items: stretch;
             flex: 1;
             gap: 0;
             min-height: 0;
@@ -283,35 +284,46 @@
             position: relative;
             flex: 1;
             min-width: 0;
-            min-height: 260px;
+            min-height: 0;
         }
 
-        .ai-stack.vertical-stack::after {
-            content: '';
-            position: absolute;
-            bottom: -380px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 80%;
-            height: 60%;
-            background: url('../images/Background/IA.png') center bottom / contain no-repeat;
-            opacity: 0.07;
-            pointer-events: none;
-            z-index: 0;
+        /* Fondo de color por jugador */
+        .player-stack.vertical-stack {
+            background: rgba(245,189,31,0.10);
+            border-radius: 6px;
+        }
+        .ai-stack.vertical-stack {
+            background: rgba(71,41,123,0.12);
+            border-radius: 6px;
         }
 
-        .player-stack.vertical-stack::after {
+        /* Watermark icons — on battle-column (fixed height) instead of stacks (scrollable) */
+        .battle-column {
+            position: relative;
+        }
+        .battle-column::before {
             content: '';
             position: absolute;
-            bottom: -380px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 80%;
-            height: 60%;
-            background: url('../images/Background/Human.png') center bottom / contain no-repeat;
+            bottom: 20px;
+            left: 4%;
+            width: 40%;
+            height: 140px;
+            background: url('../images/Background/Human.png') center / contain no-repeat;
             opacity: 0.07;
             pointer-events: none;
-            z-index: 0;
+            z-index: 1;
+        }
+        .battle-column::after {
+            content: '';
+            position: absolute;
+            bottom: 20px;
+            right: 4%;
+            width: 40%;
+            height: 140px;
+            background: url('../images/Background/IA.png') center / contain no-repeat;
+            opacity: 0.07;
+            pointer-events: none;
+            z-index: 1;
         }
 
         /* Cards inside stacks: absolute positioned for overlap */
@@ -325,7 +337,7 @@
         /* Vertical separator between player and AI */
         .line-separator-h {
             width: 2px;
-            min-height: 260px;
+            min-height: 0;
             align-self: stretch;
             background: linear-gradient(to bottom, transparent, #555, transparent);
             flex-shrink: 0;

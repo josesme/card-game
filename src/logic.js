@@ -853,7 +853,6 @@ function renderStack(line, target) {
     if (isV2) {
         const totalH = stack.length === 0 ? 0 : (stack.length - 1) * (v2Offset + V2_EXTRA_GAP) + V2_CARD_H;
         stackEl.style.minHeight = Math.max(totalH, 280) + 'px';
-        stackEl.style.height = totalH + 'px';
     }
 
     stack.forEach((cardObj, idx) => {
