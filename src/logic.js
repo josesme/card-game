@@ -2586,18 +2586,18 @@ function updateStatus(msg) {
 
     // Detectar tipo de mensaje para icono y color
     let icon = '•';
-    let color = '#aaddff'; // Default player blueish
+    let color = '#FFD93D'; // Default player yellow
     let bgColor = 'transparent';
     const isAI = gameState.turn === 'ai';
 
     if (msg.includes('--- Turno')) {
         icon = '➔';
-        color = isAI ? '#ef4444' : '#00d4ff';
-        bgColor = isAI ? 'rgba(239, 68, 68, 0.1)' : 'rgba(0, 212, 255, 0.1)';
+        color = isAI ? '#722E9A' : '#FFD93D';
+        bgColor = isAI ? 'rgba(114, 46, 154, 0.1)' : 'rgba(255, 217, 61, 0.1)';
     } else if (msg.includes('¡Has compilado') || msg.includes('¡IA ha compilado')) {
         icon = '⚡';
-        color = '#facc15';
-        bgColor = 'rgba(250, 204, 21, 0.15)';
+        color = '#FFE150';
+        bgColor = 'rgba(255, 225, 80, 0.15)';
     } else if (msg.includes('Robas') || msg.includes('IA roba')) {
         icon = '🎴';
     } else if (msg.includes('eliminó') || msg.includes('Eliminar')) {
@@ -2612,7 +2612,7 @@ function updateStatus(msg) {
     } else if (msg.includes('Plaga')) {
         icon = '☣️';
     } else if (isAI) {
-        color = '#ef9999'; // AI soft red
+        color = '#9b59b6'; // AI soft purple
     }
 
     const entry = document.createElement('div');

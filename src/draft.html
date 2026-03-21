@@ -288,19 +288,19 @@
 
     <div class="selections-row">
         <div class="selection-box player-box">
-            <div class="selection-label player">👤 TU SELECCIÓN</div>
+            <div class="selection-label player">JUGADOR</div>
             <div class="selection-slots" id="player-selection"></div>
         </div>
         <div class="vs-divider">VS</div>
         <div class="selection-box ai-box">
-            <div class="selection-label ai">🤖 IA</div>
+            <div class="selection-label ai">IA</div>
             <div class="selection-slots" id="ai-selection"></div>
         </div>
     </div>
 
     <div style="display: flex; gap: 12px; justify-content: center; align-items: center;">
         <button class="start-button" onclick="window.location.href='/src/index.html'">← VOLVER</button>
-        <button class="start-button" id="start-game-btn" disabled>🎮 COMENZAR JUEGO</button>
+        <button class="start-button" id="start-game-btn" disabled>COMENZAR JUEGO</button>
     </div>
 
 </div>
@@ -516,7 +516,7 @@ function completeDraft() {
 function updateDraftDisplay() {
     const roundInfo    = DRAFT_ROUNDS[draftState.round] || DRAFT_ROUNDS[DRAFT_ROUNDS.length - 1];
     const isFirstPlayer = roundInfo && roundInfo.player === 'first';
-    const currentPlayer = (draftState.firstPlayer === 'player') === isFirstPlayer ? '👤 JUGADOR' : '🤖 IA';
+    const currentPlayer = (draftState.firstPlayer === 'player') === isFirstPlayer ? 'JUGADOR' : 'IA';
     const roundDesc = DRAFT_ROUNDS[draftState.round]
         ? `Ronda ${draftState.round + 1}/4 — ${currentPlayer} elige ${DRAFT_ROUNDS[draftState.round].selections}`
         : 'Draft Completado';

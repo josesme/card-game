@@ -289,7 +289,7 @@
         .ai-stack.vertical-stack::after {
             content: '';
             position: absolute;
-            bottom: -450px;
+            bottom: -380px;
             left: 50%;
             transform: translateX(-50%);
             width: 80%;
@@ -303,7 +303,7 @@
         .player-stack.vertical-stack::after {
             content: '';
             position: absolute;
-            bottom: -450px;
+            bottom: -380px;
             left: 50%;
             transform: translateX(-50%);
             width: 80%;
@@ -508,7 +508,7 @@
     <div class="hand-bar">
       <div class="hand-bar-inner">
         <div style="display: flex; align-items: center; gap: 8px; width: 220px; flex-shrink: 0;">
-            <span style="color: var(--player-primary); font-size: 1em;">👤</span>
+            <span style="color: var(--player-primary); font-size: 0.85em; font-weight: bold;">JUG</span>
             <span class="stat-label">Mazo</span>
             <span id="player-deck-count" class="stat-value" style="color: var(--player-primary);">0</span>
             <span class="stat-label">Desc.</span>
@@ -517,9 +517,9 @@
         </div>
         <div id="discard-banner"></div>
         <button id="btn-stop-discard" class="hidden" style="background:#f59e0b;color:#000;border:none;border-radius:5px;padding:4px 14px;cursor:pointer;font-weight:bold;font-size:0.9em;">Detener descarte</button>
-        <div id="game-status" style="flex: 1; text-align: center; color: #facc15; font-weight: bold; font-size: 0.85em;">—</div>
+        <div id="game-status" style="flex: 1; text-align: center; color: var(--player-primary); font-weight: bold; font-size: 0.85em;">—</div>
         <div style="display: flex; align-items: center; gap: 8px; width: 220px; flex-shrink: 0; justify-content: flex-end;">
-            <span style="color: var(--ai-primary); font-size: 1em;">🤖</span>
+            <span style="color: var(--ai-primary); font-size: 0.85em; font-weight: bold;">IA</span>
             <span class="stat-label">Mano</span>
             <span id="ai-hand-count" class="stat-value" style="color: var(--ai-100);">0</span>
             <span class="stat-label">Mazo</span>
@@ -660,7 +660,7 @@
             if (last) {
                 const txt = last.textContent.trim().replace(/^[•➔⚡🎴💀🔄🗑️💧☣️]\s*/, '');
                 bar.textContent = txt;
-                bar.style.color = last.style.color || '#facc15';
+                bar.style.color = last.style.color || '#FFD93D';
             }
         }).observe(log, { childList: true });
     })();
