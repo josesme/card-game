@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>COMPILE</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="design-tokens.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -37,7 +38,7 @@
             background: rgba(15, 20, 45, 0.5); /* Fondo sutil para el contenido */
             backdrop-filter: blur(10px); /* Efecto cristal */
             border-radius: 24px;
-            border: 1px solid rgba(0, 212, 255, 0.15);
+            border: 1px solid rgba(255, 217, 61, 0.15);
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
         }
 
@@ -45,7 +46,7 @@
             max-width: 100%;
             height: auto;
             max-height: 180px;
-            filter: drop-shadow(0 0 20px rgba(0, 212, 255, 0.4));
+            filter: drop-shadow(0 0 20px rgba(255, 217, 61, 0.4));
             margin-bottom: 24px;
         }
 
@@ -182,18 +183,18 @@
             font-family: 'Orbitron', monospace;
             font-weight: 700;
             letter-spacing: 3px;
-            border: 2px solid #00d4ff;
+            border: 2px solid var(--player-primary);
             border-radius: 8px;
             background: transparent;
-            color: #00d4ff;
+            color: var(--player-primary);
             cursor: pointer;
             transition: all 0.25s;
             margin-bottom: 40px;
         }
 
         .btn-play:hover:not(:disabled) {
-            background: rgba(0, 212, 255, 0.15);
-            box-shadow: 0 0 28px rgba(0, 212, 255, 0.35);
+            background: rgba(255, 217, 61, 0.15);
+            box-shadow: 0 0 28px rgba(255, 217, 61, 0.35);
             transform: translateY(-2px);
         }
 
@@ -212,9 +213,9 @@
         #btn-fullscreen {
             position: fixed;
             top: 12px; right: 16px;
-            background: rgba(0,212,255,0.1);
-            border: 1px solid #00d4ff;
-            color: #00d4ff;
+            background: rgba(255,217,61,0.1);
+            border: 1px solid var(--player-primary);
+            color: var(--player-primary);
             border-radius: 8px;
             padding: 8px 14px;
             cursor: pointer;
@@ -224,7 +225,7 @@
             transition: background 0.2s;
             z-index: 100;
         }
-        #btn-fullscreen:hover { background: rgba(0,212,255,0.25); }
+        #btn-fullscreen:hover { background: rgba(255,217,61,0.25); }
 
         #index-container {
             transform-origin: center center;

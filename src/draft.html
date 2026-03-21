@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>COMPILE - Draft de Protocolos</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="design-tokens.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -55,7 +56,7 @@
         /* ── Cabecera ─────────────────────────────────── */
         .title-img {
             max-height: 64px;
-            filter: drop-shadow(0 0 12px rgba(0, 212, 255, 0.4));
+            filter: drop-shadow(0 0 12px rgba(255, 217, 61, 0.4));
             margin-bottom: 4px;
         }
 
@@ -70,7 +71,7 @@
             font-weight: 700;
             font-size: 0.9em;
             letter-spacing: 1px;
-            color: #00d4ff;
+            color: var(--player-primary);
             margin-bottom: 14px;
         }
 
@@ -103,7 +104,7 @@
 
         .protocol-card:hover:not(.unavailable) {
             transform: translateY(-6px);
-            box-shadow: 0 8px 24px rgba(0, 212, 255, 0.35);
+            box-shadow: 0 8px 24px rgba(255, 217, 61, 0.35);
         }
 
         .protocol-card.unavailable {
@@ -117,7 +118,7 @@
         }
 
         .protocol-card.selected-player {
-            box-shadow: 0 0 16px rgba(0, 212, 255, 0.5);
+            box-shadow: 0 0 16px rgba(255, 217, 61, 0.5);
         }
 
         .protocol-card.selected-ai {
@@ -170,7 +171,7 @@
             opacity: 0.8;
         }
 
-        .selection-label.player { color: #00d4ff; }
+        .selection-label.player { color: var(--player-primary); }
         .selection-label.ai     { color: #ff1744; }
 
         .selection-slots {
@@ -214,9 +215,9 @@
 
         /* ── Botón inicio ─────────────────────────────── */
         .start-button {
-            background: rgba(0,212,255,0.1);
-            color: #00d4ff;
-            border: 1px solid #00d4ff;
+            background: rgba(255,217,61,0.1);
+            color: var(--player-primary);
+            border: 1px solid var(--player-primary);
             padding: 13px 32px;
             border-radius: 8px;
             cursor: pointer;
@@ -235,16 +236,16 @@
         }
 
         .start-button:hover:not(:disabled) {
-            background: rgba(0,212,255,0.25);
+            background: rgba(255,217,61,0.25);
             transform: scale(1.04);
         }
 
         #btn-fullscreen {
             position: fixed;
             top: 12px; right: 16px;
-            background: rgba(0,212,255,0.1);
-            border: 1px solid #00d4ff;
-            color: #00d4ff;
+            background: rgba(255,217,61,0.1);
+            border: 1px solid var(--player-primary);
+            color: var(--player-primary);
             border-radius: 8px;
             padding: 8px 14px;
             cursor: pointer;
@@ -254,13 +255,13 @@
             transition: background 0.2s;
             z-index: 100;
         }
-        #btn-fullscreen:hover { background: rgba(0,212,255,0.25); }
+        #btn-fullscreen:hover { background: rgba(255,217,61,0.25); }
         .nav-btn {
             position: fixed;
             top: 12px;
-            background: rgba(0,212,255,0.1);
-            border: 1px solid #00d4ff;
-            color: #00d4ff;
+            background: rgba(255,217,61,0.1);
+            border: 1px solid var(--player-primary);
+            color: var(--player-primary);
             border-radius: 8px;
             padding: 8px 14px;
             cursor: pointer;
@@ -270,7 +271,7 @@
             transition: background 0.2s;
             z-index: 100;
         }
-        .nav-btn:hover { background: rgba(0,212,255,0.25); }
+        .nav-btn:hover { background: rgba(255,217,61,0.25); }
     </style>
 </head>
 <body>
@@ -566,7 +567,7 @@ function updateSelections() {
         for (let i = 0; i < 3; i++) {
             if (selected[i]) {
                 const p     = selected[i];
-                const color = (PROTOCOL_DEFS[p] && PROTOCOL_DEFS[p].color) || (isAi ? '#ff1744' : '#00d4ff');
+                const color = (PROTOCOL_DEFS[p] && PROTOCOL_DEFS[p].color) || (isAi ? '#ff1744' : 'var(--player-primary)');
                 slots.push(`<div class="protocol-badge" style="color:${color};border-color:${color};background:${color}18">${p}</div>`);
             } else {
                 slots.push(`<div class="slot-empty"></div>`);
