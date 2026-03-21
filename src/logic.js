@@ -777,6 +777,7 @@ function updateUI() {
             const cardToMark = compiledBy === 'player' ? pCard : aCard;
             if (cardToMark) {
                 cardToMark.classList.add('compiled');
+                cardToMark.classList.add(`compiled-${compiledBy}`);
             }
         }
     });
