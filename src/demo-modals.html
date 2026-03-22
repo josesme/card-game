@@ -320,6 +320,109 @@
             letter-spacing: 2px;
             margin: 32px 0 12px;
         }
+
+        /* ── Dropdown (Pencil design system) ── */
+        .ui-dropdown {
+            position: relative;
+            width: 100%;
+            max-width: 220px;
+            font-family: var(--ui-font);
+        }
+        .ui-dropdown-label {
+            font-size: 8px;
+            font-weight: 400;
+            color: var(--ui-text-muted);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .ui-dropdown-trigger {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 36px;
+            padding: 0 12px;
+            background: #060e1c;
+            border: 1px solid rgba(0,245,255,0.27);
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .ui-dropdown-trigger:hover {
+            border-color: rgba(0,245,255,0.5);
+        }
+        .ui-dropdown-trigger .drop-value {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            color: var(--ui-cyan);
+        }
+        .ui-dropdown-trigger .drop-value .drop-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--ui-cyan);
+            flex-shrink: 0;
+        }
+        .ui-dropdown-trigger .drop-placeholder {
+            font-size: 10px;
+            color: var(--ui-text-muted);
+        }
+        .ui-dropdown-trigger .drop-chevron {
+            width: 12px;
+            height: 12px;
+            stroke: var(--ui-cyan);
+            stroke-width: 2;
+            fill: none;
+            transition: transform 0.2s;
+        }
+        .ui-dropdown.open .drop-chevron {
+            transform: rotate(180deg);
+        }
+        .ui-dropdown-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #040c18;
+            border: 1px solid rgba(0,245,255,0.13);
+            border-top: none;
+            z-index: 10;
+            display: none;
+            max-height: 210px;
+            overflow-y: auto;
+        }
+        .ui-dropdown.open .ui-dropdown-list {
+            display: block;
+        }
+        .ui-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            height: 30px;
+            padding: 0 12px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .ui-dropdown-item .drop-dot {
+            width: 6px;
+            height: 6px;
+            background: #475569;
+            flex-shrink: 0;
+        }
+        .ui-dropdown-item .drop-text {
+            font-size: 10px;
+            color: #475569;
+        }
+        .ui-dropdown-item:hover {
+            background: rgba(0,245,255,0.06);
+        }
+        .ui-dropdown-item:hover .drop-dot { background: var(--ui-cyan); }
+        .ui-dropdown-item:hover .drop-text { color: var(--ui-cyan); }
+        .ui-dropdown-item.active {
+            background: rgba(0,245,255,0.09);
+        }
+        .ui-dropdown-item.active .drop-dot { background: var(--ui-cyan); }
+        .ui-dropdown-item.active .drop-text { color: var(--ui-cyan); }
     </style>
 </head>
 <body>
@@ -336,6 +439,7 @@
     <button class="ui-btn ui-btn--sm ui-btn--purple" onclick="showNotifyAI()">IA ELIMINA CARTA</button>
     <button class="ui-btn ui-btn--sm ui-btn--purple" onclick="showNotifyDraw()">IA ROBA 2</button>
     <button class="ui-btn ui-btn--sm" onclick="showConfirm()">CONFIRMAR ACCION</button>
+    <button class="ui-btn ui-btn--sm" onclick="showSelectProtocol()">DI UN PROTOCOLO</button>
 </div>
 
 <div class="game-bg">
@@ -598,6 +702,89 @@ function showSelectEliminate() {
             <button class="ui-btn ui-btn--danger" ${selected.size < 1 ? 'disabled' : ''}
                 onclick="closeOverlay('overlay-select')">ELIMINAR</button>
             `;
+    }
+    render();
+    ov.classList.add('active');
+}
+
+function showSelectProtocol() {
+    const ov = document.getElementById('overlay-select');
+    ov.className = 'effect-overlay theme-select';
+
+    document.getElementById('select-title').textContent = 'NOMBRAR PROTOCOLO';
+    document.getElementById('select-subtitle').textContent = 'Elige un protocolo';
+    document.getElementById('select-source').textContent = 'Suerte 2';
+
+    const protos = Object.keys(PROTOCOL_IMG_MAP);
+    let chosen = null;
+
+    function render() {
+        document.getElementById('select-cards').innerHTML = '';
+        document.getElementById('select-counter').innerHTML = '';
+
+        const dropdownHTML = `
+            <div style="padding: 8px 22px 14px; display: flex; justify-content: center;">
+                <div class="ui-dropdown" id="proto-dropdown">
+                    <div class="ui-dropdown-label">PROTOCOLO</div>
+                    <div class="ui-dropdown-trigger" id="proto-drop-trigger">
+                        ${chosen
+                            ? `<span class="drop-value"><span class="drop-dot"></span>${chosen}</span>`
+                            : `<span class="drop-placeholder">Seleccionar...</span>`
+                        }
+                        <svg class="drop-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+                    </div>
+                    <div class="ui-dropdown-list" id="proto-drop-list">
+                        ${protos.map(p => `
+                            <div class="ui-dropdown-item${chosen === p ? ' active' : ''}" data-proto="${p}">
+                                <span class="drop-dot"></span>
+                                <span class="drop-text">${p}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Insert dropdown before actions
+        const actionsEl = document.getElementById('select-actions');
+        let dropZone = document.getElementById('select-dropdown-zone');
+        if (!dropZone) {
+            dropZone = document.createElement('div');
+            dropZone.id = 'select-dropdown-zone';
+            actionsEl.parentElement.insertBefore(dropZone, actionsEl);
+        }
+        dropZone.innerHTML = dropdownHTML;
+
+        document.getElementById('select-actions').innerHTML = `
+            <button class="ui-btn" ${!chosen ? 'disabled' : ''}
+                onclick="closeOverlay('overlay-select')">CONFIRMAR</button>
+            <button class="ui-btn ui-btn--danger"
+                onclick="closeOverlay('overlay-select')">CANCELAR</button>
+        `;
+
+        // Dropdown behavior
+        const trigger = document.getElementById('proto-drop-trigger');
+        const dd = document.getElementById('proto-dropdown');
+
+        trigger.onclick = (e) => {
+            e.stopPropagation();
+            dd.classList.toggle('open');
+        };
+
+        document.querySelectorAll('#proto-drop-list .ui-dropdown-item').forEach(item => {
+            item.onclick = (e) => {
+                e.stopPropagation();
+                chosen = item.dataset.proto;
+                dd.classList.remove('open');
+                render();
+            };
+        });
+
+        // Close dropdown on outside click
+        document.addEventListener('click', function closeDD() {
+            dd.classList.remove('open');
+            document.removeEventListener('click', closeDD);
+        });
     }
     render();
     ov.classList.add('active');

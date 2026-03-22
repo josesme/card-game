@@ -1294,7 +1294,7 @@ function startEffect(type, target, count, opts = {}) {
         }
     }
 
-    gameState.effectContext = { type, target, count, selected: [], ...opts };
+    gameState.effectContext = { type, target, count, selected: [], _triggerName: gameState.currentTriggerCard || '', ...opts };
     console.log(`🎯 startEffect: type=${type}, target=${target}, count=${count}`);
 
     let actionVerb = 'VOLTEAR';
@@ -1315,170 +1315,48 @@ function highlightEffectTargets() {
     const ctx = gameState.effectContext;
     if (!ctx) return;
 
-    if (ctx.type === 'discardVariable') {
-        const hand = document.getElementById('player-hand');
-        hand.classList.add('targeting', 'discard-mode');
-        const banner = document.getElementById('discard-banner');
-        if (banner) {
-            banner.textContent = `🗑 Plaga 2: lleva ${ctx.selected.length} descartada${ctx.selected.length !== 1 ? 's' : ''} — haz clic para descartar otra`;
-            banner.classList.add('visible');
+    if (ctx.type === 'discardVariable' || ctx.type === 'discardAny') {
+        if (typeof showHandSelectOverlay === 'function') {
+            showHandSelectOverlay(ctx.type, 0, ctx);
         }
-        const stopBtn = document.getElementById('btn-stop-discard');
-        if (stopBtn) stopBtn.classList.toggle('hidden', ctx.selected.length < 1);
-    } else if (ctx.type === 'discardAny') {
-        const hand = document.getElementById('player-hand');
-        hand.classList.add('targeting', 'discard-mode');
-        const banner = document.getElementById('discard-banner');
-        if (banner) {
-            banner.textContent = `🗑 Guerra 1: ${ctx.selected.length} descartada${ctx.selected.length !== 1 ? 's' : ''} — haz clic para descartar más o pulsa LISTO`;
-            banner.classList.add('visible');
-        }
-        const stopBtn = document.getElementById('btn-stop-discard');
-        if (stopBtn) stopBtn.classList.remove('hidden'); // visible desde el inicio (0 descartes válido)
     } else if (ctx.type === 'discard' || ctx.type === 'give') {
-        const hand = document.getElementById('player-hand');
-        hand.classList.add('targeting', 'discard-mode');
-        const remaining = ctx.count - ctx.selected.length;
-        const banner = document.getElementById('discard-banner');
-        if (banner) {
-            const msg = ctx.type === 'give'
-                ? `🤝 Da ${remaining} carta${remaining > 1 ? 's' : ''} al oponente — haz clic en la que quieres dar`
-                : `🗑 Descarta ${remaining} carta${remaining > 1 ? 's' : ''} — haz clic en la que quieres descartar`;
-            banner.textContent = msg;
-            banner.classList.add('visible');
+        if (typeof showHandSelectOverlay === 'function') {
+            showHandSelectOverlay(ctx.type, ctx.count - ctx.selected.length, ctx);
         }
     } else if (ctx.type === 'eliminate' || ctx.type === 'flip' || ctx.type === 'return') {
-        const linesToCheck = ctx.allowedLines ? ctx.allowedLines : (ctx.forceLine ? [ctx.forceLine] : LINES);
-        linesToCheck.forEach(l => {
-            if (ctx.excludeLine && l === ctx.excludeLine) return;
-            ['player', 'ai'].forEach(p => {
-                if (ctx.target !== 'any' && ctx.target !== p) return;
-                const stack = gameState.field[l][p];
-                if (ctx.coveredOnly) {
-                    if (stack.length < 2) return;
-                    // Con filtro + targetAll: verificar que alguna carta cubierta pase el filtro
-                    if (ctx.targetAll && ctx.filter) {
-                        if (!stack.slice(0, -1).some(c => cardMatchesFilter(c, ctx))) return;
-                    }
-                } else {
-                    if (stack.length === 0) return;
-                    if (ctx.targetAll && ctx.filter === 'faceDown') {
-                        if (!stack.some(c => c.faceDown)) return;
-                    } else if (ctx.targetAll && ctx.filter === 'exactValue') {
-                        if (!stack.some(c => c.card.valor === ctx.exactVal)) return;
-                    } else {
-                        const topCard = stack[stack.length - 1];
-                        if (!cardMatchesFilter(topCard, ctx)) return;
-                        // preventFlip: no resaltar cartas que no pueden ser volteadas
-                        if (ctx.type === 'flip' && typeof getPersistentModifiers === 'function' && getPersistentModifiers(topCard.card).preventFlip) return;
-                    }
-                }
-                const stackEl = document.querySelector(`#line-${l} .${p}-stack`);
-                if (stackEl) stackEl.classList.add('targeting');
-            });
-        });
-        const banner = document.getElementById('discard-banner');
-        if (banner) {
-            const verb = ctx.type === 'flip' ? 'VOLTEAR' : ctx.type === 'return' ? 'DEVOLVER a mano' : 'ELIMINAR';
-            const targetDesc = ctx.target === 'any' ? '' : ctx.target === 'ai' ? ' del oponente' : ' tuya';
-            banner.textContent = `⚡ Elige ${ctx.count} carta${ctx.count > 1 ? 's' : ''}${targetDesc} para ${verb} — haz clic en la carta del campo`;
-            banner.classList.add('visible');
+        if (typeof showFieldSelectOverlay === 'function') {
+            showFieldSelectOverlay(ctx.type, ctx.count, ctx);
         }
     } else if (ctx.type === 'rearrange') {
-        const owner = (ctx.target === 'opponent' || ctx.target === 'ai') ? 'ai' : 'player';
-        const suffix = owner === 'player' ? 'player' : 'ai';
-        LINES.forEach(l => {
-            const protoEl = document.getElementById(`proto-${l}-${suffix}`);
-            if (protoEl) {
-                protoEl.classList.add('targeting');
-                protoEl.style.cursor = 'pointer';
-                protoEl.onclick = () => handleFieldCardClick(l, owner, 0);
-            }
-        });
-        const banner = document.getElementById('discard-banner');
-        if (banner) {
-            const msg = ctx.swapCards
-                ? (ctx.firstProtocol ? `🔀 Línea seleccionada: ${ctx.firstProtocol} — elige la segunda para intercambiar pilas` : `🔀 Elige la primera línea a intercambiar`)
-                : (ctx.firstProtocol ? `🔀 Protocolo seleccionado: ${ctx.firstProtocol} — elige el segundo para intercambiar` : `🔀 Elige el primer protocolo a intercambiar`);
-            banner.textContent = msg;
-            banner.classList.add('visible');
+        if (typeof showRearrangeOverlay === 'function') {
+            showRearrangeOverlay(ctx);
         }
     } else if (ctx.type === 'selectCardToCopy') {
-        // Espejo 1: resaltar cartas del rival bocarriba con efecto onPlay
-        const opponentSide = gameState.turn === 'player' ? 'ai' : 'player';
-        LINES.forEach(l => {
-            const stack = gameState.field[l][opponentSide];
-            const hasCopyable = typeof CARD_EFFECTS !== 'undefined' &&
-                stack.some(c => !c.faceDown && CARD_EFFECTS[c.card.nombre]?.onPlay);
-            if (!hasCopyable) return;
-            const stackEl = document.querySelector(`#line-${l} .${opponentSide}-stack`);
-            if (stackEl) stackEl.classList.add('targeting');
-        });
-        const banner = document.getElementById('discard-banner');
-        if (banner) {
-            banner.textContent = '🪞 Espejo 1: elige la carta del rival a copiar — haz clic en ella';
-            banner.classList.add('visible');
+        if (typeof showFieldSelectOverlay === 'function') {
+            // Collect copyable cards
+            const opponentSide = gameState.turn === 'player' ? 'ai' : 'player';
+            ctx.target = opponentSide;
+            ctx.filter = null;
+            ctx._copyMode = true;
+            showFieldSelectOverlay('selectCardToCopy', 1, ctx);
         }
     } else if (ctx.type === 'shift') {
-        LINES.forEach(l => {
-            if (ctx.excludeLine && l === ctx.excludeLine) return;
-            ['player', 'ai'].forEach(p => {
-                if (ctx.target !== 'any' && ctx.target !== p) return;
-                const stack = gameState.field[l][p];
-                if (ctx.coveredOnly) {
-                    // Solo resaltar stacks con al menos 1 carta cubierta (length >= 2)
-                    if (stack.length < 2) return;
-                } else {
-                    if (stack.length === 0) return;
-                    const topCard = stack[stack.length - 1];
-                    if (ctx.filter && !cardMatchesFilter(topCard, ctx)) return;
-                }
-                const stackEl = document.querySelector(`#line-${l} .${p}-stack`);
-                if (stackEl) stackEl.classList.add('targeting');
-            });
-        });
-        const banner = document.getElementById('discard-banner');
-        if (banner) {
-            const filterDesc = ctx.coveredOnly ? ' cubierta' : (ctx.filter === 'faceDown' ? ' bocabajo' : '');
-            banner.textContent = `🔀 Elige una carta${filterDesc} para CAMBIAR de línea`;
-            banner.classList.add('visible');
+        if (typeof showFieldSelectOverlay === 'function') {
+            showFieldSelectOverlay('shift', 1, ctx);
         }
     } else if (ctx.type === 'reveal') {
-        const hand = document.getElementById('player-hand');
-        hand.classList.add('targeting', 'reveal-mode');
-        const banner = document.getElementById('discard-banner');
-        if (banner) {
-            banner.textContent = `👁️ Selecciona 1 carta de tu mano para REVELAR al oponente`;
-            banner.classList.add('visible');
+        if (typeof showHandSelectOverlay === 'function') {
+            showHandSelectOverlay('reveal', 1, ctx);
         }
     } else if (ctx.type === 'playNonDiversity') {
-        const hand = document.getElementById('player-hand');
-        hand.classList.add('targeting');
-        const banner = document.getElementById('discard-banner');
-        if (banner) {
-            banner.textContent = `🃏 Elige 1 carta (no Diversidad) de tu mano para jugar bocarriba`;
-            banner.classList.add('visible');
+        if (typeof showHandSelectOverlay === 'function') {
+            showHandSelectOverlay('playNonDiversity', 1, ctx);
         }
     } else if (ctx.type === 'confirm') {
         // No highlighting needed, just the confirm dialog
     } else if (ctx.type === 'massDeleteByValueRange') {
-        const { minVal, maxVal } = ctx;
-        LINES.forEach(l => {
-            const hasEligible = ['player', 'ai'].some(p =>
-                gameState.field[l][p].some(c => c.faceDown || (c.card.valor >= minVal && c.card.valor <= maxVal))
-            );
-            if (!hasEligible) return;
-            const lineEl = document.getElementById(`line-${l}`);
-            if (lineEl) {
-                lineEl.classList.add('targeting');
-                lineEl.style.cursor = 'pointer';
-                lineEl.onclick = () => executeMassDeleteByValueRange(l);
-            }
-        });
-        const banner = document.getElementById('discard-banner');
-        if (banner) {
-            banner.textContent = `💀 Elige una línea — se eliminarán todas las cartas con valor ${ctx.minVal}-${ctx.maxVal} (incluye bocabajos)`;
-            banner.classList.add('visible');
+        if (typeof showLineSelectOverlay === 'function') {
+            showLineSelectOverlay(ctx);
         }
     }
 }
@@ -1521,6 +1399,8 @@ function clearEffectHighlights() {
     if (banner) banner.classList.remove('visible');
     const stopBtn = document.getElementById('btn-stop-discard');
     if (stopBtn) stopBtn.classList.add('hidden');
+    // Close select overlay if open
+    if (typeof closeHandSelectOverlay === 'function') closeHandSelectOverlay();
 }
 
 function handleDiscardChoice(handIndex) {
@@ -2687,7 +2567,7 @@ function showGameOver(playerWon) {
         `;
     }
 
-    if (modal) modal.style.display = 'flex';
+    if (modal) modal.classList.remove('hidden');
 }
 
 // Set restart button only if it exists (game mode)

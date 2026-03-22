@@ -1908,13 +1908,19 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         const modal = document.getElementById('reveal-modal');
         const container = document.getElementById('reveal-cards-container');
         const closeBtn = document.getElementById('btn-reveal-close');
+        const titleEl = document.getElementById('reveal-title');
+        const subtitleEl = document.getElementById('reveal-subtitle');
+        const sourceEl = document.getElementById('reveal-source');
         if (modal && container && closeBtn && typeof createCardHTML === 'function') {
+          if (titleEl) titleEl.textContent = 'MANO DEL RIVAL';
+          if (subtitleEl) subtitleEl.textContent = `${hand.length} cartas en mano`;
+          if (sourceEl) sourceEl.textContent = triggerCardName || '';
           container.innerHTML = hand.length > 0
             ? hand.map(c => `<div style="transform: scale(0.8); transform-origin: top center;">${createCardHTML(c)}</div>`).join('')
-            : '<p style="color:#ddd;">La mano del oponente está vacía.</p>';
-          modal.style.display = 'flex';
+            : '<p style="color:var(--ui-text-muted);">La mano del oponente está vacía.</p>';
+          modal.classList.remove('hidden');
           closeBtn.onclick = () => {
-            modal.style.display = 'none';
+            modal.classList.add('hidden');
             processAbilityEffect();
           };
         } else {
@@ -3116,11 +3122,17 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       const modal = document.getElementById('reveal-modal');
       const container = document.getElementById('reveal-cards-container');
       const closeBtn = document.getElementById('btn-reveal-close');
+      const titleEl = document.getElementById('reveal-title');
+      const subtitleEl = document.getElementById('reveal-subtitle');
+      const sourceEl = document.getElementById('reveal-source');
       if (modal && container && closeBtn && typeof createCardHTML === 'function') {
+        if (titleEl) titleEl.textContent = 'CARTAS REVELADAS';
+        if (subtitleEl) subtitleEl.textContent = `${cards.length} carta${cards.length !== 1 ? 's' : ''}`;
+        if (sourceEl) sourceEl.textContent = triggerCardName || '';
         container.innerHTML = cards.map(c => `<div style="transform: scale(0.85); transform-origin: top center;">${createCardHTML(c)}</div>`).join('');
-        modal.style.display = 'flex';
+        modal.classList.remove('hidden');
         closeBtn.onclick = () => {
-          modal.style.display = 'none';
+          modal.classList.add('hidden');
           processAbilityEffect();
         };
       } else {
@@ -3364,17 +3376,23 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         const modal     = document.getElementById('reveal-modal');
         const container = document.getElementById('reveal-cards-container');
         const closeBtn  = document.getElementById('btn-reveal-close');
+        const titleEl   = document.getElementById('reveal-title');
+        const subtitleEl = document.getElementById('reveal-subtitle');
+        const sourceEl  = document.getElementById('reveal-source');
+        const actionsEl = document.getElementById('reveal-actions');
         if (modal && container && closeBtn && typeof createCardHTML === 'function') {
+          if (titleEl) titleEl.textContent = 'TOPE DEL MAZO';
+          if (subtitleEl) subtitleEl.textContent = 'Puedes descartar esta carta';
+          if (sourceEl) sourceEl.textContent = triggerCardName || '';
           container.innerHTML = `<div style="transform:scale(0.85);transform-origin:top center">${createCardHTML(topCard)}</div>`;
-          const discardBtn = document.createElement('button');
-          discardBtn.textContent = 'Descartar';
-          discardBtn.style.cssText = 'margin-top:10px;padding:8px 16px;background:rgba(255,0,0,0.2);border:1px solid red;color:white;cursor:pointer;border-radius:4px;display:block;';
-          container.appendChild(discardBtn);
-          closeBtn.textContent = 'Mantener';
-          modal.style.display = 'flex';
-          const cleanup = () => { modal.style.display = 'none'; closeBtn.textContent = 'Cerrar'; };
-          closeBtn.onclick = () => { cleanup(); processAbilityEffect(); };
-          discardBtn.onclick = () => {
+          actionsEl.innerHTML = `
+            <button class="ui-btn ui-btn--danger" id="btn-reveal-discard">DESCARTAR</button>
+            <button class="ui-btn" id="btn-reveal-close">MANTENER</button>
+          `;
+          modal.classList.remove('hidden');
+          const cleanup = () => { modal.classList.add('hidden'); };
+          document.getElementById('btn-reveal-close').onclick = () => { cleanup(); processAbilityEffect(); };
+          document.getElementById('btn-reveal-discard').onclick = () => {
             cleanup();
             gameState.player.deck.pop();
             gameState.player.trash.push(topCard);
