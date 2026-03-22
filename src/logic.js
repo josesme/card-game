@@ -1682,6 +1682,10 @@ function finishEffect() {
     // Route to ability engine if queue items are in new format
     if (gameState.effectQueue.length > 0 && gameState.effectQueue[0].effect !== undefined) {
         processAbilityEffect();
+    } else if (gameState.effectQueue.length === 0 && gameState.pendingCheckCompile) {
+        const who = gameState.pendingCheckCompile;
+        gameState.pendingCheckCompile = null;
+        setTimeout(() => checkCompilePhase(who), 600);
     } else if (gameState.effectQueue.length === 0 && gameState.pendingStartTurn) {
         const next = gameState.pendingStartTurn;
         gameState.pendingStartTurn = null;

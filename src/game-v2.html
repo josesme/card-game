@@ -1411,7 +1411,6 @@ function showLineSelectOverlay(ctx) {
 
 function processFieldSelection(type, selectedSet, eligible, ctx) {
     const items = [...selectedSet].map(i => eligible[i]);
-
     items.forEach(item => {
         const { cardObj, line, player, idx } = item;
         // Find current index (may shift if multiple removals)
