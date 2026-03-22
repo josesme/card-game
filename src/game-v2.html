@@ -233,6 +233,19 @@
             min-width: 0;
             min-height: 0;
             overflow: hidden;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .battle-column.rearrange-active {
+            cursor: pointer;
+            border-color: rgba(0, 245, 255, 0.3);
+        }
+        .battle-column.rearrange-active:hover {
+            border-color: rgba(0, 245, 255, 0.5);
+            box-shadow: 0 0 20px rgba(0, 245, 255, 0.15);
+        }
+        .battle-column.rearrange-selected {
+            border-color: var(--ui-cyan);
+            box-shadow: 0 0 20px rgba(0, 245, 255, 0.4), inset 0 0 30px rgba(0, 245, 255, 0.08);
         }
 
         /* Force content below watermark icons */

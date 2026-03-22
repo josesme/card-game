@@ -1557,36 +1557,43 @@ function handleFieldCardClick(line, target, cardIdx) {
         ctx.selected.push(cardObj);
         triggerUncovered(line, target);
     } else if (ctx.type === 'rearrange') {
+        const getColumn = (l) => { const el = document.getElementById(`line-${l}`); return el ? el.parentElement : null; };
         if (!ctx.firstProtocol) {
+            if (line === ctx._lastDeselected) { delete ctx._lastDeselected; return; }
             ctx.firstProtocol = line;
             const owner = (ctx.target === 'opponent' || ctx.target === 'ai') ? 'ai' : 'player';
             const p = gameState[owner].protocols;
             const idx = LINES.indexOf(line);
-            updateStatus(`Reorganizar: seleccionado ${p[idx]} (${line}). Elige otra línea para intercambiar, o pulsa Listo.`);
-            const lineEl = document.getElementById(`line-${line}`);
-            if (lineEl) lineEl.classList.add('selected');
+            updateStatus(`Reorganizar: ${p[idx]} (${line}) seleccionado. Elige otra línea o deselecciona.`);
+            const col = getColumn(line);
+            if (col) col.classList.add('rearrange-selected');
+        } else if (ctx.firstProtocol === line) {
+            // Deseleccionar
+            ctx.firstProtocol = null;
+            ctx._lastDeselected = line;
+            const col = getColumn(line);
+            if (col) col.classList.remove('rearrange-selected');
+            updateStatus('Selección cancelada. Elige una línea o pulsa Listo.');
         } else {
             const first = ctx.firstProtocol;
             const second = line;
-            const firstEl = document.getElementById(`line-${first}`);
-            if (firstEl) firstEl.classList.remove('selected');
+            const colFirst = getColumn(first);
+            if (colFirst) colFirst.classList.remove('rearrange-selected');
             ctx.firstProtocol = null;
-            if (first !== second) {
-                const owner = (ctx.target === 'opponent' || ctx.target === 'ai') ? 'ai' : 'player';
-                if (ctx.swapCards) {
-                    const tmp = gameState.field[first][owner];
-                    gameState.field[first][owner] = gameState.field[second][owner];
-                    gameState.field[second][owner] = tmp;
-                } else {
-                    swapProtocols(first, second, owner);
-                }
-                updateUI();
-                updateStatus('Protocolos intercambiados. Elige otra pareja o pulsa Listo.');
+            const owner = (ctx.target === 'opponent' || ctx.target === 'ai') ? 'ai' : 'player';
+            if (ctx.swapCards) {
+                const tmp = gameState.field[first][owner];
+                gameState.field[first][owner] = gameState.field[second][owner];
+                gameState.field[second][owner] = tmp;
             } else {
-                updateStatus('Selección cancelada. Elige la primera línea o pulsa Listo.');
+                swapProtocols(first, second, owner);
             }
-            return; // no avanzar — esperar más swaps o "Listo"
+            updateUI();
+            // Re-aplicar clases rearrange-active tras updateUI
+            setRearrangeActiveColumns(true);
+            updateStatus('Protocolos intercambiados. Elige otra pareja o pulsa Listo.');
         }
+        return; // no avanzar — esperar más swaps o "Listo"
     } else if (ctx.type === 'selectCardToCopy') {
         // Espejo 1: copiar efecto de carta rival elegida
         const cardObj = gameState.field[line][target][cardIdx];
@@ -1657,7 +1664,19 @@ function landPendingCard() {
     }
 }
 
+function setRearrangeActiveColumns(active) {
+    LINES.forEach(l => {
+        const lineEl = document.getElementById(`line-${l}`);
+        const col = lineEl ? lineEl.parentElement : null;
+        if (col) {
+            if (active) col.classList.add('rearrange-active');
+            else col.classList.remove('rearrange-active', 'rearrange-selected');
+        }
+    });
+}
+
 function showRearrangeDoneButton() {
+    setRearrangeActiveColumns(true);
     let btn = document.getElementById('btn-rearrange-done');
     if (!btn) {
         const statusEl = document.getElementById('game-status');
@@ -1671,11 +1690,7 @@ function showRearrangeDoneButton() {
     btn.classList.remove('hidden');
     btn.onclick = () => {
         btn.classList.add('hidden');
-        // Limpiar selección visual
-        LINES.forEach(l => {
-            const el = document.getElementById(`line-${l}`);
-            if (el) el.classList.remove('selected');
-        });
+        setRearrangeActiveColumns(false);
         finishEffect();
         if (typeof processAbilityEffect === 'function') processAbilityEffect();
     };
@@ -1684,6 +1699,7 @@ function showRearrangeDoneButton() {
 function hideRearrangeDoneButton() {
     const btn = document.getElementById('btn-rearrange-done');
     if (btn) btn.classList.add('hidden');
+    setRearrangeActiveColumns(false);
 }
 
 function finishEffect() {
