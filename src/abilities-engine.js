@@ -4739,11 +4739,17 @@ function onCardFlipped(card, targetPlayer, line) {
  * (el comando inicio es siempre visible aunque la carta esté cubierta)
  */
 function onTurnStartEffects(player) {
+  // Armar efectos de fin de turno: registrar IDs de cartas bocarriba con onTurnEnd
+  // Solo las que están en juego AHORA dispararán su "Final:" al acabar el turno
+  gameState.armedEndEffects = new Set();
   LINES.forEach(line => {
     if (gameState.ignoreEffectsLines && gameState.ignoreEffectsLines[line]) return;
     gameState.currentEffectLine = line;
     gameState.field[line][player].forEach(cardObj => {
       if (!cardObj.faceDown) {
+        if (CARD_EFFECTS[cardObj.card.nombre]?.onTurnEnd) {
+          gameState.armedEndEffects.add(cardObj.card.id);
+        }
         triggerCardEffect(cardObj.card, 'onTurnStart', player);
       }
     });
@@ -4751,20 +4757,20 @@ function onTurnStartEffects(player) {
 }
 
 /**
- * Hook para fin de turno — solo la carta top descubierta de cada pila
+ * Hook para fin de turno — solo cartas armadas al inicio del turno y que siguen en juego
  */
 function onTurnEndEffects(player) {
-  // Comando superior (h_inicio) con "Final:" persiste aunque la carta esté cubierta
-  // → iterar TODAS las cartas bocarriba, igual que onTurnStartEffects
+  if (!gameState.armedEndEffects || gameState.armedEndEffects.size === 0) return;
   LINES.forEach(line => {
     if (gameState.ignoreEffectsLines && gameState.ignoreEffectsLines[line]) return;
     gameState.currentEffectLine = line;
     gameState.field[line][player].forEach(cardObj => {
-      if (!cardObj.faceDown) {
+      if (!cardObj.faceDown && gameState.armedEndEffects.has(cardObj.card.id)) {
         triggerCardEffect(cardObj.card, 'onTurnEnd', player);
       }
     });
   });
+  gameState.armedEndEffects = null;
 }
 
 

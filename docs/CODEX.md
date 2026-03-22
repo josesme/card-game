@@ -112,7 +112,12 @@ Durante la fase "Verificar Compilación": si tienes **valor ≥ 10** en una lín
 - La carta **descubierta** (uncovered) es la que está en el extremo de la pila, más alejada del protocolo — es la **única que puede ser manipulada** en esa línea, salvo que un efecto especifique "cartas cubiertas" o "todas las cartas".
 - Una carta cubierta **no puede descubrirse** mientras está en una pila. Solo la carta superior está descubierta.
 - El valor y el comando superior (Persistent) son siempre visibles aunque la carta esté cubierta.
-- **Comando superior con "Inicial:" o "Final:"**: estos efectos se disparan al inicio/final de turno **aunque la carta esté cubierta**, porque están en el slot persistente (h_inicio). Ejemplo: Corrupción 6 ("Final: Descarta 1 carta o elimina esta carta") se activa incluso cubierta. Implementación: `onTurnStartEffects` y `onTurnEndEffects` iteran TODAS las cartas bocarriba de cada pila, no solo la top.
+- **Comando superior con "Inicial:" o "Final:"**: estos efectos están en el slot persistente (h_inicio) y aplican aunque la carta esté cubierta.
+  - **"Inicial:"** se dispara al inicio del turno para todas las cartas bocarriba (cubiertas o no).
+  - **"Final:"** se **arma** al inicio del turno (se registran las cartas con onTurnEnd presentes en ese momento). Solo se dispara al final del turno si la carta sigue en juego y bocarriba. Consecuencias:
+    - Una carta jugada durante la fase de acción **no** dispara su "Final:" ese turno (no estaba al inicio).
+    - Una carta armada al inicio pero eliminada/compilada antes del final **no** dispara su "Final:" (ya no está en juego).
+  - Implementación: `onTurnStartEffects` registra IDs en `gameState.armedEndEffects`; `onTurnEndEffects` solo dispara para IDs armados y aún presentes.
 
 ### Activación del Comando Central
 El comando central (texto del medio) de una carta se activa en **3 casos**:
