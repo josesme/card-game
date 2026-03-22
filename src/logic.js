@@ -1337,13 +1337,9 @@ function highlightEffectTargets() {
         if (typeof showHandSelectOverlay === 'function') {
             showHandSelectOverlay(ctx.type, ctx.count - ctx.selected.length, ctx);
         }
-    } else if (ctx.type === 'eliminate' || ctx.type === 'flip' || ctx.type === 'return' || ctx.type === 'shift' || ctx.type === 'selectCardToCopy') {
+    } else if (ctx.type === 'eliminate' || ctx.type === 'flip' || ctx.type === 'return' || ctx.type === 'shift' || ctx.type === 'selectCardToCopy' || ctx.type === 'rearrange' || ctx.type === 'swap') {
         // Click directo en mesa — el jugador necesita ver el contexto del tablero
         // Las cartas del campo ya tienen onclick → handleFieldCardClick
-    } else if (ctx.type === 'rearrange') {
-        if (typeof showRearrangeOverlay === 'function') {
-            showRearrangeOverlay(ctx);
-        }
     } else if (ctx.type === 'reveal') {
         if (typeof showHandSelectOverlay === 'function') {
             showHandSelectOverlay('reveal', 1, ctx);
