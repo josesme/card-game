@@ -240,6 +240,8 @@ function initLineListeners() {
                 clearSelectionHighlights();
                 updateUI();
                 if (typeof processAbilityEffect === 'function') processAbilityEffect();
+            } else if (gameState.effectContext && gameState.effectContext.type === 'rearrange') {
+                handleFieldCardClick(line, 'player', 0); // rearrange solo usa line, target/idx irrelevantes
             } else if (gameState.effectContext && gameState.effectContext.waitingForLine) {
                 handleShiftTargetLine(line);
             }
@@ -907,6 +909,8 @@ function renderStack(line, target) {
                 gameState.effectContext.type?.endsWith('_lineSelect') ||
                 gameState.effectContext.waitingForLine
             )) return;
+            // rearrange selecciona líneas — dejar que burbujee al line handler
+            if (gameState.effectContext && gameState.effectContext.type === 'rearrange') return;
             e.stopPropagation();
             if (gameState.effectContext) {
                 // Rule: Only uncovered cards can be manipulated unless "all" or coveredOnly is specified
