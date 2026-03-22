@@ -3583,7 +3583,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       for (let i = 0; i < stack.length; i++) {
         if (!stack[i].faceDown && stack[i].card.nombre !== 'Corrupción 0') faceUpIdx.push(i);
       }
-      if (faceUpIdx.length === 0) { processAbilityEffect(); break; }
+      if (faceUpIdx.length === 0) { updateStatus(`Corrupción 0: sin cartas bocarriba para voltear`); processAbilityEffect(); break; }
       if (targetPlayer === 'ai' || faceUpIdx.length === 1) {
         const idx = targetPlayer === 'ai'
           ? faceUpIdx.reduce((best, i) => stack[i].card.valor > stack[best].card.valor ? i : best, faceUpIdx[0])
