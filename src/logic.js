@@ -1337,26 +1337,12 @@ function highlightEffectTargets() {
         if (typeof showHandSelectOverlay === 'function') {
             showHandSelectOverlay(ctx.type, ctx.count - ctx.selected.length, ctx);
         }
-    } else if (ctx.type === 'eliminate' || ctx.type === 'flip' || ctx.type === 'return') {
-        if (typeof showFieldSelectOverlay === 'function') {
-            showFieldSelectOverlay(ctx.type, ctx.count, ctx);
-        }
+    } else if (ctx.type === 'eliminate' || ctx.type === 'flip' || ctx.type === 'return' || ctx.type === 'shift' || ctx.type === 'selectCardToCopy') {
+        // Click directo en mesa — el jugador necesita ver el contexto del tablero
+        // Las cartas del campo ya tienen onclick → handleFieldCardClick
     } else if (ctx.type === 'rearrange') {
         if (typeof showRearrangeOverlay === 'function') {
             showRearrangeOverlay(ctx);
-        }
-    } else if (ctx.type === 'selectCardToCopy') {
-        if (typeof showFieldSelectOverlay === 'function') {
-            // Collect copyable cards
-            const opponentSide = gameState.turn === 'player' ? 'ai' : 'player';
-            ctx.target = opponentSide;
-            ctx.filter = null;
-            ctx._copyMode = true;
-            showFieldSelectOverlay('selectCardToCopy', 1, ctx);
-        }
-    } else if (ctx.type === 'shift') {
-        if (typeof showFieldSelectOverlay === 'function') {
-            showFieldSelectOverlay('shift', 1, ctx);
         }
     } else if (ctx.type === 'reveal') {
         if (typeof showHandSelectOverlay === 'function') {
