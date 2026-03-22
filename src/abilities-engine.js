@@ -1910,6 +1910,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     case 'revealOpponentHand': {
       // Luz 4 / Psique 0: muestra la mano de la IA al jugador en el modal
       if (targetPlayer === 'player') {
+        updateUI(); // sincronizar contador antes de mostrar modal
         const hand = gameState.ai.hand;
         const modal = document.getElementById('reveal-modal');
         const container = document.getElementById('reveal-cards-container');
@@ -1921,6 +1922,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           if (titleEl) titleEl.textContent = 'MANO DEL RIVAL';
           if (subtitleEl) subtitleEl.textContent = `${hand.length} cartas en mano`;
           if (sourceEl) sourceEl.textContent = triggerCardName || '';
+          console.log(`[reveal] Mano IA real: ${hand.length} cartas — ${hand.map(c => c.nombre).join(', ')}`);
           container.innerHTML = hand.length > 0
             ? hand.map(c => `<div style="transform: scale(0.8); transform-origin: top center;">${createCardHTML(c)}</div>`).join('')
             : '<p style="color:var(--ui-text-muted);">La mano del oponente está vacía.</p>';
