@@ -578,6 +578,11 @@
         .effect-confirm-body {
             padding: 24px 22px;
             text-align: center;
+            overflow: visible;
+        }
+        /* Confirm panel: allow dropdown to overflow */
+        #command-confirm .effect-panel {
+            overflow: visible;
         }
         .effect-confirm-body .confirm-text {
             font-size: 11px;
@@ -761,7 +766,7 @@
         }
         .ui-dropdown-trigger .drop-placeholder {
             font-size: 10px;
-            color: var(--ui-text-muted);
+            color: #8899aa;
         }
         .ui-dropdown-trigger .drop-chevron {
             width: 12px; height: 12px;
@@ -794,12 +799,12 @@
         }
         .ui-dropdown-item .drop-dot {
             width: 6px; height: 6px;
-            background: #475569;
+            background: #8899aa;
             flex-shrink: 0;
         }
         .ui-dropdown-item .drop-text {
             font-size: 10px;
-            color: #475569;
+            color: #8899aa;
         }
         .ui-dropdown-item:hover { background: rgba(0,245,255,0.06); }
         .ui-dropdown-item:hover .drop-dot,
