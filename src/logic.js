@@ -1318,10 +1318,15 @@ function startEffect(type, target, count, opts = {}) {
     else if (type === 'return') actionVerb = 'DEVOLVER';
     else if (type === 'shift') actionVerb = 'CAMBIAR de línea';
     else if (type === 'swap') actionVerb = 'INTERCAMBIAR';
-    else if (type === 'rearrange') actionVerb = 'REORGANIZAR';
-    
+    else if (type === 'rearrange') actionVerb = 'REORGANIZAR protocolos';
+
     const targetDesc = target === 'ai' ? ' del OPONENTE' : target === 'player' ? ' TUYAS' : '';
-    updateStatus(`Efecto: elige ${count} carta(s)${targetDesc} para ${actionVerb}`);
+    if (type === 'rearrange') {
+        const ownerDesc = target === 'ai' ? 'del OPONENTE' : 'TUYOS';
+        updateStatus(`Efecto: elige 2 líneas para REORGANIZAR protocolos ${ownerDesc}`);
+    } else {
+        updateStatus(`Efecto: elige ${count} carta(s)${targetDesc} para ${actionVerb}`);
+    }
     highlightEffectTargets();
 }
 
@@ -1478,8 +1483,8 @@ function handleFieldCardClick(line, target, cardIdx) {
     const ctx = gameState.effectContext;
     if (!ctx) return;
 
-    // Validate target
-    if (ctx.target !== 'any' && ctx.target !== target) return;
+    // Validate target (rearrange selecciona líneas, no cartas de un lado)
+    if (ctx.type !== 'rearrange' && ctx.target !== 'any' && ctx.target !== target) return;
 
     if (ctx.type === 'eliminate') {
         if (ctx.forceLine && line !== ctx.forceLine) return;
