@@ -1327,7 +1327,9 @@ function startEffect(type, target, count, opts = {}) {
     const targetDesc = target === 'ai' ? ' del OPONENTE' : target === 'player' ? ' TUYAS' : '';
     if (type === 'rearrange') {
         const ownerDesc = target === 'ai' ? 'del OPONENTE' : 'TUYOS';
-        updateStatus(`Efecto: elige 2 líneas para REORGANIZAR protocolos ${ownerDesc}`);
+        updateStatus(`Reorganizar protocolos ${ownerDesc}: intercambia líneas y pulsa Listo`);
+        // Mostrar botón "Listo" para confirmar reorganización
+        showRearrangeDoneButton();
     } else {
         updateStatus(`Efecto: elige ${count} carta(s)${targetDesc} para ${actionVerb}`);
     }
@@ -1557,7 +1559,10 @@ function handleFieldCardClick(line, target, cardIdx) {
     } else if (ctx.type === 'rearrange') {
         if (!ctx.firstProtocol) {
             ctx.firstProtocol = line;
-            highlightEffectTargets(); // actualiza banner con el protocolo seleccionado
+            const owner = (ctx.target === 'opponent' || ctx.target === 'ai') ? 'ai' : 'player';
+            const p = gameState[owner].protocols;
+            const idx = LINES.indexOf(line);
+            updateStatus(`Reorganizar: seleccionado ${p[idx]} (${line}). Elige otra línea para intercambiar, o pulsa Listo.`);
             const lineEl = document.getElementById(`line-${line}`);
             if (lineEl) lineEl.classList.add('selected');
         } else {
@@ -1565,6 +1570,7 @@ function handleFieldCardClick(line, target, cardIdx) {
             const second = line;
             const firstEl = document.getElementById(`line-${first}`);
             if (firstEl) firstEl.classList.remove('selected');
+            ctx.firstProtocol = null;
             if (first !== second) {
                 const owner = (ctx.target === 'opponent' || ctx.target === 'ai') ? 'ai' : 'player';
                 if (ctx.swapCards) {
@@ -1574,12 +1580,12 @@ function handleFieldCardClick(line, target, cardIdx) {
                 } else {
                     swapProtocols(first, second, owner);
                 }
-                ctx.selected.push({ first, second });
+                updateUI();
+                updateStatus('Protocolos intercambiados. Elige otra pareja o pulsa Listo.');
             } else {
-                ctx.firstProtocol = null;
-                updateStatus("Intercambio cancelado. Elige la primera línea.");
-                return;
+                updateStatus('Selección cancelada. Elige la primera línea o pulsa Listo.');
             }
+            return; // no avanzar — esperar más swaps o "Listo"
         }
     } else if (ctx.type === 'selectCardToCopy') {
         // Espejo 1: copiar efecto de carta rival elegida
@@ -1651,7 +1657,37 @@ function landPendingCard() {
     }
 }
 
+function showRearrangeDoneButton() {
+    let btn = document.getElementById('btn-rearrange-done');
+    if (!btn) {
+        const statusEl = document.getElementById('game-status');
+        if (!statusEl) return;
+        btn = document.createElement('button');
+        btn.id = 'btn-rearrange-done';
+        btn.textContent = 'LISTO';
+        btn.style.cssText = 'margin-left: 8px; padding: 4px 16px; background: var(--ui-cyan); color: #0a0e27; font-family: var(--ui-font); font-size: 10px; font-weight: 700; border: none; border-radius: 4px; cursor: pointer; letter-spacing: 1px;';
+        statusEl.parentElement.insertBefore(btn, statusEl.nextSibling);
+    }
+    btn.classList.remove('hidden');
+    btn.onclick = () => {
+        btn.classList.add('hidden');
+        // Limpiar selección visual
+        LINES.forEach(l => {
+            const el = document.getElementById(`line-${l}`);
+            if (el) el.classList.remove('selected');
+        });
+        finishEffect();
+        if (typeof processAbilityEffect === 'function') processAbilityEffect();
+    };
+}
+
+function hideRearrangeDoneButton() {
+    const btn = document.getElementById('btn-rearrange-done');
+    if (btn) btn.classList.add('hidden');
+}
+
 function finishEffect() {
+    hideRearrangeDoneButton();
     gameState.effectContext = null;
     clearEffectHighlights();
     updateUI();
