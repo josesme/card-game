@@ -4754,15 +4754,16 @@ function onTurnStartEffects(player) {
  * Hook para fin de turno — solo la carta top descubierta de cada pila
  */
 function onTurnEndEffects(player) {
+  // Comando superior (h_inicio) con "Final:" persiste aunque la carta esté cubierta
+  // → iterar TODAS las cartas bocarriba, igual que onTurnStartEffects
   LINES.forEach(line => {
     if (gameState.ignoreEffectsLines && gameState.ignoreEffectsLines[line]) return;
-    const stack = gameState.field[line][player];
-    if (stack.length === 0) return;
-    const top = stack[stack.length - 1];
-    if (!top.faceDown) {
-      gameState.currentEffectLine = line;
-      triggerCardEffect(top.card, 'onTurnEnd', player);
-    }
+    gameState.currentEffectLine = line;
+    gameState.field[line][player].forEach(cardObj => {
+      if (!cardObj.faceDown) {
+        triggerCardEffect(cardObj.card, 'onTurnEnd', player);
+      }
+    });
   });
 }
 
