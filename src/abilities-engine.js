@@ -4071,11 +4071,33 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         if (confirmArea && btnYes && btnNo) {
           gameState.effectContext = { type: 'confirm' };
           confirmArea.classList.remove('hidden');
-          const opts = allProtos.map(p => `<option value="${p}">${p}</option>`).join('');
-          confirmMsg.innerHTML = `${triggerCardName || ''}: Declara un Protocolo<br><select id="luck3-proto-sel" style="font-size:1.1em;margin-top:8px;padding:2px 8px;">${opts}</select>`;
+          const dropItems = allProtos.map(p => `<div class="ui-dropdown-item" data-val="${p}"><span class="drop-dot"></span><span class="drop-text">${p}</span></div>`).join('');
+          confirmMsg.innerHTML = `${triggerCardName || ''}: Declara un Protocolo
+            <div class="ui-dropdown" id="luck3-dropdown" style="margin-top:10px;">
+              <div class="ui-dropdown-trigger" id="luck3-trigger">
+                <span class="drop-placeholder" id="luck3-placeholder">Elige protocolo</span>
+                <span class="drop-value" id="luck3-value" style="display:none;"><span class="drop-dot"></span><span id="luck3-val-text"></span></span>
+                <svg class="drop-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+              <div class="ui-dropdown-list">${dropItems}</div>
+            </div>`;
+          // Dropdown behavior
+          const dd3 = document.getElementById('luck3-dropdown');
+          dd3.querySelector('.ui-dropdown-trigger').onclick = () => dd3.classList.toggle('open');
+          dd3.querySelectorAll('.ui-dropdown-item').forEach(it => {
+            it.onclick = () => {
+              dd3.querySelectorAll('.ui-dropdown-item').forEach(x => x.classList.remove('active'));
+              it.classList.add('active');
+              dd3.dataset.selected = it.dataset.val;
+              document.getElementById('luck3-placeholder').style.display = 'none';
+              const valEl = document.getElementById('luck3-value');
+              valEl.style.display = 'flex';
+              document.getElementById('luck3-val-text').textContent = it.dataset.val;
+              dd3.classList.remove('open');
+            };
+          });
           btnYes.onclick = () => {
-            const sel = document.getElementById('luck3-proto-sel');
-            const declared = sel?.value || allProtos[0];
+            const declared = dd3.dataset.selected || allProtos[0];
             confirmArea.classList.add('hidden');
             confirmMsg.innerHTML = '';
             gameState.effectContext = null;
@@ -4162,10 +4184,32 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         if (confirmArea && btnYes && btnNo) {
           gameState.effectContext = { type: 'confirm' };
           confirmArea.classList.remove('hidden');
-          confirmMsg.innerHTML = `${triggerCardName || ''}: ¿Qué número declaras? (0–6)<br><select id="luck-num-sel" style="font-size:1.3em;margin-top:8px;padding:2px 8px;">${[0,1,2,3,4,5,6].map(n=>`<option>${n}</option>`).join('')}</select>`;
+          const numItems = [0,1,2,3,4,5,6].map(n => `<div class="ui-dropdown-item" data-val="${n}"><span class="drop-dot"></span><span class="drop-text">${n}</span></div>`).join('');
+          confirmMsg.innerHTML = `${triggerCardName || ''}: ¿Qué número declaras? (0–6)
+            <div class="ui-dropdown" id="luck0-dropdown" style="margin-top:10px;">
+              <div class="ui-dropdown-trigger" id="luck0-trigger">
+                <span class="drop-placeholder" id="luck0-placeholder">Elige número</span>
+                <span class="drop-value" id="luck0-value" style="display:none;"><span class="drop-dot"></span><span id="luck0-val-text"></span></span>
+                <svg class="drop-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+              <div class="ui-dropdown-list">${numItems}</div>
+            </div>`;
+          const dd0 = document.getElementById('luck0-dropdown');
+          dd0.querySelector('.ui-dropdown-trigger').onclick = () => dd0.classList.toggle('open');
+          dd0.querySelectorAll('.ui-dropdown-item').forEach(it => {
+            it.onclick = () => {
+              dd0.querySelectorAll('.ui-dropdown-item').forEach(x => x.classList.remove('active'));
+              it.classList.add('active');
+              dd0.dataset.selected = it.dataset.val;
+              document.getElementById('luck0-placeholder').style.display = 'none';
+              const valEl = document.getElementById('luck0-value');
+              valEl.style.display = 'flex';
+              document.getElementById('luck0-val-text').textContent = it.dataset.val;
+              dd0.classList.remove('open');
+            };
+          });
           btnYes.onclick = () => {
-            const sel = document.getElementById('luck-num-sel');
-            const declaredVal = parseInt(sel?.value ?? '0');
+            const declaredVal = parseInt(dd0.dataset.selected ?? '0');
             confirmArea.classList.add('hidden');
             confirmMsg.innerHTML = '';
             gameState.effectContext = null;
