@@ -359,7 +359,7 @@ function initProtocolDisplay() {
                 if (imgUrl) pCard.classList.add('proto-img');
                 if (imgUrl) pCard.style.backgroundImage = `url('${imgUrl}')`;
             }
-            if (!_isV2Layout && !pCard.dataset.stackHover) {
+            if (!pCard.dataset.stackHover) {
                 pCard.dataset.stackHover = '1';
                 pCard.style.cursor = 'pointer';
                 pCard.addEventListener('mouseenter', () => showStackPreview(line, 'player'));
@@ -382,7 +382,7 @@ function initProtocolDisplay() {
                 if (imgUrl) aCard.classList.add('proto-img');
                 if (imgUrl) aCard.style.backgroundImage = `url('${imgUrl}')`;
             }
-            if (!_isV2Layout && !aCard.dataset.stackHover) {
+            if (!aCard.dataset.stackHover) {
                 aCard.dataset.stackHover = '1';
                 aCard.style.cursor = 'pointer';
                 aCard.addEventListener('mouseenter', () => showStackPreview(line, 'ai'));
@@ -425,6 +425,13 @@ function createFieldCardHTML(card) {
 }
 
 function isSelectionActive() {
+    // Check if any effect overlay is open
+    const overlayIds = ['action-modal', 'command-confirm', 'reveal-modal', 'overlay-select'];
+    const hasOverlay = overlayIds.some(id => {
+        const el = document.getElementById(id);
+        return el && !el.classList.contains('hidden');
+    });
+    if (hasOverlay) return true;
     return gameState.selectionMode ||
         (gameState.effectContext && (
             gameState.effectContext.waitingForLine ||
@@ -470,7 +477,9 @@ function showStackPreview(line, owner) {
     stack.forEach((cardObj, idx) => {
         const top = idx * OFFSET;
         const z = idx + 1;
-        if (cardObj.faceDown) {
+        // Regla: el jugador puede mirar sus propias cartas bocabajo; las del rival se ocultan
+        const showFaceDown = cardObj.faceDown && owner !== 'player';
+        if (showFaceDown) {
             html += `<div style="position:absolute;top:${top}px;left:0;z-index:${z};">
                 <div class="card face-down"><div class="card-back-value">2</div><div class="card-back-title">COMPILE</div></div>
             </div>`;
@@ -622,7 +631,7 @@ function updateUI() {
     if (aiHandCountEl) {
         const n = gameState.ai.hand.length;
         aiHandCountEl.textContent = n;
-        aiHandCountEl.style.color = n === 0 ? '#ef4444' : '#722E9A';
+        aiHandCountEl.style.color = n === 0 ? '#ef4444' : 'var(--ui-pink)';
     }
     // V2: update hand count badge
     const handBadge = document.getElementById('hand-count-badge');
@@ -877,12 +886,17 @@ function renderStack(line, target) {
 
         const domCard = cEl.firstElementChild;
 
-        if (!cardObj.faceDown) {
-            // V2: no hover preview needed — cards are already visible
-            if (!isV2) {
+        if (isV2) {
+            // V2: hover muestra la carta individual ampliada
+            // Regla: bocabajo del jugador se revelan, bocabajo del rival se ocultan
+            const canReveal = !cardObj.faceDown || target === 'player';
+            if (canReveal) {
                 domCard.addEventListener('mouseenter', () => showCardPreview(cardObj.card));
                 domCard.addEventListener('mouseleave', hideCardPreview);
             }
+        } else if (!cardObj.faceDown) {
+            domCard.addEventListener('mouseenter', () => showCardPreview(cardObj.card));
+            domCard.addEventListener('mouseleave', hideCardPreview);
         }
 
         // Add click handler for effects (eliminate/flip/shift/return)
