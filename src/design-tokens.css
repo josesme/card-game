@@ -42,4 +42,16 @@
     --text-primary:      #e0e0e0;
     --text-secondary:    #888;
     --border-subtle:     #333;
+
+    /* ── UI Components (Pencil) ─────────────────────── */
+    --ui-bg:             #030712;
+    --ui-bg-inactive:    #060e1c;
+    --ui-cyan:           #00f5ff;
+    --ui-purple:         #8b5cf6;
+    --ui-pink:           #d946ef;
+    --ui-cyan-glow:      rgba(0, 245, 255, 0.33);
+    --ui-purple-glow:    rgba(139, 92, 246, 0.33);
+    --ui-text-muted:     #334155;
+    --ui-border-inactive:#1e3a5f;
+    --ui-font:           'JetBrains Mono', monospace;
 }

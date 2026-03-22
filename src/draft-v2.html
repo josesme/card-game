@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>COMPILE - Draft de Protocolos v2</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&family=Teko:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&family=Teko:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="design-tokens.css">
+    <link rel="stylesheet" href="ui-components.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -13,7 +14,7 @@
             width: 100%; height: 100%;
             overflow: hidden;
             color: #e0e0e0;
-            font-family: 'Space Mono', monospace;
+            font-family: 'JetBrains Mono', monospace;
             font-size: 14px;
         }
 
@@ -60,17 +61,20 @@
         }
 
         .subtitle {
-            color: #666;
-            font-size: 0.8em;
+            color: var(--ui-cyan);
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
             margin-bottom: 14px;
         }
 
         .current-turn {
-            font-family: 'Orbitron', monospace;
-            font-weight: 700;
-            font-size: 0.9em;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            font-size: 11px;
             letter-spacing: 1px;
-            color: var(--player-primary);
+            color: var(--ui-cyan);
             margin-bottom: 14px;
         }
 
@@ -214,10 +218,9 @@
         }
 
         .selection-label {
-            font-size: 0.75em;
-            font-weight: bold;
-            letter-spacing: 1px;
-            opacity: 0.8;
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 2px;
         }
 
         .selection-label.player { color: var(--player-primary); }
@@ -279,67 +282,58 @@
             align-items: center;
             justify-content: center;
             padding: 0 20px;
-            font-family: 'Orbitron', monospace;
-            font-weight: 900;
-            font-size: 1.3em;
-            color: #333;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 11px;
+            color: var(--ui-cyan);
             border-left: 1px solid rgba(255,255,255,0.06);
             border-right: 1px solid rgba(255,255,255,0.06);
         }
 
-        /* ── Botones ─────────────────────────────────── */
-        .start-button {
-            background: rgba(255,217,61,0.1);
-            color: var(--player-primary);
-            border: 1px solid var(--player-primary);
-            padding: 13px 32px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 1em;
-            font-family: 'Orbitron', monospace;
-            letter-spacing: 1px;
-            transition: background 0.2s, transform 0.15s;
-        }
-
-        .start-button:disabled {
-            border-color: #334;
-            color: #334;
-            cursor: not-allowed;
-            background: transparent;
-        }
-
-        .start-button:hover:not(:disabled) {
-            background: rgba(255,217,61,0.25);
-            transform: scale(1.04);
-        }
+        /* ── Botones: .ui-btn definido en style.css ── */
 
         #btn-fullscreen {
             position: fixed;
             top: 12px; right: 16px;
-            background: rgba(255,217,61,0.1);
-            border: 1px solid var(--player-primary);
-            color: var(--player-primary);
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ui-bg);
+            border: 1.5px solid var(--ui-cyan);
             border-radius: 8px;
-            padding: 8px 14px;
             cursor: pointer;
-            font-size: 1.1em;
-            transition: background 0.2s;
+            padding: 0;
             z-index: 100;
+            box-shadow: 0 0 12px var(--ui-cyan-glow), 0 0 3px rgba(0,245,255,0.55);
+            transition: box-shadow 0.25s, background 0.25s;
         }
-        #btn-fullscreen:hover { background: rgba(255,217,61,0.25); }
+        #btn-fullscreen svg {
+            width: 22px;
+            height: 22px;
+            stroke: var(--ui-cyan);
+            stroke-width: 2;
+            fill: none;
+            filter: drop-shadow(0 0 8px rgba(0,245,255,0.66));
+        }
+        #btn-fullscreen:hover {
+            background: #061220;
+            box-shadow: 0 0 18px rgba(0,245,255,0.5), 0 0 6px rgba(0,245,255,0.7);
+        }
         .nav-btn {
             position: fixed;
             top: 12px;
-            background: rgba(255,217,61,0.1);
-            border: 1px solid var(--player-primary);
-            color: var(--player-primary);
+            background: var(--ui-bg-inactive);
+            border: 1px solid var(--ui-border-inactive);
+            color: var(--ui-text-muted);
             border-radius: 8px;
             padding: 8px 14px;
             cursor: pointer;
-            font-family: 'Orbitron', monospace;
-            font-size: 0.75em;
-            letter-spacing: 1px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 2px;
             transition: background 0.2s;
             z-index: 100;
         }
@@ -348,7 +342,10 @@
 </head>
 <body>
 
-<button id="btn-fullscreen" onclick="toggleFullscreen()" title="Pantalla completa">&#x26F6;</button>
+<button id="btn-fullscreen" onclick="toggleFullscreen()" title="Pantalla completa">
+    <svg id="fs-icon-expand" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+    <svg id="fs-icon-shrink" viewBox="0 0 24 24" style="display:none"><path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/><path d="M3 21l7-7"/></svg>
+</button>
 <div id="draft-viewport">
 <div id="draft-container">
 
@@ -371,8 +368,8 @@
     </div>
 
     <div style="display: flex; gap: 12px; justify-content: center; align-items: center;">
-        <button class="start-button" onclick="window.location.href='/src/index.html'">VOLVER</button>
-        <button class="start-button" id="start-game-btn" disabled>COMENZAR JUEGO</button>
+        <button class="ui-btn ui-btn--danger" onclick="window.location.href='/src/index.html'">VOLVER</button>
+        <button class="ui-btn" id="start-game-btn" disabled>COMENZAR JUEGO</button>
     </div>
 
 </div>
@@ -742,25 +739,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.addEventListener('resize', applyDraftScale);
 
+function setFsIcons(isFs) {
+    document.getElementById('fs-icon-expand').style.display = isFs ? 'none' : '';
+    document.getElementById('fs-icon-shrink').style.display = isFs ? '' : 'none';
+}
 function toggleFullscreen() {
-    const btn = document.getElementById('btn-fullscreen');
     if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(() => {});
-        btn.textContent = '\u2715 SALIR';
+        setFsIcons(true);
         sessionStorage.setItem('fs', '1');
     } else {
         document.exitFullscreen().catch(() => {});
-        btn.textContent = '\u26F6';
+        setFsIcons(false);
         sessionStorage.removeItem('fs');
     }
 }
 
 document.addEventListener('fullscreenchange', () => {
-    const btn = document.getElementById('btn-fullscreen');
     if (document.fullscreenElement) {
-        btn.textContent = '\u2715 SALIR';
+        setFsIcons(true);
     } else {
-        btn.textContent = '\u26F6';
+        setFsIcons(false);
         sessionStorage.removeItem('fs');
     }
     setTimeout(applyDraftScale, 50);

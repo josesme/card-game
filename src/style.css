@@ -15,7 +15,7 @@
    Personalización fácil mediante variables CSS en :root
  ============================================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap');
 
 /* VARIABLES DE DISEÑO */
 :root {
@@ -1267,3 +1267,75 @@ body::before {
     from { box-shadow: 0 0 6px rgba(0, 255, 65, 0.3); }
     to   { box-shadow: 0 0 18px rgba(0, 255, 65, 0.8); }
 }
+
+/* ── UI Button System (Pencil components) ──────────────────────────────── */
+.ui-btn {
+    padding: 0 20px;
+    height: 36px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 11px;
+    font-family: var(--ui-font);
+    letter-spacing: 2px;
+    transition: all 0.25s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ui-bg);
+    color: var(--ui-cyan);
+    border: 1px solid rgba(0,245,255,0.4);
+    box-shadow: 0 0 12px rgba(0,245,255,0.33), 0 0 2px rgba(0,245,255,0.55);
+}
+.ui-btn:hover {
+    background: var(--ui-cyan);
+    color: var(--ui-bg);
+    border: 1px solid var(--ui-cyan);
+    box-shadow: none;
+}
+.ui-btn:disabled {
+    background: var(--ui-bg-inactive);
+    color: var(--ui-text-muted);
+    border: 1px solid var(--ui-border-inactive);
+    cursor: not-allowed;
+    box-shadow: none;
+}
+.ui-btn:disabled:hover {
+    background: var(--ui-bg-inactive);
+    color: var(--ui-text-muted);
+    border: 1px solid var(--ui-border-inactive);
+    box-shadow: none;
+}
+
+/* Variante púrpura */
+.ui-btn--purple {
+    color: var(--ui-purple);
+    border-color: rgba(139,92,246,0.4);
+    box-shadow: 0 0 12px var(--ui-purple-glow), 0 0 2px rgba(139,92,246,0.55);
+}
+.ui-btn--purple:hover {
+    background: var(--ui-purple);
+    color: #fff;
+    border-color: var(--ui-purple);
+}
+
+/* Variante danger (rosa) */
+.ui-btn--danger {
+    color: var(--ui-pink);
+    border-color: rgba(217,70,239,0.4);
+    box-shadow: 0 0 12px rgba(217,70,239,0.33), 0 0 2px rgba(217,70,239,0.55);
+}
+.ui-btn--danger:hover {
+    background: var(--ui-pink);
+    color: var(--ui-bg);
+    border-color: var(--ui-pink);
+}
+
+/* Tamaño compacto para bar/inline */
+.ui-btn--sm {
+    height: 28px;
+    padding: 0 14px;
+    font-size: 10px;
+}
+
+/* Botón flex (ocupa espacio disponible en flex container) */
+.ui-btn--flex { flex: 1; }

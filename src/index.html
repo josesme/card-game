@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>COMPILE</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="design-tokens.css">
+    <link rel="stylesheet" href="ui-components.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -13,7 +14,7 @@
             background: url('../images/Background/Compile_2.png') no-repeat center center fixed;
             background-size: cover;
             color: #e0e0e0;
-            font-family: 'Space Mono', monospace;
+            font-family: 'JetBrains Mono', monospace;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -38,7 +39,7 @@
             background: rgba(15, 20, 45, 0.5); /* Fondo sutil para el contenido */
             backdrop-filter: blur(10px); /* Efecto cristal */
             border-radius: 24px;
-            border: 1px solid rgba(255, 217, 61, 0.15);
+            border: 1px solid rgba(0, 245, 255, 0.1);
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
         }
 
@@ -51,17 +52,20 @@
         }
 
         .tagline {
-            color: #778;
-            font-size: 1em;
+            color: var(--ui-cyan);
+            font-size: 0.75em;
+            font-weight: 600;
             margin-bottom: 60px;
             letter-spacing: 2px;
+            text-transform: uppercase;
         }
 
         /* ── Dificultad ──────────────────────────────── */
         .diff-label {
-            color: #ffb700;
-            font-size: 0.9em;
-            letter-spacing: 4px;
+            color: var(--ui-cyan);
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 2px;
             text-transform: uppercase;
             margin-bottom: 20px;
         }
@@ -75,14 +79,14 @@
         .diff-btn {
             flex: 1;
             height: 90px;
-            background: rgba(0,0,0,0.4);
-            border: 1px solid #333;
-            color: #666;
+            background: var(--ui-bg-inactive);
+            border: 1px solid var(--ui-border-inactive);
+            color: var(--ui-text-muted);
             padding: 0 8px;
-            border-radius: 8px;
             cursor: pointer;
-            font-family: 'Orbitron', monospace;
-            font-size: 0.75em;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            font-weight: 600;
             letter-spacing: 1px;
             transition: all 0.2s;
             display: flex;
@@ -99,13 +103,13 @@
         }
 
         .diff-name {
-            font-size: 0.68em;
-            letter-spacing: 0px;
+            font-size: 9px;
+            letter-spacing: 1px;
             white-space: nowrap;
         }
 
         .diff-btn:hover {
-            border-color: #666;
+            border-color: rgba(0,245,255,0.3);
             color: #aaa;
         }
 
@@ -126,8 +130,8 @@
         .diff-desc {
             position: absolute;
             inset: 0;
-            font-size: 0.95em;
-            color: #667;
+            font-size: 10px;
+            color: var(--ui-text-muted);
             line-height: 1.6;
             display: flex;
             align-items: center;
@@ -144,20 +148,20 @@
 
         .protocol-btn {
             flex: 1;
-            background: rgba(0,0,0,0.4);
-            border: 1px solid #333;
-            color: #666;
+            background: var(--ui-bg-inactive);
+            border: 1px solid var(--ui-border-inactive);
+            color: var(--ui-text-muted);
             padding: 16px 8px;
-            border-radius: 8px;
             cursor: pointer;
-            font-family: 'Orbitron', monospace;
-            font-size: 0.75em;
-            letter-spacing: 1px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 2px;
             transition: all 0.2s;
         }
 
         .protocol-btn:hover {
-            border-color: #666;
+            border-color: rgba(0,245,255,0.3);
             color: #aaa;
         }
 
@@ -175,55 +179,44 @@
             box-shadow: 0 0 18px rgba(168, 85, 247, 0.2);
         }
 
-        /* ── Botón jugar ─────────────────────────────── */
-        .btn-play {
-            width: 100%;
-            padding: 26px;
-            font-size: 1.3em;
-            font-family: 'Orbitron', monospace;
-            font-weight: 700;
-            letter-spacing: 3px;
-            border: 2px solid var(--player-primary);
-            border-radius: 8px;
-            background: transparent;
-            color: var(--player-primary);
-            cursor: pointer;
-            transition: all 0.25s;
-            margin-bottom: 40px;
-        }
-
-        .btn-play:hover:not(:disabled) {
-            background: rgba(255, 217, 61, 0.15);
-            box-shadow: 0 0 28px rgba(255, 217, 61, 0.35);
-            transform: translateY(-2px);
-        }
-
-        .btn-play:disabled {
-            border-color: #334;
-            color: #334;
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
+        /* ── .ui-btn viene de style.css ── */
 
         .version {
-            color: #445;
-            font-size: 0.8em;
+            color: var(--ui-text-muted);
+            font-size: 8px;
+            letter-spacing: 1px;
+            margin-top: 16px;
         }
 
         #btn-fullscreen {
             position: fixed;
             top: 12px; right: 16px;
-            background: rgba(255,217,61,0.1);
-            border: 1px solid var(--player-primary);
-            color: var(--player-primary);
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ui-bg);
+            border: 1.5px solid var(--ui-cyan);
             border-radius: 8px;
-            padding: 8px 14px;
             cursor: pointer;
-            font-size: 1.1em;
-            transition: background 0.2s;
+            padding: 0;
             z-index: 100;
+            box-shadow: 0 0 12px var(--ui-cyan-glow), 0 0 3px rgba(0,245,255,0.55);
+            transition: box-shadow 0.25s, background 0.25s;
         }
-        #btn-fullscreen:hover { background: rgba(255,217,61,0.25); }
+        #btn-fullscreen svg {
+            width: 22px;
+            height: 22px;
+            stroke: var(--ui-cyan);
+            stroke-width: 2;
+            fill: none;
+            filter: drop-shadow(0 0 8px rgba(0,245,255,0.66));
+        }
+        #btn-fullscreen:hover {
+            background: #061220;
+            box-shadow: 0 0 18px rgba(0,245,255,0.5), 0 0 6px rgba(0,245,255,0.7);
+        }
 
         #index-container {
             transform-origin: center center;
@@ -232,16 +225,19 @@
 </head>
 <body>
 
-<button id="btn-fullscreen" onclick="toggleFullscreen()" title="Pantalla completa">⛶</button>
+<button id="btn-fullscreen" onclick="toggleFullscreen()" title="Pantalla completa">
+    <svg id="fs-icon-expand" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+    <svg id="fs-icon-shrink" viewBox="0 0 24 24" style="display:none"><path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/><path d="M3 21l7-7"/></svg>
+</button>
 <div class="container" id="index-container">
     <img src="../images/Background/Compile.png" class="title-img" alt="COMPILE">
     <p class="tagline">Juego de cartas · IA adaptativa</p>
 
-    <p class="diff-label">⚙️ Nivel de compilación</p>
+    <p class="diff-label">Nivel de compilación</p>
     <div class="diff-grid" id="diff-grid"></div>
     <div class="diff-desc-wrapper"><p class="diff-desc" id="diff-desc"></p></div>
 
-    <p class="diff-label">🧬 Protocolos disponibles</p>
+    <p class="diff-label">Protocolos disponibles</p>
     <div class="protocol-grid">
         <button class="protocol-btn" id="proto-1" style="--c: 168, 85, 247;">
             <span class="protocol-name">MAIN 1</span>
@@ -254,7 +250,9 @@
         </button>
     </div>
 
-    <button class="btn-play" id="btn-play" disabled>INICIAR DRAFT</button>
+    <div style="display: flex; gap: 12px; justify-content: center; align-items: center;">
+        <button class="ui-btn" id="btn-play" disabled>COMENZAR JUEGO</button>
+    </div>
 
     <div class="version">v2.1 — 2026</div>
 </div>
@@ -306,24 +304,26 @@ document.getElementById('proto-all').onclick = () => { selectedProtocols = 'all'
 
 renderDiff();
 
+function setFsIcons(isFs) {
+    document.getElementById('fs-icon-expand').style.display = isFs ? 'none' : '';
+    document.getElementById('fs-icon-shrink').style.display = isFs ? '' : 'none';
+}
 function toggleFullscreen() {
-    const btn = document.getElementById('btn-fullscreen');
     if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(() => {});
-        btn.textContent = '✕ SALIR';
+        setFsIcons(true);
         sessionStorage.setItem('fs', '1');
     } else {
         document.exitFullscreen().catch(() => {});
-        btn.textContent = '⛶';
+        setFsIcons(false);
         sessionStorage.removeItem('fs');
     }
 }
 document.addEventListener('fullscreenchange', () => {
-    const btn = document.getElementById('btn-fullscreen');
     if (document.fullscreenElement) {
-        btn.textContent = '✕ SALIR';
+        setFsIcons(true);
     } else {
-        btn.textContent = '⛶';
+        setFsIcons(false);
         sessionStorage.removeItem('fs');
     }
 });
