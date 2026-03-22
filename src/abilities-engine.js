@@ -188,6 +188,7 @@ const CARD_EFFECTS = {
     onTurnStart: [
       { action: 'warnIfCovered', target: 'self' }
     ],
+    persistentEnd: true,
     onTurnEnd: [
       { action: 'deleteSelfIfCoveredAndWarned', target: 'self' }
     ]
@@ -969,6 +970,7 @@ const CARD_EFFECTS = {
     onPlay: [{ action: 'mayFlipCoveredFaceUp' }]
   },
   'Corrupción 6': {
+    persistentEnd: true,
     onTurnEnd: [{ action: 'optionalDiscardOrDeleteSelf' }]
   },
 
@@ -985,6 +987,7 @@ const CARD_EFFECTS = {
     onTurnEnd: [{ action: 'mayShiftSelfToHighestOpponentLine' }]
   },
   'Valor 6': {
+    persistentEnd: true,
     onTurnEnd: [{ action: 'flipSelfIfOpponentWins' }]
   },
 
@@ -1006,6 +1009,7 @@ const CARD_EFFECTS = {
     onPlay: [{ action: 'flipCardBelowDistinctProtocolCount' }]
   },
   'Diversidad 6': {
+    persistentEnd: true,
     onTurnEnd: [{ action: 'deleteIfFewDistinctProtocols', minProtocols: 4 }]
   },
 
@@ -1023,6 +1027,7 @@ const CARD_EFFECTS = {
 
   // ========== HIELO (faltantes) ==========
   'Hielo 3': {
+    persistentEnd: true,
     onTurnEnd: [{ action: 'mayShiftSelfIfCovered' }]
   },
   'Hielo 4': {
@@ -1127,6 +1132,7 @@ const CARD_EFFECTS = {
     onPlay: [{ action: 'mayFlipIfUnityOnField' }]
   },
   'Unidad 4': {
+    persistentEnd: true,
     onTurnEnd: [{ action: 'drawUnityFromDeckIfEmptyHand' }]
   }
 };
@@ -4739,15 +4745,16 @@ function onCardFlipped(card, targetPlayer, line) {
  * (el comando inicio es siempre visible aunque la carta esté cubierta)
  */
 function onTurnStartEffects(player) {
-  // Armar efectos de fin de turno: registrar IDs de cartas bocarriba con onTurnEnd
-  // Solo las que están en juego AHORA dispararán su "Final:" al acabar el turno
+  // Armar efectos persistentes de fin de turno (persistentEnd: true, h_inicio con "Final:")
+  // Solo las cartas bocarriba AHORA con persistentEnd dispararán su onTurnEnd
   gameState.armedEndEffects = new Set();
   LINES.forEach(line => {
     if (gameState.ignoreEffectsLines && gameState.ignoreEffectsLines[line]) return;
     gameState.currentEffectLine = line;
     gameState.field[line][player].forEach(cardObj => {
       if (!cardObj.faceDown) {
-        if (CARD_EFFECTS[cardObj.card.nombre]?.onTurnEnd) {
+        const ef = CARD_EFFECTS[cardObj.card.nombre];
+        if (ef?.persistentEnd && ef.onTurnEnd) {
           gameState.armedEndEffects.add(cardObj.card.id);
         }
         triggerCardEffect(cardObj.card, 'onTurnStart', player);
@@ -4757,18 +4764,34 @@ function onTurnStartEffects(player) {
 }
 
 /**
- * Hook para fin de turno — solo cartas armadas al inicio del turno y que siguen en juego
+ * Hook para fin de turno — dos categorías:
+ * 1) persistentEnd (h_inicio "Final:"): solo si armadas al inicio Y siguen bocarriba (cubiertas o no)
+ * 2) normales (h_final "Final:"): si la carta es top descubierta al final del turno
  */
 function onTurnEndEffects(player) {
-  if (!gameState.armedEndEffects || gameState.armedEndEffects.size === 0) return;
   LINES.forEach(line => {
     if (gameState.ignoreEffectsLines && gameState.ignoreEffectsLines[line]) return;
     gameState.currentEffectLine = line;
-    gameState.field[line][player].forEach(cardObj => {
-      if (!cardObj.faceDown && gameState.armedEndEffects.has(cardObj.card.id)) {
-        triggerCardEffect(cardObj.card, 'onTurnEnd', player);
+    const stack = gameState.field[line][player];
+    if (stack.length === 0) return;
+
+    // 1) Persistentes armadas: cualquier carta bocarriba cuyo ID fue registrado al inicio
+    if (gameState.armedEndEffects && gameState.armedEndEffects.size > 0) {
+      stack.forEach(cardObj => {
+        if (!cardObj.faceDown && gameState.armedEndEffects.has(cardObj.card.id)) {
+          triggerCardEffect(cardObj.card, 'onTurnEnd', player);
+        }
+      });
+    }
+
+    // 2) Normales: solo la top descubierta, si tiene onTurnEnd y NO es persistentEnd
+    const top = stack[stack.length - 1];
+    if (!top.faceDown) {
+      const ef = CARD_EFFECTS[top.card.nombre];
+      if (ef?.onTurnEnd && !ef.persistentEnd) {
+        triggerCardEffect(top.card, 'onTurnEnd', player);
       }
-    });
+    }
   });
   gameState.armedEndEffects = null;
 }
