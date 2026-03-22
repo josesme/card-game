@@ -1558,29 +1558,42 @@ function handleFieldCardClick(line, target, cardIdx) {
         triggerUncovered(line, target);
     } else if (ctx.type === 'rearrange') {
         const getColumn = (l) => { const el = document.getElementById(`line-${l}`); return el ? el.parentElement : null; };
+        const owner = (ctx.target === 'opponent' || ctx.target === 'ai') ? 'ai' : 'player';
+        const protoSide = owner === 'ai' ? 'ai' : 'player';
+        const addCheck = (l) => {
+            const col = getColumn(l);
+            if (col) col.classList.add('rearrange-selected');
+            const protoBox = document.getElementById(`proto-${l}-${protoSide}`);
+            if (protoBox && !protoBox.querySelector('.rearrange-check')) {
+                const chk = document.createElement('span');
+                chk.className = 'rearrange-check';
+                chk.textContent = '✓';
+                protoBox.appendChild(chk);
+            }
+        };
+        const removeCheck = (l) => {
+            const col = getColumn(l);
+            if (col) col.classList.remove('rearrange-selected');
+            const protoBox = document.getElementById(`proto-${l}-${protoSide}`);
+            if (protoBox) { const chk = protoBox.querySelector('.rearrange-check'); if (chk) chk.remove(); }
+        };
         if (!ctx.firstProtocol) {
             if (line === ctx._lastDeselected) { delete ctx._lastDeselected; return; }
             ctx.firstProtocol = line;
-            const owner = (ctx.target === 'opponent' || ctx.target === 'ai') ? 'ai' : 'player';
             const p = gameState[owner].protocols;
             const idx = LINES.indexOf(line);
             updateStatus(`Reorganizar: ${p[idx]} (${line}) seleccionado. Elige otra línea o deselecciona.`);
-            const col = getColumn(line);
-            if (col) col.classList.add('rearrange-selected');
+            addCheck(line);
         } else if (ctx.firstProtocol === line) {
-            // Deseleccionar
             ctx.firstProtocol = null;
             ctx._lastDeselected = line;
-            const col = getColumn(line);
-            if (col) col.classList.remove('rearrange-selected');
+            removeCheck(line);
             updateStatus('Selección cancelada. Elige una línea o pulsa Listo.');
         } else {
             const first = ctx.firstProtocol;
             const second = line;
-            const colFirst = getColumn(first);
-            if (colFirst) colFirst.classList.remove('rearrange-selected');
+            removeCheck(first);
             ctx.firstProtocol = null;
-            const owner = (ctx.target === 'opponent' || ctx.target === 'ai') ? 'ai' : 'player';
             if (ctx.swapCards) {
                 const tmp = gameState.field[first][owner];
                 gameState.field[first][owner] = gameState.field[second][owner];
@@ -1589,11 +1602,10 @@ function handleFieldCardClick(line, target, cardIdx) {
                 swapProtocols(first, second, owner);
             }
             updateUI();
-            // Re-aplicar clases rearrange-active tras updateUI
             setRearrangeActiveColumns(true);
             updateStatus('Protocolos intercambiados. Elige otra pareja o pulsa Listo.');
         }
-        return; // no avanzar — esperar más swaps o "Listo"
+        return;
     } else if (ctx.type === 'selectCardToCopy') {
         // Espejo 1: copiar efecto de carta rival elegida
         const cardObj = gameState.field[line][target][cardIdx];
@@ -1671,6 +1683,10 @@ function setRearrangeActiveColumns(active) {
         if (col) {
             if (active) col.classList.add('rearrange-active');
             else col.classList.remove('rearrange-active', 'rearrange-selected');
+        }
+        if (!active) {
+            // Limpiar checks de proto-boxes
+            document.querySelectorAll(`#proto-${l}-player .rearrange-check, #proto-${l}-ai .rearrange-check`).forEach(c => c.remove());
         }
     });
 }
