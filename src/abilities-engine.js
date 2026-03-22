@@ -1911,7 +1911,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       // Luz 4 / Psique 0: muestra la mano de la IA al jugador en el modal
       if (targetPlayer === 'player') {
         updateUI(); // sincronizar contador antes de mostrar modal
-        const hand = gameState.ai.hand;
+        const hand = [...gameState.ai.hand]; // snapshot — copia para que efectos deferred no alteren el modal
         const modal = document.getElementById('reveal-modal');
         const container = document.getElementById('reveal-cards-container');
         const closeBtn = document.getElementById('btn-reveal-close');
@@ -1919,6 +1919,8 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         const subtitleEl = document.getElementById('reveal-subtitle');
         const sourceEl = document.getElementById('reveal-source');
         if (modal && container && closeBtn && typeof createCardHTML === 'function') {
+          // Bloquear cola de efectos mientras el modal está abierto
+          gameState.effectContext = { type: 'revealHand' };
           if (titleEl) titleEl.textContent = 'MANO DEL RIVAL';
           if (subtitleEl) subtitleEl.textContent = `${hand.length} cartas en mano`;
           if (sourceEl) sourceEl.textContent = triggerCardName || '';
@@ -1929,6 +1931,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           modal.classList.remove('hidden');
           closeBtn.onclick = () => {
             modal.classList.add('hidden');
+            gameState.effectContext = null; // desbloquear cola
             processAbilityEffect();
           };
         } else {
