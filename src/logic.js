@@ -581,6 +581,7 @@ function createCardHTML(card, faceDown = false) {
         const imgUrl = getCardImageUrl(card.protocol, card.valor);
         return `
         <div class="card card-img" data-id="${card.id}" style="border-color: ${color}; box-shadow: 0 0 15px ${color}33; background-image: url('${imgUrl}');">
+            <div class="slot-title" data-text="${card.nombre.replace(/\s+\d+$/, '')}"></div>
             ${startText  ? `<div class="card-img-zone slot-start"><div class="card-img-zone-text">${startText}</div></div>` : ''}
             ${actionText ? `<div class="card-img-zone slot-action"><div class="card-img-zone-text">${actionText}</div></div>` : ''}
             ${endText    ? `<div class="card-img-zone slot-end"><div class="card-img-zone-text">${endText}</div></div>` : ''}

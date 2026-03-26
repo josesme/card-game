@@ -4,11 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>COMPILE - Mesa de Juego (v2)</title>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&family=Teko:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;600;700&family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&family=Teko:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="design-tokens.css">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="ui-components.css">
     <style>
+        @font-face {
+            font-family: 'DoctorGlitch';
+            src: url('../src/fonts/DoctorGlitch.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+        }
         body {
             padding: 0;
             margin: 0;
@@ -449,6 +455,7 @@
             background-repeat: no-repeat;
             position: relative;
             padding: 0;
+            container-type: inline-size;
             overflow: hidden;
             border: none !important;
             box-shadow: none !important;
@@ -467,9 +474,12 @@
             display: flex;
             align-items: center;
             padding: 6px 6px 4px;
-            background: rgba(20,24,32,0.92);
-            border: 1px solid #676E79;
-            border-left: 2px solid rgba(255,255,255,0.15);
+            background:
+                repeating-linear-gradient(180deg,
+                    rgba(0,0,0,0.30) 0px, rgba(0,0,0,0.30) 1px,
+                    transparent 1px, transparent 3px),
+                #202225;
+            border: 1px solid rgba(255,255,255,0.25);
             border-radius: 3px;
             box-sizing: border-box;
             overflow: hidden;
@@ -477,6 +487,41 @@
         .card-img-zone.slot-start  { top: calc(24% - 6px); height: calc(24% + 1px); }
         .card-img-zone.slot-action { top: calc(50% - 8px); height: calc(24% + 1px); }
         .card-img-zone.slot-end    { top: calc(74% - 2px); height: calc(24% + 1px); }
+
+        /* Zona título — standalone, sin heredar left/right de card-img-zone */
+        .slot-title {
+            position: absolute;
+            top: 1.5%;
+            left: calc(2.5% + 3px);
+            width: calc(34% + 3px);
+            height: calc(9% - 2px);
+            background:
+                repeating-linear-gradient(180deg,
+                    rgba(0,0,0,0.30) 0px, rgba(0,0,0,0.30) 1px,
+                    transparent 1px, transparent 3px),
+                #17181c;
+            border: 1px solid rgba(255,255,255,0.25);
+            box-sizing: border-box;
+            overflow: hidden;
+            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%);
+        }
+        .slot-title::before {
+            content: attr(data-text);
+            position: absolute;
+            left: 4px;
+            top: 50%;
+            transform: translateY(-50%) scaleX(0.82);
+            transform-origin: left center;
+            font-family: 'DoctorGlitch', sans-serif;
+            font-size: 4.8cqw;
+            font-weight: normal;
+            letter-spacing: 0px;
+            color: #ffffff;
+            -webkit-text-stroke: 0.4px #17181c;
+            text-transform: uppercase;
+            white-space: nowrap;
+            line-height: 1;
+        }
 
         .card-img-zone-text {
             font-family: 'JetBrains Mono', monospace;

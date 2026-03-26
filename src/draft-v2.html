@@ -8,6 +8,13 @@
     <link rel="stylesheet" href="design-tokens.css">
     <link rel="stylesheet" href="ui-components.css">
     <style>
+        @font-face {
+            font-family: 'DoctorGlitch';
+            src: url('../src/fonts/DoctorGlitch.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         html, body {
@@ -98,6 +105,43 @@
             /* Recorte: solo mostramos el header del arte (top ~22% de 1039px ≈ 228px) */
             height: 0;
             padding-bottom: 30%; /* ratio landscape para el recorte */
+            container-type: inline-size;
+        }
+
+        /* Caja de título traducido sobre la carta de draft */
+        .protocol-card .slot-title {
+            position: absolute;
+            top: 5.5cqw;
+            left: calc(2.5% + 3px);
+            width: calc(34% + 3px);
+            height: 12cqw;
+            background:
+                repeating-linear-gradient(180deg,
+                    rgba(0,0,0,0.30) 0px, rgba(0,0,0,0.30) 1px,
+                    transparent 1px, transparent 3px),
+                #202225;
+            border: 1px solid rgba(255,255,255,0.25);
+            box-sizing: border-box;
+            overflow: hidden;
+            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%);
+            z-index: 2;
+        }
+        .protocol-card .slot-title::before {
+            content: attr(data-text);
+            position: absolute;
+            left: 4px;
+            top: 50%;
+            transform: translateY(-50%) scaleX(0.82);
+            transform-origin: left center;
+            font-family: 'DoctorGlitch', sans-serif;
+            font-size: 4.8cqw;
+            font-weight: normal;
+            letter-spacing: 0px;
+            color: #ffffff;
+            -webkit-text-stroke: 0.4px #202225;
+            text-transform: uppercase;
+            white-space: nowrap;
+            line-height: 1;
         }
 
         .protocol-card-img {
@@ -657,6 +701,7 @@ function updateProtocolsGrid() {
         const imgUrl = getCardImageUrl(protocol, 1);
         card.innerHTML = `
             <img class="protocol-card-img" src="${imgUrl}" alt="${protocol}" loading="lazy">
+            <div class="slot-title" data-text="${protocol}"></div>
             <div class="protocol-card-overlay">
                 <div class="protocol-card-logo-box">
                     <img class="protocol-card-logo" src="../images/Background/Logo.png" alt="COMPILE">
