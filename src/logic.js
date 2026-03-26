@@ -360,6 +360,12 @@ function initProtocolDisplay() {
                 const imgUrl = getCardImageUrl(pProto, 1);
                 if (imgUrl) pCard.classList.add('proto-img');
                 if (imgUrl) pCard.style.backgroundImage = `url('${imgUrl}')`;
+                if (imgUrl && !pCard.querySelector('.slot-title')) {
+                    const t = document.createElement('div');
+                    t.className = 'slot-title';
+                    t.dataset.text = pProto;
+                    pCard.appendChild(t);
+                }
             }
             if (!pCard.dataset.stackHover) {
                 pCard.dataset.stackHover = '1';
@@ -383,6 +389,12 @@ function initProtocolDisplay() {
                 const imgUrl = getCardImageUrl(aProto, 1);
                 if (imgUrl) aCard.classList.add('proto-img');
                 if (imgUrl) aCard.style.backgroundImage = `url('${imgUrl}')`;
+                if (imgUrl && !aCard.querySelector('.slot-title')) {
+                    const t = document.createElement('div');
+                    t.className = 'slot-title';
+                    t.dataset.text = aProto;
+                    aCard.appendChild(t);
+                }
             }
             if (!aCard.dataset.stackHover) {
                 aCard.dataset.stackHover = '1';
