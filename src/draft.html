@@ -333,6 +333,16 @@
         }
 
 
+        .thumb-logo {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            height: 20px;
+            opacity: 0.8;
+            filter: drop-shadow(0 1px 3px rgba(0,0,0,0.8));
+            z-index: 3;
+        }
+
         .thumb-number {
             position: absolute;
             bottom: 2px;
@@ -774,6 +784,7 @@ function updateSelections() {
                     <div class="selection-card-thumb" style="border-color:${color}">
                         <img src="${imgUrl}" alt="${p}">
                         <div class="slot-title" data-text="${p}"></div>
+                        <img class="thumb-logo" src="../images/Background/Logo.png" alt="">
                         <div class="thumb-number">${orderNum}</div>
                     </div>
                 `);
