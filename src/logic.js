@@ -731,27 +731,49 @@ function updateUI() {
             } else if (gameState.effectContext && gameState.effectContext.type === 'pickDeckCard_valor5') {
                 // Claridad 3: elegir cuál de las cartas valor 5 reveladas del mazo robar
                 const ctx = gameState.effectContext;
-                if (index < ctx.handSizeBefore) {
-                    updateStatus(`Claridad 3: elige una de las cartas con Valor ${ctx.targetValue} (las últimas de tu mano)`);
-                    return;
+                // Nuevo formato (modal): usa matchCards y selectedIdx
+                if (ctx.matchCards && ctx.selectedIdx !== null) {
+                    const chosenCard = ctx.matchCards[ctx.selectedIdx];
+                    // Devolver las no elegidas al mazo y barajar
+                    ctx.matchCards.forEach((c, i) => { 
+                        if (i !== ctx.selectedIdx) gameState.player.deck.push(c); 
+                    });
+                    gameState.player.hand.push(chosenCard);
+                    // Barajar mazo
+                    const dk = gameState.player.deck;
+                    for (let i = dk.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [dk[i], dk[j]] = [dk[j], dk[i]];
+                    }
+                    gameState.effectContext = null;
+                    updateStatus(`Robas ${chosenCard.nombre} (Valor ${ctx.targetValue}) del mazo`);
+                    clearEffectHighlights();
+                    updateUI();
+                    if (typeof processAbilityEffect === 'function') processAbilityEffect();
+                } else {
+                    // Formato antiguo (mano): elige de las cartas en mano
+                    if (index < ctx.handSizeBefore) {
+                        updateStatus(`Claridad 3: elige una de las cartas con Valor ${ctx.targetValue} (las últimas de tu mano)`);
+                        return;
+                    }
+                    const chosenRelIdx = index - ctx.handSizeBefore;
+                    const revealed = gameState.player.hand.splice(ctx.handSizeBefore, ctx.revealedCount);
+                    const chosen = revealed[chosenRelIdx];
+                    // Devolver las no elegidas al mazo y barajar
+                    revealed.forEach((c, i) => { if (i !== chosenRelIdx) gameState.player.deck.push(c); });
+                    gameState.player.hand.push(chosen);
+                    gameState.effectContext = null;
+                    const dk = gameState.player.deck;
+                    for (let i = dk.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [dk[i], dk[j]] = [dk[j], dk[i]];
+                    }
+                    updateStatus(`Robas ${chosen.nombre} (Valor ${ctx.targetValue}) del mazo`);
+                    clearSelectionHighlights();
+                    clearEffectHighlights();
+                    updateUI();
+                    if (typeof processAbilityEffect === 'function') processAbilityEffect();
                 }
-                const chosenRelIdx = index - ctx.handSizeBefore;
-                const revealed = gameState.player.hand.splice(ctx.handSizeBefore, ctx.revealedCount);
-                const chosen = revealed[chosenRelIdx];
-                // Devolver las no elegidas al mazo y barajar
-                revealed.forEach((c, i) => { if (i !== chosenRelIdx) gameState.player.deck.push(c); });
-                gameState.player.hand.push(chosen);
-                gameState.effectContext = null;
-                const dk = gameState.player.deck;
-                for (let i = dk.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [dk[i], dk[j]] = [dk[j], dk[i]];
-                }
-                updateStatus(`Robas ${chosen.nombre} (Valor ${ctx.targetValue}) del mazo`);
-                clearSelectionHighlights();
-                clearEffectHighlights();
-                updateUI();
-                if (typeof processAbilityEffect === 'function') processAbilityEffect();
             } else if (gameState.effectContext && gameState.effectContext.type === 'playHandCard_valor1') {
                 // Claridad 2 paso 2: elegir carta de Valor 1 para jugar en campo
                 const card = gameState.player.hand[index];

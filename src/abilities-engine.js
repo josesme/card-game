@@ -3456,17 +3456,79 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         break;
       }
 
-      // Múltiples cartas con el valor buscado: jugador elige cuál robar
+      // Múltiples cartas con el valor buscado: jugador elige cuál robar usando modal
       const matchCards = [];
       for (let i = matchIdx.length - 1; i >= 0; i--) {
         matchCards.unshift(deckRef.splice(matchIdx[i], 1)[0]);
       }
-      const handSizeBefore = gameState.player.hand.length;
-      gameState.player.hand.push(...matchCards);
-      gameState.effectContext = { type: 'pickDeckCard_valor5', handSizeBefore, revealedCount: matchCards.length, targetValue };
-      showCancelButton();
-      updateStatus(`Claridad 3: ${matchCards.length} cartas con Valor ${targetValue} en tu mazo — elige cuál robar`);
-      updateUI();
+      
+      const modal = document.getElementById('reveal-modal');
+      const container = document.getElementById('reveal-cards-container');
+      const titleEl = document.getElementById('reveal-title');
+      const subtitleEl = document.getElementById('reveal-subtitle');
+      const sourceEl = document.getElementById('reveal-source');
+      const actionsEl = document.getElementById('reveal-actions');
+      
+      if (modal && container && typeof createCardHTML === 'function') {
+        gameState.effectContext = { 
+          type: 'pickDeckCard_valor5', 
+          matchCards,
+          targetValue,
+          selectedIdx: null 
+        };
+        
+        if (titleEl) titleEl.textContent = `ELIGE 1 CARTA (Valor ${targetValue})`;
+        if (subtitleEl) subtitleEl.textContent = 'Roba esta carta, baraja el resto en tu mazo';
+        if (sourceEl) sourceEl.textContent = triggerCardName || '';
+        
+        container.innerHTML = matchCards.map((c, idx) => 
+          `<div class="reveal-card-select" data-idx="${idx}" style="transform: scale(0.85); transform-origin: top center; cursor: pointer;">
+            ${createCardHTML(c)}
+          </div>`
+        ).join('');
+        
+        actionsEl.innerHTML = '<button class="ui-btn" id="btn-reveal-continue">ROBAR</button>';
+        modal.classList.remove('hidden');
+        
+        let selectedIdx = null;
+        container.querySelectorAll('.reveal-card-select').forEach(el => {
+          el.onclick = () => {
+            container.querySelectorAll('.reveal-card-select').forEach(x => x.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedIdx = parseInt(el.dataset.idx);
+            gameState.effectContext.selectedIdx = selectedIdx;
+          };
+        });
+        
+        document.getElementById('btn-reveal-continue').onclick = () => {
+          if (selectedIdx === null) {
+            alert('Selecciona una carta primero');
+            return;
+          }
+          const chosenCard = matchCards[selectedIdx];
+          // Devolver las no elegidas al mazo y barajar
+          matchCards.forEach((c, i) => { 
+            if (i !== selectedIdx) gameState.player.deck.push(c); 
+          });
+          gameState.player.hand.push(chosenCard);
+          // Barajar mazo
+          shuffleDeck();
+          modal.classList.add('hidden');
+          container.innerHTML = '';
+          gameState.effectContext = null;
+          updateStatus(`Robas ${chosenCard.nombre} (Valor ${targetValue}) del mazo`);
+          updateUI();
+          processAbilityEffect();
+        };
+      } else {
+        // Fallback: mover a mano si no hay modal
+        const handSizeBefore = gameState.player.hand.length;
+        gameState.player.hand.push(...matchCards);
+        gameState.effectContext = { type: 'pickDeckCard_valor5', handSizeBefore, revealedCount: matchCards.length, targetValue };
+        showCancelButton();
+        updateStatus(`Claridad 3: ${matchCards.length} cartas con Valor ${targetValue} en tu mazo — elige cuál robar`);
+        updateUI();
+      }
       break;
     }
 
@@ -4346,22 +4408,90 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'playFromDiscardThenShuffle': {
-      // Tiempo 0: juega 1 carta de tu descarte, luego baraja el descarte en el mazo
+      // Tiempo 0: muestra descarte, elige 1 carta para jugar, baraja el resto
       if (gameState[targetPlayer].trash.length === 0) { processAbilityEffect(); break; }
-      // Enqueue the shuffle for after the play
-      gameState.effectQueue.unshift({ effect: { action: '_shuffleDiscardIntoDeck' }, targetPlayer, cardName: triggerCardName });
+      
       if (targetPlayer === 'player') {
         const trashCount = gameState.player.trash.length;
-        const handSizeBefore = gameState.player.hand.length;
-        gameState.player.hand.push(...gameState.player.trash.splice(0));
-        gameState.effectContext = { type: 'pickFromDiscardToPlay', handSizeBefore, revealedCount: trashCount };
-        updateStatus(`Tiempo 0: elige 1 carta del descarte para jugar (las últimas ${trashCount} de tu mano)`);
-        updateUI();
+        const modal = document.getElementById('reveal-modal');
+        const container = document.getElementById('reveal-cards-container');
+        const titleEl = document.getElementById('reveal-title');
+        const subtitleEl = document.getElementById('reveal-subtitle');
+        const sourceEl = document.getElementById('reveal-source');
+        const actionsEl = document.getElementById('reveal-actions');
+        
+        if (modal && container && typeof createCardHTML === 'function') {
+          // Guardar referencia al descarte para restaurar si se cancela
+          gameState.effectContext = { 
+            type: 'pickFromDiscardToPlay', 
+            trashBackup: [...gameState.player.trash],
+            selectedIdx: null 
+          };
+          
+          if (titleEl) titleEl.textContent = 'ELIGE 1 CARTA';
+          if (subtitleEl) subtitleEl.textContent = 'Juega esta carta, baraja el resto en tu mazo';
+          if (sourceEl) sourceEl.textContent = triggerCardName || '';
+          
+          // Mostrar cartas del descarte con click para seleccionar
+          container.innerHTML = gameState.player.trash.map((c, idx) => 
+            `<div class="reveal-card-select" data-idx="${idx}" style="transform: scale(0.85); transform-origin: top center; cursor: pointer;">
+              ${createCardHTML(c)}
+            </div>`
+          ).join('');
+          
+          actionsEl.innerHTML = '<button class="ui-btn" id="btn-reveal-continue">JUGAR</button>';
+          modal.classList.remove('hidden');
+          
+          // Manejar selección de carta
+          let selectedIdx = null;
+          container.querySelectorAll('.reveal-card-select').forEach(el => {
+            el.onclick = () => {
+              container.querySelectorAll('.reveal-card-select').forEach(x => x.classList.remove('selected'));
+              el.classList.add('selected');
+              selectedIdx = parseInt(el.dataset.idx);
+              gameState.effectContext.selectedIdx = selectedIdx;
+            };
+          });
+          
+          document.getElementById('btn-reveal-continue').onclick = () => {
+            if (selectedIdx === null) {
+              alert('Selecciona una carta primero');
+              return;
+            }
+            const chosenCard = gameState.player.trash[selectedIdx];
+            // Eliminar carta elegida del descarte
+            gameState.player.trash.splice(selectedIdx, 1);
+            // Jugar la carta en la línea actual
+            const line = gameState.currentEffectLine || LINES[0];
+            gameState.field[line].player.push({ card: chosenCard, faceDown: false });
+            // Barajar el resto del descarte en el mazo
+            if (gameState.player.trash.length > 0) {
+              shuffleDiscardIntoDeck('player');
+            } else {
+              processAbilityEffect();
+            }
+            modal.classList.add('hidden');
+            container.innerHTML = '';
+            gameState.effectContext = null;
+            updateUI();
+            // Ejecutar efectos de la carta jugada
+            if (typeof executeNewEffect === 'function') {
+              executeNewEffect(chosenCard, 'player');
+            }
+          };
+        } else {
+          processAbilityEffect();
+        }
       } else {
+        // IA: elige la carta de mayor valor
         const bestIdx = gameState.ai.trash.reduce((b, c, i) => c.valor > gameState.ai.trash[b].valor ? i : b, 0);
         const [card] = gameState.ai.trash.splice(bestIdx, 1);
         const line = gameState.currentEffectLine || LINES[0];
         gameState.field[line].ai.push({ card, faceDown: false });
+        // Barajar el resto
+        if (gameState.ai.trash.length > 0) {
+          shuffleDiscardIntoDeck('ai');
+        }
         updateUI();
         processAbilityEffect();
       }
