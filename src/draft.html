@@ -286,6 +286,42 @@
             overflow: hidden;
             border: 2px solid;
             position: relative;
+            container-type: inline-size;
+        }
+
+        .selection-card-thumb .slot-title {
+            position: absolute;
+            top: 5.5cqw;
+            left: calc(2.5% + 3px);
+            width: calc(34% + 3px);
+            height: 12cqw;
+            background:
+                repeating-linear-gradient(180deg,
+                    rgba(0,0,0,0.30) 0px, rgba(0,0,0,0.30) 1px,
+                    transparent 1px, transparent 3px),
+                #202225;
+            border: 1px solid rgba(255,255,255,0.25);
+            box-sizing: border-box;
+            overflow: hidden;
+            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%);
+            z-index: 2;
+        }
+
+        .selection-card-thumb .slot-title::before {
+            content: attr(data-text);
+            position: absolute;
+            left: 3px;
+            top: 50%;
+            transform: translateY(-50%) scaleX(0.82);
+            transform-origin: left center;
+            font-family: 'DoctorGlitch', sans-serif;
+            font-size: 4.8cqw;
+            font-weight: normal;
+            color: #ffffff;
+            -webkit-text-stroke: 0.4px #202225;
+            text-transform: uppercase;
+            white-space: nowrap;
+            line-height: 1;
         }
 
         .selection-card-thumb > img {
@@ -737,6 +773,7 @@ function updateSelections() {
                 slots.push(`
                     <div class="selection-card-thumb" style="border-color:${color}">
                         <img src="${imgUrl}" alt="${p}">
+                        <div class="slot-title" data-text="${p}"></div>
                         <div class="thumb-number">${orderNum}</div>
                     </div>
                 `);
