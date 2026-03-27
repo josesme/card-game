@@ -3285,7 +3285,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       if (targetPlayer === 'player') {
         // beneficiary='player' → la carta va a la mano del jugador, no del oponente
         // targetAll=true → permite seleccionar cartas cubiertas
-        startEffect('return', 'opponent', 1, { filter: 'faceDown', targetAll: true, beneficiary: 'player' });
+        startEffect('return', 'ai', 1, { filter: 'faceDown', targetAll: true, beneficiary: 'player' });
       } else {
         // IA: roba la bocabajo del jugador de mayor valor (cubierta o top)
         let best = null, bestLine = null, bestIdx = -1;
@@ -3636,7 +3636,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       });
       if (winLines.length === 0) { processAbilityEffect(); break; }
       if (targetPlayer === 'player') {
-        startEffect('eliminate', 'opponent', 1, { allowedLines: winLines });
+        startEffect('eliminate', 'ai', 1, { allowedLines: winLines });
       } else {
         const best = winLines.sort((a, b) => calculateScore(gameState, b, 'player') - calculateScore(gameState, a, 'player'))[0];
         const removed = gameState.field[best].player.pop();
@@ -3777,7 +3777,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       const hasCovered = LINES.some(l => gameState.field[l][targetPlayer].length > 1);
       if (!hasCovered) { processAbilityEffect(); break; }
       if (targetPlayer === 'player') {
-        startEffect('shift', 'self', 1, { coveredOnly: true });
+        startEffect('shift', 'player', 1, { coveredOnly: true });
       } else {
         let bestSrc = null, bestLine = null, bestIdx = -1;
         LINES.forEach(l => {
