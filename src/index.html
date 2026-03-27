@@ -267,7 +267,7 @@ const DIFFICULTY_LEVELS = [
 ];
 
 let selectedDifficulty = 3;
-let selectedProtocols = null; // 1, 2, or 'all'
+let selectedProtocols = 'all'; // 1, 2, or 'all'
 
 function renderDiff() {
     const grid = document.getElementById('diff-grid');
@@ -303,6 +303,7 @@ document.getElementById('proto-2').onclick = () => { selectedProtocols = 2; upda
 document.getElementById('proto-all').onclick = () => { selectedProtocols = 'all'; updateProtocolSelection(); };
 
 renderDiff();
+updateProtocolSelection();
 
 function setFsIcons(isFs) {
     document.getElementById('fs-icon-expand').style.display = isFs ? 'none' : '';
