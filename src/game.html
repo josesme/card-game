@@ -1145,7 +1145,7 @@
 
 <!-- REVEAL OVERLAY -->
 <div id="reveal-modal" class="effect-overlay hidden">
-    <div class="effect-panel theme-reveal" style="max-width: 520px;">
+    <div class="effect-panel theme-reveal" style="max-width: 860px; display: flex; flex-direction: column; overflow: hidden;">
         <div class="effect-header">
             <div class="effect-header-text">
                 <div class="effect-title" id="reveal-title">CARTAS REVELADAS</div>
@@ -1153,8 +1153,8 @@
             </div>
             <div class="effect-source" id="reveal-source"></div>
         </div>
-        <div class="effect-cards" id="reveal-cards-container"></div>
-        <div class="effect-actions" id="reveal-actions">
+        <div class="effect-cards" id="reveal-cards-container" style="overflow-y: auto; flex: 1; min-height: 0;"></div>
+        <div class="effect-actions" id="reveal-actions" style="flex-shrink: 0;">
             <button class="ui-btn" id="btn-reveal-close">CONTINUAR</button>
         </div>
     </div>
