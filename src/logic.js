@@ -172,7 +172,8 @@ function initLineListeners() {
             console.warn(`Line element not found: line-${line}`);
             return;
         }
-        const handler = () => {
+        const handler = (e) => {
+            if (e) e.stopPropagation();
             if (gameState.selectionMode) {
                 finalizePlay(line, !gameState.selectionModeFaceUp);
                 gameState.selectionModeFaceUp = false;
@@ -2170,6 +2171,8 @@ function finalizePlay(targetLine, isFaceDown) {
     clearSelectionHighlights();
 
     const card = gameState.player.hand[gameState.selectedCardIndex];
+    // Guard: selectedCardIndex null (double-fire del handler de línea) o estado inválido
+    if (!card) return;
     const playedCard = { card: card, faceDown: isFaceDown };
 
     // Detectar carta que quedará cubierta (commit queue: onCover debe resolver antes de aterrizar)
