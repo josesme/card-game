@@ -748,11 +748,6 @@ body::before {
     transform-origin: center;
 }
 
-#card-preview-panel.stacked-view .card {
-    width: 216px;
-    height: 288px;
-    font-size: 1.35em;
-}
 
 #card-preview-panel.hidden {
     display: none;

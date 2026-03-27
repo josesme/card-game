@@ -369,12 +369,6 @@ function initProtocolDisplay() {
                     pCard.appendChild(t);
                 }
             }
-            if (!pCard.dataset.stackHover) {
-                pCard.dataset.stackHover = '1';
-                pCard.style.cursor = 'pointer';
-                pCard.addEventListener('mouseenter', () => showStackPreview(line, 'player'));
-                pCard.addEventListener('mouseleave', hideCardPreview);
-            }
         }
 
         // AI protocol card (top) - check if exists
@@ -400,12 +394,6 @@ function initProtocolDisplay() {
                     t.dataset.text = aProto;
                     aCard.appendChild(t);
                 }
-            }
-            if (!aCard.dataset.stackHover) {
-                aCard.dataset.stackHover = '1';
-                aCard.style.cursor = 'pointer';
-                aCard.addEventListener('mouseenter', () => showStackPreview(line, 'ai'));
-                aCard.addEventListener('mouseleave', hideCardPreview);
             }
         }
     });
@@ -476,37 +464,6 @@ function showCardPreview(card) {
     panel.innerHTML = createCardHTML(card);
 }
 
-function showStackPreview(line, owner) {
-    const panel = document.getElementById('card-preview-panel');
-    if (!panel || isSelectionActive()) return;
-    const stack = gameState.field[line][owner];
-    if (!stack || stack.length === 0) { hideCardPreview(); return; }
-
-    const OFFSET = 120, CARD_H = 288, CARD_W = 216;
-    const totalH = (stack.length - 1) * OFFSET + CARD_H;
-
-    panel.classList.remove('hidden', 'single-card');
-    panel.classList.add('stacked-view');
-    panel.style.width = CARD_W + 'px';
-    panel.style.height = totalH + 'px';
-
-    let html = `<div style="position:relative;width:${CARD_W}px;height:${totalH}px;">`;
-    stack.forEach((cardObj, idx) => {
-        const top = idx * OFFSET;
-        const z = idx + 1;
-        // Regla: el jugador puede mirar sus propias cartas bocabajo; las del rival se ocultan
-        const showFaceDown = cardObj.faceDown && owner !== 'player';
-        if (showFaceDown) {
-            html += `<div style="position:absolute;top:${top}px;left:0;z-index:${z};">
-                <div class="card face-down"><div class="card-back-value">2</div><div class="card-back-title">COMPILE</div></div>
-            </div>`;
-        } else {
-            html += `<div style="position:absolute;top:${top}px;left:0;z-index:${z};">${createCardHTML(cardObj.card)}</div>`;
-        }
-    });
-    html += '</div>';
-    panel.innerHTML = html;
-}
 
 function hideCardPreview() {
     const panel = document.getElementById('card-preview-panel');
