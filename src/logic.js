@@ -1376,8 +1376,6 @@ function startEffect(type, target, count, opts = {}) {
 
     gameState.effectContext = { type, target, count, selected: [], _triggerName: gameState.currentTriggerCard || '', ...opts };
     console.log(`🎯 startEffect: type=${type}, target=${target}, count=${count}`);
-    const noCancel = ['discard', 'discardAny', 'discardVariable', 'give'];
-    if (!noCancel.includes(type)) showCancelButton();
 
     let actionVerb = 'VOLTEAR';
     if (type === 'discard' || type === 'discardAny') actionVerb = 'DESCARTAR';
@@ -2320,26 +2318,6 @@ if (btnCancelSelection) btnCancelSelection.onclick = () => {
         clearEffectHighlights();
         updateStatus('Jugada cancelada');
         updateUI();
-        return;
-    }
-    if (gameState.effectContext) {
-        const ctx = gameState.effectContext;
-        if (ctx.waitingForLine) {
-            // Shift: volver a selección de carta origen
-            ctx.waitingForLine = false;
-            ctx.selectedCard = null;
-            clearEffectHighlights();
-            updateStatus('Elige la carta a mover...');
-            updateUI();
-            return;
-        }
-        // Cualquier otro efecto interactivo: saltar y continuar cola
-        gameState.effectContext = null;
-        gameState.selectedCardIndex = null;
-        clearSelectionHighlights();
-        clearEffectHighlights();
-        updateStatus('Efecto cancelado');
-        if (typeof processAbilityEffect === 'function') processAbilityEffect();
     }
 };
 

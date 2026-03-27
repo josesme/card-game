@@ -3525,7 +3525,6 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         const handSizeBefore = gameState.player.hand.length;
         gameState.player.hand.push(...matchCards);
         gameState.effectContext = { type: 'pickDeckCard_valor5', handSizeBefore, revealedCount: matchCards.length, targetValue };
-        showCancelButton();
         updateStatus(`Claridad 3: ${matchCards.length} cartas con Valor ${targetValue} en tu mazo — elige cuál robar`);
         updateUI();
       }
