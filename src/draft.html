@@ -332,15 +332,28 @@
         }
 
 
-        .thumb-logo {
+        .thumb-logo-box {
             position: absolute;
             bottom: 3px;
             left: 50%;
             transform: translateX(-50%);
-            height: 22px;
+            background: rgba(20,24,32,0.72);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,255,255,0.35);
+            border-left: 2px solid rgba(255,255,255,0.18);
+            border-radius: 3px 6px 3px 6px;
+            padding: 3px 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3;
+        }
+
+        .thumb-logo {
+            display: block;
+            height: 18px;
             opacity: 0.85;
             filter: drop-shadow(0 1px 3px rgba(0,0,0,0.8));
-            z-index: 3;
         }
 
 
@@ -768,7 +781,7 @@ function updateSelections() {
                     <div class="selection-card-thumb" style="border-color:${color}">
                         <img src="${imgUrl}" alt="${p}">
                         <div class="slot-title" data-text="${p}"></div>
-                        <img class="thumb-logo" src="../images/Background/Logo.png" alt="">
+                        <div class="thumb-logo-box"><img class="thumb-logo" src="../images/Background/Logo.png" alt=""></div>
                     </div>
                 `);
             } else {
