@@ -85,6 +85,7 @@ let gameState = {
     currentTriggerCard: null,                               // nombre de la carta que disparó el efecto activo
     pendingCheckCompile: null,                              // set en startTurn; avanza a checkCompilePhase cuando la cola de efectos se vacía
     revealedPlayerCards: [],                                // cartas reveladas por Amor 4 — visibles para la IA
+    aiNarrativeModal: { isOpen: false, messages: [] },      // estado del modal narrativo de IA
 };
 
 function createDeckForPlayer(target) {
@@ -293,6 +294,26 @@ function handleShiftTargetLine(destinationLine) {
             gameState.field[destinationLine][ctx.owner].push({ card: topCard, faceDown: true });
         }
         finishEffect();
+        return;
+    }
+
+    if (ctx.type === 'pickFromDiscardFaceDown') {
+        // Tiempo 3: jugar carta elegida del descarte bocabajo en línea diferente
+        if (destinationLine === ctx.excludeLine) {
+            updateStatus('Elige una línea diferente');
+            return;
+        }
+        if (ctx.chosenCard) {
+            gameState.field[destinationLine].player.push({ card: ctx.chosenCard, faceDown: true });
+            // Barajar el resto del descarte
+            if (gameState.player.trash.length > 0) {
+              shuffleDiscardIntoDeck('player');
+            }
+            updateUI();
+        }
+        gameState.effectContext = null;
+        clearEffectHighlights();
+        if (typeof processAbilityEffect === 'function') processAbilityEffect();
         return;
     }
 
@@ -731,27 +752,49 @@ function updateUI() {
             } else if (gameState.effectContext && gameState.effectContext.type === 'pickDeckCard_valor5') {
                 // Claridad 3: elegir cuál de las cartas valor 5 reveladas del mazo robar
                 const ctx = gameState.effectContext;
-                if (index < ctx.handSizeBefore) {
-                    updateStatus(`Claridad 3: elige una de las cartas con Valor ${ctx.targetValue} (las últimas de tu mano)`);
-                    return;
+                // Nuevo formato (modal): usa matchCards y selectedIdx
+                if (ctx.matchCards && ctx.selectedIdx !== null) {
+                    const chosenCard = ctx.matchCards[ctx.selectedIdx];
+                    // Devolver las no elegidas al mazo y barajar
+                    ctx.matchCards.forEach((c, i) => { 
+                        if (i !== ctx.selectedIdx) gameState.player.deck.push(c); 
+                    });
+                    gameState.player.hand.push(chosenCard);
+                    // Barajar mazo
+                    const dk = gameState.player.deck;
+                    for (let i = dk.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [dk[i], dk[j]] = [dk[j], dk[i]];
+                    }
+                    gameState.effectContext = null;
+                    updateStatus(`Robas ${chosenCard.nombre} (Valor ${ctx.targetValue}) del mazo`);
+                    clearEffectHighlights();
+                    updateUI();
+                    if (typeof processAbilityEffect === 'function') processAbilityEffect();
+                } else {
+                    // Formato antiguo (mano): elige de las cartas en mano
+                    if (index < ctx.handSizeBefore) {
+                        updateStatus(`Claridad 3: elige una de las cartas con Valor ${ctx.targetValue} (las últimas de tu mano)`);
+                        return;
+                    }
+                    const chosenRelIdx = index - ctx.handSizeBefore;
+                    const revealed = gameState.player.hand.splice(ctx.handSizeBefore, ctx.revealedCount);
+                    const chosen = revealed[chosenRelIdx];
+                    // Devolver las no elegidas al mazo y barajar
+                    revealed.forEach((c, i) => { if (i !== chosenRelIdx) gameState.player.deck.push(c); });
+                    gameState.player.hand.push(chosen);
+                    gameState.effectContext = null;
+                    const dk = gameState.player.deck;
+                    for (let i = dk.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [dk[i], dk[j]] = [dk[j], dk[i]];
+                    }
+                    updateStatus(`Robas ${chosen.nombre} (Valor ${ctx.targetValue}) del mazo`);
+                    clearSelectionHighlights();
+                    clearEffectHighlights();
+                    updateUI();
+                    if (typeof processAbilityEffect === 'function') processAbilityEffect();
                 }
-                const chosenRelIdx = index - ctx.handSizeBefore;
-                const revealed = gameState.player.hand.splice(ctx.handSizeBefore, ctx.revealedCount);
-                const chosen = revealed[chosenRelIdx];
-                // Devolver las no elegidas al mazo y barajar
-                revealed.forEach((c, i) => { if (i !== chosenRelIdx) gameState.player.deck.push(c); });
-                gameState.player.hand.push(chosen);
-                gameState.effectContext = null;
-                const dk = gameState.player.deck;
-                for (let i = dk.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [dk[i], dk[j]] = [dk[j], dk[i]];
-                }
-                updateStatus(`Robas ${chosen.nombre} (Valor ${ctx.targetValue}) del mazo`);
-                clearSelectionHighlights();
-                clearEffectHighlights();
-                updateUI();
-                if (typeof processAbilityEffect === 'function') processAbilityEffect();
             } else if (gameState.effectContext && gameState.effectContext.type === 'playHandCard_valor1') {
                 // Claridad 2 paso 2: elegir carta de Valor 1 para jugar en campo
                 const card = gameState.player.hand[index];
@@ -999,7 +1042,14 @@ function startTurn(who) {
     gameState.revealedPlayerCards = gameState.revealedPlayerCards.filter(
         rc => gameState.player.hand.some(h => h.nombre === rc.nombre)
     );
-    updateStatus(`--- Turno de ${who === 'player' ? 'Jugador' : 'IA'} ---`);
+    
+    const turnLabel = who === 'player' ? 'Jugador' : 'IA';
+    updateStatus(`--- Turno de ${turnLabel} ---`);
+    
+    // Modal narrativo para turno de IA
+    if (who === 'ai') {
+        openAINarrativeModal();
+    }
 
     // Disparar efectos de inicio de turno; la fase de compilación esperará a que terminen
     gameState.pendingCheckCompile = who;
@@ -2362,6 +2412,7 @@ function playAITurn() {
         while(gameState.ai.hand.length < 5) drawCard('ai');
         console.log('🤖 IA: Recarga (mano vacía)');
         updateStatus("IA recarga su mazo");
+        addAINarrativeMessage('IA actualiza (roba 5 cartas)', { delay: 800, closeAfter: true });
         endTurn('ai');
         return;
     }
@@ -2372,7 +2423,7 @@ function playAITurn() {
             window.aiEvaluator = new AIEvaluator(gameState);
             console.log('✅ Motor de Evaluación inicializado');
         }
-        
+
         // Re-inicializar minimax si la profundidad actual es diferente a la deseada
         if (!window.miniMax || window.miniMax.maxDepth !== diffDepth) {
             window.miniMax = new MiniMax(window.aiEvaluator, diffDepth);
@@ -2387,6 +2438,7 @@ function playAITurn() {
             // Sin movimientos disponibles, recargar
             while(gameState.ai.hand.length < 5) drawCard('ai');
             updateStatus("IA recarga su mazo (sin jugadas posibles)");
+            addAINarrativeMessage('IA actualiza (sin jugadas posibles)', { delay: 800, closeAfter: true });
             endTurn('ai');
             return;
         }
@@ -2408,6 +2460,13 @@ function playAITurn() {
             faceUp: move.faceUp,
             score: Math.round(bestMoveResult.score),
             stats: bestMoveResult.statistics,
+        });
+
+        // Mostrar acción en modal narrativo
+        const faceText = move.faceUp ? 'bocarriba' : 'bocabajo';
+        addAINarrativeMessage(`IA juega ${move.card.nombre} ${faceText} en ${move.line}`, { 
+            delay: 1000, 
+            closeAfter: true 
         });
 
         // Ejecutar el movimiento elegido y terminar turno
@@ -2449,7 +2508,18 @@ function playAITurnRandom() {
         const movedCard = gameState.ai.hand.splice(cardIdx, 1)[0];
         gameState.field[targetLine].ai.push({ card: movedCard, faceDown: isFaceDown });
         checkDeleteOnCover(targetLine, 'ai');
-        updateStatus(`IA jugó 1 carta ${isFaceDown ? 'bocabajo' : movedCard.nombre + ' bocarriba'} en ${targetLine}`);
+        const faceText = isFaceDown ? 'bocabajo' : 'bocarriba';
+        updateStatus(`IA jugó 1 carta ${faceText} en ${targetLine}`);
+        
+        // Mostrar en modal narrativo si está abierto
+        if (gameState.aiNarrativeModal && gameState.aiNarrativeModal.isOpen) {
+            const cardName = isFaceDown ? '1 carta' : movedCard.nombre;
+            addAINarrativeMessage(`IA juega ${cardName} ${faceText} en ${targetLine}`, { 
+                delay: 1000, 
+                closeAfter: true 
+            });
+        }
+        
         console.log('Estado final del juego tras fallback aleatorio:', JSON.stringify(gameState));
     } else {
         console.error('❌ Fallback aleatorio falló: No hay líneas disponibles');
@@ -2624,6 +2694,11 @@ function continueEndTurn(who) {
         if (typeof onOpponentRefreshEffects === 'function') onOpponentRefreshEffects(who);
     }
 
+    // Cerrar modal narrativo si es turno de IA
+    if (who === 'ai' && gameState.aiNarrativeModal && gameState.aiNarrativeModal.isOpen) {
+        addAINarrativeMessage('Fin del turno de IA', { delay: 500, closeAfter: true });
+    }
+
     // Si onTurnEnd/onRefresh dejó efectos interactivos pendientes, esperar a que se resuelvan
     if (gameState.effectContext || gameState.effectQueue.length > 0) {
         gameState.pendingStartTurn = (who === 'player' ? 'ai' : 'player');
@@ -2633,6 +2708,90 @@ function continueEndTurn(who) {
 
     console.log(`⏱️ Starting next turn...`);
     setTimeout(() => startTurn(who === 'player' ? 'ai' : 'player'), 1000);
+}
+
+// ============================================================================
+// MODAL NARRATIVO IA (MVP)
+// ============================================================================
+
+/**
+ * Abre el modal narrativo para mostrar acciones de la IA con ritmo pausado
+ */
+function openAINarrativeModal() {
+    const modal = document.getElementById('reveal-modal');
+    const titleEl = document.getElementById('reveal-title');
+    const subtitleEl = document.getElementById('reveal-subtitle');
+    const container = document.getElementById('reveal-cards-container');
+    const actionsEl = document.getElementById('reveal-actions');
+    
+    if (!modal || !titleEl || !container || !actionsEl) return;
+    
+    if (titleEl) titleEl.textContent = '➤ TURNO DE LA IA';
+    if (subtitleEl) subtitleEl.textContent = 'La IA está pensando...';
+    container.innerHTML = '<div style="color: #8899aa; font-size: 0.9em; padding: 20px;">Preparando jugada...</div>';
+    actionsEl.innerHTML = '';
+    modal.classList.remove('hidden');
+    
+    gameState.aiNarrativeModal = {
+        isOpen: true,
+        messages: []
+    };
+}
+
+/**
+ * Añade un mensaje al modal narrativo con pausa opcional
+ */
+function addAINarrativeMessage(message, { delay = 600, closeAfter = false } = {}) {
+    return new Promise(resolve => {
+        const modal = document.getElementById('reveal-modal');
+        const container = document.getElementById('reveal-cards-container');
+        const subtitleEl = document.getElementById('reveal-subtitle');
+        
+        if (!modal || !container) {
+            resolve();
+            return;
+        }
+        
+        // Añadir mensaje
+        const msgEl = document.createElement('div');
+        msgEl.style.cssText = `
+            color: #9b59b6;
+            font-size: 0.95em;
+            padding: 8px 12px;
+            margin: 4px 0;
+            border-left: 3px solid #9b59b6;
+            background: rgba(155, 89, 182, 0.1);
+            border-radius: 0 4px 4px 0;
+            animation: fadeInLog 0.3s ease-out;
+        `;
+        msgEl.textContent = message;
+        container.appendChild(msgEl);
+        
+        // Auto-scroll
+        container.scrollTop = container.scrollHeight;
+        
+        if (subtitleEl) subtitleEl.textContent = message;
+        
+        if (closeAfter) {
+            setTimeout(() => {
+                closeAINarrativeModal();
+                resolve();
+            }, delay);
+        } else {
+            setTimeout(resolve, delay);
+        }
+    });
+}
+
+/**
+ * Cierra el modal narrativo
+ */
+function closeAINarrativeModal() {
+    const modal = document.getElementById('reveal-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+    gameState.aiNarrativeModal = { isOpen: false, messages: [] };
 }
 
 function updateStatus(msg) {
