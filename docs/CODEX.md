@@ -212,6 +212,9 @@ Sí. Mientras esté boca arriba, sus efectos aplican aunque esté cubierta.
 **¿Puedo mirar cartas que juego desde la parte superior del mazo antes de colocarlas boca abajo?**
 No. Solo puedes verlas después de estar en el campo.
 
+**¿Cómo funciona la selección de cartas del descarte o mazo (Tiempo 0/3, Claridad 3)?**
+Estas cartas abren un modal "revelar" que muestra las cartas disponibles. El jugador elige una haciendo click (se marca con ✓) y pulsa el botón de acción. Las cartas no elegidas se barajan de vuelta en el mazo (o permanecen en descarte según el efecto). **Las cartas no pasan por la mano** en ningún momento.
+
 **¿Si un efecto descarta una carta que no está en la mano, se activa Plaga 1 u efectos similares?**
 Sí. "Descartar" incluye cualquier descarte, salvo que se especifique lo contrario.
 

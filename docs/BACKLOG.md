@@ -6,17 +6,18 @@ Documento para el seguimiento de bugs, mejoras y nuevas funcionalidades.
 
 - [ ] **IA:** Mejorar evaluación de movimientos que disparan efectos complejos.
 - [ ] **UI:** Solapamiento de cartas en stacks grandes en pantallas pequeñas.
-- [ ] **UX:** Selección de cartas desde mazo/descarte (Tiempo 0/3, Claridad 2, etc.) debe mostrarse en modal tipo "revelar" en vez de añadirse a la mano. Actualmente no queda claro cuáles son las cartas a elegir y el scroll no permite verlas todas.
+- [x] **UX:** Selección de cartas desde mazo/descarte con modal reveal (Tiempo 0/3, Claridad 3).
 - [x] **Amor 4:** IA usa cartas reveladas del jugador para tomar decisiones.
 - [x] **Comando central:** Voltear bocabajo→bocarriba y descubrirse activan onPlay (implementado).
 
 ## Completado recientemente
 
 - [x] **Audit Main 2 completo:** 90 cartas auditadas, 12 bugs corregidos, 2 features implementados. Ver `AUDIT-MAIN2.md`.
-- [x] **176 tests pasando** (100% pass rate).
+- [x] **182 tests pasando** (100% pass rate).
 - [x] **Hooks reactivos:** Solo disparan para carta top, no cubiertas.
 - [x] **Server:** Manejo de EADDRINUSE, EISDIR y cierre limpio.
-- [x] **Docs:** LEEME.md y README.md unificados.
+- [x] **Docs:** LEEME.md y README.md unificados + DEV_INSTRUCTIONS.md para IA.
+- [x] **Modal Reveal:** Tiempo 0 (descarte), Tiempo 3 (descarte + línea), Claridad 3 (mazo) eligen cartas sin ir a mano.
 
 ## Próximas Versiones
 
