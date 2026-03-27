@@ -2412,7 +2412,7 @@ function playAITurn() {
         while(gameState.ai.hand.length < 5) drawCard('ai');
         console.log('🤖 IA: Recarga (mano vacía)');
         updateStatus("IA recarga su mazo");
-        addAINarrativeMessage('IA actualiza (roba 5 cartas)', { delay: 800, closeAfter: true });
+        addAINarrativeMessage('IA actualiza (roba 5 cartas)', { delay: 1600, closeAfter: true });
         endTurn('ai');
         return;
     }
@@ -2438,7 +2438,7 @@ function playAITurn() {
             // Sin movimientos disponibles, recargar
             while(gameState.ai.hand.length < 5) drawCard('ai');
             updateStatus("IA recarga su mazo (sin jugadas posibles)");
-            addAINarrativeMessage('IA actualiza (sin jugadas posibles)', { delay: 800, closeAfter: true });
+            addAINarrativeMessage('IA actualiza (sin jugadas posibles)', { delay: 1600, closeAfter: true });
             endTurn('ai');
             return;
         }
@@ -2465,7 +2465,7 @@ function playAITurn() {
         // Mostrar acción en modal narrativo
         const faceText = move.faceUp ? 'bocarriba' : 'bocabajo';
         addAINarrativeMessage(`IA juega ${move.card.nombre} ${faceText} en ${move.line}`, { 
-            delay: 1000, 
+            delay: 2000, 
             closeAfter: true 
         });
 
@@ -2515,7 +2515,7 @@ function playAITurnRandom() {
         if (gameState.aiNarrativeModal && gameState.aiNarrativeModal.isOpen) {
             const cardName = isFaceDown ? '1 carta' : movedCard.nombre;
             addAINarrativeMessage(`IA juega ${cardName} ${faceText} en ${targetLine}`, { 
-                delay: 1000, 
+                delay: 2000, 
                 closeAfter: true 
             });
         }
@@ -2696,7 +2696,7 @@ function continueEndTurn(who) {
 
     // Cerrar modal narrativo si es turno de IA
     if (who === 'ai' && gameState.aiNarrativeModal && gameState.aiNarrativeModal.isOpen) {
-        addAINarrativeMessage('Fin del turno de IA', { delay: 500, closeAfter: true });
+        addAINarrativeMessage('Fin del turno de IA', { delay: 1000, closeAfter: true });
     }
 
     // Si onTurnEnd/onRefresh dejó efectos interactivos pendientes, esperar a que se resuelvan
