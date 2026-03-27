@@ -217,6 +217,7 @@ function initLineListeners() {
                 gameState.effectContext = null;
                 gameState.field[line].player.push({ card: chosen, faceDown: true });
                 clearSelectionHighlights();
+                clearEffectHighlights();
                 updateUI();
                 if (typeof processAbilityEffect === 'function') processAbilityEffect();
             } else if (gameState.effectContext && gameState.effectContext.type === 'luckPlay_lineSelect') {
