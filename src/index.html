@@ -79,15 +79,16 @@
         .diff-btn {
             flex: 1;
             height: 90px;
-            background: var(--ui-bg-inactive);
-            border: 1px solid var(--ui-border-inactive);
-            color: var(--ui-text-muted);
+            background: rgba(6,14,28,0.55);
+            border: 1px solid rgba(255,255,255,0.09);
+            color: #64748b;
             padding: 0 8px;
             cursor: pointer;
             font-family: 'JetBrains Mono', monospace;
             font-size: 10px;
             font-weight: 600;
             letter-spacing: 1px;
+            border-radius: 8px;
             transition: all 0.2s;
             display: flex;
             flex-direction: column;
@@ -109,8 +110,8 @@
         }
 
         .diff-btn:hover {
-            border-color: rgba(0,245,255,0.3);
-            color: #aaa;
+            border-color: rgba(0,245,255,0.25);
+            color: #94a3b8;
         }
 
         .diff-btn.active {
@@ -148,21 +149,22 @@
 
         .protocol-btn {
             flex: 1;
-            background: var(--ui-bg-inactive);
-            border: 1px solid var(--ui-border-inactive);
-            color: var(--ui-text-muted);
+            background: rgba(6,14,28,0.55);
+            border: 1px solid rgba(255,255,255,0.09);
+            color: #64748b;
             padding: 16px 8px;
             cursor: pointer;
             font-family: 'JetBrains Mono', monospace;
             font-size: 10px;
             font-weight: 600;
             letter-spacing: 2px;
+            border-radius: 8px;
             transition: all 0.2s;
         }
 
         .protocol-btn:hover {
-            border-color: rgba(0,245,255,0.3);
-            color: #aaa;
+            border-color: rgba(0,245,255,0.25);
+            color: #94a3b8;
         }
 
         .protocol-btn.active {
