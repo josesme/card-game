@@ -3501,17 +3501,10 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         });
         
         document.getElementById('btn-reveal-continue').onclick = () => {
-          if (selectedIdx === null) {
-            alert('Selecciona una carta primero');
-            return;
-          }
+          if (selectedIdx === null) { updateStatus('Claridad 3: elige una carta primero'); return; }
           const chosenCard = matchCards[selectedIdx];
-          // Devolver las no elegidas al mazo y barajar
-          matchCards.forEach((c, i) => { 
-            if (i !== selectedIdx) gameState.player.deck.push(c); 
-          });
+          matchCards.forEach((c, i) => { if (i !== selectedIdx) gameState.player.deck.push(c); });
           gameState.player.hand.push(chosenCard);
-          // Barajar mazo
           shuffleDeck();
           modal.classList.add('hidden');
           container.innerHTML = '';
@@ -3521,12 +3514,14 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           processAbilityEffect();
         };
       } else {
-        // Fallback: mover a mano si no hay modal
-        const handSizeBefore = gameState.player.hand.length;
-        gameState.player.hand.push(...matchCards);
-        gameState.effectContext = { type: 'pickDeckCard_valor5', handSizeBefore, revealedCount: matchCards.length, targetValue };
-        updateStatus(`Claridad 3: ${matchCards.length} cartas con Valor ${targetValue} en tu mazo — elige cuál robar`);
+        // Fallback sin modal: auto-robar la primera
+        const drawn = matchCards[0];
+        matchCards.slice(1).forEach(c => gameState.player.deck.push(c));
+        gameState.player.hand.push(drawn);
+        shuffleDeck();
+        updateStatus(`Robas ${drawn.nombre} (Valor ${targetValue}) del mazo`);
         updateUI();
+        processAbilityEffect();
       }
       break;
     }
@@ -3582,17 +3577,54 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         break;
       }
 
-      // Múltiples valor-1 en mazo: jugador elige cuál robar
-      // Extrae todas de mayor a menor índice para no desplazar índices
+      // Múltiples valor-1 en mazo: jugador elige en modal
       const revealedCards = [];
       for (let i = v1Indices.length - 1; i >= 0; i--) {
         revealedCards.unshift(deckRef.splice(v1Indices[i], 1)[0]);
       }
-      const handSizeBefore = gameState.player.hand.length;
-      gameState.player.hand.push(...revealedCards);
-      gameState.effectContext = { type: 'pickDeckCard_valor1', handSizeBefore, revealedCount: revealedCards.length };
-      updateStatus(`Claridad 2: ${revealedCards.length} cartas con Valor 1 reveladas en tu mazo — elige cuál robar`);
-      updateUI();
+      const modal = document.getElementById('reveal-modal');
+      const container = document.getElementById('reveal-cards-container');
+      const titleEl = document.getElementById('reveal-title');
+      const subtitleEl = document.getElementById('reveal-subtitle');
+      const sourceEl = document.getElementById('reveal-source');
+      const actionsEl = document.getElementById('reveal-actions');
+      if (modal && container) {
+        if (titleEl) titleEl.textContent = 'ELIGE 1 CARTA';
+        if (subtitleEl) subtitleEl.textContent = 'Roba 1 carta con Valor 1, baraja el mazo y juega una carta Valor 1';
+        if (sourceEl) sourceEl.textContent = triggerCardName || '';
+        container.innerHTML = revealedCards.map((c, idx) =>
+          `<div class="reveal-card-select" data-idx="${idx}" style="transform:scale(0.85);transform-origin:top center;cursor:pointer;">${createCardHTML(c)}</div>`
+        ).join('');
+        actionsEl.innerHTML = '<button class="ui-btn" id="btn-reveal-continue">ROBAR</button>';
+        modal.classList.remove('hidden');
+        let selectedIdx = null;
+        container.querySelectorAll('.reveal-card-select').forEach(el => {
+          el.onclick = () => {
+            container.querySelectorAll('.reveal-card-select').forEach(x => x.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedIdx = parseInt(el.dataset.idx);
+          };
+        });
+        document.getElementById('btn-reveal-continue').onclick = () => {
+          if (selectedIdx === null) { updateStatus('Claridad 2: elige una carta primero'); return; }
+          modal.classList.add('hidden');
+          container.innerHTML = '';
+          const chosen = revealedCards[selectedIdx];
+          revealedCards.forEach((c, i) => { if (i !== selectedIdx) deckRef.push(c); });
+          gameState.player.hand.push(chosen);
+          for (let i = deckRef.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [deckRef[i], deckRef[j]] = [deckRef[j], deckRef[i]];
+          }
+          updateStatus(`Robas ${chosen.nombre} (Valor 1) del mazo`);
+          shuffleThenPlayStep();
+        };
+      } else {
+        // Fallback sin modal: auto-robar la primera
+        const [drawn] = deckRef.splice(v1Indices[0], 1);
+        gameState[targetPlayer].hand.push(drawn);
+        shuffleThenPlayStep();
+      }
       break;
     }
 
@@ -4507,12 +4539,52 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       // Tiempo 3: revela 1 carta del descarte, juégala bocabajo en otra línea
       if (gameState[targetPlayer].trash.length === 0) { processAbilityEffect(); break; }
       if (targetPlayer === 'player') {
-        const trashCount = gameState.player.trash.length;
-        const handSizeBefore = gameState.player.hand.length;
-        gameState.player.hand.push(...gameState.player.trash.splice(0));
-        gameState.effectContext = { type: 'pickFromDiscardFaceDown', handSizeBefore, revealedCount: trashCount, excludeLine: gameState.currentEffectLine };
-        updateStatus(`Tiempo 3: elige 1 carta del descarte para jugar bocabajo en otra línea (las últimas ${trashCount} de tu mano)`);
-        updateUI();
+        const trashSnapshot = [...gameState.player.trash];
+        const excludeLine = gameState.currentEffectLine;
+        const modal = document.getElementById('reveal-modal');
+        const container = document.getElementById('reveal-cards-container');
+        const titleEl = document.getElementById('reveal-title');
+        const subtitleEl = document.getElementById('reveal-subtitle');
+        const sourceEl = document.getElementById('reveal-source');
+        const actionsEl = document.getElementById('reveal-actions');
+        if (modal && container) {
+          if (titleEl) titleEl.textContent = 'ELIGE 1 CARTA';
+          if (subtitleEl) subtitleEl.textContent = 'Se jugará bocabajo en otra línea';
+          if (sourceEl) sourceEl.textContent = triggerCardName || '';
+          container.innerHTML = trashSnapshot.map((c, idx) =>
+            `<div class="reveal-card-select" data-idx="${idx}" style="transform:scale(0.85);transform-origin:top center;cursor:pointer;">${createCardHTML(c)}</div>`
+          ).join('');
+          actionsEl.innerHTML = '<button class="ui-btn" id="btn-reveal-continue">ELEGIR LÍNEA</button>';
+          modal.classList.remove('hidden');
+          let selectedIdx = null;
+          container.querySelectorAll('.reveal-card-select').forEach(el => {
+            el.onclick = () => {
+              container.querySelectorAll('.reveal-card-select').forEach(x => x.classList.remove('selected'));
+              el.classList.add('selected');
+              selectedIdx = parseInt(el.dataset.idx);
+            };
+          });
+          document.getElementById('btn-reveal-continue').onclick = () => {
+            if (selectedIdx === null) { updateStatus('Tiempo 3: elige una carta primero'); return; }
+            modal.classList.add('hidden');
+            container.innerHTML = '';
+            const chosenCard = trashSnapshot[selectedIdx];
+            // Quitar la carta elegida del descarte real; el resto permanece en descarte
+            const realIdx = gameState.player.trash.findIndex(c => c === chosenCard);
+            if (realIdx >= 0) gameState.player.trash.splice(realIdx, 1);
+            gameState.effectContext = { type: 'pickFromDiscardFaceDown_lineSelect', chosenCard, excludeLine };
+            highlightSelectableLines(excludeLine);
+            updateStatus('Tiempo 3: elige la línea donde jugar bocabajo (no la línea actual)');
+            updateUI();
+          };
+        } else {
+          // Fallback sin modal: auto-jugar la primera carta en otra línea
+          const [card] = gameState.player.trash.splice(0, 1);
+          const destLine = LINES.filter(l => l !== gameState.currentEffectLine)[0] || LINES[0];
+          gameState.field[destLine].player.push({ card, faceDown: true });
+          updateUI();
+          processAbilityEffect();
+        }
       } else {
         const bestIdx = gameState.ai.trash.reduce((b, c, i) => c.valor > gameState.ai.trash[b].valor ? i : b, 0);
         const [card] = gameState.ai.trash.splice(bestIdx, 1);

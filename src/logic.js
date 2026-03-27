@@ -207,15 +207,13 @@ function initLineListeners() {
                 updateUI();
                 if (typeof processAbilityEffect === 'function') processAbilityEffect();
             } else if (gameState.effectContext && gameState.effectContext.type === 'pickFromDiscardFaceDown_lineSelect') {
-                // Tiempo 3: jugar carta del descarte bocabajo en otra línea
+                // Tiempo 3: jugar carta del descarte bocabajo en otra línea (carta ya elegida en modal)
                 const ctx = gameState.effectContext;
                 if (ctx.excludeLine && line === ctx.excludeLine) {
                     updateStatus('Tiempo 3: elige una línea diferente a la actual');
                     return;
                 }
-                const revealed = gameState.player.hand.splice(ctx.handSizeBefore, ctx.revealedCount);
-                const chosen = revealed[ctx.chosenRelIdx];
-                revealed.forEach((c, i) => { if (i !== ctx.chosenRelIdx) gameState.player.trash.push(c); });
+                const chosen = ctx.chosenCard;
                 gameState.effectContext = null;
                 gameState.field[line].player.push({ card: chosen, faceDown: true });
                 clearSelectionHighlights();
@@ -459,11 +457,8 @@ function isSelectionActive() {
             gameState.effectContext.type === 'pickHandFaceDown_lineSelect' ||
             gameState.effectContext.type === 'playTopDeckFaceDownOpponentChooseLine' ||
             gameState.effectContext.type === 'playHandCard_valor1_lineSelect' ||
-            gameState.effectContext.type === 'pickDeckCard_valor1' ||
-            gameState.effectContext.type === 'pickDeckCard_valor5' ||
             gameState.effectContext.type === 'pickFromDiscardToPlay' ||
             gameState.effectContext.type === 'pickFromDiscardToPlay_lineSelect' ||
-            gameState.effectContext.type === 'pickFromDiscardFaceDown' ||
             gameState.effectContext.type === 'pickFromDiscardFaceDown_lineSelect' ||
             gameState.effectContext.type === 'rearrange' ||
             gameState.effectContext.type === 'selectCardToCopy' ||
@@ -689,97 +684,6 @@ function updateUI() {
                 const cardT0 = gameState.player.hand[index];
                 updateStatus(`Tiempo 0: elige la línea donde jugar "${cardT0.nombre}"`);
                 updateUI();
-            } else if (gameState.effectContext && gameState.effectContext.type === 'pickFromDiscardFaceDown') {
-                // Tiempo 3: elegir carta del descarte para jugar bocabajo en otra línea
-                const ctx = gameState.effectContext;
-                if (index < ctx.handSizeBefore) {
-                    updateStatus('Tiempo 3: elige una de las cartas del descarte (las últimas de tu mano)');
-                    return;
-                }
-                ctx.chosenRelIdx = index - ctx.handSizeBefore;
-                ctx.type = 'pickFromDiscardFaceDown_lineSelect';
-                const cardT3 = gameState.player.hand[index];
-                updateStatus(`Tiempo 3: elige la línea destino para "${cardT3.nombre}" (bocabajo, no la línea actual)`);
-                updateUI();
-            } else if (gameState.effectContext && gameState.effectContext.type === 'pickDeckCard_valor1') {
-                // Claridad 2 paso 1: elegir cuál de las cartas reveladas del mazo robar
-                const ctx = gameState.effectContext;
-                if (index < ctx.handSizeBefore) {
-                    updateStatus('Claridad 2: elige una de las cartas reveladas del mazo (las últimas de tu mano)');
-                    return;
-                }
-                const chosenRelIdx = index - ctx.handSizeBefore;
-                // Extraer todas las reveladas de la mano
-                const revealed = gameState.player.hand.splice(ctx.handSizeBefore, ctx.revealedCount);
-                const chosen = revealed[chosenRelIdx];
-                // Devolver las no elegidas al mazo (se barajará después)
-                revealed.forEach((c, i) => { if (i !== chosenRelIdx) gameState.player.deck.push(c); });
-                gameState.player.hand.push(chosen);
-                gameState.effectContext = null;
-                updateStatus(`Robas ${chosen.nombre} (Valor 1) del mazo`);
-                // Barajar mazo
-                const dk = gameState.player.deck;
-                for (let i = dk.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [dk[i], dk[j]] = [dk[j], dk[i]];
-                }
-                clearSelectionHighlights();
-                updateUI();
-                // Paso siguiente: jugar carta Valor 1
-                const v1InHand = gameState.player.hand.some(c => c.valor === 1);
-                if (v1InHand) {
-                    gameState.effectContext = { type: 'playHandCard_valor1' };
-                    updateStatus('Claridad 2: juega 1 carta con Valor 1 de tu mano');
-                    updateUI();
-                } else {
-                    if (typeof processAbilityEffect === 'function') processAbilityEffect();
-                }
-            } else if (gameState.effectContext && gameState.effectContext.type === 'pickDeckCard_valor5') {
-                // Claridad 3: elegir cuál de las cartas valor 5 reveladas del mazo robar
-                const ctx = gameState.effectContext;
-                // Nuevo formato (modal): usa matchCards y selectedIdx
-                if (ctx.matchCards && ctx.selectedIdx !== null) {
-                    const chosenCard = ctx.matchCards[ctx.selectedIdx];
-                    // Devolver las no elegidas al mazo y barajar
-                    ctx.matchCards.forEach((c, i) => { 
-                        if (i !== ctx.selectedIdx) gameState.player.deck.push(c); 
-                    });
-                    gameState.player.hand.push(chosenCard);
-                    // Barajar mazo
-                    const dk = gameState.player.deck;
-                    for (let i = dk.length - 1; i > 0; i--) {
-                        const j = Math.floor(Math.random() * (i + 1));
-                        [dk[i], dk[j]] = [dk[j], dk[i]];
-                    }
-                    gameState.effectContext = null;
-                    updateStatus(`Robas ${chosenCard.nombre} (Valor ${ctx.targetValue}) del mazo`);
-                    clearEffectHighlights();
-                    updateUI();
-                    if (typeof processAbilityEffect === 'function') processAbilityEffect();
-                } else {
-                    // Formato antiguo (mano): elige de las cartas en mano
-                    if (index < ctx.handSizeBefore) {
-                        updateStatus(`Claridad 3: elige una de las cartas con Valor ${ctx.targetValue} (las últimas de tu mano)`);
-                        return;
-                    }
-                    const chosenRelIdx = index - ctx.handSizeBefore;
-                    const revealed = gameState.player.hand.splice(ctx.handSizeBefore, ctx.revealedCount);
-                    const chosen = revealed[chosenRelIdx];
-                    // Devolver las no elegidas al mazo y barajar
-                    revealed.forEach((c, i) => { if (i !== chosenRelIdx) gameState.player.deck.push(c); });
-                    gameState.player.hand.push(chosen);
-                    gameState.effectContext = null;
-                    const dk = gameState.player.deck;
-                    for (let i = dk.length - 1; i > 0; i--) {
-                        const j = Math.floor(Math.random() * (i + 1));
-                        [dk[i], dk[j]] = [dk[j], dk[i]];
-                    }
-                    updateStatus(`Robas ${chosen.nombre} (Valor ${ctx.targetValue}) del mazo`);
-                    clearSelectionHighlights();
-                    clearEffectHighlights();
-                    updateUI();
-                    if (typeof processAbilityEffect === 'function') processAbilityEffect();
-                }
             } else if (gameState.effectContext && gameState.effectContext.type === 'playHandCard_valor1') {
                 // Claridad 2 paso 2: elegir carta de Valor 1 para jugar en campo
                 const card = gameState.player.hand[index];
