@@ -230,16 +230,6 @@ function initLineListeners() {
                 updateUI();
                 if (!ctx.faceDown) triggerCardEffect(card, 'onPlay', 'player');
                 if (typeof processAbilityEffect === 'function') processAbilityEffect();
-            } else if (gameState.effectContext && gameState.effectContext.type === 'playHandCard_valor1_lineSelect') {
-                // Claridad 2: jugar carta de Valor 1 en línea elegida
-                if (gameState.selectedCardIndex === null) return;
-                const card = gameState.player.hand.splice(gameState.selectedCardIndex, 1)[0];
-                gameState.selectedCardIndex = null;
-                gameState.effectContext = null;
-                gameState.field[line].player.push({ card, faceDown: false });
-                clearSelectionHighlights();
-                updateUI();
-                if (typeof processAbilityEffect === 'function') processAbilityEffect();
             } else if (gameState.effectContext && gameState.effectContext.type === 'rearrange') {
                 handleFieldCardClick(line, 'player', 0); // rearrange solo usa line, target/idx irrelevantes
             } else if (gameState.effectContext && gameState.effectContext.waitingForLine) {
@@ -445,7 +435,6 @@ function isSelectionActive() {
             gameState.effectContext.waitingForLine ||
             gameState.effectContext.type === 'pickHandFaceDown_lineSelect' ||
             gameState.effectContext.type === 'playTopDeckFaceDownOpponentChooseLine' ||
-            gameState.effectContext.type === 'playHandCard_valor1_lineSelect' ||
             gameState.effectContext.type === 'pickFromDiscardToPlay' ||
             gameState.effectContext.type === 'pickFromDiscardToPlay_lineSelect' ||
             gameState.effectContext.type === 'pickFromDiscardFaceDown_lineSelect' ||
@@ -643,16 +632,16 @@ function updateUI() {
                 updateStatus(`Tiempo 0: elige la línea donde jugar "${cardT0.nombre}"`);
                 updateUI();
             } else if (gameState.effectContext && gameState.effectContext.type === 'playHandCard_valor1') {
-                // Claridad 2 paso 2: elegir carta de Valor 1 para jugar en campo
+                // Claridad 2 paso 2: jugar carta de Valor 1 con el modal normal (bocarriba/bocabajo)
                 const card = gameState.player.hand[index];
                 if (!card || card.valor !== 1) {
-                    updateStatus('Claridad 2: solo puedes elegir cartas con Valor 1');
+                    updateStatus('Claridad 2: solo puedes jugar cartas con Valor 1');
                     return;
                 }
-                gameState.selectedCardIndex = index;
-                gameState.effectContext.type = 'playHandCard_valor1_lineSelect';
-                updateStatus(`Claridad 2: elige la línea donde jugar "${card.nombre}"`);
-                updateUI();
+                // Limpiar contexto antes de abrir el modal para que fluya como jugada normal
+                gameState.effectContext = null;
+                gameState.pendingTurnEnd = null;
+                showActionModal(index);
             } else if (gameState.effectContext && gameState.effectContext.type === 'playNonDiversity') {
                 // Diversidad 0: jugador elige carta no-Diversidad para jugar bocarriba
                 const card = gameState.player.hand[index];
