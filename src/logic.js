@@ -454,6 +454,7 @@ function isSelectionActive() {
             gameState.effectContext.type === 'playTopDeckFaceDownOpponentChooseLine' ||
             gameState.effectContext.type === 'playHandCard_valor1_lineSelect' ||
             gameState.effectContext.type === 'pickDeckCard_valor1' ||
+            gameState.effectContext.type === 'pickDeckCard_valor5' ||
             gameState.effectContext.type === 'pickFromDiscardToPlay' ||
             gameState.effectContext.type === 'pickFromDiscardToPlay_lineSelect' ||
             gameState.effectContext.type === 'pickFromDiscardFaceDown' ||
@@ -727,6 +728,30 @@ function updateUI() {
                 } else {
                     if (typeof processAbilityEffect === 'function') processAbilityEffect();
                 }
+            } else if (gameState.effectContext && gameState.effectContext.type === 'pickDeckCard_valor5') {
+                // Claridad 3: elegir cuál de las cartas valor 5 reveladas del mazo robar
+                const ctx = gameState.effectContext;
+                if (index < ctx.handSizeBefore) {
+                    updateStatus(`Claridad 3: elige una de las cartas con Valor ${ctx.targetValue} (las últimas de tu mano)`);
+                    return;
+                }
+                const chosenRelIdx = index - ctx.handSizeBefore;
+                const revealed = gameState.player.hand.splice(ctx.handSizeBefore, ctx.revealedCount);
+                const chosen = revealed[chosenRelIdx];
+                // Devolver las no elegidas al mazo y barajar
+                revealed.forEach((c, i) => { if (i !== chosenRelIdx) gameState.player.deck.push(c); });
+                gameState.player.hand.push(chosen);
+                gameState.effectContext = null;
+                const dk = gameState.player.deck;
+                for (let i = dk.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [dk[i], dk[j]] = [dk[j], dk[i]];
+                }
+                updateStatus(`Robas ${chosen.nombre} (Valor ${ctx.targetValue}) del mazo`);
+                clearSelectionHighlights();
+                clearEffectHighlights();
+                updateUI();
+                if (typeof processAbilityEffect === 'function') processAbilityEffect();
             } else if (gameState.effectContext && gameState.effectContext.type === 'playHandCard_valor1') {
                 // Claridad 2 paso 2: elegir carta de Valor 1 para jugar en campo
                 const card = gameState.player.hand[index];
@@ -2424,7 +2449,7 @@ function playAITurnRandom() {
         const movedCard = gameState.ai.hand.splice(cardIdx, 1)[0];
         gameState.field[targetLine].ai.push({ card: movedCard, faceDown: isFaceDown });
         checkDeleteOnCover(targetLine, 'ai');
-        updateStatus(`IA jugó ${movedCard.nombre} ${isFaceDown ? 'bocabajo' : 'bocarriba'} en ${targetLine}`);
+        updateStatus(`IA jugó 1 carta ${isFaceDown ? 'bocabajo' : movedCard.nombre + ' bocarriba'} en ${targetLine}`);
         console.log('Estado final del juego tras fallback aleatorio:', JSON.stringify(gameState));
     } else {
         console.error('❌ Fallback aleatorio falló: No hay líneas disponibles');
@@ -2541,7 +2566,8 @@ function executeAIMove(move) {
 
     const sideText = landSide !== 'ai' ? ' (lado rival)' : '';
     const faceText = move.faceUp ? 'bocarriba' : 'bocabajo';
-    updateStatus(`IA jugó ${movedCard.nombre} ${faceText} en ${move.line}${sideText}`);
+    const cardNameText = move.faceUp ? movedCard.nombre : '1 carta';
+    updateStatus(`IA jugó ${cardNameText} ${faceText} en ${move.line}${sideText}`);
     
     // Ejecutar efectos si es bocarriba
     if (move.faceUp) {

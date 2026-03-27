@@ -3419,21 +3419,54 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'searchDeckByValue': {
-      // Claridad 3: revela mazo, roba 1 carta con Valor dado, baraja
+      // Claridad 3: busca cartas con Valor dado en el mazo; si hay 1 la roba automáticamente,
+      // si hay varias el jugador elige; baraja el mazo después.
       const targetValue = actionDef.value || 5;
       const deckRef = gameState[targetPlayer].deck;
-      const foundIdx = deckRef.findIndex(c => c.valor === targetValue);
-      if (foundIdx >= 0) {
-        const [drawn] = deckRef.splice(foundIdx, 1);
+
+      const shuffleDeck = () => {
+        for (let i = deckRef.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [deckRef[i], deckRef[j]] = [deckRef[j], deckRef[i]];
+        }
+      };
+
+      // Reunir índices de cartas con el valor buscado (de mayor a menor para splice seguro)
+      const matchIdx = [];
+      for (let i = 0; i < deckRef.length; i++) {
+        if (deckRef[i].valor === targetValue) matchIdx.push(i);
+      }
+
+      if (matchIdx.length === 0) {
+        updateStatus(`No hay cartas con Valor ${targetValue} en el mazo`);
+        shuffleDeck();
+        updateUI();
+        processAbilityEffect();
+        break;
+      }
+
+      if (matchIdx.length === 1 || targetPlayer !== 'player') {
+        // IA o sólo 1 carta: robar directamente
+        const drawn = deckRef.splice(matchIdx[0], 1)[0];
         gameState[targetPlayer].hand.push(drawn);
-        updateStatus(`${targetPlayer === 'player' ? 'Robas' : 'IA roba'} ${drawn.nombre} del mazo`);
+        updateStatus(`${targetPlayer === 'player' ? 'Robas' : 'IA roba'} ${drawn.nombre} (Valor ${targetValue}) del mazo`);
+        shuffleDeck();
+        updateUI();
+        processAbilityEffect();
+        break;
       }
-      for (let i = deckRef.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [deckRef[i], deckRef[j]] = [deckRef[j], deckRef[i]];
+
+      // Múltiples cartas con el valor buscado: jugador elige cuál robar
+      const matchCards = [];
+      for (let i = matchIdx.length - 1; i >= 0; i--) {
+        matchCards.unshift(deckRef.splice(matchIdx[i], 1)[0]);
       }
+      const handSizeBefore = gameState.player.hand.length;
+      gameState.player.hand.push(...matchCards);
+      gameState.effectContext = { type: 'pickDeckCard_valor5', handSizeBefore, revealedCount: matchCards.length, targetValue };
+      showCancelButton();
+      updateStatus(`Claridad 3: ${matchCards.length} cartas con Valor ${targetValue} en tu mazo — elige cuál robar`);
       updateUI();
-      processAbilityEffect();
       break;
     }
 
