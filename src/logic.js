@@ -2723,15 +2723,15 @@ function openAINarrativeModal() {
     const subtitleEl = document.getElementById('reveal-subtitle');
     const container = document.getElementById('reveal-cards-container');
     const actionsEl = document.getElementById('reveal-actions');
-
+    
     if (!modal || !titleEl || !container || !actionsEl) return;
-
+    
     if (titleEl) titleEl.textContent = '➤ TURNO DE LA IA';
-    if (subtitleEl) subtitleEl.textContent = '';
-    container.innerHTML = '';
+    if (subtitleEl) subtitleEl.textContent = 'La IA está pensando...';
+    container.innerHTML = '<div style="color: #8899aa; font-size: 0.9em; padding: 20px;">Preparando jugada...</div>';
     actionsEl.innerHTML = '';
     modal.classList.remove('hidden');
-
+    
     gameState.aiNarrativeModal = {
         isOpen: true,
         messages: []
