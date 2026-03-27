@@ -627,15 +627,14 @@ function updateUI() {
     if (!GLOBAL_CARDS) return; // Esperar a que carguen las cartas
     hideCardPreview(); // Limpiar preview flotante al re-renderizar el campo
 
-    // Mostrar CANCELAR solo cuando el jugador está eligiendo dónde colocar una carta
+    // Mostrar CANCELAR cuando el jugador está en medio de una acción no completada
     const cancelBtn = document.getElementById('btn-cancel-selection');
     if (cancelBtn) {
+        const ctx = gameState.effectContext;
+        const noCancel = ['discard', 'discardAny', 'discardVariable', 'confirm'];
         const showCancel = gameState.turn === 'player' && (
             gameState.selectionMode ||
-            (gameState.effectContext && (
-                gameState.effectContext.type?.endsWith('_lineSelect') ||
-                gameState.effectContext.waitingForLine
-            ))
+            (ctx && !noCancel.includes(ctx.type))
         );
         cancelBtn.classList.toggle('hidden', !showCancel);
     }
@@ -2268,29 +2267,35 @@ function finalizePlay(targetLine, isFaceDown) {
 const btnCancelSelection = document.getElementById('btn-cancel-selection');
 if (btnCancelSelection) btnCancelSelection.onclick = () => {
     if (gameState.selectionMode) {
+        // Jugada bocabajo/bocarriba en espera de línea — la carta sigue en mano
         gameState.selectionMode = false;
         gameState.selectionModeFaceUp = false;
         gameState.selectedCardIndex = null;
+        gameState.playOnSide = null;
         clearSelectionHighlights();
         clearEffectHighlights();
-        updateStatus('Acción cancelada');
+        updateStatus('Jugada cancelada');
         updateUI();
-    } else if (gameState.effectContext) {
+        return;
+    }
+    if (gameState.effectContext) {
         const ctx = gameState.effectContext;
         if (ctx.waitingForLine) {
-            // Shift: volver a selección de carta
+            // Shift: volver a selección de carta origen
             ctx.waitingForLine = false;
             ctx.selectedCard = null;
             clearEffectHighlights();
             updateStatus('Elige la carta a mover...');
             updateUI();
-        } else if (ctx.type?.endsWith('_lineSelect')) {
-            gameState.effectContext = null;
-            gameState.selectedCardIndex = null;
-            clearSelectionHighlights();
-            clearEffectHighlights();
-            if (typeof processAbilityEffect === 'function') processAbilityEffect();
+            return;
         }
+        // Cualquier otro efecto interactivo: saltar y continuar cola
+        gameState.effectContext = null;
+        gameState.selectedCardIndex = null;
+        clearSelectionHighlights();
+        clearEffectHighlights();
+        updateStatus('Efecto cancelado');
+        if (typeof processAbilityEffect === 'function') processAbilityEffect();
     }
 };
 
