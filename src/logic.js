@@ -2020,6 +2020,7 @@ function playSelectedCard(isFaceDown) {
     if (isFaceDown) {
         // Enter selection mode for any non-compiled line
         gameState.selectionMode = true;
+        showCancelButton();
         updateStatus("Elige línea para colocar la carta bocabajo...");
         console.log('📍 Selection mode ON - choose line for face-down play');
         highlightSelectableLines();
@@ -2035,6 +2036,7 @@ function playSelectedCard(isFaceDown) {
         console.log(`✅ Playing face-up (any protocol allowed): ${card.nombre}`);
         gameState.selectionMode = true;
         gameState.selectionModeFaceUp = true;
+        showCancelButton();
         updateStatus("Espíritu 1: elige línea para colocar la carta bocarriba...");
         highlightSelectableLines();
     } else if (cardPlaysAnywhere) {
@@ -2054,6 +2056,7 @@ function playSelectedCard(isFaceDown) {
                     gameState.selectionMode = true;
                     gameState.selectionModeFaceUp = true;
                     gameState.playOnSide = 'player';
+                    showCancelButton();
                     updateStatus(`${card.nombre}: elige línea en tu lado...`);
                     highlightSelectableLines();
                 };
@@ -2062,6 +2065,7 @@ function playSelectedCard(isFaceDown) {
                     gameState.selectionMode = true;
                     gameState.selectionModeFaceUp = true;
                     gameState.playOnSide = 'opponent';
+                    showCancelButton();
                     updateStatus(`${card.nombre}: elige línea en el lado rival...`);
                     highlightSelectableLines();
                 };
@@ -2071,6 +2075,7 @@ function playSelectedCard(isFaceDown) {
             console.log(`✅ Playing face-up (playAnywhere): ${card.nombre}`);
             gameState.selectionMode = true;
             gameState.selectionModeFaceUp = true;
+            showCancelButton();
             updateStatus(`${card.nombre}: elige línea para colocar la carta bocarriba...`);
             highlightSelectableLines();
         }
@@ -2097,7 +2102,6 @@ function showCancelButton() {
 }
 
 function highlightSelectableLines(excludeLine, allowedLines) {
-    showCancelButton();
     const lines = allowedLines || LINES;
     lines.forEach(line => {
         if (excludeLine && line === excludeLine) return;
