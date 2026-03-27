@@ -361,7 +361,10 @@ function initProtocolDisplay() {
                 const imgUrl = getCardImageUrl(pProto, 1);
                 if (imgUrl) pCard.classList.add('proto-img');
                 if (imgUrl) pCard.style.backgroundImage = `url('${imgUrl}')`;
-                if (imgUrl && !pCard.querySelector('.slot-title')) {
+                const existingPTitle = pCard.querySelector('.slot-title');
+                if (imgUrl && existingPTitle) {
+                    existingPTitle.dataset.text = pProto;
+                } else if (imgUrl && !existingPTitle) {
                     const t = document.createElement('div');
                     t.className = 'slot-title';
                     t.dataset.text = pProto;
@@ -390,7 +393,10 @@ function initProtocolDisplay() {
                 const imgUrl = getCardImageUrl(aProto, 1);
                 if (imgUrl) aCard.classList.add('proto-img');
                 if (imgUrl) aCard.style.backgroundImage = `url('${imgUrl}')`;
-                if (imgUrl && !aCard.querySelector('.slot-title')) {
+                const existingATitle = aCard.querySelector('.slot-title');
+                if (imgUrl && existingATitle) {
+                    existingATitle.dataset.text = aProto;
+                } else if (imgUrl && !existingATitle) {
                     const t = document.createElement('div');
                     t.className = 'slot-title';
                     t.dataset.text = aProto;
@@ -855,6 +861,7 @@ function updateUI() {
         }
     });
 
+    initProtocolDisplay();
     checkWinCondition();
 }
 
