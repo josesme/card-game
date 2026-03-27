@@ -132,7 +132,7 @@
             position: absolute;
             inset: 0;
             font-size: 10px;
-            color: var(--ui-text-muted);
+            color: #00f5ff;
             line-height: 1.6;
             display: flex;
             align-items: center;
@@ -298,11 +298,11 @@
 
 <script>
 const DIFFICULTY_LEVELS = [
-    { id: 1, name: 'SUBRUTINA',    icon: '⬡', color: '71,41,123',   depth: 1, desc: 'IA básica. Ejecuta protocolos sin análisis profundo.' },
-    { id: 2, name: 'ALGORITMO',    icon: '◈', color: '114,46,154',  depth: 2, desc: 'IA táctica. Anticipa tus jugadas inmediatas.' },
+    { id: 1, name: 'SUBRUTINA',    icon: '⬡', color: '114,46,154',  depth: 1, desc: 'IA básica. Ejecuta protocolos sin análisis profundo.' },
+    { id: 2, name: 'ALGORITMO',    icon: '◈', color: '71,41,123',   depth: 2, desc: 'IA táctica. Anticipa tus jugadas inmediatas.' },
     { id: 3, name: 'NÚCLEO',       icon: '⬢', color: '114,46,154',  depth: 3, desc: 'IA estándar. Equilibrio entre velocidad y estrategia.' },
-    { id: 4, name: 'CENTINELA',    icon: '◉', color: '245,189,31',  depth: 4, desc: 'IA avanzada. Analiza múltiples futuros para bloquearte.' },
-    { id: 5, name: 'SINGULARIDAD', icon: '✦', color: '255,232,99',  depth: 5, desc: 'IA total. Máxima capacidad de cómputo y predicción.' }
+    { id: 4, name: 'CENTINELA',    icon: '◉', color: '255,232,99',  depth: 4, desc: 'IA avanzada. Analiza múltiples futuros para bloquearte.' },
+    { id: 5, name: 'SINGULARIDAD', icon: '✦', color: '245,189,31',  depth: 5, desc: 'IA total. Máxima capacidad de cómputo y predicción.' }
 ];
 
 let selectedDifficulty = 3;
@@ -326,7 +326,6 @@ function renderDiff() {
     const cur = DIFFICULTY_LEVELS.find(l => l.id === selectedDifficulty);
     const desc = document.getElementById('diff-desc');
     desc.textContent = cur.desc;
-    desc.style.color = `rgb(${cur.color})`;
 }
 
 function updateProtocolSelection() {
