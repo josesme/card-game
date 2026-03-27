@@ -247,8 +247,8 @@ function initLineListeners() {
                 handleShiftTargetLine(line);
             }
         };
-        lineEl.onclick = handler;
-        // line-* tiene display:contents — el área visual está en el padre
+        // Solo el padre — lineEl tiene display:contents y no genera caja visual.
+        // Asignarlo a ambos causaba doble disparo cuando el click burbujea desde una carta.
         if (lineEl.parentElement) lineEl.parentElement.onclick = handler;
     });
 }
@@ -626,6 +626,19 @@ function createCardHTML(card, faceDown = false) {
 function updateUI() {
     if (!GLOBAL_CARDS) return; // Esperar a que carguen las cartas
     hideCardPreview(); // Limpiar preview flotante al re-renderizar el campo
+
+    // Mostrar CANCELAR solo cuando el jugador está eligiendo dónde colocar una carta
+    const cancelBtn = document.getElementById('btn-cancel-selection');
+    if (cancelBtn) {
+        const showCancel = gameState.turn === 'player' && (
+            gameState.selectionMode ||
+            (gameState.effectContext && (
+                gameState.effectContext.type?.endsWith('_lineSelect') ||
+                gameState.effectContext.waitingForLine
+            ))
+        );
+        cancelBtn.classList.toggle('hidden', !showCancel);
+    }
 
     // Update deck/trash counts (query fresh to avoid stale references)
     const playerDeckEl = document.getElementById('player-deck-count');
@@ -1420,6 +1433,8 @@ function clearEffectHighlights() {
     if (banner) banner.classList.remove('visible');
     const stopBtn = document.getElementById('btn-stop-discard');
     if (stopBtn) stopBtn.classList.add('hidden');
+    const cancelBtn = document.getElementById('btn-cancel-selection');
+    if (cancelBtn) cancelBtn.classList.add('hidden');
     // Close select overlay if open
     if (typeof closeHandSelectOverlay === 'function') closeHandSelectOverlay();
 }
@@ -2249,6 +2264,35 @@ function finalizePlay(targetLine, isFaceDown) {
     console.log(`⏱️ Ending player turn...`);
     endTurn('player');
 }
+
+const btnCancelSelection = document.getElementById('btn-cancel-selection');
+if (btnCancelSelection) btnCancelSelection.onclick = () => {
+    if (gameState.selectionMode) {
+        gameState.selectionMode = false;
+        gameState.selectionModeFaceUp = false;
+        gameState.selectedCardIndex = null;
+        clearSelectionHighlights();
+        clearEffectHighlights();
+        updateStatus('Acción cancelada');
+        updateUI();
+    } else if (gameState.effectContext) {
+        const ctx = gameState.effectContext;
+        if (ctx.waitingForLine) {
+            // Shift: volver a selección de carta
+            ctx.waitingForLine = false;
+            ctx.selectedCard = null;
+            clearEffectHighlights();
+            updateStatus('Elige la carta a mover...');
+            updateUI();
+        } else if (ctx.type?.endsWith('_lineSelect')) {
+            gameState.effectContext = null;
+            gameState.selectedCardIndex = null;
+            clearSelectionHighlights();
+            clearEffectHighlights();
+            if (typeof processAbilityEffect === 'function') processAbilityEffect();
+        }
+    }
+};
 
 const btnStopDiscard = document.getElementById('btn-stop-discard');
 if (btnStopDiscard) btnStopDiscard.onclick = () => {
