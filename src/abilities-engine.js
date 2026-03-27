@@ -3449,7 +3449,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         // IA o sólo 1 carta: robar directamente
         const drawn = deckRef.splice(matchIdx[0], 1)[0];
         gameState[targetPlayer].hand.push(drawn);
-        updateStatus(`${targetPlayer === 'player' ? 'Robas' : 'IA roba'} ${drawn.nombre} (Valor ${targetValue}) del mazo`);
+        updateStatus(`${targetPlayer === 'player' ? `Robas ${drawn.nombre} (Valor ${targetValue}) del mazo` : `IA roba 1 carta (Valor ${targetValue}) del mazo`}`);
         shuffleDeck();
         updateUI();
         processAbilityEffect();
@@ -3572,7 +3572,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         // Una sola opción o IA: auto-robar la primera
         const [drawn] = deckRef.splice(v1Indices[0], 1);
         gameState[targetPlayer].hand.push(drawn);
-        updateStatus(`${targetPlayer === 'player' ? 'Robas' : 'IA roba'} ${drawn.nombre} (Valor 1) del mazo`);
+        updateStatus(`${targetPlayer === 'player' ? `Robas ${drawn.nombre} (Valor 1) del mazo` : 'IA roba 1 carta (Valor 1) del mazo'}`);
         shuffleThenPlayStep();
         break;
       }
@@ -4390,7 +4390,6 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           const randomOffset = Math.floor(Math.random() * drawn);
           const pickedCard = gameState.ai.hand[handBefore + randomOffset];
           if (pickedCard.valor === aiDeclaredVal) {
-            updateStatus(`IA — ${triggerCardName}: acierta con valor ${aiDeclaredVal}! Juega ${pickedCard.nombre}`);
             const handIdx = gameState.ai.hand.indexOf(pickedCard);
             gameState.ai.hand.splice(handIdx, 1);
             const isOwn = gameState.ai.protocols && gameState.ai.protocols.includes(pickedCard.protocol);
@@ -4398,10 +4397,11 @@ function resolveAbilityAction(actionDef, targetPlayer) {
               calculateScore(gameState, l, 'ai') >= calculateScore(gameState, best, 'ai') ? l : best, LINES[0]);
             gameState.field[bestLine].ai.push({ card: pickedCard, faceDown: !isOwn });
             gameState.currentEffectLine = bestLine;
+            updateStatus(`IA — ${triggerCardName}: acierta con valor ${aiDeclaredVal}! Juega ${isOwn ? pickedCard.nombre : '1 carta'}`);
             if (isOwn) triggerCardEffect(pickedCard, 'onPlay', 'ai');
             updateUI();
           } else {
-            updateStatus(`IA — ${triggerCardName}: no coincide (declaró ${aiDeclaredVal}, carta: ${pickedCard.nombre} valor ${pickedCard.valor})`);
+            updateStatus(`IA — ${triggerCardName}: no coincide (declaró ${aiDeclaredVal})`);
           }
         }
         processAbilityEffect();
