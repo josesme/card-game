@@ -627,17 +627,6 @@ function updateUI() {
     if (!GLOBAL_CARDS) return; // Esperar a que carguen las cartas
     hideCardPreview(); // Limpiar preview flotante al re-renderizar el campo
 
-    // Mostrar CANCELAR cuando el jugador está en medio de una acción no completada
-    const cancelBtn = document.getElementById('btn-cancel-selection');
-    if (cancelBtn) {
-        const ctx = gameState.effectContext;
-        const noCancel = ['discard', 'discardAny', 'discardVariable', 'confirm'];
-        const showCancel = gameState.turn === 'player' && (
-            gameState.selectionMode ||
-            (ctx && !noCancel.includes(ctx.type))
-        );
-        cancelBtn.classList.toggle('hidden', !showCancel);
-    }
 
     // Update deck/trash counts (query fresh to avoid stale references)
     const playerDeckEl = document.getElementById('player-deck-count');
@@ -1340,6 +1329,8 @@ function startEffect(type, target, count, opts = {}) {
 
     gameState.effectContext = { type, target, count, selected: [], _triggerName: gameState.currentTriggerCard || '', ...opts };
     console.log(`🎯 startEffect: type=${type}, target=${target}, count=${count}`);
+    const noCancel = ['discard', 'discardAny', 'discardVariable', 'give'];
+    if (!noCancel.includes(type)) showCancelButton();
 
     let actionVerb = 'VOLTEAR';
     if (type === 'discard' || type === 'discardAny') actionVerb = 'DESCARTAR';
@@ -2144,7 +2135,13 @@ function playSelectedCard(isFaceDown) {
     }
 }
 
+function showCancelButton() {
+    const btn = document.getElementById('btn-cancel-selection');
+    if (btn) btn.classList.remove('hidden');
+}
+
 function highlightSelectableLines(excludeLine, allowedLines) {
+    showCancelButton();
     const lines = allowedLines || LINES;
     lines.forEach(line => {
         if (excludeLine && line === excludeLine) return;
