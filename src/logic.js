@@ -1183,6 +1183,11 @@ function startEffect(type, target, count, opts = {}) {
     if (type === 'discard' || type === 'discardAny' || type === 'give' || type === 'reveal') {
         // Acciones sobre la mano: el dueño de la mano elige.
         isAIResolving = (target === 'ai');
+    } else if (type === 'rearrange') {
+        // Reorganizar protocolos: el dueño de los protocolos decide, no el jugador del turno.
+        // Si la IA descubre una carta propia con "reorganiza tus protocolos", la IA lo resuelve
+        // aunque sea el turno del jugador (y viceversa).
+        isAIResolving = (target === 'ai');
     } else {
         // Acciones sobre el tablero: el jugador del turno elige.
         isAIResolving = (gameState.turn === 'ai');
