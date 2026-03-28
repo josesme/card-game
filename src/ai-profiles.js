@@ -214,15 +214,16 @@ const AI_PROFILES = {
     name: "IA5-A - El Maestro",
     level: 5,
     minimaxDepth: 4,                    // Piensa 4+ turnos adelante
-    aggression: 0.5,                    // Perfecto balance
+    aggression: 0.65,                   // Oportunista activo
+    lineControl: 0.80,                  // Dominio agresivo de líneas (separado de aggression)
     defensiveNeed: 0.75,                // Defensa casi perfecta
     valueOverEffect: 0.15,              // 15% valor, 85% efectos
     faceUpPreference: 0.5,              // Balance perfecto según situación
     resourceManagement: 0.9,            // Gestión casi perfecta
     protocolImportance: 0.85,           // Protocolos esenciales
     riskTaking: 0.3,                    // Riesgo muy calculado
-    compilationPriority: 0.8,           // Compila en momento óptimo
-    description: "Nivel 5 maestro. Planificación superior. Casi no comete errores. Lectura del rival."
+    compilationPriority: 0.85,          // Compila en momento óptimo
+    description: "Nivel 5 maestro. Dominio de líneas, defensa casi perfecta. Casi no comete errores."
   },
 
   /**
@@ -236,15 +237,16 @@ const AI_PROFILES = {
     name: "IA5-B - El Gran Maestro",
     level: 5,
     minimaxDepth: 5,                    // Máxima profundidad (5 turnos)
-    aggression: 0.5,                    // Balance perfecto dinámico
-    defensiveNeed: 0.8,                 // Defensa excelente
+    aggression: 0.60,                   // Oportunista calculado
+    lineControl: 0.90,                  // Control de líneas casi perfecto
+    defensiveNeed: 0.85,                // Defensa excelente
     valueOverEffect: 0.1,               // 10% valor, 90% efectos
     faceUpPreference: 0.5,              // Decisión perfecta según contexto
     resourceManagement: 0.95,           // Gestión perfecta
     protocolImportance: 0.9,            // Protocolos maximizados
     riskTaking: 0.2,                    // Mínimo riesgo calculado
-    compilationPriority: 0.85,          // Compila solo cuando es óptimo
-    description: "Nivel 5 gran maestro. Máxima profundidad. Adaptativo. Estrategias complejas. Casi perfecto."
+    compilationPriority: 0.90,          // Compila en el momento más favorable
+    description: "Nivel 5 gran maestro. Máxima profundidad. Control total de líneas. Casi perfecto."
   },
 };
 
@@ -299,13 +301,13 @@ function getRandomProfileForLevel(level) {
 function applyAIProfile(evaluator, profile) {
   if (!evaluator || !profile) return;
 
-  evaluator.weights.compilationThreat = profile.compilationPriority * 120;
-  evaluator.weights.defensiveNeed     = profile.defensiveNeed       * 100;
-  evaluator.weights.lineValue         = profile.aggression          *  70;
-  evaluator.weights.cardAdvantage     = profile.resourceManagement  *  50;
-  evaluator.weights.opportunities     = profile.aggression          *  35;
-  evaluator.weights.protocolCoverage  = profile.protocolImportance  *  30;
-  evaluator.weights.faceDownBalance   = profile.resourceManagement  *  20;
+  evaluator.weights.compilationThreat = profile.compilationPriority          * 120;
+  evaluator.weights.defensiveNeed     = profile.defensiveNeed                * 100;
+  evaluator.weights.lineValue         = (profile.lineControl ?? profile.aggression) * 70;
+  evaluator.weights.cardAdvantage     = profile.resourceManagement           *  50;
+  evaluator.weights.opportunities     = profile.aggression                   *  35;
+  evaluator.weights.protocolCoverage  = profile.protocolImportance           *  30;
+  evaluator.weights.faceDownBalance   = profile.resourceManagement           *  20;
 
   // Guardar referencia al perfil activo para uso en sortMoves (AI-02)
   evaluator.activeProfile = profile;

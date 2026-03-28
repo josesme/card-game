@@ -112,8 +112,8 @@ class AIEvaluator {
       if (this.diffDepth >= 4) {
         const top2AI     = this._aiTop2Sum(state);
         const top2Player = this._estimatePlayerTop2Sum(state);
-        if (aiScore + top2AI > playerScore && aiScore + top2AI >= 10)         score += 0.07;
-        if (playerScore + top2Player > aiScore && playerScore + top2Player >= 10) score -= 0.07;
+        if (aiScore + top2AI > playerScore && aiScore + top2AI >= 10)         score += 0.20;
+        if (playerScore + top2Player > aiScore && playerScore + top2Player >= 10) score -= 0.20;
       }
     });
 

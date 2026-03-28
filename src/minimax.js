@@ -363,8 +363,9 @@ class MiniMax {
       // 1. Compile Priority
       if (myScore + cardVal >= 10 && myScore + cardVal > oppScore) s += 150;
       
-      // 2. Block Opponent Compile
-      if (oppScore >= 7 && player === 'ai') s += 50;
+      // 2. Block Opponent Compile (nivel 5 bloquea antes: threshold 6 en vez de 7)
+      const blockThreshold = this.maxDepth >= 5 ? 6 : 7;
+      if (oppScore >= blockThreshold && player === 'ai') s += 50;
 
       // 3. Efficiency (Face-up > Face-down)
       if (move.faceUp) s += 25;
