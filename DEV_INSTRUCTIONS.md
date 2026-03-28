@@ -26,6 +26,7 @@
 - Regla de juego resuelta o edge case aclarado → actualizar `docs/CODEX.md` en el momento.
 - Decisión técnica o de diseño no obvia → documentar en comentario inline con contexto del porqué.
 - No dejar la documentación para el final de la sesión; documentar al resolver.
+- **CHANGELOG.md:** Actualizar al cerrar cada milestone o versión. Ver sección específica más abajo.
 
 ## CSS — debugging de estilos que no se aplican
 
@@ -40,5 +41,79 @@
 2. **Planificar** → Para tareas complejas, usar `todo_write` para trackear pasos.
 3. **Implementar** → Hacer cambios mínimos y focalizados.
 4. **Verificar** → `npm test` + revisar visualmente si aplica.
-5. **Documentar** → Actualizar BACKLOG, CODEX, o comentarios según corresponda.
+5. **Documentar** → Actualizar BACKLOG, CODEX, CHANGELOG, o comentarios según corresponda.
 6. **Commit** → Mensaje descriptivo, push inmediato.
+
+---
+
+## 📝 Mantenimiento del CHANGELOG.md
+
+El archivo `CHANGELOG.md` centraliza el historial del proyecto de forma resumida pero expandible.
+
+### Cuándo Actualizar
+
+| Situación | Acción |
+|-----------|--------|
+| **Cada milestone completado** | Añadir entrada en versión correspondiente |
+| **Nueva versión taggeada** | Crear nueva sección `<details>` para esa versión |
+| **Bug fix importante** | Listar en la versión actual bajo "Bugs Corregidos" |
+| **Feature completada** | Listar en "Cambios Implementados" |
+| **Documento nuevo creado** | Añadir en "Archivos Relacionados" |
+
+### Formato de Entrada
+
+```markdown
+### v2.1.0 — Nombre de la Versión
+
+**Fecha:** Mes 2026
+
+#### Cambios Implementados
+
+- ✅ **ID-01:** Descripción breve del cambio
+- ✅ **ID-02:** Otro cambio importante
+
+#### Archivos Relacionados
+
+- `src/archivo.js` — descripción del propósito
+- `docs/documento.md` — documentación relacionada
+```
+
+### Secciones Expandibles
+
+Usar formato `<details>` para mantener el archivo limpio:
+
+```markdown
+<details>
+<summary><strong>Ver detalles de v2.1.0</strong></summary>
+
+... contenido detallado ...
+
+</details>
+```
+
+### Ejemplo de Actualización Rápida
+
+Al completar una tarea del backlog:
+
+1. **Commit** con mensaje convencional:
+   ```
+   feat(ai): resource depletion penalty for level 5
+   ```
+
+2. **Actualizar CHANGELOG.md** (sección de versión actual):
+   ```markdown
+   - ✅ **AI-06:** Penalización por deck vacío — nivel 5 gestiona recursos
+   ```
+
+3. **Actualizar BACKLOG.md** (mover a "Completado"):
+   ```markdown
+   - [x] **AI-06 · Nivel 5 · Penalización por deck vacío**
+   ```
+
+### Reglas
+
+- ✅ **No duplicar** — Si ya está en git log, no hace falta detalle excesivo
+- ✅ **Resumido pero útil** — Otra persona debe poder entender qué cambió
+- ✅ **Enlaces a archivos** — Siempre listar archivos creados/modificados clave
+- ✅ **Fecha aproximada** — Mes y año es suficiente
+- ✅ **Inglés o Español** — Mensajes de commit en inglés, CHANGELOG en español

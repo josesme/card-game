@@ -110,8 +110,11 @@ compile-project/
 
 ## Documentación
 
-- **[docs/CODEX.md](docs/CODEX.md)** — reglas completas, erratas y FAQ. Fuente única de verdad.
-- **[docs/BACKLOG.md](docs/BACKLOG.md)** — tareas pendientes y decisiones de diseño.
+- **[CHANGELOG.md](CHANGELOG.md)** — Historial de cambios y versiones (resumido con secciones expandibles).
+- **[docs/CODEX.md](docs/CODEX.md)** — Fuente única de verdad: reglas, erratas y FAQ.
+- **[docs/BACKLOG.md](docs/BACKLOG.md)** — Tareas pendientes y roadmap.
+- **[docs/FASE-2-IA.md](docs/FASE-2-IA.md)** — Documentación técnica de la IA.
+- **[DEV_INSTRUCTIONS.md](DEV_INSTRUCTIONS.md)** — Instrucciones para desarrollo y mantenimiento.
 
 ---
 
