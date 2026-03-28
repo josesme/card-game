@@ -443,6 +443,22 @@ class MiniMax {
           return rScore >= (this.maxDepth >= 5 ? 6 : 7);
         });
         if (rivalThreatenElsewhere) s += 12;
+
+        // Bonus táctico 3: combo bocabajo + voltear posterior.
+        // Si la IA tiene en mano una carta con efecto flip-propio en una línea distinta,
+        // jugar una carta de valor alto bocabajo aquí es un setup deliberado.
+        if (player === 'ai' && cardVal >= 4) {
+          const hand = gameState.ai.hand || [];
+          const hasFlipSetup = hand.some(c => {
+            if (!c.h_accion || c === move.card) return false;
+            const txt = c.h_accion.toLowerCase();
+            if (!txt.includes('voltea')) return false;
+            // Comprobar que la línea de protocolo de esa carta es distinta a move.line
+            const flipProtoIdx = protocols.indexOf(c.protocol);
+            return flipProtoIdx !== -1 && LINES[flipProtoIdx] !== move.line;
+          });
+          if (hasFlipSetup) s += 22;
+        }
       }
 
       // 4. Synergy & Value
