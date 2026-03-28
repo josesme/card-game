@@ -2263,8 +2263,22 @@ function playAITurn() {
             return;
         }
 
+        // Filtrar el descarte del jugador según la memoria de cada nivel.
+        // Un jugador novato no recuerda lo que el rival descartó hace varios turnos.
+        // Nivel 1: ninguna carta recordada. Nivel 2: solo la última. Nivel 3: últimas 3.
+        // Nivel 4-5: descarte completo visible.
+        const MEMORY_LIMITS = { 1: 0, 2: 1, 3: 3, 4: Infinity, 5: Infinity };
+        const memoryLimit = MEMORY_LIMITS[diffDepth] ?? Infinity;
+        const visiblePlayerTrash = memoryLimit === Infinity
+            ? gameState.player.trash
+            : gameState.player.trash.slice(-memoryLimit);
+        const stateForAI = {
+            ...gameState,
+            player: { ...gameState.player, trash: visiblePlayerTrash }
+        };
+
         // Usar minimax para encontrar el mejor movimiento
-        const bestMoveResult = window.miniMax.findBestMove(gameState, possibleMoves);
+        const bestMoveResult = window.miniMax.findBestMove(stateForAI, possibleMoves);
         console.log('Resultado de Minimax:', bestMoveResult);
 
         if (!bestMoveResult || !bestMoveResult.bestMove) {
