@@ -2254,10 +2254,12 @@ function playAITurn() {
         }
         window.aiEvaluator.diffDepth = diffDepth;
         
-        // Re-inicializar minimax si la profundidad actual es diferente a la deseada
-        if (!window.miniMax || window.miniMax.maxDepth !== diffDepth) {
-            window.miniMax = new MiniMax(window.aiEvaluator, diffDepth);
-            console.log(`✅ Minimax inicializado (depth=${diffDepth}, lore=${diffName})`);
+        // Re-inicializar minimax si la profundidad actual es diferente a la deseada.
+        // Nivel 5 usa depth 6 para mayor anticipación.
+        const actualDepth = diffDepth === 5 ? 6 : diffDepth;
+        if (!window.miniMax || window.miniMax.maxDepth !== actualDepth) {
+            window.miniMax = new MiniMax(window.aiEvaluator, actualDepth);
+            console.log(`✅ Minimax inicializado (depth=${actualDepth}, lore=${diffName})`);
         }
 
         // Generar todos los movimientos posibles

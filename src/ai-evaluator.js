@@ -117,6 +117,25 @@ class AIEvaluator {
       }
     });
 
+    // Multi-line pressure: si una parte amenaza compilar en 2+ líneas simultáneamente
+    // el rival solo puede bloquear una → ventaja táctica casi irreversible.
+    const aiLinesThreat = LINES.filter(line => {
+      if (state.field[line].compiledBy) return false;
+      if (this.isDeadLine(state, line, 'ai')) return false;
+      const aiS = this._score(state, line, 'ai');
+      const plS = this._score(state, line, 'player');
+      return aiS >= 7 && aiS >= plS;
+    }).length;
+    const playerLinesThreat = LINES.filter(line => {
+      if (state.field[line].compiledBy) return false;
+      if (this.isDeadLine(state, line, 'player')) return false;
+      const plS = this._score(state, line, 'player');
+      const aiS = this._score(state, line, 'ai');
+      return plS >= 7 && plS >= aiS;
+    }).length;
+    if (aiLinesThreat >= 2)     score += 0.35 * (aiLinesThreat - 1);
+    if (playerLinesThreat >= 2) score -= 0.40 * (playerLinesThreat - 1);
+
     return Math.max(-1, Math.min(1, score));
   }
 
