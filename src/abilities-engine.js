@@ -4548,6 +4548,9 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         const sourceEl = document.getElementById('reveal-source');
         const actionsEl = document.getElementById('reveal-actions');
         if (modal && container) {
+          // Marcar interacción activa ANTES de abrir modal para que playSelectedCard
+          // no dispare endTurn() al ver effectContext=null tras executeEffect()
+          gameState.effectContext = { type: 'pickFromDiscardFaceDown_modal' };
           if (titleEl) titleEl.textContent = 'ELIGE 1 CARTA';
           if (subtitleEl) subtitleEl.textContent = 'Se jugará bocabajo en otra línea';
           if (sourceEl) sourceEl.textContent = triggerCardName || '';
