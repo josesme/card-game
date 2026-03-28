@@ -1869,7 +1869,7 @@ function resolveEffectAI(type, target, count, opts = {}) {
                     .sort((a, b) => b.score - a.score)[0].idx;
                 if (bestProtoIdx !== bestLineIdx) {
                     [protos[bestProtoIdx], protos[bestLineIdx]] = [protos[bestLineIdx], protos[bestProtoIdx]];
-                    swapCompiledState(LINES[bestProtoIdx], LINES[bestLineIdx]);
+                    swapCompiledState(LINES[bestProtoIdx], LINES[bestLineIdx], owner);
                     updateStatus('IA reorganizó sus Protocolos estratégicamente');
                     updateUI();
                 }
@@ -2903,25 +2903,31 @@ function swapProtocols(lineA, lineB, owner = 'player') {
     const idxA = LINES.indexOf(lineA);
     const idxB = LINES.indexOf(lineB);
     [p[idxA], p[idxB]] = [p[idxB], p[idxA]];
-    swapCompiledState(lineA, lineB);
+    swapCompiledState(lineA, lineB, owner);
     initProtocolDisplay();
 }
 
-// Mueve el estado de compilado junto con las líneas intercambiadas.
-// Se llama siempre que los protocolos se reordenan para que el glow siga al protocolo.
-function swapCompiledState(lineA, lineB) {
-    // Swap compiledBy entre las dos líneas
-    const tmp = gameState.field[lineA].compiledBy;
-    gameState.field[lineA].compiledBy = gameState.field[lineB].compiledBy;
-    gameState.field[lineB].compiledBy = tmp;
-    // Actualizar arrays player.compiled / ai.compiled para reflejar los nuevos nombres de línea
-    for (const side of ['player', 'ai']) {
-        const arr = gameState[side].compiled;
-        const hasA = arr.includes(lineA);
-        const hasB = arr.includes(lineB);
-        if (hasA && !hasB) arr[arr.indexOf(lineA)] = lineB;
-        else if (hasB && !hasA) arr[arr.indexOf(lineB)] = lineA;
+// Mueve el estado de compilado del owner junto con sus protocolos reordenados.
+// Solo toca las líneas compiladas por el owner — las del rival no se ven afectadas.
+function swapCompiledState(lineA, lineB, owner) {
+    const ownerCompiledA = gameState.field[lineA].compiledBy === owner;
+    const ownerCompiledB = gameState.field[lineB].compiledBy === owner;
+
+    if (ownerCompiledA && !ownerCompiledB) {
+        gameState.field[lineA].compiledBy = null;
+        gameState.field[lineB].compiledBy = owner;
+    } else if (!ownerCompiledA && ownerCompiledB) {
+        gameState.field[lineB].compiledBy = null;
+        gameState.field[lineA].compiledBy = owner;
     }
+    // Si el owner compiló ambas o ninguna, field.compiledBy no cambia
+
+    // Actualizar array compiled del owner para reflejar los nuevos nombres de línea
+    const arr = gameState[owner].compiled;
+    const hasA = arr.includes(lineA);
+    const hasB = arr.includes(lineB);
+    if (hasA && !hasB) arr[arr.indexOf(lineA)] = lineB;
+    else if (hasB && !hasA) arr[arr.indexOf(lineB)] = lineA;
 }
 
 // ========================== START ==========================
