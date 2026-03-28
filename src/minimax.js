@@ -100,6 +100,34 @@ const CARD_SIM_EFFECTS = {
   // ── Opponent gains (bad for AI) ───────────────────────
   'Amor 6':     { opponentDraw: 2 },
   'Amor 2':     { opponentDraw: 1 },
+
+  // ── Return opponent cards ─────────────────────────────
+  'Corrupción 1': { returnOpponent: 1 },
+  'Miedo 2':      { returnOpponent: 1 },
+  'Agua 4':       { returnOpponent: 1 },  // devuelve carta propia (ai) al ser AI — equivalente en sim
+
+  // ── Mass / composite flips ────────────────────────────
+  'Plaga 3':      { flipOpponent: 3 },    // voltea todas las bocabajo del rival en la línea (~3 max)
+  'Gravedad 2':   { flipOpponent: 1 },    // flip + shift simplificado a solo flip
+  'Caos 0':       { flipOpponent: 2 },    // voltea cubiertas en cada línea (~2 en promedio)
+  'Vida 1':       { flipOpponent: 2 },    // doble flip
+
+  // ── Opponent forced discard ───────────────────────────
+  'Miedo 4':      { opponentDiscard: 1 },
+  'Miedo 1':      { draw: 2, opponentDiscard: 1 },
+
+  // ── Opponent repositioning (shift = lose tempo) ───────
+  'Miedo 3':      { returnOpponent: 1 },  // shift masivo simplificado como return del más alto
+  'Velocidad 4':  { returnOpponent: 1 },  // reposición bocabajo = pérdida de tempo del rival
+
+  // ── Deck tutoring (AI gains card advantage) ──────────
+  'Claridad 3':   { draw: 1 },            // busca carta valor 5 del mazo = +1 carta de calidad
+  'Claridad 2':   { draw: 1 },            // busca carta valor 1 y la juega = +1 en campo (aproximación)
+
+  // ── Alternative compile triggers ─────────────────────
+  // Diversidad 0 y Unidad 1 pueden compilar directamente — el árbol debe valorarlas alto
+  'Diversidad 0': { draw: 1 },            // efecto compile condicional; aproximamos como +draw para que la IA la valore
+  'Unidad 1':     { draw: 1 },            // ídem — el valor real se captura si la condición se cumple en partida
 };
 
 class MiniMax {
