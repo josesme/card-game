@@ -2242,6 +2242,14 @@ function playAITurn() {
         // Inicializar motores de IA (primera vez o si cambia profundidad)
         if (!window.aiEvaluator) {
             window.aiEvaluator = new AIEvaluator(gameState);
+            // Aplicar perfil de comportamiento para este nivel (una vez por partida)
+            if (typeof getRandomProfileForLevel === 'function') {
+                const profile = getRandomProfileForLevel(diffDepth);
+                if (profile) {
+                    applyAIProfile(window.aiEvaluator, profile);
+                    console.log(`✅ Perfil IA aplicado: ${profile.name}`);
+                }
+            }
             console.log('✅ Motor de Evaluación inicializado');
         }
         window.aiEvaluator.diffDepth = diffDepth;
