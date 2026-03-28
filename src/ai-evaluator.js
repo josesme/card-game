@@ -34,14 +34,28 @@ class AIEvaluator {
     const protocolCoverage  = this.evaluateProtocolCoverage(state);
     const faceDownBalance   = this.evaluateFaceDownBalance(state);
 
+    // AI-03: Niveles 1-2 limitan la defensa activa.
+    // Nivel 1: ignora amenazas del rival por completo.
+    // Nivel 2: solo reacciona si el jugador está a 1 carta de compilar una línea (score >= 9).
+    let effectiveOpponentThreat = opponentThreat;
+    if (this.diffDepth <= 1) {
+      effectiveOpponentThreat = 0;
+    } else if (this.diffDepth === 2) {
+      const LINES = ['izquierda', 'centro', 'derecha'];
+      const immediateThreat = LINES.some(line =>
+        !state.field[line].compiledBy && this._score(state, line, 'player') >= 9
+      );
+      if (!immediateThreat) effectiveOpponentThreat = 0;
+    }
+
     const total =
-      compilationThreat * this.weights.compilationThreat +
-      lineStrength      * this.weights.lineValue +
-      handQuality       * this.weights.cardAdvantage +
-      (-opponentThreat) * this.weights.defensiveNeed +
-      opportunities     * this.weights.opportunities +
-      protocolCoverage  * this.weights.protocolCoverage +
-      faceDownBalance   * this.weights.faceDownBalance;
+      compilationThreat          * this.weights.compilationThreat +
+      lineStrength               * this.weights.lineValue +
+      handQuality                * this.weights.cardAdvantage +
+      (-effectiveOpponentThreat) * this.weights.defensiveNeed +
+      opportunities              * this.weights.opportunities +
+      protocolCoverage           * this.weights.protocolCoverage +
+      faceDownBalance            * this.weights.faceDownBalance;
 
     return {
       total,

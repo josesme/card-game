@@ -6,7 +6,7 @@ Historial de cambios y evolución del proyecto. Formato resumido con secciones e
 
 ## 🎯 Versión Actual
 
-**v2.1.0** — En desarrollo (AI Overhaul)
+**v2.1.0** — Completado pendiente de validación (AI Overhaul)
 
 <details>
 <summary><strong>Ver detalles de v2.1.0</strong></summary>
@@ -24,6 +24,8 @@ Historial de cambios y evolución del proyecto. Formato resumido con secciones e
 - ✅ **AI-08:** Dead line detection realista — usa valores reales de cartas, no asume 5s
 - ✅ **AI-05:** Detección de amenaza en 2 turnos — niveles 4-5 ven amenazas lejanas
 - ✅ **AI-06:** Penalización por deck vacío — nivel 5 gestiona recursos
+- ✅ **AI-02:** Epsilon-greedy — nivel 1 juega aleatoriamente 50% de turnos, nivel 2 el 20%
+- ✅ **AI-03:** Sin defensa activa en niveles bajos — nivel 1 ignora amenazas; nivel 2 solo defiende si el jugador está a 1 carta de compilar (score ≥ 9)
 
 #### Perfiles de IA Creados
 
@@ -323,7 +325,7 @@ Historial de cambios y evolución del proyecto. Formato resumido con secciones e
 | **Líneas de Código** | ~8000+ |
 | **Cartas Implementadas** | 180 |
 | **Protocolos** | 30 (15 Main 1 + 15 Main 2) |
-| **Tests** | 139 pasando (100%) |
+| **Tests** | 182 pasando (100%) |
 | **Niveles de IA** | 5 (con 2 variantes cada uno) |
 | **Efectos de Carta** | 47+ tipos únicos |
 
