@@ -386,6 +386,22 @@ class MiniMax {
     return [...moves].sort((a, b) => score(b) - score(a));
   }
 
+  /**
+   * Una posición es "caliente" si algún jugador puede compilar una línea
+   * en este mismo turno (score >= 10 y por encima del rival).
+   * Usado por quiescence search para evitar cortar en momentos críticos.
+   */
+  isHotPosition(gameState) {
+    const LINES = ['izquierda', 'centro', 'derecha'];
+    return LINES.some(line => {
+      if (gameState.field[line].compiledBy) return false;
+      const aiScore     = this._lineScore(gameState, line, 'ai');
+      const playerScore = this._lineScore(gameState, line, 'player');
+      return (aiScore >= 10 && aiScore > playerScore) ||
+             (playerScore >= 10 && playerScore > aiScore);
+    });
+  }
+
   _lineScore(gameState, line, player) {
     return window.calculateScore ? window.calculateScore(gameState, line, player) : 0;
   }
