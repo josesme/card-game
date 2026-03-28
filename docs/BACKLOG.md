@@ -47,10 +47,12 @@ Actualmente el único diferenciador es la profundidad de búsqueda minimax (1→
 - [x] **AI-02 · Niveles 1-2 · Epsilon-greedy** — Inyectar jugadas aleatorias reales en niveles 1 (50%) y 2 (20%) para que cometan errores tangibles, no solo busquen menos profundo.
 - [x] **AI-09 · Memoria del descarte por nivel** — Pasar a la evaluación solo la parte del descarte rival que cada nivel "recuerda" (ninguna / última / últimas 3 / todo). Palanca principal de diferenciación entre niveles.
 - [x] **AI-03 · Niveles 1-2 · Sin defensa activa** — Nivel 1 ignora amenazas de compilado. Nivel 2 solo defiende si el jugador está a 1 carta de compilar.
-- [ ] **AI-04 · Pesos de evaluación por nivel** — Ajustar los 7 pesos del `AIEvaluator` según nivel. Nivel 1: casi sin peso defensivo. Nivel 5: prioriza bloqueo sobre ataque.
 - [x] **AI-05 · Niveles 4-5 · Detección de amenaza en 2 turnos** — Reconocer que el jugador está a 2 cartas de compilar una línea y marcarla como urgente.
 - [x] **AI-06 · Nivel 5 · Penalización por deck vacío** — La IA en nivel 5 debe valorar no quedarse sin cartas.
 - [x] **AI-08 · Reconocimiento de dead lines más preciso** — El detector actual asume que todas las cartas restantes valen 5. Corregido: IA usa suma real de mano + media real del mazo; jugador usa media estimada del pool público.
+
+**Pendiente de investigación/mejora:**
+- [ ] **AI-10 · Estrategia de draft** — No está claro qué lógica usa la IA para elegir protocolos durante el draft. El draft no es trivial (sinergias entre protocolos, contrapicks, adaptación al set) y debería diferenciarse por nivel como el resto del comportamiento. Tarea previa: auditar qué hace actualmente el draft de IA (`src/draft.html` / lógica de draft en `logic.js`) y documentarlo antes de planear mejoras.
 
 **Fuera de alcance en esta versión (complejidad alta, posponer):**
 - Tabla de transposición / memoización (permite depth 6-7)
