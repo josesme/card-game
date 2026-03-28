@@ -149,22 +149,28 @@ class AIEvaluator {
 
     // If opponent already has 10+ and I am behind, can I still catch up?
     if (oppScore >= 10 && myScore < oppScore) {
-      // Simple check: how many cards can I still play here?
-      // For AI we know exactly, for player we estimate.
       const handCount = state[player].hand.length;
       const deckCount = state[player].deck.length;
       const cardsLeft = handCount + deckCount;
 
       if (cardsLeft === 0) return true;
 
-      // Even if I play all cards as 5s, can I beat oppScore?
-      // (Simplified: assuming 1 card slot available per turn, but field is unlimited in depth)
-      // Actually COMPILE is about reaching 10 AND being ahead.
-      // If opponent is at 15 and I have 0 cards, it's dead.
-      // If I have cards but their max possible sum < 10 or < oppScore, it's dead.
-      
-      const maxPotential = myScore + (cardsLeft * 5); 
-      if (maxPotential < 10 || maxPotential <= oppScore) return true;
+      // Calcular el potencial realista (no el optimista de asumir todo 5s)
+      let realisticPotential;
+      if (player === 'ai') {
+        // IA: valores exactos conocidos
+        const handSum = state.ai.hand.reduce((s, c) => s + (c.valor || 0), 0);
+        const deckAvg = deckCount > 0
+          ? state.ai.deck.reduce((s, c) => s + (c.valor || 0), 0) / deckCount
+          : 0;
+        realisticPotential = myScore + handSum + (deckCount * deckAvg);
+      } else {
+        // Jugador: estimar media del pool público restante
+        const avgVal = this._estimatePlayerAvgCard(state);
+        realisticPotential = myScore + (cardsLeft * avgVal);
+      }
+
+      if (realisticPotential < 10 || realisticPotential <= oppScore) return true;
     }
 
     // Special case: blocked lines (Plaga 0) - handled by isLineBlocked in minimax,
@@ -416,6 +422,26 @@ class AIEvaluator {
     });
 
     return pool.length > 0 ? Math.max(...pool) : 2.5;
+  }
+
+  // Media estimada del valor de las cartas que le quedan al jugador (pool público)
+  _estimatePlayerAvgCard(state) {
+    const pool = [0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5];
+    const LINES = ['izquierda', 'centro', 'derecha'];
+    LINES.forEach(line => {
+      (state.field[line].player || []).forEach(c => {
+        if (!c.faceDown) {
+          const idx = pool.indexOf(c.card.valor);
+          if (idx !== -1) pool.splice(idx, 1);
+        }
+      });
+    });
+    (state.player.trash || []).forEach(c => {
+      const idx = pool.indexOf(c.valor);
+      if (idx !== -1) pool.splice(idx, 1);
+    });
+    if (pool.length === 0) return 2.5;
+    return pool.reduce((s, v) => s + v, 0) / pool.length;
   }
 
   // Suma de los 2 mejores valores en mano de la IA
