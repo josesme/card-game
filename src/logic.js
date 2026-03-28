@@ -1185,8 +1185,11 @@ function startEffect(type, target, count, opts = {}) {
         isAIResolving = (target === 'ai');
     } else if (type === 'rearrange') {
         // Reorganizar protocolos: el dueño de los protocolos decide, no el jugador del turno.
-        // Si la IA descubre una carta propia con "reorganiza tus protocolos", la IA lo resuelve
-        // aunque sea el turno del jugador (y viceversa).
+        isAIResolving = (target === 'ai');
+    } else if (type === 'return' && (target === 'ai' || target === 'player')) {
+        // Devolver carta propia a mano: el dueño elige cuál devolver, no el jugador del turno.
+        // Solo aplica cuando el target es concreto (self resuelto). Si es 'any' u 'opponent',
+        // el jugador activo elige qué carta del rival devolver (flujo normal).
         isAIResolving = (target === 'ai');
     } else {
         // Acciones sobre el tablero: el jugador del turno elige.
