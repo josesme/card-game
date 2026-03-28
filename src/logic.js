@@ -1916,9 +1916,10 @@ function resolveEffectAI(type, target, count, opts = {}) {
         return;
     }
 
-    const typeLabels = { discard: 'descartó', eliminate: 'eliminó', flip: 'volteó', shift: 'cambió', return: 'devolvió a mano' };
+    const typeLabels = { discard: 'descartó', eliminate: 'eliminó', flip: 'volteó', shift: 'cambió de línea', return: 'devolvió a mano' };
     const whoLabel = actualTarget === 'player' ? 'tu carta' : 'su carta';
-    updateStatus(`IA ${typeLabels[type] || type} ${whoLabel}`);
+    const triggerLabel = gameState.currentTriggerCard ? ` [${gameState.currentTriggerCard}]` : '';
+    updateStatus(`IA ${typeLabels[type] || type} ${whoLabel}${triggerLabel}`);
     if (typeof processAbilityEffect === 'function') processAbilityEffect();
 }
 
@@ -1949,7 +1950,8 @@ function discard(target, count) {
         }
     }
     if (discarded > 0) {
-        updateStatus(`${target === 'player' ? 'Descartas' : 'IA descarta'} ${discarded} carta${discarded !== 1 ? 's' : ''}`);
+        const discardTrigger = gameState.currentTriggerCard ? ` [${gameState.currentTriggerCard}]` : '';
+        updateStatus(`${target === 'player' ? 'Descartas' : 'IA descarta'} ${discarded} carta${discarded !== 1 ? 's' : ''}${discardTrigger}`);
         updateUI();
         if (typeof onOpponentDiscardEffects === 'function') onOpponentDiscardEffects(target);
         // onOwnDiscard: Corrupción 2 reactiva cuando el dueño descarta
