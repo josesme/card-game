@@ -163,6 +163,42 @@ class MiniMax {
       return this.getTerminalScore(gameState);
     }
     if (depth >= this.maxDepth) {
+      // Quiescence: si alguien puede compilar ahora, extender 1 nivel más
+      // pero solo evaluando los movimientos de compilación inmediata.
+      if (this.isHotPosition(gameState)) {
+        const LINES = ['izquierda', 'centro', 'derecha'];
+        const player = isMaximizing ? 'ai' : 'player';
+        const allMoves = isMaximizing
+          ? this.generateAIMoves(gameState)
+          : this.generatePlayerMoves(gameState);
+
+        const compileMoves = allMoves.filter(m => {
+          if (!m.line || !m.card) return false;
+          const myScore  = this._lineScore(gameState, m.line, player);
+          const oppScore = this._lineScore(gameState, m.line, player === 'ai' ? 'player' : 'ai');
+          const val = m.faceUp ? (m.card.valor || 0) : 2;
+          return myScore + val >= 10 && myScore + val > oppScore;
+        });
+
+        if (compileMoves.length > 0) {
+          // Evaluar solo los movimientos de compilación y devolver el mejor
+          if (isMaximizing) {
+            let best = this.evaluator.evaluateBoard(gameState).total;
+            for (const move of compileMoves) {
+              const next = this.simulateMove(gameState, move, 'ai');
+              best = Math.max(best, this.evaluator.evaluateBoard(next).total);
+            }
+            return best;
+          } else {
+            let best = this.evaluator.evaluateBoard(gameState).total;
+            for (const move of compileMoves) {
+              const next = this.simulateMove(gameState, move, 'player');
+              best = Math.min(best, this.evaluator.evaluateBoard(next).total);
+            }
+            return best;
+          }
+        }
+      }
       return this.evaluator.evaluateBoard(gameState).total;
     }
 
