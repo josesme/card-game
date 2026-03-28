@@ -405,12 +405,13 @@ class MiniMax {
 
     if (move.line) {
       let card;
-      if (move.estimated) {
-        // Player moves use estimated cards — don't expose real hand contents
+      if (player === 'ai' && move.cardIndex !== undefined) {
+        // AI: índice exacto conocido
+        card = pState.hand.splice(move.cardIndex, 1)[0];
+      } else {
+        // Jugador: posición en mano desconocida para la IA — reducir conteo sin exponer carta real
         pState.hand.pop();
         card = move.card;
-      } else {
-        card = pState.hand.splice(move.cardIndex, 1)[0];
       }
       newState.field[move.line][player].push({
         card,
@@ -450,12 +451,14 @@ class MiniMax {
       }
     }
 
-    // Opponent discard (random — AI no conoce la mano del jugador)
+    // Opponent discard — el jugador descarta su carta de menor valor (juego óptimo para el jugador).
+    // Determinista: evita Math.random() dentro del árbol minimax, que produce evaluaciones inconsistentes.
     if (fx.opponentDiscard) {
       const n = Math.min(fx.opponentDiscard, state.player.hand.length);
       for (let i = 0; i < n; i++) {
-        const idx = Math.floor(Math.random() * state.player.hand.length);
-        const [c] = state.player.hand.splice(idx, 1);
+        if (state.player.hand.length === 0) break;
+        const minIdx = state.player.hand.reduce((mi, c, j, arr) => c.valor < arr[mi].valor ? j : mi, 0);
+        const [c] = state.player.hand.splice(minIdx, 1);
         if (c) state.player.trash.push(c);
       }
     }
