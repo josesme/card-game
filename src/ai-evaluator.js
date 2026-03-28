@@ -215,6 +215,16 @@ class AIEvaluator {
     const lowVals  = hand.filter(c => c.valor <= 1).length;
     if (highVals > 0 && lowVals > 0) score += 0.15; // Balanced hand
 
+    // 5. Penalización por agotamiento de recursos (solo nivel 5)
+    // Un jugador experto gestiona sus cartas para no quedarse sin opciones.
+    if (this.diffDepth >= 5) {
+      const totalResources = hand.length + deckCount + (state.ai.trash || []).length;
+      if (deckCount === 0 && hand.length <= 2) score -= 0.4; // Sin mazo y casi sin mano
+      else if (deckCount === 0 && hand.length <= 4) score -= 0.2; // Sin mazo, mano reducida
+      else if (deckCount <= 2 && hand.length <= 2) score -= 0.2; // Mazo casi vacío + mano corta
+      if (totalResources <= 3) score -= 0.3; // Recursos totales críticos
+    }
+
     return Math.max(0, Math.min(1, score / hand.length));
   }
 

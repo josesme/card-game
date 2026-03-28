@@ -48,7 +48,7 @@ Actualmente el único diferenciador es la profundidad de búsqueda minimax (1→
 - [ ] **AI-03 · Niveles 1-2 · Sin defensa activa** — Nivel 1 ignora amenazas de compilado. Nivel 2 solo defiende si el jugador está a 1 carta de compilar.
 - [ ] **AI-04 · Pesos de evaluación por nivel** — Ajustar los 7 pesos del `AIEvaluator` según nivel. Nivel 1: casi sin peso defensivo. Nivel 5: prioriza bloqueo sobre ataque.
 - [x] **AI-05 · Niveles 4-5 · Detección de amenaza en 2 turnos** — Reconocer que el jugador está a 2 cartas de compilar una línea y marcarla como urgente.
-- [ ] **AI-06 · Nivel 5 · Penalización por deck vacío** — La IA en nivel 5 debe valorar no quedarse sin cartas.
+- [x] **AI-06 · Nivel 5 · Penalización por deck vacío** — La IA en nivel 5 debe valorar no quedarse sin cartas.
 - [ ] **AI-08 · Nivel 5 · Reconocimiento de dead lines más preciso** — El detector actual asume que todas las cartas restantes valen 5. Mejorar con valor medio real del mazo.
 
 **Fuera de alcance en esta versión (complejidad alta, posponer):**
