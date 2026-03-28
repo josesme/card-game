@@ -9,6 +9,7 @@
 class AIEvaluator {
   constructor(gameState) {
     this.gameState = gameState;
+    this.diffDepth = 3; // actualizado cada turno desde playAITurn
     this.weights = {
       compilationThreat:  100,  // Win/loss proximity — highest priority
       defensiveNeed:       80,  // Suppress opponent resources
@@ -92,6 +93,14 @@ class AIEvaluator {
       // One card away from compile
       if (aiScore + bestAI > playerScore && aiScore + bestAI >= 10)         score += 0.14;
       if (playerScore + bestPlayer > aiScore && playerScore + bestPlayer >= 10) score -= 0.14;
+
+      // Two cards away (solo niveles 4-5)
+      if (this.diffDepth >= 4) {
+        const top2AI     = this._aiTop2Sum(state);
+        const top2Player = this._estimatePlayerTop2Sum(state);
+        if (aiScore + top2AI > playerScore && aiScore + top2AI >= 10)         score += 0.07;
+        if (playerScore + top2Player > aiScore && playerScore + top2Player >= 10) score -= 0.07;
+      }
     });
 
     return Math.max(-1, Math.min(1, score));
@@ -397,6 +406,33 @@ class AIEvaluator {
     });
 
     return pool.length > 0 ? Math.max(...pool) : 2.5;
+  }
+
+  // Suma de los 2 mejores valores en mano de la IA
+  _aiTop2Sum(state) {
+    const vals = (state.ai.hand || []).map(c => c.valor || 0).sort((a, b) => b - a);
+    return (vals[0] || 0) + (vals[1] || 0);
+  }
+
+  // Suma estimada de los 2 mejores valores que podría tener el jugador
+  // Usa el mismo pool público que _estimatePlayerBestCard
+  _estimatePlayerTop2Sum(state) {
+    const pool = [0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5];
+    const LINES = ['izquierda', 'centro', 'derecha'];
+    LINES.forEach(line => {
+      (state.field[line].player || []).forEach(c => {
+        if (!c.faceDown) {
+          const idx = pool.indexOf(c.card.valor);
+          if (idx !== -1) pool.splice(idx, 1);
+        }
+      });
+    });
+    (state.player.trash || []).forEach(c => {
+      const idx = pool.indexOf(c.valor);
+      if (idx !== -1) pool.splice(idx, 1);
+    });
+    pool.sort((a, b) => b - a);
+    return (pool[0] || 0) + (pool[1] || 0);
   }
 }
 

@@ -2244,6 +2244,7 @@ function playAITurn() {
             window.aiEvaluator = new AIEvaluator(gameState);
             console.log('✅ Motor de Evaluación inicializado');
         }
+        window.aiEvaluator.diffDepth = diffDepth;
         
         // Re-inicializar minimax si la profundidad actual es diferente a la deseada
         if (!window.miniMax || window.miniMax.maxDepth !== diffDepth) {
