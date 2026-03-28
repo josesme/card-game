@@ -2294,15 +2294,26 @@ function playAITurn() {
             throw new Error('Minimax no encontró movimiento válido');
         }
 
-        const move = bestMoveResult.bestMove;
+        // Epsilon-greedy: niveles 1-2 cometen errores reales ignorando minimax
+        const EPSILON = { 1: 0.5, 2: 0.2 };
+        const epsilon = EPSILON[diffDepth] ?? 0;
+        const playRandom = epsilon > 0 && Math.random() < epsilon;
+
+        let move;
+        if (playRandom) {
+            move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+            console.log(`🎲 IA nivel ${diffDepth}: jugada aleatoria (epsilon=${epsilon})`);
+        } else {
+            move = bestMoveResult.bestMove;
+        }
 
         // Log de decisión de IA
-        console.log('🤖 IA Decision (Minimax):', {
+        console.log('🤖 IA Decision:', {
             line: move.line,
             cardName: move.card.nombre,
             faceUp: move.faceUp,
-            score: Math.round(bestMoveResult.score),
-            stats: bestMoveResult.statistics,
+            score: playRandom ? 'random' : Math.round(bestMoveResult.score),
+            stats: playRandom ? null : bestMoveResult.statistics,
         });
 
         // Ejecutar el movimiento elegido y terminar turno
