@@ -91,4 +91,8 @@ process.on('SIGTERM', () => {
 
 server.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}/`);
+  const { exec } = require('child_process');
+  const url = `http://localhost:${PORT}/`;
+  const cmd = process.platform === 'win32' ? `start ${url}` : process.platform === 'darwin' ? `open ${url}` : `xdg-open ${url}`;
+  exec(cmd);
 });
