@@ -349,14 +349,28 @@ class MiniMax {
   }
 
   /**
-   * Estimate average value of player's unknown cards using only public information:
-   * - Player's 18 cards = values [0-5] × 3 protocol families
-   * - Subtract face-up cards on field (visible) and discards (visible)
+   * Estimate average value of player's unknown cards using only public information.
+   * Uses the actual card values from the player's chosen protocols (known from draft)
+   * instead of a generic [0-5] pool. Subtracts face-up field cards, discards, and
+   * already-revealed cards (all public information).
    */
   _estimatePlayerCardValue(gameState) {
-    const pool = [0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5];
     const LINES = ['izquierda', 'centro', 'derecha'];
 
+    // Build pool from player's real protocol cards (public: protocols chosen in draft)
+    const pool = [];
+    const protocols = gameState.player.protocols || [];
+    protocols.forEach(proto => {
+      const cards = (typeof GLOBAL_CARDS !== 'undefined' && GLOBAL_CARDS && GLOBAL_CARDS[proto]) || [];
+      cards.forEach(c => pool.push(c.valor !== undefined ? c.valor : (c.value || 0)));
+    });
+
+    // Fallback: if GLOBAL_CARDS not available, use generic pool
+    if (pool.length === 0) {
+      pool.push(0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5);
+    }
+
+    // Remove face-up field cards (visible)
     LINES.forEach(line => {
       (gameState.field[line].player || []).forEach(c => {
         if (!c.faceDown) {
@@ -365,11 +379,12 @@ class MiniMax {
         }
       });
     });
+    // Remove discards (public)
     (gameState.player.trash || []).forEach(c => {
       const idx = pool.indexOf(c.valor);
       if (idx !== -1) pool.splice(idx, 1);
     });
-    // Excluir cartas reveladas (ya generan movimientos exactos)
+    // Remove already-revealed cards (generate exact moves separately)
     (gameState.revealedPlayerCards || []).forEach(c => {
       const idx = pool.indexOf(c.valor);
       if (idx !== -1) pool.splice(idx, 1);
