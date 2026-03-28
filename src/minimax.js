@@ -418,12 +418,31 @@ class MiniMax {
       const blockThreshold = this.maxDepth >= 5 ? 6 : 7;
       if (oppScore >= blockThreshold && player === 'ai') s += 50;
 
-      // 3. Efficiency (Face-up > Face-down)
-      if (move.faceUp) s += 25;
-      else {
-        // Penalty for playing face-down if the card COULD be face-up elsewhere
+      // 3. Face-up vs Face-down: táctica deliberada, no solo penalización
+      if (move.faceUp) {
+        s += 25;
+      } else {
         const protocols = gameState[player].protocols || [];
+        const LINES = ['izquierda', 'centro', 'derecha'];
+        const opponent = player === 'ai' ? 'player' : 'ai';
+
+        // Penalización base: jugar bocabajo una carta que podría ir bocarriba
         if (protocols.includes(move.card.protocol)) s -= 15;
+
+        // Bonus táctico 1: acumulación silenciosa en línea secundaria.
+        // Si ambos lados tienen score bajo en esta línea, el rival probablemente
+        // no la está defendiendo — bocabajo no revela la amenaza.
+        if (myScore <= 3 && oppScore <= 3) s += 18;
+
+        // Bonus táctico 2: el rival amenaza compilar otra línea.
+        // Jugar bocabajo aquí sube score sin forzar al rival a bloquear esta línea.
+        const rivalThreatenElsewhere = LINES.some(l => {
+          if (l === move.line) return false;
+          if (gameState.field[l].compiledBy) return false;
+          const rScore = this._lineScore(gameState, l, opponent);
+          return rScore >= (this.maxDepth >= 5 ? 6 : 7);
+        });
+        if (rivalThreatenElsewhere) s += 12;
       }
 
       // 4. Synergy & Value
