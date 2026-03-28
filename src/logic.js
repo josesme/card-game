@@ -1860,6 +1860,7 @@ function resolveEffectAI(type, target, count, opts = {}) {
                     .sort((a, b) => b.score - a.score)[0].idx;
                 if (bestProtoIdx !== bestLineIdx) {
                     [protos[bestProtoIdx], protos[bestLineIdx]] = [protos[bestLineIdx], protos[bestProtoIdx]];
+                    swapCompiledState(LINES[bestProtoIdx], LINES[bestLineIdx]);
                     updateStatus('IA reorganizó sus Protocolos estratégicamente');
                     updateUI();
                 }
@@ -2859,7 +2860,25 @@ function swapProtocols(lineA, lineB, owner = 'player') {
     const idxA = LINES.indexOf(lineA);
     const idxB = LINES.indexOf(lineB);
     [p[idxA], p[idxB]] = [p[idxB], p[idxA]];
+    swapCompiledState(lineA, lineB);
     initProtocolDisplay();
+}
+
+// Mueve el estado de compilado junto con las líneas intercambiadas.
+// Se llama siempre que los protocolos se reordenan para que el glow siga al protocolo.
+function swapCompiledState(lineA, lineB) {
+    // Swap compiledBy entre las dos líneas
+    const tmp = gameState.field[lineA].compiledBy;
+    gameState.field[lineA].compiledBy = gameState.field[lineB].compiledBy;
+    gameState.field[lineB].compiledBy = tmp;
+    // Actualizar arrays player.compiled / ai.compiled para reflejar los nuevos nombres de línea
+    for (const side of ['player', 'ai']) {
+        const arr = gameState[side].compiled;
+        const hasA = arr.includes(lineA);
+        const hasB = arr.includes(lineB);
+        if (hasA && !hasB) arr[arr.indexOf(lineA)] = lineB;
+        else if (hasB && !hasA) arr[arr.indexOf(lineB)] = lineA;
+    }
 }
 
 // ========================== START ==========================
