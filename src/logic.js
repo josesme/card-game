@@ -2797,12 +2797,66 @@ function advanceDraft() {
 }
 
 function aiAutoPick() {
-    // Pick a random available protocol
     const available = Object.keys(PROTOCOL_DEFS).filter(p => !draftState.pickedSet.has(p));
     if (available.length === 0) return;
-    const choice = available[Math.floor(Math.random() * available.length)];
+
+    const choice = aiScoreDraftProtocol(available);
     applyPick('a', choice);
     advanceDraft();
+}
+
+function aiScoreDraftProtocol(available) {
+    // Puntuación de cada protocolo candidato usando solo información pública
+    const scores = available.map(proto => {
+        const cards = GLOBAL_CARDS[proto] || [];
+        let score = 0;
+
+        // 1. Valor medio de las cartas (base de poder)
+        const avgVal = cards.length > 0
+            ? cards.reduce((s, c) => s + (c.valor || 0), 0) / cards.length
+            : 0;
+        score += avgVal * 10;
+
+        // 2. Potencial ofensivo: efectos que afectan al rival
+        cards.forEach(c => {
+            const txt = ((c.h_accion || '') + (c.h_inicio || '') + (c.h_final || '')).toLowerCase();
+            if (txt.includes('elimina'))   score += 8;
+            if (txt.includes('descarta'))  score += 5;
+            if (txt.includes('devuelve') || txt.includes('devolver')) score += 6;
+            if (txt.includes('voltea'))    score += 4;
+            if (txt.includes('roba') || txt.includes('robar')) score += 3;
+        });
+
+        // 3. Contrapick: si el jugador ya tiene protocolos, intentar contrarrestar
+        // con eliminación si el jugador tiene muchas cartas de volteo/acumulación
+        const playerHasFlipHeavy = draftState.playerPicks.some(p => {
+            const abilities = (PROTOCOL_DEFS[p] && PROTOCOL_DEFS[p].abilities) || '';
+            return abilities.includes('VOLTEAR') || abilities.includes('BOCABAJO');
+        });
+        if (playerHasFlipHeavy) {
+            const abilities = (PROTOCOL_DEFS[proto] && PROTOCOL_DEFS[proto].abilities) || '';
+            if (abilities.includes('ELIMINAR') || abilities.includes('DEVOLVER')) score += 12;
+        }
+
+        // 4. Sinergia con picks propios: preferir complementar lo que ya tiene
+        draftState.aiPicks.forEach(owned => {
+            const ownedAbilities = (PROTOCOL_DEFS[owned] && PROTOCOL_DEFS[owned].abilities) || '';
+            const newAbilities   = (PROTOCOL_DEFS[proto] && PROTOCOL_DEFS[proto].abilities) || '';
+            // Evitar solapamiento total (tres protocolos de robo sin control = débil)
+            if (ownedAbilities === newAbilities) score -= 8;
+            // Bonus si el nuevo protocolo cubre lo que los propios no tienen
+            if (!ownedAbilities.includes('ELIMINAR') && newAbilities.includes('ELIMINAR')) score += 6;
+            if (!ownedAbilities.includes('DEVOLVER') && newAbilities.includes('DEVOLVER')) score += 5;
+        });
+
+        // 5. Pequeño ruido aleatorio para que no sea completamente predecible
+        score += Math.random() * 5;
+
+        return { proto, score };
+    });
+
+    scores.sort((a, b) => b.score - a.score);
+    return scores[0].proto;
 }
 
 function updateDraftUI() {
