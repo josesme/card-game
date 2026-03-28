@@ -1790,22 +1790,51 @@ function resolveEffectAI(type, target, count, opts = {}) {
         }
     } else if (type === 'flip') {
         for (let i = 0; i < count; i++) {
-            const line = aiPickFlipLine(actualTarget);
-            if (line !== null) {
-                const stack = gameState.field[line][actualTarget];
-                if (actualTarget === 'player') {
-                    // Flip top card of opponent's best line (face-up→face-down hurts them)
-                    const topCard = stack[stack.length - 1];
-                    topCard.faceDown = !topCard.faceDown;
-                    // Si pasó de bocabajo a bocarriba, disparar onPlay
-                    if (!topCard.faceDown) triggerFlipFaceUp(topCard, line, actualTarget);
-                } else {
-                    // Flip our own face-down card in best line (activate its value)
+            if (opts.filter === 'faceDown') {
+                // Solo puede voltear cartas bocabajo (face-down → face-up).
+                // Preferir propias (activa valor/efecto); solo si no hay, voltear las del rival.
+                const ownLine = LINES
+                    .filter(l => gameState.field[l].ai.some(c => c.faceDown))
+                    .sort((a, b) => calculateScore(gameState, b, 'ai') - calculateScore(gameState, a, 'ai'))[0] || null;
+                if (ownLine !== null) {
+                    const stack = gameState.field[ownLine].ai;
                     const fdIdx = [...stack].reverse().findIndex(c => c.faceDown);
                     if (fdIdx >= 0) {
                         const flipped = stack[stack.length - 1 - fdIdx];
                         flipped.faceDown = false;
-                        triggerFlipFaceUp(flipped, line, actualTarget);
+                        triggerFlipFaceUp(flipped, ownLine, 'ai');
+                    }
+                } else if (target === 'any') {
+                    // Fallback: voltear carta bocabajo del jugador (si existe)
+                    const pLine = LINES
+                        .filter(l => gameState.field[l].player.some(c => c.faceDown))
+                        .sort((a, b) => calculateScore(gameState, b, 'player') - calculateScore(gameState, a, 'player'))[0] || null;
+                    if (pLine !== null) {
+                        const stack = gameState.field[pLine].player;
+                        const fdIdx = [...stack].reverse().findIndex(c => c.faceDown);
+                        if (fdIdx >= 0) {
+                            const flipped = stack[stack.length - 1 - fdIdx];
+                            flipped.faceDown = false;
+                            triggerFlipFaceUp(flipped, pLine, 'player');
+                        }
+                    }
+                }
+            } else {
+                // Sin filtro: voltear carta bocarriba del rival a bocabajo (le perjudica)
+                const line = aiPickFlipLine(actualTarget);
+                if (line !== null) {
+                    const stack = gameState.field[line][actualTarget];
+                    if (actualTarget === 'player') {
+                        const topCard = stack[stack.length - 1];
+                        topCard.faceDown = !topCard.faceDown;
+                        if (!topCard.faceDown) triggerFlipFaceUp(topCard, line, actualTarget);
+                    } else {
+                        const fdIdx = [...stack].reverse().findIndex(c => c.faceDown);
+                        if (fdIdx >= 0) {
+                            const flipped = stack[stack.length - 1 - fdIdx];
+                            flipped.faceDown = false;
+                            triggerFlipFaceUp(flipped, line, actualTarget);
+                        }
                     }
                 }
             }
