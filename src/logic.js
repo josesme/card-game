@@ -111,7 +111,11 @@ function createDeckForPlayer(target) {
     });
     
     console.log(`  📊 Total cards in deck before shuffle: ${deck.length}`);
-    const shuffled = deck.sort(() => Math.random() - 0.5);
+    for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
+    const shuffled = deck;
     console.log(`  📊 Deck ready: ${shuffled.length} cards`);
     
     return shuffled;
@@ -408,7 +412,12 @@ function drawCard(target) {
     let pState = gameState[target];
     if (pState.deck.length === 0) {
         if (pState.trash.length === 0) return false;
-        pState.deck = pState.trash.sort(() => Math.random() - 0.5);
+        const recycled = pState.trash;
+        for (let i = recycled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [recycled[i], recycled[j]] = [recycled[j], recycled[i]];
+        }
+        pState.deck = recycled;
         pState.trash = [];
     }
     pState.hand.push(pState.deck.pop());
