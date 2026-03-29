@@ -3008,10 +3008,9 @@ function resolveAbilityAction(actionDef, targetPlayer) {
 
     case 'drawFromOpponentDeck': {
       // Roba la carta superior del mazo del oponente (va a tu mano)
-      // Si el mazo rival está vacío, baraja su descarte primero
+      // C-03 + I-02: si el mazo rival está vacío, barajar su descarte primero (dispara onDeckShuffle del rival)
       if (gameState[opponent].deck.length === 0 && gameState[opponent].trash.length > 0) {
-        gameState[opponent].deck = gameState[opponent].trash.sort(() => Math.random() - 0.5);
-        gameState[opponent].trash = [];
+        shuffleDiscardIntoDeck(opponent);
       }
       if (gameState[opponent].deck.length > 0) {
         const top = gameState[opponent].deck.pop();
@@ -3218,12 +3217,10 @@ function resolveAbilityAction(actionDef, targetPlayer) {
 
     case 'swapTopDeckCards': {
       // Chaos 0: cada jugador roba la carta top del mazo rival
-      // C-03: barajar descarte rival si su mazo está vacío antes del robo
+      // C-03 + I-02: barajar descarte si mazo vacío, disparando onDeckShuffle del dueño
       ['ai', 'player'].forEach(who => {
         if (gameState[who].deck.length === 0 && gameState[who].trash.length > 0) {
-          const r = gameState[who].trash;
-          for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; }
-          gameState[who].deck = r; gameState[who].trash = [];
+          shuffleDiscardIntoDeck(who);
         }
       });
       if (gameState.ai.deck.length > 0) gameState.player.hand.push(gameState.ai.deck.pop());
@@ -4685,12 +4682,10 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           updateUI();
           if (typeof checkWinCondition === 'function') checkWinCondition();
         } else if (diversityLine && gameState.field[diversityLine].compiledBy === targetPlayer) {
-          // Recompilar: roba top del mazo rival (C-03: barajar descarte rival si mazo vacío)
+          // Recompilar: roba top del mazo rival (C-03 + I-02: barajar descarte rival si mazo vacío)
           const opponent = targetPlayer === 'player' ? 'ai' : 'player';
           if (gameState[opponent].deck.length === 0 && gameState[opponent].trash.length > 0) {
-            const r = gameState[opponent].trash;
-            for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; }
-            gameState[opponent].deck = r; gameState[opponent].trash = [];
+            shuffleDiscardIntoDeck(opponent);
           }
           if (gameState[opponent].deck.length > 0) {
             gameState[targetPlayer].hand.push(gameState[opponent].deck.pop());

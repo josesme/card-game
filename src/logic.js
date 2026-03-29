@@ -966,16 +966,11 @@ function compileLine(line, who) {
 
     if (previousOwner === who) {
         // Mismo jugador re-compila su propia línea: roba carta superior del mazo rival
-        // C-03: si el mazo rival está vacío, barajar su descarte antes del robo
+        // C-03 + I-02: si el mazo rival está vacío, barajar su descarte antes del robo
+        // shuffleDiscardIntoDeck dispara onDeckShuffle del rival (Tiempo 2)
         const rivalState = gameState[rival];
         if (rivalState.deck.length === 0 && rivalState.trash.length > 0) {
-            const recycled = rivalState.trash;
-            for (let i = recycled.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [recycled[i], recycled[j]] = [recycled[j], recycled[i]];
-            }
-            rivalState.deck = recycled;
-            rivalState.trash = [];
+            if (typeof shuffleDiscardIntoDeck === 'function') shuffleDiscardIntoDeck(rival);
         }
         if (rivalState.deck.length > 0) {
             const stolenCard = rivalState.deck.pop();
