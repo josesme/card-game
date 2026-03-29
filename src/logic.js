@@ -963,8 +963,19 @@ function compileLine(line, who) {
 
     if (previousOwner === who) {
         // Mismo jugador re-compila su propia línea: roba carta superior del mazo rival
-        if (gameState[rival].deck.length > 0) {
-            const stolenCard = gameState[rival].deck.pop();
+        // C-03: si el mazo rival está vacío, barajar su descarte antes del robo
+        const rivalState = gameState[rival];
+        if (rivalState.deck.length === 0 && rivalState.trash.length > 0) {
+            const recycled = rivalState.trash;
+            for (let i = recycled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [recycled[i], recycled[j]] = [recycled[j], recycled[i]];
+            }
+            rivalState.deck = recycled;
+            rivalState.trash = [];
+        }
+        if (rivalState.deck.length > 0) {
+            const stolenCard = rivalState.deck.pop();
             gameState[who].hand.push(stolenCard);
             updateStatus(`¡${who === 'player' ? 'Re-compilaste' : 'IA re-compiló'} ${line} y robó una carta rival!`);
         } else {

@@ -3218,6 +3218,14 @@ function resolveAbilityAction(actionDef, targetPlayer) {
 
     case 'swapTopDeckCards': {
       // Chaos 0: cada jugador roba la carta top del mazo rival
+      // C-03: barajar descarte rival si su mazo está vacío antes del robo
+      ['ai', 'player'].forEach(who => {
+        if (gameState[who].deck.length === 0 && gameState[who].trash.length > 0) {
+          const r = gameState[who].trash;
+          for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; }
+          gameState[who].deck = r; gameState[who].trash = [];
+        }
+      });
       if (gameState.ai.deck.length > 0) gameState.player.hand.push(gameState.ai.deck.pop());
       if (gameState.player.deck.length > 0) gameState.ai.hand.push(gameState.player.deck.pop());
       updateStatus('Intercambio: cada jugador roba la top del mazo rival');
@@ -4677,8 +4685,13 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           updateUI();
           if (typeof checkWinCondition === 'function') checkWinCondition();
         } else if (diversityLine && gameState.field[diversityLine].compiledBy === targetPlayer) {
-          // Recompilar: roba top del mazo rival
+          // Recompilar: roba top del mazo rival (C-03: barajar descarte rival si mazo vacío)
           const opponent = targetPlayer === 'player' ? 'ai' : 'player';
+          if (gameState[opponent].deck.length === 0 && gameState[opponent].trash.length > 0) {
+            const r = gameState[opponent].trash;
+            for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; }
+            gameState[opponent].deck = r; gameState[opponent].trash = [];
+          }
           if (gameState[opponent].deck.length > 0) {
             gameState[targetPlayer].hand.push(gameState[opponent].deck.pop());
           }
