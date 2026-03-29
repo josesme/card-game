@@ -419,6 +419,9 @@ function drawCard(target) {
         }
         pState.deck = recycled;
         pState.trash = [];
+        // I-01: defer onDeckShuffle trigger until after the full draw+cache cycle
+        if (!gameState.pendingDeckShuffle) gameState.pendingDeckShuffle = [];
+        if (!gameState.pendingDeckShuffle.includes(target)) gameState.pendingDeckShuffle.push(target);
     }
     pState.hand.push(pState.deck.pop());
     return true;
@@ -2595,6 +2598,15 @@ function continueEndTurn(who) {
     gameState.phase = 'end';
     if (typeof onTurnEndEffects === 'function') {
         onTurnEndEffects(who);
+    }
+
+    // I-01: Tiempo 2 onDeckShuffle — dispara DESPUÉS del refresh+caché, no durante el robo
+    if (gameState.pendingDeckShuffle && gameState.pendingDeckShuffle.length > 0) {
+        const pending = gameState.pendingDeckShuffle;
+        gameState.pendingDeckShuffle = [];
+        if (typeof onDeckShuffleEffects === 'function') {
+            pending.forEach(p => onDeckShuffleEffects(p));
+        }
     }
 
     // Velocidad 1: si este jugador usó Refresh este turno, roba 1 carta extra DESPUÉS del cache check
