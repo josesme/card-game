@@ -219,7 +219,10 @@ Estas cartas abren un modal "revelar" que muestra las cartas disponibles. El jug
 Sí. "Descartar" incluye cualquier descarte, salvo que se especifique lo contrario.
 
 **¿Cuándo se reconstruye el mazo?**
-Cuando está vacío y necesitas robar. Se baraja el descarte para formar uno nuevo.
+Cuando está vacío y necesitas robar. Se baraja el descarte para formar uno nuevo. Esto aplica a **cualquier robo**, incluyendo robos del oponente (re-compilación, efectos de carta): si al robar de tu mazo este está vacío, tu descarte se baraja primero.
+
+**¿Limpiar Caché dispara efectos de descarte?**
+Sí. Descartar cartas para reducir la mano a 5 dispara efectos reactivos como `onOpponentDiscard` (ej. Plaga 1) y `onOwnDiscard` (ej. Corrupción 2). No dispara `onForcedDiscard` (ej. Paz 4), ya que ese trigger requiere que el descarte ocurra durante el turno del oponente.
 
 **¿Cero es un número par?**
 Sí.
@@ -258,7 +261,10 @@ No. Solo la carta superior de una pila está descubierta.
 
 **Muerte 1**
 - ERRATA (10/2024) — Comando superior: *"Inicio: Puedes robar 1 carta. Si lo haces, elimina 1 carta adicional. Luego, elimina esta carta."*
-- No puede ser movida, volteada ni eliminada por otros efectos.
+- No puede ser movida, volteada ni eliminada por efectos externos. Solo se elimina mediante su propio texto.
+
+**Muerte 2**
+- ACLARACIÓN: "Todas las cartas con Valor 1 o 2 de una línea" afecta a **toda la pila de esa línea**, incluyendo cartas cubiertas. El calificador numérico (valor exacto) penetra la cobertura, a diferencia de efectos genéricos que solo afectan a la carta superior.
 
 ---
 
@@ -305,6 +311,15 @@ No. Solo la carta superior de una pila está descubierta.
 
 **Plaga 3**
 - ACLARACIÓN: *"Voltea cada otra carta descubierta."* — Solo afecta cartas **descubiertas**, no cubiertas.
+
+---
+
+### ⏱️ Tiempo (Time)
+
+**Tiempo 2**
+- Dispara `onDeckShuffle` con cualquier barajado del mazo — tanto explícito (usar su propio efecto) como automático (mazo vacío durante un robo).
+- ACLARACIÓN (diseñador): Si el barajado ocurre durante el **Actualizar**, el efecto dispara **después** de completar todos los robos y limpiar caché. El robo no se interrumpe a mitad.
+- ACLARACIÓN: Si el **oponente** causa el barajado de tu mazo (re-compilación, efecto de carta), el trigger de Tiempo 2 **sí dispara** igualmente.
 
 ---
 
