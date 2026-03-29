@@ -2806,51 +2806,81 @@ function aiAutoPick() {
 }
 
 function aiScoreDraftProtocol(available) {
-    // Puntuación de cada protocolo candidato usando solo información pública
+    // Tier list basada en el canal de estrategia de la comunidad.
+    // Fuente: Discord strategy chat — análisis de jugadores experimentados.
+    const META_TIER = {
+        // Tier S — consistentemente fuertes
+        'Velocidad': 30, 'Psique': 28, 'Plaga': 26, 'Luz': 25, 'Fuego': 24, 'Vida': 24,
+        // Tier A — fuertes con contexto
+        'Gravedad': 18, 'Espíritu': 16, 'Agua': 18, 'Oscuridad': 15,
+        'Muerte': 14, 'Odio': 14, 'Amor': 14,
+        // Main 2 conocidos
+        'Corrupción': 20, 'Miedo': 18, 'Asimilación': 16, 'Caos': 15,
+        'Claridad': 16, 'Diversidad': 14, 'Valor': 15, 'Hielo': 13,
+        'Espejo': 18, 'Tiempo': 13, 'Unidad': 14, 'Guerra': 13,
+        'Paz': 8, 'Humo': 12, 'Suerte': 10,
+        // Tier B/C — situacionales o débiles
+        'Metal': 8, 'Apatía': 9,
+    };
+
+    // Sinergias explícitas del chat de estrategia.
+    // Par A+B → bonus cuando la IA ya tiene A y considera B (o viceversa).
+    const SYNERGIES = [
+        { pair: ['Fuego', 'Luz'],        bonus: 20 }, // "Fire needs to discard, Light gives draw"
+        { pair: ['Fuego', 'Corrupción'], bonus: 22 }, // "So strong" — discard heavy
+        { pair: ['Psique', 'Plaga'],     bonus: 20 }, // classic discard synergy
+        { pair: ['Vida', 'Agua'],        bonus: 16 }, // pacing control
+        { pair: ['Vida', 'Metal'],       bonus: 14 }, // designer's combo
+        { pair: ['Agua', 'Metal'],       bonus: 14 }, // idem
+        { pair: ['Amor', 'Asimilación'], bonus: 16 }, // "strongest deck stealer combo"
+        { pair: ['Amor', 'Gravedad'],    bonus: 14 }, // idem
+        { pair: ['Asimilación', 'Gravedad'], bonus: 14 },
+        { pair: ['Luz', 'Psique'],       bonus: 14 }, // draw + discard
+        { pair: ['Luz', 'Plaga'],        bonus: 14 }, // draw + discard
+    ];
+
+    // Contrapicks identificados en el chat.
+    // Si el jugador tiene A, coger B para contrarrestarlo.
+    const COUNTERPICKS = [
+        { playerHas: 'Gravedad', aiPick: 'Metal',   bonus: 20 }, // "Metal best counter to Gravity"
+        { playerHas: 'Gravedad', aiPick: 'Muerte',  bonus: 14 }, // "Death 2 best play vs Grav 0"
+        { playerHas: 'Espíritu', aiPick: 'Oscuridad', bonus: 12 }, // Darkness disrupts Spirit combos
+    ];
+
     const scores = available.map(proto => {
-        const cards = GLOBAL_CARDS[proto] || [];
         let score = 0;
 
-        // 1. Valor medio de las cartas (base de poder)
-        const avgVal = cards.length > 0
-            ? cards.reduce((s, c) => s + (c.valor || 0), 0) / cards.length
-            : 0;
-        score += avgVal * 10;
+        // 1. Tier base del meta
+        score += META_TIER[proto] ?? 12;
 
-        // 2. Potencial ofensivo: efectos que afectan al rival
-        cards.forEach(c => {
-            const txt = ((c.h_accion || '') + (c.h_inicio || '') + (c.h_final || '')).toLowerCase();
-            if (txt.includes('elimina'))   score += 8;
-            if (txt.includes('descarta'))  score += 5;
-            if (txt.includes('devuelve') || txt.includes('devolver')) score += 6;
-            if (txt.includes('voltea'))    score += 4;
-            if (txt.includes('roba') || txt.includes('robar')) score += 3;
+        // 2. Sinergias con picks propios ya realizados
+        SYNERGIES.forEach(({ pair, bonus }) => {
+            if (pair.includes(proto)) {
+                const partner = pair.find(p => p !== proto);
+                if (draftState.aiPicks.includes(partner)) score += bonus;
+            }
         });
 
-        // 3. Contrapick: si el jugador ya tiene protocolos, intentar contrarrestar
-        // con eliminación si el jugador tiene muchas cartas de volteo/acumulación
-        const playerHasFlipHeavy = draftState.playerPicks.some(p => {
-            const abilities = (PROTOCOL_DEFS[p] && PROTOCOL_DEFS[p].abilities) || '';
-            return abilities.includes('VOLTEAR') || abilities.includes('BOCABAJO');
+        // 3. Contrapicks según lo que tiene el jugador
+        COUNTERPICKS.forEach(({ playerHas, aiPick, bonus }) => {
+            if (aiPick === proto && draftState.playerPicks.includes(playerHas)) score += bonus;
         });
-        if (playerHasFlipHeavy) {
-            const abilities = (PROTOCOL_DEFS[proto] && PROTOCOL_DEFS[proto].abilities) || '';
-            if (abilities.includes('ELIMINAR') || abilities.includes('DEVOLVER')) score += 12;
+
+        // 4. Penalizar si el jugador ya tiene este protocolo (no podemos cogérselo,
+        //    pero sí evitar elegir uno con misma función si él ya la cubre)
+        if (draftState.playerPicks.includes(proto)) score -= 50; // no debería ocurrir pero salvaguarda
+
+        // 5. Evitar solapamiento funcional con picks propios
+        //    (tres protocolos de robo puro sin control = mano llena, sin presencia en mesa)
+        const ownDrawCount = draftState.aiPicks.filter(p =>
+            (META_TIER[p] ?? 0) >= 20 && ['Luz', 'Fuego', 'Psique', 'Velocidad', 'Oscuridad'].includes(p)
+        ).length;
+        if (ownDrawCount >= 2 && ['Luz', 'Fuego', 'Psique', 'Velocidad', 'Oscuridad'].includes(proto)) {
+            score -= 15;
         }
 
-        // 4. Sinergia con picks propios: preferir complementar lo que ya tiene
-        draftState.aiPicks.forEach(owned => {
-            const ownedAbilities = (PROTOCOL_DEFS[owned] && PROTOCOL_DEFS[owned].abilities) || '';
-            const newAbilities   = (PROTOCOL_DEFS[proto] && PROTOCOL_DEFS[proto].abilities) || '';
-            // Evitar solapamiento total (tres protocolos de robo sin control = débil)
-            if (ownedAbilities === newAbilities) score -= 8;
-            // Bonus si el nuevo protocolo cubre lo que los propios no tienen
-            if (!ownedAbilities.includes('ELIMINAR') && newAbilities.includes('ELIMINAR')) score += 6;
-            if (!ownedAbilities.includes('DEVOLVER') && newAbilities.includes('DEVOLVER')) score += 5;
-        });
-
-        // 5. Pequeño ruido aleatorio para que no sea completamente predecible
-        score += Math.random() * 5;
+        // 6. Ruido pequeño para variedad entre partidas (no predecible 100%)
+        score += Math.random() * 6;
 
         return { proto, score };
     });
