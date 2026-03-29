@@ -4855,6 +4855,18 @@ function getPersistentModifiers(card) {
     modifiers.immobile = true;
   }
 
+  // Hielo 4: no puede ser volteada por ningún efecto externo
+  if (persistent.preventFlip) {
+    modifiers.preventFlip = true;
+  }
+
+  // Muerte 1: no puede ser movida, volteada ni eliminada por efectos externos
+  if (persistent.immobile) {
+    modifiers.preventFlip = true;
+    modifiers.preventShift = true;
+    modifiers.preventEliminate = true;
+  }
+
   // Psique 1: Fuerza al oponente a jugar bocabajo
   if (persistent.effect === 'forceOpponentFaceDown') {
     modifiers.forceOpponentFaceDown = true;

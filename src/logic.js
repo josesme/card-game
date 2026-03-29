@@ -1238,7 +1238,12 @@ function startEffect(type, target, count, opts = {}) {
                 }
                 const topCard = stack[stack.length - 1];
                 if (opts.excludeCardName && topCard.card.nombre === opts.excludeCardName) return false;
-                if (type === 'flip' && typeof getPersistentModifiers === 'function' && getPersistentModifiers(topCard.card).preventFlip) return false;
+                if (typeof getPersistentModifiers === 'function') {
+                    const mods = getPersistentModifiers(topCard.card);
+                    if (type === 'flip' && mods.preventFlip) return false;
+                    if (type === 'shift' && mods.preventShift) return false;
+                    if (type === 'eliminate' && mods.preventEliminate) return false;
+                }
                 return cardMatchesFilter(topCard, filterCtx);
             })
         );
@@ -1436,6 +1441,11 @@ function handleFieldCardClick(line, target, cardIdx) {
         if (ctx.allowedLines && !ctx.allowedLines.includes(line)) return;
         const cardObj = gameState.field[line][target][cardIdx];
         if (!cardMatchesFilter(cardObj, ctx)) return;
+        // preventEliminate: Muerte 1 no puede ser eliminada por efectos externos
+        if (typeof getPersistentModifiers === 'function' && getPersistentModifiers(cardObj.card).preventEliminate) {
+            updateStatus(`${cardObj.card.nombre} no puede ser eliminada por efectos externos`);
+            return;
+        }
         gameState.field[line][target].splice(cardIdx, 1);
         gameState[target].trash.push(cardObj.card);
         gameState.eliminatedSinceLastCheck[gameState.turn] = true;
@@ -1473,6 +1483,11 @@ function handleFieldCardClick(line, target, cardIdx) {
         if (ctx.coveredOnly && cardIdx === gameState.field[line][target].length - 1) return;
         // Bloquear si el filtro no pasa (ej. solo bocabajo)
         if (ctx.filter && !cardMatchesFilter(cardObj, ctx)) return;
+        // preventShift: Muerte 1 no puede ser cambiada de línea por efectos externos
+        if (typeof getPersistentModifiers === 'function' && getPersistentModifiers(cardObj.card).preventShift) {
+            updateStatus(`${cardObj.card.nombre} no puede ser movida por efectos externos`);
+            return;
+        }
         ctx.selectedCard = { line, target, cardIdx };
         ctx.waitingForLine = true;
         clearEffectHighlights();
@@ -1746,7 +1761,9 @@ function aiPickEliminateLine(target, opts = {}) {
         .filter(l => {
             const stack = gameState.field[l][target];
             if (!stack.length) return false;
-            return cardMatchesFilter(stack[stack.length - 1], filterCtx);
+            const topCard = stack[stack.length - 1];
+            if (typeof getPersistentModifiers === 'function' && getPersistentModifiers(topCard.card).preventEliminate) return false;
+            return cardMatchesFilter(topCard, filterCtx);
         })
         .sort((a, b) => calculateScore(gameState, b, target) - calculateScore(gameState, a, target));
     return lines[0] || null;
@@ -1834,8 +1851,10 @@ function resolveEffectAI(type, target, count, opts = {}) {
                     const stack = gameState.field[line][actualTarget];
                     if (actualTarget === 'player') {
                         const topCard = stack[stack.length - 1];
-                        topCard.faceDown = !topCard.faceDown;
-                        if (!topCard.faceDown) triggerFlipFaceUp(topCard, line, actualTarget);
+                        if (!(typeof getPersistentModifiers === 'function' && getPersistentModifiers(topCard.card).preventFlip)) {
+                            topCard.faceDown = !topCard.faceDown;
+                            if (!topCard.faceDown) triggerFlipFaceUp(topCard, line, actualTarget);
+                        }
                     } else {
                         const fdIdx = [...stack].reverse().findIndex(c => c.faceDown);
                         if (fdIdx >= 0) {
@@ -1852,6 +1871,9 @@ function resolveEffectAI(type, target, count, opts = {}) {
             // Move top card from weakest line to where it helps most
             const sourceLine = aiLowestScoreLine(actualTarget);
             if (!sourceLine) continue;
+            const sourceStack = gameState.field[sourceLine][actualTarget];
+            const sourceTop = sourceStack[sourceStack.length - 1];
+            if (sourceTop && typeof getPersistentModifiers === 'function' && getPersistentModifiers(sourceTop.card).preventShift) continue;
             const destLine = aiPickDestLine([sourceLine], actualTarget);
             if (!destLine) continue;
             const cardObj = gameState.field[sourceLine][actualTarget].pop();
