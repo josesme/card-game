@@ -2582,6 +2582,9 @@ function endTurn(who) {
                 gameState.ai.trash.push(gameState.ai.hand.pop());
                 gameState.discardedSinceLastCheck.ai = true;
             }
+            // I-03: cache discard fires reactive discard effects
+            if (typeof onOpponentDiscardEffects === 'function') onOpponentDiscardEffects('ai');
+            if (typeof onOwnDiscardEffects === 'function') onOwnDiscardEffects('ai');
         }
     }
 

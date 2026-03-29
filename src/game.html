@@ -1696,6 +1696,13 @@ function processHandSelection(type, selectedSet, ctx) {
         ctx.selected.push(card);
     });
 
+    // I-03: descarte de caché (y cualquier descarte interactivo) dispara efectos reactivos
+    const didDiscard = type !== 'give' && !gameState._discardToOpponentTrash;
+    if (didDiscard && indices.length > 0) {
+        if (typeof onOpponentDiscardEffects === 'function') onOpponentDiscardEffects('player');
+        if (typeof onOwnDiscardEffects === 'function') onOwnDiscardEffects('player');
+    }
+
     if (type === 'discardVariable') {
         const n = ctx.selected.length;
         finishEffect();
