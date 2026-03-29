@@ -52,12 +52,28 @@ Actualmente el único diferenciador es la profundidad de búsqueda minimax (1→
 - [x] **AI-08 · Reconocimiento de dead lines más preciso** — El detector actual asume que todas las cartas restantes valen 5. Corregido: IA usa suma real de mano + media real del mazo; jugador usa media estimada del pool público.
 
 **Pendiente de investigación/mejora:**
-- [ ] **AI-10 · Estrategia de draft** — No está claro qué lógica usa la IA para elegir protocolos durante el draft. El draft no es trivial (sinergias entre protocolos, contrapicks, adaptación al set) y debería diferenciarse por nivel como el resto del comportamiento. Tarea previa: auditar qué hace actualmente el draft de IA (`src/draft.html` / lógica de draft en `logic.js`) y documentarlo antes de planear mejoras.
+- [x] **AI-10 · Estrategia de draft** — `aiScoreDraftProtocol` implementado con tabla META_TIER (S/A/B/C), 11 pares de sinergias, contrapicks y penalización anti-solapamiento. IA elige protocolos según meta-conocimiento en lugar de aleatoriamente.
 
 **Fuera de alcance en esta versión (complejidad alta, posponer):**
 - Tabla de transposición / memoización (permite depth 6-7)
 - Simulación de los ~47 efectos de carta no cubiertos en minimax
 - Modelado bayesiano completo del jugador
+
+---
+
+### v2.1.1 — Rules Audit (RULES-AUDIT.md)
+
+**Objetivo:** Corregir discrepancias entre reglas oficiales aclaradas en el Discord del diseñador y la implementación digital.
+Fuente: canal `#rules-questions` del Discord oficial.
+
+- [x] **C-01 · Muerte 1 protegida de efectos externos** — `getPersistentModifiers` ahora lee `persistent.immobile` y expone `preventFlip/Shift/Eliminate`. Checks añadidos en player y AI para flip, shift y eliminate.
+- [x] **C-02 · Velocidad 2 se desplaza al compilar** — Ya estaba funcionando correctamente. Verificado.
+- [x] **C-03 · Robo del oponente baraja mazo vacío** — `compileLine`, `drawFromOpponentDeck`, `swapTopDeckCards` y Diversidad re-compile ahora llaman a `shuffleDiscardIntoDeck` (que baraja y dispara onDeckShuffle) en lugar de inline shuffle sin trigger.
+- [x] **I-01 · Tiempo 2 dispara después del refresh completo** — `drawCard` marca `pendingDeckShuffle` al barajar automáticamente; `continueEndTurn` lo procesa tras el ciclo de robo + caché.
+- [x] **I-02 · Barajado causado por el oponente dispara Tiempo 2** — Todos los reshuffles externos usan `shuffleDiscardIntoDeck(owner)`, que ya llama a `onDeckShuffleEffects`.
+- [x] **I-03 · Limpiar caché dispara efectos de descarte** — `processHandSelection` (player) y el loop de caché IA llaman a `onOpponentDiscardEffects` y `onOwnDiscardEffects`. `onForcedDiscard` excluido intencionalmente (Paz 4 requiere turno del oponente).
+- [x] **I-04 · Luz 0 usa valor de carta aunque sea eliminada** — Verificado correcto. `_drawByFlippedValue` lee `gameState.lastFlippedCard.cardObj.card.valor`, referencia que sobrevive a la eliminación.
+- [x] **I-05 · Muerte 2 elimina cartas cubiertas** — Verificado correcto. Ambas rutas (player/AI) iteran la pila completa con `forEach`.
 
 ---
 

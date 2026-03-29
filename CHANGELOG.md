@@ -52,6 +52,51 @@ Historial de cambios y evolución del proyecto. Formato resumido con secciones e
 
 ---
 
+---
+
+## 🔧 v2.1.1 — Rules Audit & Fixes
+
+<details>
+<summary><strong>Ver detalles de v2.1.1</strong></summary>
+
+### v2.1.1 — Rules Audit: Discord Official Rules Channel
+
+**Fecha:** Marzo 2026
+
+**Objetivo:** Corregir discrepancias identificadas analizando el canal `#rules-questions` del Discord oficial del diseñador. Documento fuente: `docs/RULES-AUDIT.md`.
+
+#### Bugs Corregidos
+
+- ✅ **C-01:** Muerte 1 protegida de efectos externos — flip, shift y eliminate bloqueados vía `persistent.immobile`
+- ✅ **C-03:** Robos del oponente (re-compilación, Chaos 0, Diversidad, Amor) barajan el mazo vacío del dueño antes de robar
+
+#### Fixes de Timing y Triggers
+
+- ✅ **I-01:** Tiempo 2 `onDeckShuffle` dispara después del ciclo completo de refresh+caché, no durante el robo
+- ✅ **I-02:** Barajado causado por el oponente también dispara `onDeckShuffle` del dueño del mazo
+- ✅ **I-03:** Limpiar Caché dispara `onOpponentDiscard` y `onOwnDiscard` (Corrupción 2, Plaga 1, etc.)
+
+#### Verificaciones (ya correctas)
+
+- ✅ **C-02:** Velocidad 2 se desplaza al compilar — ya funcionaba
+- ✅ **I-04:** Luz 0 usa valor de carta eliminada — referencia sobrevive al splice
+- ✅ **I-05:** Muerte 2 elimina cartas cubiertas — itera pila completa en ambas rutas
+
+#### Documentación
+
+- `docs/RULES-AUDIT.md` — auditoría completa con fuente y estado de cada ítem
+- `docs/CODEX.md` — añadidas entradas para Muerte 1/2, Tiempo 2, y dos FAQs nuevas
+
+#### Archivos Modificados
+
+- `src/abilities-engine.js` — `getPersistentModifiers`, `drawFromOpponentDeck`, `swapTopDeckCards`, Diversidad re-compile
+- `src/logic.js` — `drawCard`, `compileLine`, `continueEndTurn`, `endTurn`, `aiPickEliminateLine`, `resolveEffectAI`
+- `src/game.html` — `processHandSelection`
+
+</details>
+
+---
+
 ## 📦 Versiones Anteriores
 
 <details>
