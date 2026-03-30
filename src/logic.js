@@ -891,10 +891,15 @@ function renderStack(line, target) {
         stackEl.appendChild(wrapper);
 
         // Animar entrada de la última carta si hay una jugada pendiente para esta línea/lado
-        if (idx === stack.length - 1 && window._animPendingField &&
-            window._animPendingField.line === line && window._animPendingField.target === target) {
-            window._animPendingField = null;
-            if (typeof window.animCardEnter === 'function') window.animCardEnter(domCard, target === 'ai');
+        if (idx === stack.length - 1) {
+            console.log('[RS-ANIM] last card. pending=', JSON.stringify(window._animPendingField), 'line=', line, 'target=', target);
+            if (window._animPendingField &&
+                window._animPendingField.line === line && window._animPendingField.target === target) {
+                window._animPendingField = null;
+                console.log('[RS-ANIM] FIRING animCardEnter on', domCard);
+                domCard.style.outline = '3px solid red'; // test visual sin GSAP
+                if (typeof window.animCardEnter === 'function') window.animCardEnter(domCard, target === 'ai');
+            }
         }
     });
 }
