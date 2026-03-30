@@ -743,6 +743,7 @@ function updateUI() {
 
     initProtocolDisplay();
     checkWinCondition();
+    if (typeof window.flushAnimQueue === 'function') window.flushAnimQueue();
 }
 
 function calculateScore(state, line, target) {
@@ -1064,6 +1065,7 @@ function checkCompilePhase(who) {
     }
 
     let compiledAny = false;
+    let compiledLine = null;
     for (const line of LINES) {
         const myScore = calculateScore(gameState, line, who);
         const oppScore = calculateScore(gameState, line, who === 'player' ? 'ai' : 'player');
@@ -1074,11 +1076,13 @@ function checkCompilePhase(who) {
             console.log(`  ✅ Compiled: ${line}`);
             compileLine(line, who);
             compiledAny = true;
+            compiledLine = line;
             break; // Max 1 compile per turn as per rules
         }
     }
 
     if (compiledAny) {
+        window.queueAnim?.({ type: 'compile', line: compiledLine });
         updateUI();
         if (gameState.pendingCompileShift) {
             const { cards, sourceLine } = gameState.pendingCompileShift;
@@ -2357,6 +2361,7 @@ function finalizePlay(targetLine, isFaceDown) {
     }
     gameState.field[targetLine][targetSide].push(playedCard);
     checkDeleteOnCover(targetLine, targetSide);
+    window.queueAnim?.({ type: 'fieldCard', line: targetLine, target: targetSide });
     updateUI(); // Sincronizar DOM antes de disparar efectos (necesario para efectos interactivos como Agua 4)
 
     console.log(`✅ Card played: ${card.nombre} on ${targetLine} (${isFaceDown ? 'face-down' : 'face-up'})`);
@@ -2560,6 +2565,7 @@ function playAITurnRandom() {
         const movedCard = gameState.ai.hand.splice(cardIdx, 1)[0];
         gameState.field[targetLine].ai.push({ card: movedCard, faceDown: isFaceDown });
         checkDeleteOnCover(targetLine, 'ai');
+        window.queueAnim?.({ type: 'fieldCard', line: targetLine, target: 'ai' });
         updateStatus(`IA jugó 1 carta ${isFaceDown ? 'bocabajo' : movedCard.nombre + ' bocarriba'} en ${targetLine}`);
         console.log('Estado final del juego tras fallback aleatorio:', JSON.stringify(gameState));
     } else {
@@ -2673,6 +2679,7 @@ function executeAIMove(move) {
         faceDown: !move.faceUp
     });
     checkDeleteOnCover(move.line, landSide);
+    window.queueAnim?.({ type: 'fieldCard', line: move.line, target: landSide });
     updateUI();
 
     const sideText = landSide !== 'ai' ? ' (lado rival)' : '';
