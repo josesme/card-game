@@ -12,7 +12,7 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 
 ---
 
-## UI / UX
+## UI/UX
 
 - **Animaciones de descarte y robo** — Sin animación al mover cartas entre zonas.
 - **Sonidos básicos de interfaz** — Sin feedback sonoro.
@@ -20,13 +20,7 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 
 ---
 
-## v3.0.0 — Control Component (avanzado)
-
-- **Documentación de diseño** — Crear `docs/FASE-3-CONTROL.md` con diseño detallado antes de implementar.
-
----
-
-## v4.0.0 — Polish & Social
+## Polish & Social
 
 - **Guardado local** — Persistir estado de partida en `localStorage`.
 - **Historial de partidas** — Log de resultados anteriores.
