@@ -1509,8 +1509,6 @@ function clearEffectHighlights() {
     if (banner) banner.classList.remove('visible');
     const stopBtn = document.getElementById('btn-stop-discard');
     if (stopBtn) stopBtn.classList.add('hidden');
-    const cancelBtn = document.getElementById('btn-cancel-selection');
-    if (cancelBtn) cancelBtn.classList.add('hidden');
     // Close select overlay if open
     if (typeof closeHandSelectOverlay === 'function') closeHandSelectOverlay();
 }
@@ -2207,7 +2205,6 @@ function playSelectedCard(isFaceDown) {
     if (isFaceDown) {
         // Enter selection mode for any non-compiled line
         gameState.selectionMode = true;
-        showCancelButton();
         updateStatus("Elige línea para colocar la carta bocabajo...");
         console.log('📍 Selection mode ON - choose line for face-down play');
         highlightSelectableLines();
@@ -2223,7 +2220,6 @@ function playSelectedCard(isFaceDown) {
         console.log(`✅ Playing face-up (any protocol allowed): ${card.nombre}`);
         gameState.selectionMode = true;
         gameState.selectionModeFaceUp = true;
-        showCancelButton();
         updateStatus("Espíritu 1: elige línea para colocar la carta bocarriba...");
         highlightSelectableLines();
     } else if (cardPlaysAnywhere) {
@@ -2243,7 +2239,6 @@ function playSelectedCard(isFaceDown) {
                     gameState.selectionMode = true;
                     gameState.selectionModeFaceUp = true;
                     gameState.playOnSide = 'player';
-                    showCancelButton();
                     updateStatus(`${card.nombre}: elige línea en tu lado...`);
                     highlightSelectableLines();
                 };
@@ -2252,7 +2247,6 @@ function playSelectedCard(isFaceDown) {
                     gameState.selectionMode = true;
                     gameState.selectionModeFaceUp = true;
                     gameState.playOnSide = 'opponent';
-                    showCancelButton();
                     updateStatus(`${card.nombre}: elige línea en el lado rival...`);
                     highlightSelectableLines();
                 };
@@ -2262,7 +2256,6 @@ function playSelectedCard(isFaceDown) {
             console.log(`✅ Playing face-up (playAnywhere): ${card.nombre}`);
             gameState.selectionMode = true;
             gameState.selectionModeFaceUp = true;
-            showCancelButton();
             updateStatus(`${card.nombre}: elige línea para colocar la carta bocarriba...`);
             highlightSelectableLines();
         }
@@ -2281,11 +2274,6 @@ function playSelectedCard(isFaceDown) {
             });
         }
     }
-}
-
-function showCancelButton() {
-    const btn = document.getElementById('btn-cancel-selection');
-    if (btn) btn.classList.remove('hidden');
 }
 
 function highlightSelectableLines(excludeLine, allowedLines) {
@@ -2407,21 +2395,6 @@ function finalizePlay(targetLine, isFaceDown) {
     console.log(`⏱️ Ending player turn...`);
     endTurn('player');
 }
-
-const btnCancelSelection = document.getElementById('btn-cancel-selection');
-if (btnCancelSelection) btnCancelSelection.onclick = () => {
-    if (gameState.selectionMode) {
-        // Jugada bocabajo/bocarriba en espera de línea — la carta sigue en mano
-        gameState.selectionMode = false;
-        gameState.selectionModeFaceUp = false;
-        gameState.selectedCardIndex = null;
-        gameState.playOnSide = null;
-        clearSelectionHighlights();
-        clearEffectHighlights();
-        updateStatus('Jugada cancelada');
-        updateUI();
-    }
-};
 
 const btnStopDiscard = document.getElementById('btn-stop-discard');
 if (btnStopDiscard) btnStopDiscard.onclick = () => {
