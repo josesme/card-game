@@ -1,92 +1,33 @@
-# COMPILE - BACKLOG & ROADMAP
+# COMPILE - BACKLOG
 
-Documento para el seguimiento de bugs, mejoras y nuevas funcionalidades.
-
-## Bugs & Tareas Pendientes
-
-- [ ] **IA:** Mejorar evaluación de movimientos que disparan efectos complejos.
-- [x] **UI:** Solapamiento de cartas en stacks grandes en pantallas pequeñas.
-- [x] **UX:** Selección de cartas desde mazo/descarte con modal reveal (Tiempo 0/3, Claridad 3).
-- [x] **Amor 4:** IA usa cartas reveladas del jugador para tomar decisiones.
-- [x] **Comando central:** Voltear bocabajo→bocarriba y descubrirse activan onPlay (implementado).
-
-## Completado recientemente
-
-- [x] **Audit Main 2 completo:** 90 cartas auditadas, 12 bugs corregidos, 2 features implementados. Ver `AUDIT-MAIN2.md`.
-- [x] **182 tests pasando** (100% pass rate).
-- [x] **Hooks reactivos:** Solo disparan para carta top, no cubiertas.
-- [x] **Server:** Manejo de EADDRINUSE, EISDIR y cierre limpio.
-- [x] **Docs:** LEEME.md y README.md unificados + DEV_INSTRUCTIONS.md para IA.
-- [x] **Modal Reveal:** Tiempo 0 (descarte), Tiempo 3 (descarte + línea), Claridad 3 (mazo) eligen cartas sin ir a mano.
-
-## Próximas Versiones
-
-### v2.1.0 — AI Overhaul: 5 niveles con diferencias reales
-
-**Objetivo:** Que cada nivel de dificultad tenga un comportamiento cualitativamente distinto.
-El nivel 5 debe suponer un reto real; el nivel 1 debe ser asequible para cualquiera.
-Actualmente el único diferenciador es la profundidad de búsqueda minimax (1→5). Sin cambios de comportamiento ni lógica de evaluación.
-
-**Principio fundamental:** La IA solo puede usar información que tendría disponible un jugador humano. Cartas en mano del rival: desconocidas. Cartas bocabajo en mesa: sabe que existen, no qué son. Descarte: visible (público). Mazo: no sabe el orden. Este principio es invariable en todos los niveles.
-
-**Eje de dificultad — Memoria del rival:** Cuánto recuerda la IA del historial público del jugador para inferir su mano/estrategia.
-
-| Nivel | Memoria del rival | Comportamiento global |
-|-------|------------------|-----------------------|
-| 1 · SUBRUTINA | Ninguna — ignora el descarte rival | 50% jugadas aleatorias, sin defensa |
-| 2 · ALGORITMO | Solo la última carta descartada | 20% jugadas aleatorias, defensa reactiva mínima |
-| 3 · NÚCLEO | Últimas 3 cartas del descarte | Sin aleatoriedad, evaluación estándar actual |
-| 4 · CENTINELA | Todo el descarte visible | Defensa proactiva, detecta amenazas a 2 turnos |
-| 5 · SINGULARIDAD | Todo el descarte + infiere mano probable | Evaluación reforzada, bloqueo agresivo |
-
-**Tareas (orden de prioridad propuesto — cada una es revisable por separado):**
-
-- [x] **AI-01 · Bug fix · simulateMove + opponentDiscard** — Dos bugs reales corregidos (el ReferenceError de `protocols` reportado inicialmente no existía): (a) cartas reveladas del jugador usaban `splice(undefined,1)` que extraía siempre la carta 0; (b) `opponentDiscard` usaba `Math.random()` dentro del árbol minimax produciendo evaluaciones no deterministas. Corregido: el jugador descarta determinísticamente su carta de menor valor.
-- [x] **AI-07 · Fisher-Yates shuffle** — El barajado actual (`sort(() => Math.random() - 0.5)`) es estadísticamente sesgado. Reemplazar por Fisher-Yates. Sin riesgo, afecta a todos los niveles.
-- [x] **AI-04 · Pesos de evaluación por nivel** — `applyAIProfile` con mapeo lineal directo en `ai-profiles.js`; perfil aleatorio por nivel aplicado al inicializar el evaluador en `playAITurn`. Nivel 1 con `defensiveNeed:0.0` tiene peso real 0. Cada partida elige variante A o B del nivel seleccionado.
-- [x] **AI-02 · Niveles 1-2 · Epsilon-greedy** — Inyectar jugadas aleatorias reales en niveles 1 (50%) y 2 (20%) para que cometan errores tangibles, no solo busquen menos profundo.
-- [x] **AI-09 · Memoria del descarte por nivel** — Pasar a la evaluación solo la parte del descarte rival que cada nivel "recuerda" (ninguna / última / últimas 3 / todo). Palanca principal de diferenciación entre niveles.
-- [x] **AI-03 · Niveles 1-2 · Sin defensa activa** — Nivel 1 ignora amenazas de compilado. Nivel 2 solo defiende si el jugador está a 1 carta de compilar.
-- [x] **AI-05 · Niveles 4-5 · Detección de amenaza en 2 turnos** — Reconocer que el jugador está a 2 cartas de compilar una línea y marcarla como urgente.
-- [x] **AI-06 · Nivel 5 · Penalización por deck vacío** — La IA en nivel 5 debe valorar no quedarse sin cartas.
-- [x] **AI-08 · Reconocimiento de dead lines más preciso** — El detector actual asume que todas las cartas restantes valen 5. Corregido: IA usa suma real de mano + media real del mazo; jugador usa media estimada del pool público.
-
-**Pendiente de investigación/mejora:**
-- [x] **AI-10 · Estrategia de draft** — `aiScoreDraftProtocol` implementado con tabla META_TIER (S/A/B/C), 11 pares de sinergias, contrapicks y penalización anti-solapamiento. IA elige protocolos según meta-conocimiento en lugar de aleatoriamente.
-
-**Fuera de alcance en esta versión (complejidad alta, posponer):**
-- Tabla de transposición / memoización (permite depth 6-7)
-- Simulación de los ~47 efectos de carta no cubiertos en minimax
-- Modelado bayesiano completo del jugador
+Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la información según DEV_INSTRUCTIONS.md.
 
 ---
 
-### v2.1.1 — Rules Audit (RULES-AUDIT.md)
+## IA
 
-**Objetivo:** Corregir discrepancias entre reglas oficiales aclaradas en el Discord del diseñador y la implementación digital.
-Fuente: canal `#rules-questions` del Discord oficial.
+- **Mejorar evaluación de efectos complejos** — La IA no evalúa correctamente jugadas que disparan cadenas de efectos (por ejemplo, cartas que encadenan robo, descarte o volteo). Impacta la calidad de decisión en niveles 4-5.
 
-- [x] **C-01 · Muerte 1 protegida de efectos externos** — `getPersistentModifiers` ahora lee `persistent.immobile` y expone `preventFlip/Shift/Eliminate`. Checks añadidos en player y AI para flip, shift y eliminate.
-- [x] **C-02 · Velocidad 2 se desplaza al compilar** — Ya estaba funcionando correctamente. Verificado.
-- [x] **C-03 · Robo del oponente baraja mazo vacío** — `compileLine`, `drawFromOpponentDeck`, `swapTopDeckCards` y Diversidad re-compile ahora llaman a `shuffleDiscardIntoDeck` (que baraja y dispara onDeckShuffle) en lugar de inline shuffle sin trigger.
-- [x] **I-01 · Tiempo 2 dispara después del refresh completo** — `drawCard` marca `pendingDeckShuffle` al barajar automáticamente; `continueEndTurn` lo procesa tras el ciclo de robo + caché.
-- [x] **I-02 · Barajado causado por el oponente dispara Tiempo 2** — Todos los reshuffles externos usan `shuffleDiscardIntoDeck(owner)`, que ya llama a `onDeckShuffleEffects`.
-- [x] **I-03 · Limpiar caché dispara efectos de descarte** — `processHandSelection` (player) y el loop de caché IA llaman a `onOpponentDiscardEffects` y `onOwnDiscardEffects`. `onForcedDiscard` excluido intencionalmente (Paz 4 requiere turno del oponente).
-- [x] **I-04 · Luz 0 usa valor de carta aunque sea eliminada** — Verificado correcto. `_drawByFlippedValue` lee `gameState.lastFlippedCard.cardObj.card.valor`, referencia que sobrevive a la eliminación.
-- [x] **I-05 · Muerte 2 elimina cartas cubiertas** — Verificado correcto. Ambas rutas (player/AI) iteran la pila completa con `forEach`.
+- **Estrategia de draft** — La lógica actual de `aiScoreDraftProtocol` no tiene en cuenta el estado de la partida en curso (qué protocolos ya tiene el rival, cuáles son más probables de compilar antes). Mejorar para considerar contexto de partida real.
 
 ---
 
-### v2.2.0 (Polish)
-- [ ] Animaciones de descarte y robo.
-- [ ] Sonidos básicos de interfaz.
-- [ ] Refactorización del sistema de modales.
+## UI / UX
 
-### v3.0.0 (Control Component)
-- [ ] Implementación del componente de control (regla avanzada).
-- [ ] Documentación de diseño en `docs/FASE-3-CONTROL.md`.
+- **Animaciones de descarte y robo** — Sin animación al mover cartas entre zonas.
+- **Sonidos básicos de interfaz** — Sin feedback sonoro.
+- **Refactorización del sistema de modales** — Varios modales comparten lógica duplicada; unificar en un sistema reutilizable.
 
-### v4.0.0 (Polish & Social)
-- [ ] Sistema de guardado local (localStorage).
-- [ ] Historial de partidas.
-- [ ] Log de eventos detallado.
+---
+
+## v3.0.0 — Control Component (avanzado)
+
+- **Documentación de diseño** — Crear `docs/FASE-3-CONTROL.md` con diseño detallado antes de implementar.
+
+---
+
+## v4.0.0 — Polish & Social
+
+- **Guardado local** — Persistir estado de partida en `localStorage`.
+- **Historial de partidas** — Log de resultados anteriores.
+- **Log de eventos detallado** — Registro por turno de todas las jugadas.

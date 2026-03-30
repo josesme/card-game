@@ -15,18 +15,28 @@
 - Lanzar los tests (`npm test`) al terminar cada cambio para verificar que todo funciona.
 - No mergear/pushear sin tests pasando.
 
-## Backlog y documentación
+## Backlog
 
-- Antes de listar algo como "pendiente", verificar en el código si ya está implementado.
-- Al cerrar una tarea, actualizar `docs/BACKLOG.md` y mover a "Completado".
-- No duplicar en el backlog cosas que ya se pueden derivar del código o git history.
+`docs/BACKLOG.md` es un backlog real: **solo contiene trabajo pendiente**. No hay secciones de "completado", "recientemente cerrado" ni historial.
 
-## Documentación durante el desarrollo
+- Cada entrada: título breve + una/dos líneas de descripción. Sin detalles de implementación.
+- Antes de añadir algo, verificar que no esté ya implementado en el código.
+- Al completar una tarea: **eliminarla del backlog** y distribuir la información según las reglas de documentación abajo.
+- Tamaño de entrada: puede ser épica, user story o funcionalidad concreta — lo que corresponda.
 
-- Regla de juego resuelta o edge case aclarado → actualizar `docs/CODEX.md` en el momento.
-- Decisión técnica o de diseño no obvia → documentar en comentario inline con contexto del porqué.
+## Documentación al cerrar tareas
+
+Al terminar cualquier trabajo, seguir estas reglas según el tipo de cambio:
+
+| Qué se cierra | Dónde va la información |
+|---------------|------------------------|
+| Regla de juego resuelta o FAQ aclarado | `docs/CODEX.md` — actualizar en el momento |
+| Fix puntual o tarea menor | Solo el mensaje de commit. Nada más. |
+| Cierre de bloque / milestone | `CHANGELOG.md` — nueva entrada con descripción + actualizar número de versión en `src/index.html` |
+| Cambio mayor o redefinición de arquitectura | `README.md` — actualizar la sección correspondiente |
+
+- Decisión técnica no obvia → comentario inline con contexto del porqué.
 - No dejar la documentación para el final de la sesión; documentar al resolver.
-- **CHANGELOG.md:** Actualizar al cerrar cada milestone o versión. Ver sección específica más abajo.
 
 ## CSS — debugging de estilos que no se aplican
 
@@ -41,7 +51,7 @@
 2. **Planificar** → Para tareas complejas, usar `todo_write` para trackear pasos.
 3. **Implementar** → Hacer cambios mínimos y focalizados.
 4. **Verificar** → `npm test` + revisar visualmente si aplica.
-5. **Documentar** → Actualizar BACKLOG, CODEX, CHANGELOG, o comentarios según corresponda.
+5. **Documentar** → Eliminar del BACKLOG. Distribuir info según tabla de "Documentación al cerrar tareas".
 6. **Commit** → Mensaje descriptivo, push inmediato.
 
 ---
@@ -52,12 +62,12 @@ El archivo `CHANGELOG.md` centraliza el historial del proyecto de forma resumida
 
 ### Cuándo Actualizar
 
+Solo al cerrar un **bloque o milestone** (no por cada fix puntual — esos van solo en el commit).
+
 | Situación | Acción |
 |-----------|--------|
-| **Cada milestone completado** | Añadir entrada en versión correspondiente |
+| **Milestone completado** | Nueva entrada en versión correspondiente + actualizar versión en `src/index.html` |
 | **Nueva versión taggeada** | Crear nueva sección `<details>` para esa versión |
-| **Bug fix importante** | Listar en la versión actual bajo "Bugs Corregidos" |
-| **Feature completada** | Listar en "Cambios Implementados" |
 | **Documento nuevo creado** | Añadir en "Archivos Relacionados" |
 
 ### Formato de Entrada
@@ -100,15 +110,12 @@ Al completar una tarea del backlog:
    feat(ai): resource depletion penalty for level 5
    ```
 
-2. **Actualizar CHANGELOG.md** (sección de versión actual):
+2. **Actualizar CHANGELOG.md** si cierra un bloque (sección de versión actual):
    ```markdown
    - ✅ **AI-06:** Penalización por deck vacío — nivel 5 gestiona recursos
    ```
 
-3. **Actualizar BACKLOG.md** (mover a "Completado"):
-   ```markdown
-   - [x] **AI-06 · Nivel 5 · Penalización por deck vacío**
-   ```
+3. **Eliminar la entrada del BACKLOG.md** (no mover, eliminar).
 
 ### Reglas
 
