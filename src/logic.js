@@ -85,6 +85,7 @@ let gameState = {
     currentTriggerCard: null,                               // nombre de la carta que disparó el efecto activo
     pendingCheckCompile: null,                              // set en startTurn; avanza a checkCompilePhase cuando la cola de efectos se vacía
     revealedPlayerCards: [],                                // cartas reveladas por Amor 4 — visibles para la IA
+    controlComponent: null,                                 // null = neutral, 'player' o 'ai' = dueño actual
 };
 
 function createDeckForPlayer(target) {
@@ -589,6 +590,21 @@ function updateUI() {
     hideCardPreview(); // Limpiar preview flotante al re-renderizar el campo
 
 
+    // Control Component indicator
+    const controlEl = document.getElementById('control-indicator');
+    if (controlEl) {
+        if (gameState.controlComponent === 'player') {
+            controlEl.textContent = 'CTRL △';
+            controlEl.style.color = 'var(--player-primary)';
+        } else if (gameState.controlComponent === 'ai') {
+            controlEl.textContent = 'CTRL △';
+            controlEl.style.color = 'var(--ui-pink)';
+        } else {
+            controlEl.textContent = '△';
+            controlEl.style.color = 'var(--ui-dim)';
+        }
+    }
+
     // Update deck/trash counts (query fresh to avoid stale references)
     const playerDeckEl = document.getElementById('player-deck-count');
     const playerTrashEl = document.getElementById('player-trash-count');
@@ -900,6 +916,25 @@ function startTurn(who) {
     }
     // Si no hubo efectos (cola vacía), avanzar manualmente
     if (typeof processAbilityEffect === 'function') processAbilityEffect();
+}
+
+function checkControlPhase(who) {
+    const opp = who === 'player' ? 'ai' : 'player';
+    const linesWon = LINES.filter(line =>
+        calculateScore(gameState, line, who) > calculateScore(gameState, line, opp)
+    ).length;
+
+    if (linesWon >= 2) {
+        const gained = gameState.controlComponent !== who;
+        gameState.controlComponent = who;
+        if (gained) {
+            updateStatus(`${who === 'player' ? 'Obtienes' : 'IA obtiene'} el Control Component`);
+            updateUI();
+        }
+    }
+    // Si el jugador activo no gana ≥2 líneas, el control queda como estaba
+
+    checkCompilePhase(who);
 }
 
 function checkCompilePhase(who) {
@@ -1707,7 +1742,7 @@ function finishEffect() {
     } else if (gameState.effectQueue.length === 0 && gameState.pendingCheckCompile) {
         const who = gameState.pendingCheckCompile;
         gameState.pendingCheckCompile = null;
-        setTimeout(() => checkCompilePhase(who), 600);
+        setTimeout(() => checkControlPhase(who), 600);
     } else if (gameState.effectQueue.length === 0 && gameState.pendingStartTurn) {
         const next = gameState.pendingStartTurn;
         gameState.pendingStartTurn = null;
