@@ -891,15 +891,10 @@ function renderStack(line, target) {
         stackEl.appendChild(wrapper);
 
         // Animar entrada de la última carta si hay una jugada pendiente para esta línea/lado
-        if (idx === stack.length - 1) {
-            console.log('[RS-ANIM] last card. pending=', JSON.stringify(window._animPendingField), 'line=', line, 'target=', target);
-            if (window._animPendingField &&
-                window._animPendingField.line === line && window._animPendingField.target === target) {
-                window._animPendingField = null;
-                console.log('[RS-ANIM] FIRING animCardEnter on', domCard);
-                domCard.style.outline = '3px solid red'; // test visual sin GSAP
-                if (typeof window.animCardEnter === 'function') window.animCardEnter(domCard, target === 'ai');
-            }
+        if (idx === stack.length - 1 && window._animPendingField &&
+            window._animPendingField.line === line && window._animPendingField.target === target) {
+            window._animPendingField = null;
+            domCard.classList.add('card-entering');
         }
     });
 }
@@ -2539,9 +2534,10 @@ function playAITurn() {
         });
 
         // Ejecutar el movimiento elegido y terminar turno
+        // Delay de 400ms: da tiempo a la animación CSS de entrada de carta y mejora legibilidad de la jugada
         executeAIMove(move);
         console.log('Estado final del juego tras movimiento de IA:', JSON.stringify(gameState));
-        endTurn('ai');
+        setTimeout(() => endTurn('ai'), 400);
 
     } catch (error) {
         // Fallback: Si IA falla, juega aleatorio (playAITurnRandom llama endTurn)
@@ -2578,7 +2574,6 @@ function playAITurnRandom() {
         gameState.field[targetLine].ai.push({ card: movedCard, faceDown: isFaceDown });
         checkDeleteOnCover(targetLine, 'ai');
         window._animPendingField = { line: targetLine, target: 'ai' };
-        console.log('[ANIM-SET] playAITurnRandom flag=', JSON.stringify(window._animPendingField));
         updateStatus(`IA jugó 1 carta ${isFaceDown ? 'bocabajo' : movedCard.nombre + ' bocarriba'} en ${targetLine}`);
         console.log('Estado final del juego tras fallback aleatorio:', JSON.stringify(gameState));
     } else {
@@ -2693,7 +2688,6 @@ function executeAIMove(move) {
     });
     checkDeleteOnCover(move.line, landSide);
     window._animPendingField = { line: move.line, target: landSide };
-    console.log('[ANIM-SET] executeAIMove flag=', JSON.stringify(window._animPendingField), 'stack size=', gameState.field[move.line][landSide].length);
     updateUI();
 
     const sideText = landSide !== 'ai' ? ' (lado rival)' : '';
