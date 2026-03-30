@@ -889,6 +889,13 @@ function renderStack(line, target) {
 
         wrapper.appendChild(domCard);
         stackEl.appendChild(wrapper);
+
+        // Animar entrada de la última carta si hay una jugada pendiente para esta línea/lado
+        if (idx === stack.length - 1 && window._animPendingField &&
+            window._animPendingField.line === line && window._animPendingField.target === target) {
+            window._animPendingField = null;
+            if (typeof window.animCardEnter === 'function') window.animCardEnter(domCard, target === 'ai');
+        }
     });
 }
 
@@ -2361,7 +2368,7 @@ function finalizePlay(targetLine, isFaceDown) {
     }
     gameState.field[targetLine][targetSide].push(playedCard);
     checkDeleteOnCover(targetLine, targetSide);
-    window.queueAnim?.({ type: 'fieldCard', line: targetLine, target: targetSide });
+    window._animPendingField = { line: targetLine, target: targetSide };
     updateUI(); // Sincronizar DOM antes de disparar efectos (necesario para efectos interactivos como Agua 4)
 
     console.log(`✅ Card played: ${card.nombre} on ${targetLine} (${isFaceDown ? 'face-down' : 'face-up'})`);
@@ -2565,7 +2572,7 @@ function playAITurnRandom() {
         const movedCard = gameState.ai.hand.splice(cardIdx, 1)[0];
         gameState.field[targetLine].ai.push({ card: movedCard, faceDown: isFaceDown });
         checkDeleteOnCover(targetLine, 'ai');
-        window.queueAnim?.({ type: 'fieldCard', line: targetLine, target: 'ai' });
+        window._animPendingField = { line: targetLine, target: 'ai' };
         updateStatus(`IA jugó 1 carta ${isFaceDown ? 'bocabajo' : movedCard.nombre + ' bocarriba'} en ${targetLine}`);
         console.log('Estado final del juego tras fallback aleatorio:', JSON.stringify(gameState));
     } else {
@@ -2679,7 +2686,7 @@ function executeAIMove(move) {
         faceDown: !move.faceUp
     });
     checkDeleteOnCover(move.line, landSide);
-    window.queueAnim?.({ type: 'fieldCard', line: move.line, target: landSide });
+    window._animPendingField = { line: move.line, target: landSide };
     updateUI();
 
     const sideText = landSide !== 'ai' ? ' (lado rival)' : '';

@@ -24,6 +24,9 @@
         );
     }
 
+    // Expuesta globalmente para llamada directa desde renderStack
+    window.animCardEnter = animCardEnterField;
+
     function animCardEnterHand(el, delay) {
         if (!el || typeof gsap === 'undefined') return;
         gsap.fromTo(el,
@@ -78,13 +81,8 @@
 
         q.forEach(function (anim) {
             if (anim.type === 'fieldCard') {
-                var stackEl = document.querySelector('#line-' + anim.line + ' .' + anim.target + '-stack');
-                console.log('[ANIM] fieldCard', anim.line, anim.target, '→ stackEl:', stackEl);
-                if (!stackEl) return;
-                var cards = stackEl.querySelectorAll('.field-card, .card');
-                var last = cards[cards.length - 1];
-                console.log('[ANIM] cards found:', cards.length, '→ animating:', last);
-                if (last) animCardEnterField(last, anim.target === 'ai');
+                // fieldCard ahora se anima directamente desde renderStack via window.animCardEnter
+                // Este path ya no se usa para fieldCard pero se mantiene por compatibilidad
             }
 
             if (anim.type === 'compile') {
