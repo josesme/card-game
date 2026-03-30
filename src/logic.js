@@ -86,6 +86,7 @@ let gameState = {
     pendingCheckCompile: null,                              // set en startTurn; avanza a checkCompilePhase cuando la cola de efectos se vacía
     revealedPlayerCards: [],                                // cartas reveladas por Amor 4 — visibles para la IA
     controlComponent: null,                                 // null = neutral, 'player' o 'ai' = dueño actual
+    pendingControlResume: null,                             // { who, action } — resume tras rearrange de Control Component
 };
 
 function createDeckForPlayer(target) {
@@ -918,6 +919,64 @@ function startTurn(who) {
     if (typeof processAbilityEffect === 'function') processAbilityEffect();
 }
 
+function resumeControlAction(action, who) {
+    if (action === 'endTurn') {
+        setTimeout(() => endTurn(who), 300);
+    } else if (action === 'doRefreshAndContinue') {
+        if (typeof onRefreshEffects === 'function') onRefreshEffects(who);
+        if (typeof onOpponentRefreshEffects === 'function') onOpponentRefreshEffects(who);
+        if (gameState.effectContext || gameState.effectQueue.length > 0) {
+            gameState.pendingStartTurn = (who === 'player' ? 'ai' : 'player');
+            return;
+        }
+        setTimeout(() => startTurn(who === 'player' ? 'ai' : 'player'), 1000);
+    }
+}
+
+function offerControlRearrange(who, resumeAction) {
+    gameState.controlComponent = null;
+    updateUI();
+
+    if (who === 'ai') {
+        // IA: por ahora pasa (paso 4 añadirá lógica de reorganización)
+        resumeControlAction(resumeAction, who);
+        return;
+    }
+
+    // Jugador: mostrar diálogo de elección
+    const confirmArea = document.getElementById('command-confirm');
+    if (!confirmArea) { resumeControlAction(resumeAction, who); return; }
+    const confirmMsg = document.getElementById('confirm-msg');
+    const actionsDiv = confirmArea.querySelector('.effect-actions');
+
+    if (confirmMsg) confirmMsg.textContent = 'Control Component: ¿Reorganizas protocolos?';
+    if (actionsDiv) actionsDiv.innerHTML = `
+        <button class="ui-btn" id="btn-ctrl-mine">MIS PROTOCOLOS</button>
+        <button class="ui-btn ui-btn--danger" id="btn-ctrl-rival">PROTOCOLOS RIVALES</button>
+        <button class="ui-btn" id="btn-ctrl-skip">SALTAR</button>
+    `;
+    confirmArea.classList.remove('hidden');
+
+    gameState.pendingControlResume = { who, action: resumeAction };
+
+    const restore = () => {
+        if (actionsDiv) actionsDiv.innerHTML = `
+            <button class="ui-btn" id="btn-confirm-yes">ACEPTAR</button>
+            <button class="ui-btn ui-btn--danger" id="btn-confirm-no">CANCELAR</button>
+        `;
+        confirmArea.classList.add('hidden');
+    };
+
+    document.getElementById('btn-ctrl-mine').onclick = () => { restore(); startEffect('rearrange', 'player', 1); };
+    document.getElementById('btn-ctrl-rival').onclick = () => { restore(); startEffect('rearrange', 'ai', 1); };
+    document.getElementById('btn-ctrl-skip').onclick = () => {
+        restore();
+        const resume = gameState.pendingControlResume;
+        gameState.pendingControlResume = null;
+        if (resume) resumeControlAction(resume.action, resume.who);
+    };
+}
+
 function checkControlPhase(who) {
     const opp = who === 'player' ? 'ai' : 'player';
     const linesWon = LINES.filter(line =>
@@ -975,7 +1034,13 @@ function checkCompilePhase(who) {
             updateStatus('Velocidad 2: elige línea donde cambiar la carta');
             highlightSelectableLines(sourceLine);
         } else {
-            setTimeout(() => endTurn(who), 2000);
+            setTimeout(() => {
+                if (gameState.controlComponent === who) {
+                    offerControlRearrange(who, 'endTurn');
+                } else {
+                    endTurn(who);
+                }
+            }, 2000);
         }
     } else {
         console.log(`✅ No compilations, moving to action phase`);
@@ -1733,6 +1798,14 @@ function finishEffect() {
         const who = gameState.pendingEndTurnFor;
         gameState.pendingEndTurnFor = null;
         continueEndTurn(who);
+        return;
+    }
+
+    // If this was a Control Component rearrange, resume the original flow
+    if (gameState.pendingControlResume) {
+        const { who, action } = gameState.pendingControlResume;
+        gameState.pendingControlResume = null;
+        resumeControlAction(action, who);
         return;
     }
 
@@ -2645,6 +2718,11 @@ function continueEndTurn(who) {
     // Velocidad 1: si este jugador usó Refresh este turno, roba 1 carta extra DESPUÉS del cache check
     if (gameState.refreshedThisTurn === who) {
         gameState.refreshedThisTurn = null;
+        // Control Component: ofrecer reorganización al actualizar antes de los efectos de refresh
+        if (gameState.controlComponent === who) {
+            offerControlRearrange(who, 'doRefreshAndContinue');
+            return;
+        }
         if (typeof onRefreshEffects === 'function') onRefreshEffects(who);
         if (typeof onOpponentRefreshEffects === 'function') onOpponentRefreshEffects(who);
     }
