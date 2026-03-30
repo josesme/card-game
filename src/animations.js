@@ -11,9 +11,16 @@
 
     function animCardEnterField(el, fromTop) {
         if (!el || typeof gsap === 'undefined') return;
+        // Desactivar CSS transition durante GSAP — evita conflicto con "transition: all 0.3s"
+        var prevTransition = el.style.transition;
+        el.style.transition = 'none';
         gsap.fromTo(el,
             { scale: 0.6, opacity: 0, y: fromTop ? -24 : 24 },
-            { scale: 1, opacity: 1, y: 0, duration: 0.32, ease: 'back.out(1.7)', clearProps: 'transform,opacity' }
+            {
+                scale: 1, opacity: 1, y: 0, duration: 0.32, ease: 'back.out(1.7)',
+                clearProps: 'transform,opacity',
+                onComplete: function () { el.style.transition = prevTransition; }
+            }
         );
     }
 
@@ -27,20 +34,30 @@
 
     function animCompileLine(lineId) {
         if (typeof gsap === 'undefined') return;
-        // Animar el proto-box compilado (el que acababa de cerrarse)
-        const lineEl = document.getElementById(`line-${lineId}`);
+        // #line-* tiene display:contents — usar battle-column (su padre) como target visual
+        var lineEl = document.getElementById('line-' + lineId);
         if (!lineEl) return;
-        const parent = lineEl.parentElement || lineEl;
-        gsap.timeline()
-            .to(parent, { scale: 1.05, duration: 0.12, ease: 'power3.out' })
-            .to(parent, { scale: 1, duration: 0.35, ease: 'elastic.out(1.2, 0.4)' });
+        var col = lineEl.parentElement; // div.battle-column
+        if (!col) return;
 
-        // Flash blanco sobre la línea
-        const flash = document.createElement('div');
-        flash.style.cssText = 'position:absolute;inset:0;background:#fff;pointer-events:none;z-index:999;border-radius:8px;';
-        parent.style.position = 'relative';
-        parent.appendChild(flash);
-        gsap.to(flash, { opacity: 0, duration: 0.4, ease: 'power2.out', onComplete: () => flash.remove() });
+        // Bounce elástico de la columna
+        gsap.timeline()
+            .to(col, { scale: 1.05, duration: 0.12, ease: 'power3.out' })
+            .to(col, { scale: 1, duration: 0.4, ease: 'elastic.out(1.2, 0.4)' });
+
+        // Flash cyan sobre la columna (temático)
+        var flash = document.createElement('div');
+        flash.style.cssText = 'position:absolute;inset:0;background:rgba(0,245,255,0.35);pointer-events:none;z-index:999;border-radius:8px;';
+        var prevPos = col.style.position;
+        col.style.position = 'relative';
+        col.appendChild(flash);
+        gsap.to(flash, {
+            opacity: 0, duration: 0.5, ease: 'power2.out',
+            onComplete: function () {
+                flash.remove();
+                col.style.position = prevPos;
+            }
+        });
     }
 
     // ------------------------------------------------------------------
