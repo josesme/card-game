@@ -79,10 +79,11 @@
         q.forEach(function (anim) {
             if (anim.type === 'fieldCard') {
                 var stackEl = document.querySelector('#line-' + anim.line + ' .' + anim.target + '-stack');
+                console.log('[ANIM] fieldCard', anim.line, anim.target, '→ stackEl:', stackEl);
                 if (!stackEl) return;
-                // La última carta del stack es la recién jugada
                 var cards = stackEl.querySelectorAll('.field-card, .card');
                 var last = cards[cards.length - 1];
+                console.log('[ANIM] cards found:', cards.length, '→ animating:', last);
                 if (last) animCardEnterField(last, anim.target === 'ai');
             }
 
