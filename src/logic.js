@@ -599,10 +599,10 @@ function updateUI() {
             controlEl.style.color = 'var(--player-primary)';
         } else if (gameState.controlComponent === 'ai') {
             controlEl.textContent = 'CTRL △';
-            controlEl.style.color = 'var(--ui-pink)';
+            controlEl.style.color = 'var(--ui-purple)';
         } else {
             controlEl.textContent = '△';
-            controlEl.style.color = 'var(--ui-dim)';
+            controlEl.style.color = '#2a3050';
         }
     }
 
@@ -933,12 +933,64 @@ function resumeControlAction(action, who) {
     }
 }
 
+/**
+ * Decide si la IA debe reorganizar sus propios protocolos o los del rival.
+ * Devuelve 'ai', 'player' o null (saltar).
+ */
+function aiShouldRearrangeControl() {
+    // --- Ganancia propia: ¿cuántas cartas de mano se pueden jugar bocarriba antes y después? ---
+    const countPlayable = (owner) => {
+        const protos = gameState[owner].protocols;
+        return gameState[owner].hand.filter(c => protos.includes(c.protocol)).length;
+    };
+    const findBestSwap = (owner) => {
+        const protos = [...gameState[owner].protocols];
+        const hand = gameState[owner].hand;
+        if (hand.length === 0 || protos.length < 2) return 0;
+        const best = hand.reduce((b, c) => c.valor > b.valor ? c : b, hand[0]);
+        const bestProtoIdx = protos.indexOf(best.protocol);
+        if (bestProtoIdx < 0) return 0;
+        const bestLineIdx = LINES
+            .map((l, i) => ({ i, score: calculateScore(gameState, l, owner) - calculateScore(gameState, l, owner === 'ai' ? 'player' : 'ai') }))
+            .sort((a, b) => b.score - a.score)[0].i;
+        if (bestProtoIdx === bestLineIdx) return 0; // ya alineado
+        // Simular swap
+        [protos[bestProtoIdx], protos[bestLineIdx]] = [protos[bestLineIdx], protos[bestProtoIdx]];
+        const after = gameState['ai'].hand.filter(c => protos.includes(c.protocol)).length;
+        const before = countPlayable('ai');
+        return after - before;
+    };
+
+    const ownGain = findBestSwap('ai');
+
+    // --- Disrupción rival: ¿cuántas de sus cartas conocidas dejarían de ser jugables? ---
+    const oppPlayable = countPlayable('player');
+    const oppProtos = [...gameState.player.protocols];
+    let maxDisruption = 0;
+    for (let i = 0; i < oppProtos.length - 1; i++) {
+        for (let j = i + 1; j < oppProtos.length; j++) {
+            [oppProtos[i], oppProtos[j]] = [oppProtos[j], oppProtos[i]];
+            const after = gameState.player.hand.filter(c => oppProtos.includes(c.protocol)).length;
+            const disruption = oppPlayable - after;
+            if (disruption > maxDisruption) maxDisruption = disruption;
+            [oppProtos[i], oppProtos[j]] = [oppProtos[j], oppProtos[i]]; // revert
+        }
+    }
+
+    if (ownGain <= 0 && maxDisruption <= 0) return null;
+    return ownGain >= maxDisruption ? 'ai' : 'player';
+}
+
 function offerControlRearrange(who, resumeAction) {
     gameState.controlComponent = null;
     updateUI();
 
     if (who === 'ai') {
-        // IA: por ahora pasa (paso 4 añadirá lógica de reorganización)
+        const target = aiShouldRearrangeControl();
+        if (target) {
+            updateStatus(`IA usa el Control Component para reorganizar protocolos ${target === 'ai' ? 'propios' : 'rivales'}`);
+            resolveEffectAI('rearrange', target, 1, {});
+        }
         resumeControlAction(resumeAction, who);
         return;
     }
