@@ -2578,6 +2578,7 @@ function playAITurnRandom() {
         gameState.field[targetLine].ai.push({ card: movedCard, faceDown: isFaceDown });
         checkDeleteOnCover(targetLine, 'ai');
         window._animPendingField = { line: targetLine, target: 'ai' };
+        console.log('[ANIM-SET] playAITurnRandom flag=', JSON.stringify(window._animPendingField));
         updateStatus(`IA jugó 1 carta ${isFaceDown ? 'bocabajo' : movedCard.nombre + ' bocarriba'} en ${targetLine}`);
         console.log('Estado final del juego tras fallback aleatorio:', JSON.stringify(gameState));
     } else {
@@ -2692,6 +2693,7 @@ function executeAIMove(move) {
     });
     checkDeleteOnCover(move.line, landSide);
     window._animPendingField = { line: move.line, target: landSide };
+    console.log('[ANIM-SET] executeAIMove flag=', JSON.stringify(window._animPendingField), 'stack size=', gameState.field[move.line][landSide].length);
     updateUI();
 
     const sideText = landSide !== 'ai' ? ' (lado rival)' : '';
