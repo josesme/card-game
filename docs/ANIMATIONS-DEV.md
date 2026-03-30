@@ -31,6 +31,8 @@ de 400ms que ya tiene la IA antes de `endTurn`.
 Abrir DevTools (F12) → pestaña Console → pegar el snippet deseado.
 Las animaciones se aplican sobre cartas existentes en mesa.
 
+> ⚠️ Nunca usar `clearProps: 'all'` — elimina los estilos inline de la carta (border-color, box-shadow) y rompe la imagen. Usar siempre `clearProps: 'transform,opacity'`.
+
 ### Objetivo rápido
 
 ```javascript
@@ -49,7 +51,7 @@ const hCard = document.querySelector('#player-hand .card');
 const el = document.querySelector('.player-stack .card');
 el.style.transition = 'none';
 gsap.fromTo(el, { scale: 0.55, opacity: 0, y: -18 },
-  { scale: 1, opacity: 1, y: 0, duration: 0.35, ease: 'back.out(1.7)', clearProps: 'all' });
+  { scale: 1, opacity: 1, y: 0, duration: 0.35, ease: 'back.out(1.7)', clearProps: 'transform,opacity', onComplete: () => el.style.transition = '' });
 ```
 
 ### A2 — Entrada suave (fade simple)
@@ -57,7 +59,7 @@ gsap.fromTo(el, { scale: 0.55, opacity: 0, y: -18 },
 const el = document.querySelector('.player-stack .card');
 el.style.transition = 'none';
 gsap.fromTo(el, { opacity: 0, y: -10 },
-  { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out', clearProps: 'all' });
+  { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out', clearProps: 'transform,opacity', onComplete: () => el.style.transition = '' });
 ```
 
 ### A3 — Entrada desde el lado (slide)
@@ -65,7 +67,7 @@ gsap.fromTo(el, { opacity: 0, y: -10 },
 const el = document.querySelector('.player-stack .card');
 el.style.transition = 'none';
 gsap.fromTo(el, { opacity: 0, x: -40, scale: 0.9 },
-  { opacity: 1, x: 0, scale: 1, duration: 0.3, ease: 'power3.out', clearProps: 'all' });
+  { opacity: 1, x: 0, scale: 1, duration: 0.3, ease: 'power3.out', clearProps: 'transform,opacity', onComplete: () => el.style.transition = '' });
 ```
 
 ### A4 — Entrada con rotación (lanzamiento)
@@ -73,7 +75,7 @@ gsap.fromTo(el, { opacity: 0, x: -40, scale: 0.9 },
 const el = document.querySelector('.player-stack .card');
 el.style.transition = 'none';
 gsap.fromTo(el, { opacity: 0, rotation: -8, scale: 0.7, y: -20 },
-  { opacity: 1, rotation: 0, scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.4)', clearProps: 'all' });
+  { opacity: 1, rotation: 0, scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.4)', clearProps: 'transform,opacity', onComplete: () => el.style.transition = '' });
 ```
 
 ### A5 — Volteo 3D (flip reveal)
@@ -81,7 +83,7 @@ gsap.fromTo(el, { opacity: 0, rotation: -8, scale: 0.7, y: -20 },
 const el = document.querySelector('.player-stack .card');
 el.style.transition = 'none';
 gsap.fromTo(el, { rotationY: 90, opacity: 0.3 },
-  { rotationY: 0, opacity: 1, duration: 0.4, ease: 'power2.out', clearProps: 'all' });
+  { rotationY: 0, opacity: 1, duration: 0.4, ease: 'power2.out', clearProps: 'transform,opacity', onComplete: () => el.style.transition = '' });
 ```
 
 ### A6 — Aparición dramática (escala grande → normal)
@@ -89,7 +91,7 @@ gsap.fromTo(el, { rotationY: 90, opacity: 0.3 },
 const el = document.querySelector('.player-stack .card');
 el.style.transition = 'none';
 gsap.fromTo(el, { scale: 1.4, opacity: 0 },
-  { scale: 1, opacity: 1, duration: 0.35, ease: 'power3.out', clearProps: 'all' });
+  { scale: 1, opacity: 1, duration: 0.35, ease: 'power3.out', clearProps: 'transform,opacity', onComplete: () => el.style.transition = '' });
 ```
 
 ### A7 — Efecto compilación manual (para probar variantes)
