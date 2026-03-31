@@ -347,13 +347,12 @@
             overflow: hidden;
             clip-path: polygon(0 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%);
             z-index: 2;
+            display: flex;
+            align-items: center;
+            padding-left: 3px;
         }
-        .proto-box.proto-img .slot-title::before {
-            content: attr(data-text);
-            position: absolute;
-            left: 3px;
-            top: 50%;
-            transform: translateY(-50%) scaleX(0.82);
+        .proto-box.proto-img .slot-title-text {
+            transform: scaleX(0.82);
             transform-origin: left center;
             font-family: 'DoctorGlitch', sans-serif;
             font-size: 4.8cqw;
@@ -554,12 +553,14 @@
             overflow: hidden;
             clip-path: polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%);
         }
-        .slot-title::before {
-            content: attr(data-text);
-            position: absolute;
-            left: 4px;
-            top: 50%;
-            transform: translateY(-50%) scaleX(0.82);
+        .slot-title {
+            display: flex;
+            align-items: center;
+            padding-left: 4px;
+        }
+        .slot-title-text {
+            display: inline-block;
+            transform: scaleX(0.82);
             transform-origin: left center;
             font-family: 'DoctorGlitch', sans-serif;
             font-size: 4.8cqw;
@@ -625,11 +626,50 @@
         }
 
         @keyframes cardEnter {
-            from { transform: scale(0.55) translateY(-18px); opacity: 0; }
-            to   { transform: none; opacity: 1; }
+            from { clip-path: inset(0 0 100% 0); }
+            to   { clip-path: inset(0 0 0% 0); }
+        }
+        @keyframes scanLineV {
+            from { top: 0%; }
+            to   { top: 100%; }
         }
         .card-entering {
-            animation: cardEnter 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+            animation: cardEnter 0.7s linear both;
+            position: relative;
+        }
+        .card-entering::after {
+            content: '';
+            position: absolute;
+            left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(to right, transparent 0%, var(--ui-cyan, #00d4ff) 30%, #fff 50%, var(--ui-cyan, #00d4ff) 70%, transparent 100%);
+            box-shadow: 0 0 8px 2px var(--ui-cyan, #00d4ff);
+            animation: scanLineV 0.7s linear both;
+            pointer-events: none;
+            z-index: 10;
+        }
+        @keyframes cardEnterH {
+            from { clip-path: inset(0 100% 0 0); }
+            to   { clip-path: inset(0 0% 0 0); }
+        }
+        @keyframes scanLineH {
+            from { left: 0%; }
+            to   { left: 100%; }
+        }
+        .card-entering-h {
+            animation: cardEnterH 0.7s linear both;
+            position: relative;
+        }
+        .card-entering-h::after {
+            content: '';
+            position: absolute;
+            top: 0; bottom: 0;
+            width: 3px;
+            background: linear-gradient(to bottom, transparent 0%, var(--ui-cyan, #00d4ff) 30%, #fff 50%, var(--ui-cyan, #00d4ff) 70%, transparent 100%);
+            box-shadow: 0 0 8px 2px var(--ui-cyan, #00d4ff);
+            animation: scanLineH 0.7s linear both;
+            pointer-events: none;
+            z-index: 10;
         }
 
         /* ── NAV BUTTONS ────────────────────────────── */
@@ -1353,6 +1393,18 @@ function showHandSelectOverlay(type, count, ctx) {
 
     render();
     ov.classList.remove('hidden');
+    
+    // Apply scramble effect to card texts in overlay
+    setTimeout(function() {
+        if (window.scrTxt) {
+            document.querySelectorAll('#overlay-select .slot-title-text, #overlay-select .card-img-zone-text').forEach(function(el) {
+                const text = el.textContent.trim();
+                if (text) {
+                    window.scrTxt(el, text, { duration: 1.0, chars: el.classList.contains('slot-title-text') ? 'upperCase' : 'upperAndLowerCase' });
+                }
+            });
+        }
+    }, 50);
 }
 
 function closeHandSelectOverlay() {
@@ -1463,6 +1515,18 @@ function showFieldSelectOverlay(type, count, ctx) {
 
     render();
     ov.classList.remove('hidden');
+    
+    // Apply scramble effect to card texts in overlay
+    setTimeout(function() {
+        if (window.scrTxt) {
+            document.querySelectorAll('#overlay-select .slot-title-text, #overlay-select .card-img-zone-text').forEach(function(el) {
+                const text = el.textContent.trim();
+                if (text) {
+                    window.scrTxt(el, text, { duration: 1.0, chars: el.classList.contains('slot-title-text') ? 'upperCase' : 'upperAndLowerCase' });
+                }
+            });
+        }
+    }, 50);
 }
 
 /**
@@ -1724,6 +1788,8 @@ function processHandSelection(type, selectedSet, ctx) {
 
 <!-- Scripts -->
 <script src="gsap.min.js"></script>
+<script src="ScrambleText.min.js"></script>
+<script src="Flip.min.js"></script>
 <script src="cards-data.js"></script>
 <script src="ai-profiles.js"></script>
 <script src="ai-evaluator.js"></script>
@@ -1741,7 +1807,7 @@ function processHandSelection(type, selectedSet, ctx) {
             const last = log.querySelector('.log-latest');
             if (last) {
                 const txt = last.textContent.trim().replace(/^[•➔⚡🎴💀🔄🗑️💧☣️]\s*/, '');
-                bar.textContent = txt;
+                window.scrTxt ? window.scrTxt(bar, txt, { duration: 1.0, chars: 'upperCase' }) : (bar.textContent = txt);
                 bar.style.color = 'var(--ui-cyan)';
             }
         }).observe(log, { childList: true });
@@ -1838,6 +1904,49 @@ function processHandSelection(type, selectedSet, ctx) {
             }).observe(modal, { attributes: true, attributeFilter: ['class'] });
         });
     })();
+
+    // ── ScrambleText: etiquetas estáticas al cargar ─────────────────────────
+    window.addEventListener('load', function () {
+        if (typeof window._initModalScramble === 'function') window._initModalScramble();
+        if (typeof window.scrTxt !== 'function') return;
+
+        var delay = 0;
+        function stagger(el, dur, chars) {
+            if (!el) return;
+            var txt = (el.value !== undefined ? el.value : el.textContent || '').trim();
+            if (!txt) return;
+            setTimeout(function () { window.scrTxt(el, txt, { duration: dur || 1.0, chars: chars || 'upperCase' }); }, delay);
+            delay += 60;
+        }
+
+        // Stat labels (Mazo, Desc., Mano...)
+        document.querySelectorAll('.stat-label').forEach(function (e) { stagger(e, 0.5); });
+
+        // Etiquetas JUG / IA (spans con color inline en hand-bar)
+        document.querySelectorAll('#hand-overlay .hand-bar-inner span[style*="color"]').forEach(function (e) {
+            if (e.textContent.trim().length <= 4) stagger(e, 0.5);
+        });
+
+        // Botones en hand-bar
+        ['player-deck-btn', 'btn-stop-discard'].forEach(function (id) { stagger(document.getElementById(id), 0.6); });
+
+        // Botones de cabecera (NUEVO DRAFT, ABANDONAR)
+        document.querySelectorAll('#game-container .ui-btn').forEach(function (e) { stagger(e, 0.6); });
+
+        // Modal estático: action-modal (JUGAR CARTA, BOCARRIBA, BOCABAJO, CANCELAR)
+        ['btn-play-up', 'btn-play-down', 'btn-cancel'].forEach(function (id) { stagger(document.getElementById(id), 0.6); });
+        document.querySelectorAll('#action-modal .effect-title').forEach(function (e) { stagger(e, 0.6); });
+
+        // Modal confirmación (ACEPTAR, CANCELAR)
+        ['btn-confirm-yes', 'btn-confirm-no'].forEach(function (id) { stagger(document.getElementById(id), 0.6); });
+        document.querySelectorAll('#command-confirm .effect-title').forEach(function (e) { stagger(e, 0.6); });
+
+        // Reveal modal static button
+        stagger(document.getElementById('btn-reveal-close'), 0.6);
+
+        // Log header
+        document.querySelectorAll('.log-header').forEach(function (e) { stagger(e, 0.5); });
+    });
 
     // Close log when clicking outside
     document.addEventListener('click', function(e) {

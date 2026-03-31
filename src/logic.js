@@ -358,11 +358,20 @@ function initProtocolDisplay() {
                 if (imgUrl) pCard.style.backgroundImage = `url('${imgUrl}')`;
                 const existingPTitle = pCard.querySelector('.slot-title');
                 if (imgUrl && existingPTitle) {
-                    existingPTitle.dataset.text = pProto;
+                    let textEl = existingPTitle.querySelector('.slot-title-text');
+                    if (!textEl) {
+                        textEl = document.createElement('span');
+                        textEl.className = 'slot-title-text';
+                        existingPTitle.appendChild(textEl);
+                    }
+                    textEl.textContent = pProto;
                 } else if (imgUrl && !existingPTitle) {
                     const t = document.createElement('div');
                     t.className = 'slot-title';
-                    t.dataset.text = pProto;
+                    const textEl = document.createElement('span');
+                    textEl.className = 'slot-title-text';
+                    textEl.textContent = pProto;
+                    t.appendChild(textEl);
                     pCard.appendChild(t);
                 }
             }
@@ -384,11 +393,20 @@ function initProtocolDisplay() {
                 if (imgUrl) aCard.style.backgroundImage = `url('${imgUrl}')`;
                 const existingATitle = aCard.querySelector('.slot-title');
                 if (imgUrl && existingATitle) {
-                    existingATitle.dataset.text = aProto;
+                    let textEl = existingATitle.querySelector('.slot-title-text');
+                    if (!textEl) {
+                        textEl = document.createElement('span');
+                        textEl.className = 'slot-title-text';
+                        existingATitle.appendChild(textEl);
+                    }
+                    textEl.textContent = aProto;
                 } else if (imgUrl && !existingATitle) {
                     const t = document.createElement('div');
                     t.className = 'slot-title';
-                    t.dataset.text = aProto;
+                    const textEl = document.createElement('span');
+                    textEl.className = 'slot-title-text';
+                    textEl.textContent = aProto;
+                    t.appendChild(textEl);
                     aCard.appendChild(t);
                 }
             }
@@ -557,7 +575,7 @@ function createCardHTML(card, faceDown = false) {
         const imgUrl = getCardImageUrl(card.protocol, card.valor);
         return `
         <div class="card card-img" data-id="${card.id}" style="border-color: ${color}; box-shadow: 0 0 15px ${color}33; background-image: url('${imgUrl}');">
-            <div class="slot-title" data-text="${card.nombre.replace(/\s+\d+$/, '')}"></div>
+            <div class="slot-title"><span class="slot-title-text">${card.nombre.replace(/\s+\d+$/, '')}</span></div>
             ${startText  ? `<div class="card-img-zone slot-start"><div class="card-img-zone-text">${startText}</div></div>` : ''}
             ${actionText ? `<div class="card-img-zone slot-action"><div class="card-img-zone-text">${actionText}</div></div>` : ''}
             ${endText    ? `<div class="card-img-zone slot-end"><div class="card-img-zone-text">${endText}</div></div>` : ''}
@@ -595,13 +613,13 @@ function updateUI() {
     const controlEl = document.getElementById('control-indicator');
     if (controlEl) {
         if (gameState.controlComponent === 'player') {
-            controlEl.textContent = 'CTRL △';
+            window.scrTxt ? window.scrTxt(controlEl, 'CTRL △', { duration: 1.0 }) : (controlEl.textContent = 'CTRL △');
             controlEl.style.color = 'var(--player-primary)';
         } else if (gameState.controlComponent === 'ai') {
-            controlEl.textContent = 'CTRL △';
+            window.scrTxt ? window.scrTxt(controlEl, 'CTRL △', { duration: 1.0 }) : (controlEl.textContent = 'CTRL △');
             controlEl.style.color = 'var(--ui-purple)';
         } else {
-            controlEl.textContent = '△';
+            window.scrTxt ? window.scrTxt(controlEl, '△', { duration: 1.0 }) : (controlEl.textContent = '△');
             controlEl.style.color = '#2a3050';
         }
     }
@@ -611,26 +629,28 @@ function updateUI() {
     const playerTrashEl = document.getElementById('player-trash-count');
     const aiDeckEl = document.getElementById('ai-deck-count');
     const aiTrashEl = document.getElementById('ai-trash-count');
-    if (playerDeckEl) playerDeckEl.innerText = gameState.player.deck.length;
-    if (playerTrashEl) playerTrashEl.innerText = gameState.player.trash.length;
-    if (aiDeckEl) aiDeckEl.innerText = gameState.ai.deck.length;
-    if (aiTrashEl) aiTrashEl.innerText = gameState.ai.trash.length;
+    const _s = (el, v) => window.scrTxt ? window.scrTxt(el, String(v), { duration: 1.0, chars: '0123456789' }) : (el.innerText = v);
+    if (playerDeckEl)  _s(playerDeckEl,  gameState.player.deck.length);
+    if (playerTrashEl) _s(playerTrashEl, gameState.player.trash.length);
+    if (aiDeckEl)      _s(aiDeckEl,      gameState.ai.deck.length);
+    if (aiTrashEl)     _s(aiTrashEl,     gameState.ai.trash.length);
 
-    // Update hands
-    if (ui.playerHand) {
-        ui.playerHand.innerHTML = gameState.player.hand.map(c => createCardHTML(c)).join('');
-        // No hover preview for hand cards — stacked preview via protocol cards is sufficient
+    // Update hands — skip rebuild si animación de entrada está corriendo
+    if (ui.playerHand && !window._handAnimating) {
+        ui.playerHand.innerHTML = gameState.player.hand
+            .map(c => createCardHTML(c))
+            .join('');
     }
     // AI hand: just show count
     const aiHandCountEl = document.getElementById('ai-hand-count');
     if (aiHandCountEl) {
         const n = gameState.ai.hand.length;
-        aiHandCountEl.textContent = n;
+        window.scrTxt ? window.scrTxt(aiHandCountEl, String(n), { duration: 1.0, chars: '0123456789' }) : (aiHandCountEl.textContent = n);
         aiHandCountEl.style.color = n === 0 ? '#ef4444' : 'var(--ui-pink)';
     }
     // V2: update hand count badge
     const handBadge = document.getElementById('hand-count-badge');
-    if (handBadge) handBadge.textContent = gameState.player.hand.length;
+    if (handBadge) { window.scrTxt ? window.scrTxt(handBadge, String(gameState.player.hand.length), { duration: 1.0, chars: '0123456789' }) : (handBadge.textContent = gameState.player.hand.length); }
     
     // Attach events to player hand
     document.querySelectorAll('#player-hand .card').forEach((cardEl, index) => {
@@ -684,6 +704,7 @@ function updateUI() {
                 gameState.field[ctx.line].player.push(cardObj);
                 gameState.effectContext = null;
                 updateStatus(`Juegas ${played.nombre} bocarriba en ${ctx.line} (Diversidad 0)`);
+                window._animPendingField = { line: ctx.line, target: 'player' };
                 updateUI();
                 if (typeof triggerCardEffect === 'function') {
                     gameState.currentEffectLine = ctx.line;
@@ -710,8 +731,8 @@ function updateUI() {
         // Try to update score display if it exists
         const pScoreEl = document.querySelector(`#proto-${line}-player .player-score`);
         const aiScoreEl = document.querySelector(`#proto-${line}-ai .ai-score`);
-        if (pScoreEl) pScoreEl.innerText = pScore;
-        if (aiScoreEl) aiScoreEl.innerText = aiScore;
+        if (pScoreEl)  { window.scrTxt ? window.scrTxt(pScoreEl,  String(pScore),  { duration: 1.0, chars: '0123456789' }) : (pScoreEl.innerText  = pScore);  }
+        if (aiScoreEl) { window.scrTxt ? window.scrTxt(aiScoreEl, String(aiScore), { duration: 1.0, chars: '0123456789' }) : (aiScoreEl.innerText = aiScore); }
 
         // Visual blocking indicators
         const lineEl = document.getElementById(`line-${line}`);
@@ -742,6 +763,19 @@ function updateUI() {
     });
 
     initProtocolDisplay();
+    
+    // Apply scramble effect to card text zones (slot-title-text and card-img-zone-text)
+    if (window.scrTxt) {
+        document.querySelectorAll('.slot-title-text').forEach(el => {
+            const text = el.textContent.trim();
+            if (text) window.scrTxt(el, text, { duration: 1.0, chars: 'upperCase' });
+        });
+        document.querySelectorAll('.card-img-zone-text').forEach(el => {
+            const text = el.textContent.trim();
+            if (text) window.scrTxt(el, text, { duration: 1.0, chars: 'upperAndLowerCase' });
+        });
+    }
+    
     checkWinCondition();
     if (typeof window.flushAnimQueue === 'function') window.flushAnimQueue();
 }
@@ -890,11 +924,16 @@ function renderStack(line, target) {
         wrapper.appendChild(domCard);
         stackEl.appendChild(wrapper);
 
-        // Animar entrada de la última carta si hay una jugada pendiente para esta línea/lado
+        // Animar entrada: (a) nueva carta jugada — _animPendingField en última posición
+        //                 (b) carta volteada — _animate en el cardObj directamente
         if (idx === stack.length - 1 && window._animPendingField &&
             window._animPendingField.line === line && window._animPendingField.target === target) {
             window._animPendingField = null;
             domCard.classList.add('card-entering');
+        } else if (cardObj._animateFlip) {
+            console.log('[FLIP ANIM] applying card-entering-h to', cardObj.card.nombre);
+            delete cardObj._animateFlip;
+            domCard.classList.add('card-entering-h');
         }
     });
 }
@@ -1009,7 +1048,7 @@ function offerControlRearrange(who, resumeAction) {
     const confirmMsg = document.getElementById('confirm-msg');
     const actionsDiv = confirmArea.querySelector('.effect-actions');
 
-    if (confirmMsg) confirmMsg.textContent = 'Control Component: ¿Reorganizas protocolos?';
+    if (confirmMsg) { window.scrTxt ? window.scrTxt(confirmMsg, 'Control Component: ¿Reorganizas protocolos?', { duration: 1.0 }) : (confirmMsg.textContent = 'Control Component: ¿Reorganizas protocolos?'); }
     if (actionsDiv) actionsDiv.innerHTML = `
         <button class="ui-btn" id="btn-ctrl-mine">MIS PROTOCOLOS</button>
         <button class="ui-btn ui-btn--danger" id="btn-ctrl-rival">PROTOCOLOS RIVALES</button>
@@ -1184,28 +1223,40 @@ function compileLine(line, who) {
 
 function showActionModal(handIndex) {
     console.log(`📋 showActionModal called. Check: turn=${gameState.turn}, phase=${gameState.phase}`);
-    
+
     if (gameState.turn !== 'player') {
         console.warn(`❌ Not player's turn: ${gameState.turn}`);
         return;
     }
-    
+
     if (gameState.phase !== 'action') {
         console.warn(`❌ Wrong phase: ${gameState.phase} (need 'action')`);
         return;
     }
-    
+
     gameState.selectedCardIndex = handIndex;
     const card = gameState.player.hand[handIndex];
-    
+
     console.log(`✅ Showing modal for: ${card.nombre}`);
-    
+
     if (!ui.modalCardPreview) {
         console.error('❌ modalCardPreview not found in DOM');
         return;
     }
-    
+
     ui.modalCardPreview.innerHTML = createCardHTML(card);
+    
+    // Apply scramble effect to card text in modal
+    setTimeout(function() {
+        if (window.scrTxt) {
+            ui.modalCardPreview.querySelectorAll('.slot-title-text, .card-img-zone-text').forEach(function(el) {
+                const text = el.textContent.trim();
+                if (text) {
+                    window.scrTxt(el, text, { duration: 1.0, chars: el.classList.contains('slot-title-text') ? 'upperCase' : 'upperAndLowerCase' });
+                }
+            });
+        }
+    }, 50);
     
     // Check if face-up play is legal: card protocol must match the line's protocol
     // ERRATA Espíritu 1: if allowAnyProtocol is active, any line is valid
@@ -1293,7 +1344,7 @@ function processNextEffect() {
     // Check for "puedes" (optional)
     if (text.includes("puedes") && targetPlayer === 'player') {
         ui.confirmArea.classList.remove('hidden');
-        ui.confirmMsg.innerText = `¿Quieres usar este efecto? "${text}"`;
+        window.scrTxt ? window.scrTxt(ui.confirmMsg, `¿Quieres usar este efecto? "${text}"`, { duration: 1.0 }) : (ui.confirmMsg.innerText = `¿Quieres usar este efecto? "${text}"`);
         ui.btnConfirmYes.onclick = () => {
             ui.confirmArea.classList.add('hidden');
             resolveSentence(text, targetPlayer, opponent);
@@ -1394,8 +1445,7 @@ function startEffect(type, target, count, opts = {}) {
                 const stack = gameState.field[l][p];
                 if (opts.coveredOnly) {
                     if (stack.length < 2) return false;
-                    // Con filtro + targetAll: verificar que alguna carta cubierta pase el filtro
-                    if (opts.targetAll && filterCtx.filter) {
+                    if (filterCtx.filter) {
                         return stack.slice(0, -1).some(c => cardMatchesFilter(c, filterCtx));
                     }
                     return true;
@@ -1616,18 +1666,28 @@ function handleFieldCardClick(line, target, cardIdx) {
             updateStatus(`${cardObj.card.nombre} no puede ser eliminada por efectos externos`);
             return;
         }
-        gameState.field[line][target].splice(cardIdx, 1);
-        gameState[target].trash.push(cardObj.card);
-        gameState.eliminatedSinceLastCheck[gameState.turn] = true;
-        ctx.selected.push(cardObj);
-        // Odio 2 tie-break: if the chosen card is NOT Odio 2 itself, queue opponent phase
-        if (ctx._checkSuicide) {
-            const { triggerCardName, queueEffect } = ctx._checkSuicide;
-            if (cardObj.card.nombre !== triggerCardName && queueEffect) {
-                gameState.effectQueue.unshift(queueEffect);
+        const _doElim = () => {
+            gameState.field[line][target].splice(cardIdx, 1);
+            gameState[target].trash.push(cardObj.card);
+            gameState.eliminatedSinceLastCheck[gameState.turn] = true;
+            ctx.selected.push(cardObj);
+            // Odio 2 tie-break: if the chosen card is NOT Odio 2 itself, queue opponent phase
+            if (ctx._checkSuicide) {
+                const { triggerCardName, queueEffect } = ctx._checkSuicide;
+                if (cardObj.card.nombre !== triggerCardName && queueEffect) {
+                    gameState.effectQueue.unshift(queueEffect);
+                }
             }
+            triggerUncovered(line, target);
+            if (ctx.selected.length >= ctx.count) finishEffect();
+            else updateUI();
+        };
+        if (window.animCardEliminate) {
+            window.animCardEliminate(cardObj.card.id, _doElim);
+        } else {
+            _doElim();
         }
-        triggerUncovered(line, target);
+        return;
     } else if (ctx.type === 'flip') {
         const cardObj = gameState.field[line][target][cardIdx];
         if (ctx.forceLine && line !== ctx.forceLine) return;
@@ -1643,8 +1703,20 @@ function handleFieldCardClick(line, target, cardIdx) {
         const wasFaceDown = cardObj.faceDown;
         cardObj.faceDown = !cardObj.faceDown;
         gameState.lastFlippedCard = { cardObj, line };
-        if (wasFaceDown) triggerFlipFaceUp(cardObj, line, target);
-        ctx.selected.push(cardObj);
+        cardObj._animateFlip = true;
+        updateUI(); // inicia animación — finishEffect debe esperar
+        const _isTop = cardIdx === gameState.field[line][target].length - 1;
+        setTimeout(() => {
+            ctx.selected.push(cardObj);
+            if (wasFaceDown && _isTop) {
+                triggerFlipFaceUp(cardObj, line, target);
+            } else if (ctx.selected.length >= ctx.count) {
+                finishEffect();
+            } else {
+                updateUI();
+            }
+        }, 700);
+        return;
     } else if (ctx.type === 'shift') {
         const cardObj = gameState.field[line][target][cardIdx];
         // Bloquear línea excluida (ej. Gravedad 4: fuente no puede ser la propia línea)
@@ -1781,6 +1853,7 @@ function landPendingCard() {
     gameState.pendingLanding = null;
     gameState.field[line][owner].push(cardObj);
     checkDeleteOnCover(line, owner);
+    window._animPendingField = { line, target: owner };
     updateUI();
     if (!isFaceDown) {
         gameState.currentEffectLine = line;
@@ -1985,7 +2058,9 @@ function resolveEffectAI(type, target, count, opts = {}) {
         for (let i = 0; i < count; i++) {
             const line = aiPickEliminateLine(actualTarget, opts);
             if (line !== null) {
-                const cardObj = gameState.field[line][actualTarget].pop();
+                const cardObj = gameState.field[line][actualTarget][gameState.field[line][actualTarget].length - 1];
+                if (window.animCardEliminate) window.animCardEliminate(cardObj.card.id, null);
+                gameState.field[line][actualTarget].pop();
                 gameState[actualTarget].trash.push(cardObj.card);
                 gameState.eliminatedSinceLastCheck[gameState.turn] = true;
                 triggerUncovered(line, actualTarget);
@@ -2005,6 +2080,7 @@ function resolveEffectAI(type, target, count, opts = {}) {
                     if (fdIdx >= 0) {
                         const flipped = stack[stack.length - 1 - fdIdx];
                         flipped.faceDown = false;
+                        if (fdIdx === 0) flipped._animateFlip = true;
                         triggerFlipFaceUp(flipped, ownLine, 'ai');
                     }
                 } else if (target === 'any') {
@@ -2018,6 +2094,7 @@ function resolveEffectAI(type, target, count, opts = {}) {
                         if (fdIdx >= 0) {
                             const flipped = stack[stack.length - 1 - fdIdx];
                             flipped.faceDown = false;
+                            if (fdIdx === 0) flipped._animateFlip = true;
                             triggerFlipFaceUp(flipped, pLine, 'player');
                         }
                     }
@@ -2031,13 +2108,17 @@ function resolveEffectAI(type, target, count, opts = {}) {
                         const topCard = stack[stack.length - 1];
                         if (!(typeof getPersistentModifiers === 'function' && getPersistentModifiers(topCard.card).preventFlip)) {
                             topCard.faceDown = !topCard.faceDown;
-                            if (!topCard.faceDown) triggerFlipFaceUp(topCard, line, actualTarget);
+                            if (!topCard.faceDown) {
+                                topCard._animateFlip = true;
+                                triggerFlipFaceUp(topCard, line, actualTarget);
+                            }
                         }
                     } else {
                         const fdIdx = [...stack].reverse().findIndex(c => c.faceDown);
                         if (fdIdx >= 0) {
                             const flipped = stack[stack.length - 1 - fdIdx];
                             flipped.faceDown = false;
+                            if (fdIdx === 0) flipped._animateFlip = true;
                             triggerFlipFaceUp(flipped, line, actualTarget);
                         }
                     }
@@ -2244,7 +2325,7 @@ function playSelectedCard(isFaceDown) {
             const btnNo = document.getElementById('btn-confirm-no');
             if (confirmArea && btnYes && btnNo) {
                 confirmArea.classList.remove('hidden');
-                confirmMsg.textContent = `${card.nombre}: ¿Jugar en tu lado (SÍ) o en el lado rival (NO)?`;
+                window.scrTxt ? window.scrTxt(confirmMsg, `${card.nombre}: ¿Jugar en tu lado (SÍ) o en el lado rival (NO)?`, { duration: 1.0 }) : (confirmMsg.textContent = `${card.nombre}: ¿Jugar en tu lado (SÍ) o en el lado rival (NO)?`);
                 btnYes.onclick = () => {
                     confirmArea.classList.add('hidden');
                     gameState.selectionMode = true;
@@ -2369,43 +2450,46 @@ function finalizePlay(targetLine, isFaceDown) {
     gameState.field[targetLine][targetSide].push(playedCard);
     checkDeleteOnCover(targetLine, targetSide);
     window._animPendingField = { line: targetLine, target: targetSide };
-    updateUI(); // Sincronizar DOM antes de disparar efectos (necesario para efectos interactivos como Agua 4)
+    updateUI(); // Sincronizar DOM antes de disparar efectos — animación de entrada empieza aquí
 
-    console.log(`✅ Card played: ${card.nombre} on ${targetLine} (${isFaceDown ? 'face-down' : 'face-up'})`);
+    // Delay para que la animación de entrada sea visible antes de que aparezca el modal
+    setTimeout(() => {
+        console.log(`✅ Card played: ${card.nombre} on ${targetLine} (${isFaceDown ? 'face-down' : 'face-up'})`);
 
-    if (!isFaceDown) {
-        console.log(`🔧 Executing card effect...`);
-        gameState.currentEffectLine = targetLine;
-        executeEffect(card, 'player');
-        console.log(`🔍 tras executeEffect: effectContext=${gameState.effectContext ? gameState.effectContext.type : 'null'}, queueLen=${gameState.effectQueue.length}`);
-    } else {
-        // Face-down play has no immediate effects, just update UI
-        console.log(`💤 Face-down play - no effects, updating UI`);
-        updateUI();
-    }
-
-    // Efectos reactivos: cartas del rival en esta línea (ej: Ice 1)
-    if (typeof onOpponentPlayInLineEffects === 'function') onOpponentPlayInLineEffects('player', targetLine);
-    
-    if (gameState.pendingPlayCard) {
-        gameState.pendingPlayCard = false;
-        console.log(`🎴 playCard effect resolved — continuing effect queue`);
-        updateUI();
-        if (gameState.effectQueue.length > 0) {
-            processAbilityEffect();
+        if (!isFaceDown) {
+            console.log(`🔧 Executing card effect...`);
+            gameState.currentEffectLine = targetLine;
+            executeEffect(card, 'player');
+            console.log(`🔍 tras executeEffect: effectContext=${gameState.effectContext ? gameState.effectContext.type : 'null'}, queueLen=${gameState.effectQueue.length}`);
+        } else {
+            // Face-down play has no immediate effects, just update UI
+            console.log(`💤 Face-down play - no effects, updating UI`);
+            updateUI();
         }
-        return;
-    }
 
-    // Si hay efectos interactivos pendientes, esperar a que se resuelvan
-    if (gameState.effectContext || gameState.effectQueue.length > 0) {
-        gameState.pendingTurnEnd = 'player';
-        console.log(`⏳ Efectos pendientes — turno del jugador pausado`);
-        return;
-    }
+        // Efectos reactivos: cartas del rival en esta línea (ej: Ice 1)
+        if (typeof onOpponentPlayInLineEffects === 'function') onOpponentPlayInLineEffects('player', targetLine);
 
-    console.log(`⏱️ Ending player turn...`);
-    endTurn('player');
+        if (gameState.pendingPlayCard) {
+            gameState.pendingPlayCard = false;
+            console.log(`🎴 playCard effect resolved — continuing effect queue`);
+            updateUI();
+            if (gameState.effectQueue.length > 0) {
+                processAbilityEffect();
+            }
+            return;
+        }
+
+        // Si hay efectos interactivos pendientes, esperar a que se resuelvan
+        if (gameState.effectContext || gameState.effectQueue.length > 0) {
+            gameState.pendingTurnEnd = 'player';
+            console.log(`⏳ Efectos pendientes — turno del jugador pausado`);
+            return;
+        }
+
+        console.log(`⏱️ Ending player turn...`);
+        endTurn('player');
+    }, 1000);
 }
 
 const btnStopDiscard = document.getElementById('btn-stop-discard');
@@ -2430,9 +2514,12 @@ ui.btnRefresh.onclick = () => {
         return;
     }
     console.log('✅ Refreshing hand...');
+    const handBefore = gameState.player.hand.length;
     while(gameState.player.hand.length < 5) {
         if(!drawCard('player')) break;
     }
+    const drawn = gameState.player.hand.length - handBefore;
+    if (drawn > 0) window.queueAnim?.({ type: 'handCard', count: drawn });
     gameState.refreshedThisTurn = 'player';
     console.log('🔄 Hand refreshed, ending turn');
     endTurn('player');
@@ -2537,7 +2624,7 @@ function playAITurn() {
         // Delay de 400ms: da tiempo a la animación CSS de entrada de carta y mejora legibilidad de la jugada
         executeAIMove(move);
         console.log('Estado final del juego tras movimiento de IA:', JSON.stringify(gameState));
-        setTimeout(() => endTurn('ai'), 400);
+        setTimeout(() => endTurn('ai'), 1200);
 
     } catch (error) {
         // Fallback: Si IA falla, juega aleatorio (playAITurnRandom llama endTurn)
@@ -2574,12 +2661,13 @@ function playAITurnRandom() {
         gameState.field[targetLine].ai.push({ card: movedCard, faceDown: isFaceDown });
         checkDeleteOnCover(targetLine, 'ai');
         window._animPendingField = { line: targetLine, target: 'ai' };
+        updateUI();
         updateStatus(`IA jugó 1 carta ${isFaceDown ? 'bocabajo' : movedCard.nombre + ' bocarriba'} en ${targetLine}`);
         console.log('Estado final del juego tras fallback aleatorio:', JSON.stringify(gameState));
     } else {
         console.error('❌ Fallback aleatorio falló: No hay líneas disponibles');
     }
-    endTurn('ai');
+    setTimeout(() => endTurn('ai'), 600);
 }
 
 /**
@@ -2695,14 +2783,14 @@ function executeAIMove(move) {
     const cardNameText = move.faceUp ? movedCard.nombre : '1 carta';
     updateStatus(`IA jugó ${cardNameText} ${faceText} en ${move.line}${sideText}`);
     
-    // Ejecutar efectos si es bocarriba
-    if (move.faceUp) {
-        gameState.currentEffectLine = move.line;
-        executeEffect(movedCard, 'ai');
-    }
-
-    // Efectos reactivos: cartas del rival en esta línea (ej: Ice 1)
-    if (typeof onOpponentPlayInLineEffects === 'function') onOpponentPlayInLineEffects('ai', move.line);
+    // Delay para que la animación de entrada sea visible antes de ejecutar efectos
+    setTimeout(() => {
+        if (move.faceUp) {
+            gameState.currentEffectLine = move.line;
+            executeEffect(movedCard, 'ai');
+        }
+        if (typeof onOpponentPlayInLineEffects === 'function') onOpponentPlayInLineEffects('ai', move.line);
+    }, 600);
 }
 
 function endTurn(who) {
@@ -2859,12 +2947,11 @@ function showGameOver(playerWon) {
     const reasonEl = document.getElementById('win-reason');
     const statsEl = document.getElementById('win-stats');
 
-    if (titleEl) titleEl.textContent = playerWon ? '¡VICTORIA!' : 'DERROTA';
+    if (titleEl) { window.scrTxt ? window.scrTxt(titleEl, playerWon ? '¡VICTORIA!' : 'DERROTA', { duration: 1.0, chars: 'upperCase' }) : (titleEl.textContent = playerWon ? '¡VICTORIA!' : 'DERROTA'); }
     if (titleEl) titleEl.style.color = playerWon ? '#00ff41' : '#ef4444';
 
-    if (reasonEl) reasonEl.textContent = playerWon
-        ? 'Compilaste los 3 protocolos. ¡Bien jugado!'
-        : 'La IA compiló sus 3 protocolos primero.';
+    const _reasonText = playerWon ? 'Compilaste los 3 protocolos. ¡Bien jugado!' : 'La IA compiló sus 3 protocolos primero.';
+    if (reasonEl) { window.scrTxt ? window.scrTxt(reasonEl, _reasonText, { duration: 1.0, chars: 'upperCase' }) : (reasonEl.textContent = _reasonText); }
 
     if (statsEl) {
         const pLines = gameState.player.compiled.join(', ') || '—';

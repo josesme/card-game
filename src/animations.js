@@ -27,40 +27,43 @@
     // Expuesta globalmente para llamada directa desde renderStack
     window.animCardEnter = animCardEnterField;
 
-    function animCardEnterHand(el, delay) {
-        if (!el || typeof gsap === 'undefined') return;
+    // Anima la carta directamente en su contexto DOM, luego ejecuta el callback
+    // para que el splice y updateUI ocurran DESPUÉS de que la animación termine.
+    function animCardEliminate(cardId, onDone) {
+        if (typeof gsap === 'undefined') { if (onDone) onDone(); return; }
+        var el = document.querySelector('.card-in-field[data-id="' + cardId + '"]');
+        if (!el) { if (onDone) onDone(); return; }
+        el.style.transition = 'none';
         gsap.fromTo(el,
-            { x: 36, opacity: 0 },
-            { x: 0, opacity: 1, duration: 0.22, delay: delay || 0, ease: 'power2.out', clearProps: 'transform,opacity' }
+            { clipPath: 'inset(0 0 0% 0)' },
+            { clipPath: 'inset(0 0 100% 0)', duration: 0.4, ease: 'power2.in',
+              onComplete: function () { if (onDone) onDone(); } }
         );
     }
 
+    window.animCardEliminate = animCardEliminate;
+
+    console.log('[ANIM] Flip available:', typeof Flip);
+    if (typeof Flip !== 'undefined') gsap.registerPlugin(Flip);
+
+    gsap.registerEffect({
+        name: 'pulse',
+        effect: function (targets, config) {
+            return gsap.timeline()
+                .to(targets, { scale: config.scale, duration: config.duration * 0.4, ease: 'power2.out' })
+                .to(targets, { scale: 1, duration: config.duration * 0.6, ease: 'elastic.out(1.2, 0.4)' });
+        },
+        defaults: { scale: 1.12, duration: 0.7 },
+        extendTimeline: true
+    });
+
     function animCompileLine(lineId) {
         if (typeof gsap === 'undefined') return;
-        // #line-* tiene display:contents — usar battle-column (su padre) como target visual
         var lineEl = document.getElementById('line-' + lineId);
         if (!lineEl) return;
-        var col = lineEl.parentElement; // div.battle-column
+        var col = lineEl.parentElement; // div.battle-column (#line-* tiene display:contents)
         if (!col) return;
-
-        // Bounce elástico de la columna
-        gsap.timeline()
-            .to(col, { scale: 1.05, duration: 0.12, ease: 'power3.out' })
-            .to(col, { scale: 1, duration: 0.4, ease: 'elastic.out(1.2, 0.4)' });
-
-        // Flash cyan sobre la columna (temático)
-        var flash = document.createElement('div');
-        flash.style.cssText = 'position:absolute;inset:0;background:rgba(0,245,255,0.35);pointer-events:none;z-index:999;border-radius:8px;';
-        var prevPos = col.style.position;
-        col.style.position = 'relative';
-        col.appendChild(flash);
-        gsap.to(flash, {
-            opacity: 0, duration: 0.5, ease: 'power2.out',
-            onComplete: function () {
-                flash.remove();
-                col.style.position = prevPos;
-            }
-        });
+        gsap.effects.pulse(col);
     }
 
     // ------------------------------------------------------------------
@@ -72,6 +75,53 @@
     window.queueAnim = function (anim) {
         if (!window._animQueue) window._animQueue = [];
         window._animQueue.push(anim);
+    };
+
+    // ------------------------------------------------------------------
+    // scrTxt — ScrambleText helper
+    // Aplica GSAP ScrambleText a un elemento. Si el valor no cambió, no
+    // re-anima (evita scramble continuo en updateUI). Fallback: textContent.
+    // ------------------------------------------------------------------
+
+    window.scrTxt = function (el, text, opts) {
+        if (typeof el === 'string') el = document.getElementById(el);
+        if (!el) return;
+        var t = (text === undefined || text === null) ? '' : String(text);
+        // Evitar re-animar si el valor no cambió
+        if (el.getAttribute('data-scr-last') === t) return;
+        el.setAttribute('data-scr-last', t);
+        if (typeof ScrambleTextPlugin === 'undefined' || typeof gsap === 'undefined') {
+            el.textContent = t; return;
+        }
+        var dur   = (opts && opts.duration !== undefined) ? opts.duration : 1.0;
+        var chars = (opts && opts.chars)   || 'upperCase';
+        var speed = (opts && opts.speed)   || 0.5;
+        gsap.to(el, { duration: dur, scrambleText: { text: t, chars: chars, speed: speed, revealDelay: 0 } });
+    };
+
+    // ------------------------------------------------------------------
+    // _initModalScramble — Observa los modales y aplica scrTxt cuando
+    // se hacen visibles (clase 'hidden' eliminada). El texto ya está puesto
+    // antes de removeClass en todos los casos de reveal y overlay-select.
+    // ------------------------------------------------------------------
+
+    window._initModalScramble = function () {
+        function watchModal(modalId, targets) {
+            var modal = document.getElementById(modalId);
+            if (!modal) return;
+            new MutationObserver(function () {
+                if (!modal.classList.contains('hidden')) {
+                    targets.forEach(function (id) {
+                        var el = document.getElementById(id);
+                        if (el && el.textContent.trim()) {
+                            window.scrTxt(el, el.textContent.trim(), { duration: 1.0 });
+                        }
+                    });
+                }
+            }).observe(modal, { attributes: true, attributeFilter: ['class'] });
+        }
+        watchModal('reveal-modal',   ['reveal-title', 'reveal-subtitle', 'reveal-source']);
+        watchModal('overlay-select', ['select-title',  'select-subtitle',  'select-source']);
     };
 
     window.flushAnimQueue = function () {
@@ -95,9 +145,22 @@
                 var hCards = handEl.querySelectorAll('.card');
                 var count = anim.count || 1;
                 var start = Math.max(0, hCards.length - count);
-                for (var i = start; i < hCards.length; i++) {
-                    animCardEnterHand(hCards[i], (i - start) * 0.06);
-                }
+                var newCards = Array.from(hCards).slice(start);
+                window._handAnimating = true;
+                var stagger = 120; // ms entre cartas
+                var animDuration = 700; // ms — igual que card-entering en campo
+                newCards.forEach(function (el, i) {
+                    setTimeout(function () {
+                        el.classList.add('card-entering');
+                        el.addEventListener('animationend', function () {
+                            el.classList.remove('card-entering');
+                        }, { once: true });
+                    }, i * stagger);
+                });
+                setTimeout(function () {
+                    window._handAnimating = false;
+                    if (typeof updateUI === 'function') updateUI();
+                }, animDuration + (newCards.length - 1) * stagger + 50);
             }
         });
     };

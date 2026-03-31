@@ -549,7 +549,7 @@ const CARD_EFFECTS = {
 
   'Apatía 4': {
     onPlay: [
-      { action: 'mayFlipCovered', target: 'self', count: 1 }
+      { action: 'mayFlipOwnCovered', target: 'self', count: 1 }
     ]
   },
 
@@ -2623,6 +2623,48 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       break;
     }
 
+    case 'mayFlipOwnCovered': {
+      // Apatía 4: voltea 1 de TUS cartas bocarriba cubiertas (cualquier línea, sin restricción de línea)
+      const hasOwnCoveredFaceUp = LINES.some(l =>
+        gameState.field[l][targetPlayer].slice(0, -1).some(c => !c.faceDown)
+      );
+      if (!hasOwnCoveredFaceUp) { processAbilityEffect(); break; }
+      if (targetPlayer === 'player') {
+        const confirmArea = document.getElementById('command-confirm');
+        const confirmMsg  = document.getElementById('confirm-msg');
+        const btnYes = document.getElementById('btn-confirm-yes');
+        const btnNo  = document.getElementById('btn-confirm-no');
+        if (confirmArea && btnYes && btnNo) {
+          gameState.effectContext = { type: 'confirm' };
+          confirmArea.classList.remove('hidden');
+          confirmMsg.textContent = `${triggerCardName || ''}: ¿Quieres voltear una de tus cartas bocarriba cubiertas?`;
+          btnYes.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            startEffect('flip', 'player', 1, { coveredOnly: true, filter: 'faceUp' });
+          };
+          btnNo.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            processAbilityEffect();
+          };
+        } else { processAbilityEffect(); }
+      } else {
+        // IA: voltea la carta cubierta bocarriba propia de mayor valor
+        let bestTarget = null, bestLine = null, bestIdx = -1;
+        LINES.forEach(l => {
+          gameState.field[l].ai.slice(0, -1).forEach((c, i) => {
+            if (!c.faceDown && (!bestTarget || c.card.valor > bestTarget.card.valor)) {
+              bestTarget = c; bestLine = l; bestIdx = i;
+            }
+          });
+        });
+        if (bestTarget) flipAndTrigger(gameState.field[bestLine].ai[bestIdx], bestLine, 'ai');
+        processAbilityEffect();
+      }
+      break;
+    }
+
     case 'mayFlipCoveredFaceUp': {
       // Corrupción 3: opcional — voltea bocabajo una carta cubierta bocarriba (propia o rival)
       const hasCoveredFaceUp = LINES.some(l =>
@@ -3141,6 +3183,19 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         if (sourceEl) sourceEl.textContent = triggerCardName || '';
         container.innerHTML = cards.map(c => `<div style="transform: scale(0.85); transform-origin: top center;">${createCardHTML(c)}</div>`).join('');
         modal.classList.remove('hidden');
+        
+        // Apply scramble effect to card texts in reveal modal
+        setTimeout(function() {
+            if (window.scrTxt) {
+                container.querySelectorAll('.slot-title-text, .card-img-zone-text').forEach(function(el) {
+                    const text = el.textContent.trim();
+                    if (text) {
+                        window.scrTxt(el, text, { duration: 1.0, chars: el.classList.contains('slot-title-text') ? 'upperCase' : 'upperAndLowerCase' });
+                    }
+                });
+            }
+        }, 50);
+        
         closeBtn.onclick = () => {
           modal.classList.add('hidden');
           processAbilityEffect();
@@ -3406,6 +3461,19 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             <button class="ui-btn" id="btn-reveal-close">MANTENER</button>
           `;
           modal.classList.remove('hidden');
+          
+          // Apply scramble effect to card texts in reveal modal
+          setTimeout(function() {
+              if (window.scrTxt) {
+                  container.querySelectorAll('.slot-title-text, .card-img-zone-text').forEach(function(el) {
+                      const text = el.textContent.trim();
+                      if (text) {
+                          window.scrTxt(el, text, { duration: 1.0, chars: el.classList.contains('slot-title-text') ? 'upperCase' : 'upperAndLowerCase' });
+                      }
+                  });
+              }
+          }, 50);
+          
           const cleanup = () => { modal.classList.add('hidden'); };
           document.getElementById('btn-reveal-close').onclick = () => { cleanup(); processAbilityEffect(); };
           document.getElementById('btn-reveal-discard').onclick = () => {
@@ -3495,6 +3563,18 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         actionsEl.innerHTML = '<button class="ui-btn" id="btn-reveal-continue">ROBAR</button>';
         modal.classList.remove('hidden');
         
+        // Apply scramble effect to card texts in reveal modal
+        setTimeout(function() {
+            if (window.scrTxt) {
+                container.querySelectorAll('.slot-title-text, .card-img-zone-text').forEach(function(el) {
+                    const text = el.textContent.trim();
+                    if (text) {
+                        window.scrTxt(el, text, { duration: 1.0, chars: el.classList.contains('slot-title-text') ? 'upperCase' : 'upperAndLowerCase' });
+                    }
+                });
+            }
+        }, 50);
+
         let selectedIdx = null;
         container.querySelectorAll('.reveal-card-select').forEach(el => {
           el.onclick = () => {
@@ -3602,6 +3682,19 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         ).join('');
         actionsEl.innerHTML = '<button class="ui-btn" id="btn-reveal-continue">ROBAR</button>';
         modal.classList.remove('hidden');
+        
+        // Apply scramble effect to card texts in reveal modal
+        setTimeout(function() {
+            if (window.scrTxt) {
+                container.querySelectorAll('.slot-title-text, .card-img-zone-text').forEach(function(el) {
+                    const text = el.textContent.trim();
+                    if (text) {
+                        window.scrTxt(el, text, { duration: 1.0, chars: el.classList.contains('slot-title-text') ? 'upperCase' : 'upperAndLowerCase' });
+                    }
+                });
+            }
+        }, 50);
+        
         let selectedIdx = null;
         container.querySelectorAll('.reveal-card-select').forEach(el => {
           el.onclick = () => {
@@ -4478,6 +4571,18 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           actionsEl.innerHTML = '<button class="ui-btn" id="btn-reveal-continue">JUGAR</button>';
           modal.classList.remove('hidden');
           
+          // Apply scramble effect to card texts in reveal modal
+          setTimeout(function() {
+              if (window.scrTxt) {
+                  container.querySelectorAll('.slot-title-text, .card-img-zone-text').forEach(function(el) {
+                      const text = el.textContent.trim();
+                      if (text) {
+                          window.scrTxt(el, text, { duration: 1.0, chars: el.classList.contains('slot-title-text') ? 'upperCase' : 'upperAndLowerCase' });
+                      }
+                  });
+              }
+          }, 50);
+
           // Manejar selección de carta
           let selectedIdx = null;
           container.querySelectorAll('.reveal-card-select').forEach(el => {
@@ -4564,6 +4669,19 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           ).join('');
           actionsEl.innerHTML = '<button class="ui-btn" id="btn-reveal-continue">ELEGIR LÍNEA</button>';
           modal.classList.remove('hidden');
+          
+          // Apply scramble effect to card texts in reveal modal
+          setTimeout(function() {
+              if (window.scrTxt) {
+                  container.querySelectorAll('.slot-title-text, .card-img-zone-text').forEach(function(el) {
+                      const text = el.textContent.trim();
+                      if (text) {
+                          window.scrTxt(el, text, { duration: 1.0, chars: el.classList.contains('slot-title-text') ? 'upperCase' : 'upperAndLowerCase' });
+                      }
+                  });
+              }
+          }, 50);
+          
           let selectedIdx = null;
           container.querySelectorAll('.reveal-card-select').forEach(el => {
             el.onclick = () => {
