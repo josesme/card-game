@@ -44,15 +44,15 @@ let GLOBAL_CARDS = null; // cargado desde data/cards.json al iniciar
 
 // Game State
 let gameState = {
-    player: { 
-        deck: [], trash: [], hand: [], 
+    player: {
+        deck: [], trash: [], hand: [],
         protocols: JSON.parse(sessionStorage.getItem('playerProtocols') || '["Espíritu", "Muerte", "Fuego"]'),
-        compiled: [] 
+        compiled: []
     },
-    ai: { 
-        deck: [], trash: [], hand: [], 
+    ai: {
+        deck: [], trash: [], hand: [],
         protocols: JSON.parse(sessionStorage.getItem('aiProtocols') || '["Vida", "Luz", "Oscuridad"]'),
-        compiled: [] 
+        compiled: []
     },
     field: {
         izquierda: { player: [], ai: [], compiledBy: null },
@@ -87,6 +87,7 @@ let gameState = {
     revealedPlayerCards: [],                                // cartas reveladas por Amor 4 — visibles para la IA
     controlComponent: null,                                 // null = neutral, 'player' o 'ai' = dueño actual
     pendingControlResume: null,                             // { who, action } — resume tras rearrange de Control Component
+    isProcessing: false,                                    // ⚠️ BLOQUEO: true mientras se resuelve una acción del jugador
 };
 
 function createDeckForPlayer(target) {
@@ -655,7 +656,14 @@ function updateUI() {
     // Attach events to player hand
     document.querySelectorAll('#player-hand .card').forEach((cardEl, index) => {
         cardEl.onclick = () => {
-            console.log(`🖱️ Card clicked at index ${index}. gameState.turn=${gameState.turn}, phase=${gameState.phase}, effectContext=${gameState.effectContext ? gameState.effectContext.type : 'none'}`);
+            console.log(`🖱️ Card clicked at index ${index}. gameState.turn=${gameState.turn}, phase=${gameState.phase}, effectContext=${gameState.effectContext ? gameState.effectContext.type : 'none'}, isProcessing=${gameState.isProcessing}`);
+            
+            // ⚠️ BLOQUEO: Si ya hay una acción en proceso, ignorar clicks normales
+            if (gameState.isProcessing && !gameState.effectContext) {
+                console.warn('⛔ Card click blocked — already processing');
+                return;
+            }
+            
             if (gameState.effectContext && (gameState.effectContext.type === 'discard' || gameState.effectContext.type === 'discardAny' || gameState.effectContext.type === 'discardVariable' || gameState.effectContext.type === 'give')) {
                 console.log(`   → Handling discard/give choice`);
                 handleDiscardChoice(index);
@@ -1223,6 +1231,12 @@ function compileLine(line, who) {
 
 function showActionModal(handIndex) {
     console.log(`📋 showActionModal called. Check: turn=${gameState.turn}, phase=${gameState.phase}`);
+
+    // ⚠️ BLOQUEO: Si ya hay una acción en proceso, ignorar
+    if (gameState.isProcessing) {
+        console.warn('⛔ Action blocked — already processing');
+        return;
+    }
 
     if (gameState.turn !== 'player') {
         console.warn(`❌ Not player's turn: ${gameState.turn}`);
@@ -2385,6 +2399,13 @@ function clearSelectionHighlights() {
 }
 
 function finalizePlay(targetLine, isFaceDown) {
+    // ⚠️ BLOQUEO: Marcar como en proceso para evitar doble click
+    if (gameState.isProcessing) {
+        console.warn('⛔ finalizePlay blocked — already processing');
+        return;
+    }
+    gameState.isProcessing = true;
+    
     // Corrupción 0: playOnSide indica en qué lado se juega la carta
     const targetSide = gameState.playOnSide === 'opponent' ? 'ai' : 'player';
     gameState.playOnSide = null; // consumir
@@ -2796,6 +2817,10 @@ function executeAIMove(move) {
 
 function endTurn(who) {
     console.log(`⏸️ Ending turn for ${who}`);
+    
+    // ⚠️ BLOQUEO: Resetear isProcessing al terminar el turno
+    gameState.isProcessing = false;
+    
     gameState.phase = 'check_cache';
 
     if (gameState[who].skipNextCacheCheck) {
