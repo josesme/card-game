@@ -3183,6 +3183,19 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         if (sourceEl) sourceEl.textContent = triggerCardName || '';
         container.innerHTML = cards.map(c => `<div style="transform: scale(0.85); transform-origin: top center;">${createCardHTML(c)}</div>`).join('');
         modal.classList.remove('hidden');
+        
+        // Apply scramble effect to card texts in reveal modal
+        setTimeout(function() {
+            if (window.scrTxt) {
+                container.querySelectorAll('.slot-title-text, .card-img-zone-text').forEach(function(el) {
+                    const text = el.textContent.trim();
+                    if (text) {
+                        window.scrTxt(el, text, { duration: 1.0, chars: el.classList.contains('slot-title-text') ? 'upperCase' : 'upperAndLowerCase' });
+                    }
+                });
+            }
+        }, 50);
+        
         closeBtn.onclick = () => {
           modal.classList.add('hidden');
           processAbilityEffect();
@@ -3448,6 +3461,19 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             <button class="ui-btn" id="btn-reveal-close">MANTENER</button>
           `;
           modal.classList.remove('hidden');
+          
+          // Apply scramble effect to card texts in reveal modal
+          setTimeout(function() {
+              if (window.scrTxt) {
+                  container.querySelectorAll('.slot-title-text, .card-img-zone-text').forEach(function(el) {
+                      const text = el.textContent.trim();
+                      if (text) {
+                          window.scrTxt(el, text, { duration: 1.0, chars: el.classList.contains('slot-title-text') ? 'upperCase' : 'upperAndLowerCase' });
+                      }
+                  });
+              }
+          }, 50);
+          
           const cleanup = () => { modal.classList.add('hidden'); };
           document.getElementById('btn-reveal-close').onclick = () => { cleanup(); processAbilityEffect(); };
           document.getElementById('btn-reveal-discard').onclick = () => {
@@ -3537,6 +3563,18 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         actionsEl.innerHTML = '<button class="ui-btn" id="btn-reveal-continue">ROBAR</button>';
         modal.classList.remove('hidden');
         
+        // Apply scramble effect to card texts in reveal modal
+        setTimeout(function() {
+            if (window.scrTxt) {
+                container.querySelectorAll('.slot-title-text, .card-img-zone-text').forEach(function(el) {
+                    const text = el.textContent.trim();
+                    if (text) {
+                        window.scrTxt(el, text, { duration: 1.0, chars: el.classList.contains('slot-title-text') ? 'upperCase' : 'upperAndLowerCase' });
+                    }
+                });
+            }
+        }, 50);
+
         let selectedIdx = null;
         container.querySelectorAll('.reveal-card-select').forEach(el => {
           el.onclick = () => {
@@ -3644,6 +3682,19 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         ).join('');
         actionsEl.innerHTML = '<button class="ui-btn" id="btn-reveal-continue">ROBAR</button>';
         modal.classList.remove('hidden');
+        
+        // Apply scramble effect to card texts in reveal modal
+        setTimeout(function() {
+            if (window.scrTxt) {
+                container.querySelectorAll('.slot-title-text, .card-img-zone-text').forEach(function(el) {
+                    const text = el.textContent.trim();
+                    if (text) {
+                        window.scrTxt(el, text, { duration: 1.0, chars: el.classList.contains('slot-title-text') ? 'upperCase' : 'upperAndLowerCase' });
+                    }
+                });
+            }
+        }, 50);
+        
         let selectedIdx = null;
         container.querySelectorAll('.reveal-card-select').forEach(el => {
           el.onclick = () => {
@@ -4520,6 +4571,18 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           actionsEl.innerHTML = '<button class="ui-btn" id="btn-reveal-continue">JUGAR</button>';
           modal.classList.remove('hidden');
           
+          // Apply scramble effect to card texts in reveal modal
+          setTimeout(function() {
+              if (window.scrTxt) {
+                  container.querySelectorAll('.slot-title-text, .card-img-zone-text').forEach(function(el) {
+                      const text = el.textContent.trim();
+                      if (text) {
+                          window.scrTxt(el, text, { duration: 1.0, chars: el.classList.contains('slot-title-text') ? 'upperCase' : 'upperAndLowerCase' });
+                      }
+                  });
+              }
+          }, 50);
+
           // Manejar selección de carta
           let selectedIdx = null;
           container.querySelectorAll('.reveal-card-select').forEach(el => {
@@ -4606,6 +4669,19 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           ).join('');
           actionsEl.innerHTML = '<button class="ui-btn" id="btn-reveal-continue">ELEGIR LÍNEA</button>';
           modal.classList.remove('hidden');
+          
+          // Apply scramble effect to card texts in reveal modal
+          setTimeout(function() {
+              if (window.scrTxt) {
+                  container.querySelectorAll('.slot-title-text, .card-img-zone-text').forEach(function(el) {
+                      const text = el.textContent.trim();
+                      if (text) {
+                          window.scrTxt(el, text, { duration: 1.0, chars: el.classList.contains('slot-title-text') ? 'upperCase' : 'upperAndLowerCase' });
+                      }
+                  });
+              }
+          }, 50);
+          
           let selectedIdx = null;
           container.querySelectorAll('.reveal-card-select').forEach(el => {
             el.onclick = () => {

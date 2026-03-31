@@ -15,8 +15,14 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 ## UI/UX
 
 - **Animaciones de descarte y robo** — Sin animación al mover cartas entre zonas.
+    (gsap.com/docs/v3/Eases - codepen.io/GreenSock)
+    - Flip para reordenacion de draft tras seleccion
+    - Drag para cartas
+    - MorphSVG para eliminar carta papelera
+    - Card stack para mazo
+    - Infinite card slider para mano
 - **Sonidos básicos de interfaz** — Sin feedback sonoro.
-- **Refactorización del sistema de modales** — Varios modales comparten lógica duplicada; unificar en un sistema reutilizable.
+
 
 ---
 
