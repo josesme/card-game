@@ -270,22 +270,22 @@
 </button>
 <div class="container" id="index-container">
     <img src="../images/Background/Compile.png" class="title-img" alt="COMPILE">
-    <p class="tagline">Juego de cartas · IA adaptativa</p>
+    <p class="tagline" id="tagline-text">Juego de cartas · IA adaptativa</p>
 
-    <p class="diff-label">Nivel de compilación</p>
+    <p class="diff-label" id="diff-label-1">Nivel de compilación</p>
     <div class="diff-grid" id="diff-grid"></div>
     <div class="diff-desc-wrapper"><p class="diff-desc" id="diff-desc"></p></div>
 
-    <p class="diff-label">Protocolos disponibles</p>
+    <p class="diff-label" id="diff-label-2">Protocolos disponibles</p>
     <div class="protocol-grid">
         <button class="protocol-btn" id="proto-1" style="--c: 168, 85, 247;">
-            <span class="protocol-name">MAIN 1</span>
+            <span class="protocol-name" data-text="MAIN 1">MAIN 1</span>
         </button>
         <button class="protocol-btn" id="proto-2" style="--c: 234, 179, 8;">
-            <span class="protocol-name">MAIN 2</span>
+            <span class="protocol-name" data-text="MAIN 2">MAIN 2</span>
         </button>
         <button class="protocol-btn" id="proto-all" style="--c: gradient;">
-            <span class="protocol-name">MAIN 1 + 2</span>
+            <span class="protocol-name" data-text="MAIN 1 + 2">MAIN 1 + 2</span>
         </button>
     </div>
 
@@ -293,8 +293,77 @@
         <button class="ui-btn" id="btn-play">COMENZAR JUEGO</button>
     </div>
 
-    <div class="version">v2.1 — 2026</div>
+    <div class="version" id="version-text">v2.1 — 2026</div>
 </div>
+
+<!-- GSAP + ScrambleText -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+    console.log('[GSAP Check]', { gsap: typeof gsap, version: gsap ? gsap.version : 'not loaded' });
+</script>
+<script src="ScrambleText.min.js"></script>
+<script>
+    console.log('[ScrambleText Check]', { plugin: typeof ScrambleTextPlugin });
+</script>
+<script>
+// Register ScrambleTextPlugin
+if (typeof ScrambleTextPlugin !== 'undefined' && typeof gsap !== 'undefined') {
+    gsap.registerPlugin(ScrambleTextPlugin);
+}
+
+// Define scrTxt helper directly (from animations.js)
+window.scrTxt = function (el, text, opts) {
+    if (typeof el === 'string') el = document.getElementById(el);
+    if (!el) return;
+    var t = (text === undefined || text === null) ? '' : String(text);
+    if (el.getAttribute('data-scr-last') === t) return;
+    el.setAttribute('data-scr-last', t);
+    if (typeof ScrambleTextPlugin === 'undefined' || typeof gsap === 'undefined') {
+        el.textContent = t; return;
+    }
+    var dur   = (opts && opts.duration !== undefined) ? opts.duration : 1.0;
+    var chars = (opts && opts.chars)   || 'upperCase';
+    var speed = (opts && opts.speed)   || 0.5;
+    gsap.to(el, { duration: dur, scrambleText: { text: t, chars: chars, speed: speed, revealDelay: 0 } });
+};
+
+// Apply scramble effect on page load
+window.addEventListener('load', function() {
+    setTimeout(function() {
+        // Scramble tagline
+        if (window.scrTxt && typeof gsap !== 'undefined') {
+            console.log('[Scramble] Applying to tagline and version...');
+            window.scrTxt('tagline-text', 'Juego de cartas · IA adaptativa', { duration: 1.0, chars: 'upperAndLowerCase' });
+            window.scrTxt('version-text', 'v2.1 — 2026', { duration: 1.0, chars: '0123456789' });
+        } else {
+            console.log('[Scramble] Not available:', { scrTxt: !!window.scrTxt, gsap: typeof gsap });
+        }
+    }, 500);
+});
+
+// Apply scramble to diff labels after render
+function applyDiffScramble() {
+    if (window.scrTxt && typeof gsap !== 'undefined') {
+        console.log('[Scramble] Applying to all diff elements...');
+        window.scrTxt('diff-label-1', 'Nivel de compilación', { duration: 1.0, chars: 'upperCase' });
+        window.scrTxt('diff-label-2', 'Protocolos disponibles', { duration: 1.0, chars: 'upperCase' });
+        // Scramble difficulty descriptions
+        var diffDescEl = document.getElementById('diff-desc');
+        if (diffDescEl && diffDescEl.textContent) {
+            window.scrTxt(diffDescEl, diffDescEl.textContent, { duration: 1.0, chars: 'upperAndLowerCase' });
+        }
+        // Scramble difficulty button names using data-text attribute
+        document.querySelectorAll('.diff-name').forEach(function(el) {
+            var originalText = el.getAttribute('data-text');
+            if (originalText) {
+                el.textContent = originalText;
+                window.scrTxt(el, originalText, { duration: 1.0, chars: 'upperCase' });
+            }
+        });
+    }
+}
+setTimeout(applyDiffScramble, 500);
+</script>
 
 <script>
 const DIFFICULTY_LEVELS = [
@@ -316,16 +385,25 @@ function renderDiff() {
         btn.className = 'diff-btn' + (l.id === selectedDifficulty ? ' active' : '');
         if (l.id === 3) btn.id = 'diff-nucleo';
         btn.style.setProperty('--c', l.color);
-        btn.innerHTML = `<span class="diff-icon">${l.icon}</span><span class="diff-name">${l.name}</span>`;
+        btn.innerHTML = `<span class="diff-icon">${l.icon}</span><span class="diff-name" data-text="${l.name}">${l.name}</span>`;
         btn.onclick = () => {
             selectedDifficulty = l.id;
             renderDiff();
+            // Apply scramble to all text elements on difficulty change
+            applyDiffScramble();
         };
         grid.appendChild(btn);
     });
     const cur = DIFFICULTY_LEVELS.find(l => l.id === selectedDifficulty);
     const desc = document.getElementById('diff-desc');
     desc.textContent = cur.desc;
+
+    // Apply scramble to difficulty name and description
+    if (window.scrTxt) {
+        setTimeout(function() {
+            window.scrTxt(desc, cur.desc, { duration: 1.0, chars: 'upperAndLowerCase' });
+        }, 50);
+    }
 }
 
 function updateProtocolSelection() {
@@ -333,8 +411,23 @@ function updateProtocolSelection() {
     if (selectedProtocols === 1) document.getElementById('proto-1').classList.add('active');
     if (selectedProtocols === 2) document.getElementById('proto-2').classList.add('active');
     if (selectedProtocols === 'all') document.getElementById('proto-all').classList.add('active');
-    
+
     document.getElementById('btn-play').disabled = selectedProtocols === null;
+    
+    // Apply scramble to protocol names when selection changes
+    setTimeout(function() {
+        if (window.scrTxt && typeof gsap !== 'undefined') {
+            // Scramble protocol names using data-text attribute
+            document.querySelectorAll('.protocol-name').forEach(function(el) {
+                var originalText = el.getAttribute('data-text');
+                if (originalText) {
+                    // Reset textContent to original before scrambling
+                    el.textContent = originalText;
+                    window.scrTxt(el, originalText, { duration: 1.0, chars: 'upperCase' });
+                }
+            });
+        }
+    }, 50);
 }
 
 document.getElementById('proto-1').onclick = () => { selectedProtocols = 1; updateProtocolSelection(); };
@@ -391,6 +484,25 @@ function applyIndexScale() {
 }
 window.addEventListener('load', applyIndexScale);
 window.addEventListener('resize', applyIndexScale);
+
+// Apply scramble to diff labels after render
+function applyDiffScramble() {
+    if (window.scrTxt) {
+        window.scrTxt('diff-label-1', 'Nivel de compilación', { duration: 1.0, chars: 'upperCase' });
+        window.scrTxt('diff-label-2', 'Protocolos disponibles', { duration: 1.0, chars: 'upperCase' });
+        // Scramble difficulty descriptions after they are set
+        var diffDescEl = document.getElementById('diff-desc');
+        if (diffDescEl && diffDescEl.textContent) {
+            window.scrTxt(diffDescEl, diffDescEl.textContent, { duration: 1.0, chars: 'upperAndLowerCase' });
+        }
+        // Scramble protocol names
+        document.querySelectorAll('.protocol-name').forEach(function(el) {
+            var txt = el.textContent.trim();
+            if (txt) window.scrTxt(el, txt, { duration: 1.0, chars: 'upperCase' });
+        });
+    }
+}
+setTimeout(applyDiffScramble, 500);
 
 document.getElementById('btn-play').addEventListener('click', () => {
     const diff = DIFFICULTY_LEVELS.find(l => l.id === selectedDifficulty);

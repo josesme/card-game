@@ -549,7 +549,7 @@ const CARD_EFFECTS = {
 
   'Apatía 4': {
     onPlay: [
-      { action: 'mayFlipCovered', target: 'self', count: 1 }
+      { action: 'mayFlipOwnCovered', target: 'self', count: 1 }
     ]
   },
 
@@ -2618,6 +2618,48 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             gameState.field[line].player[best.i].faceDown = true;
           }
         }
+        processAbilityEffect();
+      }
+      break;
+    }
+
+    case 'mayFlipOwnCovered': {
+      // Apatía 4: voltea 1 de TUS cartas bocarriba cubiertas (cualquier línea, sin restricción de línea)
+      const hasOwnCoveredFaceUp = LINES.some(l =>
+        gameState.field[l][targetPlayer].slice(0, -1).some(c => !c.faceDown)
+      );
+      if (!hasOwnCoveredFaceUp) { processAbilityEffect(); break; }
+      if (targetPlayer === 'player') {
+        const confirmArea = document.getElementById('command-confirm');
+        const confirmMsg  = document.getElementById('confirm-msg');
+        const btnYes = document.getElementById('btn-confirm-yes');
+        const btnNo  = document.getElementById('btn-confirm-no');
+        if (confirmArea && btnYes && btnNo) {
+          gameState.effectContext = { type: 'confirm' };
+          confirmArea.classList.remove('hidden');
+          confirmMsg.textContent = `${triggerCardName || ''}: ¿Quieres voltear una de tus cartas bocarriba cubiertas?`;
+          btnYes.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            startEffect('flip', 'player', 1, { coveredOnly: true, filter: 'faceUp' });
+          };
+          btnNo.onclick = () => {
+            confirmArea.classList.add('hidden');
+            gameState.effectContext = null;
+            processAbilityEffect();
+          };
+        } else { processAbilityEffect(); }
+      } else {
+        // IA: voltea la carta cubierta bocarriba propia de mayor valor
+        let bestTarget = null, bestLine = null, bestIdx = -1;
+        LINES.forEach(l => {
+          gameState.field[l].ai.slice(0, -1).forEach((c, i) => {
+            if (!c.faceDown && (!bestTarget || c.card.valor > bestTarget.card.valor)) {
+              bestTarget = c; bestLine = l; bestIdx = i;
+            }
+          });
+        });
+        if (bestTarget) flipAndTrigger(gameState.field[bestLine].ai[bestIdx], bestLine, 'ai');
         processAbilityEffect();
       }
       break;

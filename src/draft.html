@@ -437,7 +437,7 @@
 <div id="draft-container">
 
     <img src="../images/Background/Compile.png" class="title-img" alt="COMPILE">
-    <p class="subtitle">Selecciona Tus Protocolos</p>
+    <p class="subtitle" id="draft-subtitle">Selecciona Tus Protocolos</p>
     <div class="current-turn" id="current-turn">Asignando primer jugador...</div>
 
     <div class="protocols-grid" id="protocols-grid"></div>
@@ -717,7 +717,16 @@ function updateDraftDisplay() {
         ? `Ronda ${draftState.round + 1}/4 — ${currentPlayer} elige ${DRAFT_ROUNDS[draftState.round].selections}`
         : 'Draft Completado';
 
-    document.getElementById('current-turn').textContent = roundDesc;
+    var currentTurnEl = document.getElementById('current-turn');
+    currentTurnEl.textContent = roundDesc;
+    
+    // Apply scramble to current-turn text
+    if (window.scrTxt && typeof gsap !== 'undefined') {
+        setTimeout(function() {
+            window.scrTxt(currentTurnEl, roundDesc, { duration: 1.0, chars: 'upperAndLowerCase' });
+        }, 50);
+    }
+    
     updateProtocolsGrid();
     updateSelections();
     requestAnimationFrame(() => requestAnimationFrame(applyDraftScale));
@@ -744,7 +753,7 @@ function updateProtocolsGrid() {
         const imgUrl = getCardImageUrl(protocol, 1);
         card.innerHTML = `
             <img class="protocol-card-img" src="${imgUrl}" alt="${protocol}" loading="lazy">
-            <div class="slot-title" data-text="${protocol}"></div>
+            <div class="slot-title"><span class="slot-title-text">${protocol}</span></div>
             <div class="protocol-card-overlay">
                 <div class="protocol-card-logo-box">
                     <img class="protocol-card-logo" src="../images/Background/Logo.png" alt="COMPILE">
@@ -763,6 +772,22 @@ function updateProtocolsGrid() {
 
         grid.appendChild(card);
     });
+    
+    // Apply scramble to protocol card texts
+    if (window.scrTxt && typeof gsap !== 'undefined') {
+        setTimeout(function() {
+            // Scramble protocol titles (UPPERCASE)
+            grid.querySelectorAll('.slot-title-text').forEach(function(el) {
+                var txt = el.textContent.trim();
+                if (txt) window.scrTxt(el, txt.toUpperCase(), { duration: 1.0, chars: 'upperCase' });
+            });
+            // Scramble protocol abilities descriptions
+            grid.querySelectorAll('.protocol-card-abilities').forEach(function(el) {
+                var txt = el.textContent.trim();
+                if (txt) window.scrTxt(el, txt, { duration: 1.0, chars: 'upperAndLowerCase' });
+            });
+        }, 100);
+    }
 }
 
 function updateSelections() {
@@ -860,6 +885,52 @@ document.getElementById('start-game-btn').addEventListener('click', function() {
         sessionStorage.setItem('aiProtocols',     JSON.stringify(draftState.aiSelected));
         window.location.href = '/src/game.html';
     }
+});
+
+// ── Scramble Text Effect ───────────────────────────────────
+// Load GSAP and ScrambleText
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+    console.log('[GSAP Check - Draft]', { gsap: typeof gsap, version: gsap ? gsap.version : 'not loaded' });
+</script>
+<script src="ScrambleText.min.js"></script>
+<script>
+    console.log('[ScrambleText Check - Draft]', { plugin: typeof ScrambleTextPlugin });
+</script>
+<script>
+// Register ScrambleTextPlugin
+if (typeof ScrambleTextPlugin !== 'undefined' && typeof gsap !== 'undefined') {
+    gsap.registerPlugin(ScrambleTextPlugin);
+}
+
+// Define scrTxt helper directly (from animations.js)
+window.scrTxt = function (el, text, opts) {
+    if (typeof el === 'string') el = document.getElementById(el);
+    if (!el) return;
+    var t = (text === undefined || text === null) ? '' : String(text);
+    if (el.getAttribute('data-scr-last') === t) return;
+    el.setAttribute('data-scr-last', t);
+    if (typeof ScrambleTextPlugin === 'undefined' || typeof gsap === 'undefined') {
+        el.textContent = t; return;
+    }
+    var dur   = (opts && opts.duration !== undefined) ? opts.duration : 1.0;
+    var chars = (opts && opts.chars)   || 'upperCase';
+    var speed = (opts && opts.speed)   || 0.5;
+    gsap.to(el, { duration: dur, scrambleText: { text: t, chars: chars, speed: speed, revealDelay: 0 } });
+};
+
+// Apply scramble to subtitle on load
+window.addEventListener('load', function() {
+    setTimeout(function() {
+        if (window.scrTxt && typeof gsap !== 'undefined') {
+            console.log('[Scramble] Applying to draft subtitle...');
+            window.scrTxt('draft-subtitle', 'Selecciona Tus Protocolos', { duration: 1.0, chars: 'upperCase' });
+            // Note: current-turn scramble is handled in updateDraftDisplay()
+        } else {
+            console.log('[Scramble] Not available in draft:', { scrTxt: !!window.scrTxt, gsap: typeof gsap });
+        }
+    }, 500);
 });
 </script>
 

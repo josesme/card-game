@@ -742,7 +742,21 @@ function updateUI() {
     });
 
     initProtocolDisplay();
+    
+    // Apply scramble effect to card text zones (slot-title-text and card-img-zone-text)
+    if (window.scrTxt) {
+        document.querySelectorAll('.slot-title-text').forEach(el => {
+            const text = el.textContent.trim();
+            if (text) window.scrTxt(el, text, { duration: 1.0, chars: 'upperCase' });
+        });
+        document.querySelectorAll('.card-img-zone-text').forEach(el => {
+            const text = el.textContent.trim();
+            if (text) window.scrTxt(el, text, { duration: 1.0, chars: 'upperAndLowerCase' });
+        });
+    }
+    
     checkWinCondition();
+    if (typeof window.flushAnimQueue === 'function') window.flushAnimQueue();
 }
 
 function calculateScore(state, line, target) {
@@ -1383,8 +1397,8 @@ function startEffect(type, target, count, opts = {}) {
                 const stack = gameState.field[l][p];
                 if (opts.coveredOnly) {
                     if (stack.length < 2) return false;
-                    // Con filtro + targetAll: verificar que alguna carta cubierta pase el filtro
-                    if (opts.targetAll && filterCtx.filter) {
+                    // Si hay filtro, verificar que alguna carta cubierta lo pase
+                    if (filterCtx.filter) {
                         return stack.slice(0, -1).some(c => cardMatchesFilter(c, filterCtx));
                     }
                     return true;

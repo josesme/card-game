@@ -1715,12 +1715,24 @@ function processHandSelection(type, selectedSet, ctx) {
 </script>
 
 <!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="ScrambleText.min.js"></script>
+<script src="animations.js"></script>
 <script src="cards-data.js"></script>
 <script src="ai-profiles.js"></script>
 <script src="ai-evaluator.js"></script>
 <script src="minimax.js"></script>
 <script src="abilities-engine.js"></script>
 <script src="logic.js"></script>
+<script>
+// Initialize modal scramble after all scripts are loaded
+window.addEventListener('load', function() {
+    if (typeof window._initModalScramble === 'function') {
+        console.log('[Scramble] Initializing modal scramble...');
+        window._initModalScramble();
+    }
+});
+</script>
 <script>
     // Mirror last log entry into the status bar
     (function() {
@@ -1731,7 +1743,11 @@ function processHandSelection(type, selectedSet, ctx) {
             const last = log.querySelector('.log-latest');
             if (last) {
                 const txt = last.textContent.trim().replace(/^[•➔⚡🎴💀🔄🗑️💧☣️]\s*/, '');
-                bar.textContent = txt;
+                if (window.scrTxt) {
+                    window.scrTxt(bar, txt, { duration: 1.0, chars: 'upperCase' });
+                } else {
+                    bar.textContent = txt;
+                }
                 bar.style.color = 'var(--ui-cyan)';
             }
         }).observe(log, { childList: true });
