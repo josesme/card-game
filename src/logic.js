@@ -771,19 +771,31 @@ function updateUI() {
     });
 
     initProtocolDisplay();
-    
+
     // Apply scramble effect to card text zones (slot-title-text and card-img-zone-text)
+    // ⚠️ COOLDOWN: Evitar re-animar si ya se animó recientemente (misma frame o frames cercanos)
     if (window.scrTxt) {
+        const now = Date.now();
+        const COOLDOWN_MS = 1500; // No re-animar en 1.5s
+        
         document.querySelectorAll('.slot-title-text').forEach(el => {
             const text = el.textContent.trim();
-            if (text) window.scrTxt(el, text, { duration: 1.0, chars: 'upperCase' });
+            const lastScramble = el.getAttribute('data-scr-last-time');
+            if (text && (!lastScramble || (now - parseInt(lastScramble)) > COOLDOWN_MS)) {
+                el.setAttribute('data-scr-last-time', now.toString());
+                window.scrTxt(el, text, { duration: 1.0, chars: 'upperCase' });
+            }
         });
         document.querySelectorAll('.card-img-zone-text').forEach(el => {
             const text = el.textContent.trim();
-            if (text) window.scrTxt(el, text, { duration: 1.0, chars: 'upperAndLowerCase' });
+            const lastScramble = el.getAttribute('data-scr-last-time');
+            if (text && (!lastScramble || (now - parseInt(lastScramble)) > COOLDOWN_MS)) {
+                el.setAttribute('data-scr-last-time', now.toString());
+                window.scrTxt(el, text, { duration: 1.0, chars: 'upperAndLowerCase' });
+            }
         });
     }
-    
+
     checkWinCondition();
     if (typeof window.flushAnimQueue === 'function') window.flushAnimQueue();
 }
