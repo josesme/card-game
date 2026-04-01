@@ -48,7 +48,9 @@
             margin: 0 auto;
             display: flex;
             flex-direction: column;
-            height: calc(100vh - 42px); /* reserve space for hand-bar */
+            /* Portrait/tall viewports: cap at vw-based height to prevent endless stacks.
+               Landscape (vw > vh): the vw formula gives a larger value so vh wins — no change. */
+            height: min(calc(100vh - 60px), calc(100vw * 0.72 + 100px));
             overflow: hidden;
         }
 
@@ -437,30 +439,15 @@
         }
 
         /* Fondo de color por jugador */
-        /* Col 1 — glow suave */
         .player-stack.vertical-stack {
             background: #0b0f1a;
-            box-shadow: inset 0 0 40px rgba(255,217,61,0.18);
+            box-shadow: inset 0 0 40px rgba(255,225,80,0.55);
             border-radius: 6px;
         }
         .ai-stack.vertical-stack {
             background: #0b0f1a;
-            box-shadow: inset 0 0 40px rgba(114,46,154,0.25);
-            border-radius: 6px;
-        }
-        /* Col 2 — glow medio */
-        #line-centro .player-stack.vertical-stack {
-            box-shadow: inset 0 0 40px rgba(255,217,61,0.35);
-        }
-        #line-centro .ai-stack.vertical-stack {
-            box-shadow: inset 0 0 40px rgba(114,46,154,0.45);
-        }
-        /* Col 3 — glow intenso */
-        #line-derecha .player-stack.vertical-stack {
-            box-shadow: inset 0 0 40px rgba(255,217,61,0.55);
-        }
-        #line-derecha .ai-stack.vertical-stack {
             box-shadow: inset 0 0 40px rgba(114,46,154,0.65);
+            border-radius: 6px;
         }
 
         /* Watermark icons — on battle-column (fixed height) instead of stacks (scrollable) */
@@ -476,7 +463,7 @@
             width: 32%;
             height: 14.4%;
             background: url('../images/Background/Human.png') center / contain no-repeat;
-            opacity: 0.12;
+            opacity: 0.35;
             pointer-events: none;
             z-index: 10;
         }
@@ -488,8 +475,8 @@
             transform: translateX(50%);
             width: 32%;
             height: 14.4%;
-            background: url('../images/Background/IA.png') center / contain no-repeat;
-            opacity: 0.12;
+            background: url('../images/Background/IA_2.png') center / contain no-repeat;
+            opacity: 0.35;
             pointer-events: none;
             z-index: 10;
         }
@@ -866,7 +853,7 @@
             position: fixed;
             top: 50%;
             left: 50%;
-            transform: translate(-50%, -50%) scale(0.9);
+            transform: translate(-50%, -50%) scale(0.95);
             z-index: 1001;
             background: var(--ui-bg);
             border: 1px solid rgba(0,245,255,0.3);
