@@ -491,6 +491,51 @@ function hideCardPreview() {
     if (panel) panel.classList.remove('visible');
 }
 
+function luz2ShowPostRevealModal(cardObj, line, revSide) {
+    const confirmArea = document.getElementById('command-confirm');
+    const confirmMsg  = document.getElementById('confirm-msg');
+    const btnYes      = document.getElementById('btn-confirm-yes');
+    const btnNo       = document.getElementById('btn-confirm-no');
+    if (!confirmArea || !btnYes || !btnNo) {
+        hideCardPreview();
+        if (typeof processAbilityEffect === 'function') processAbilityEffect();
+        return;
+    }
+    gameState.effectContext = { type: 'confirm' };
+    confirmArea.classList.remove('hidden');
+    confirmMsg.textContent = `Luz 2 — ${cardObj.card.nombre}: SÍ = Cambiar de línea (bocabajo) · NO = Voltear bocarriba`;
+
+    btnYes.onclick = () => {
+        confirmArea.classList.add('hidden');
+        gameState.effectContext = null;
+        hideCardPreview();
+        const currentIdx = gameState.field[line][revSide].indexOf(cardObj);
+        if (currentIdx === -1) { if (typeof processAbilityEffect === 'function') processAbilityEffect(); return; }
+        // Shift pre-seleccionado sobre la carta revelada (sigue bocabajo)
+        gameState.effectContext = {
+            type: 'shift', target: revSide, count: 1, selected: [],
+            selectedCard: { line, target: revSide, cardIdx: currentIdx },
+            waitingForLine: true
+        };
+        highlightSelectableLines(line);
+        updateStatus(`Elige línea destino para mover "${cardObj.card.nombre}" (bocabajo)`);
+    };
+
+    btnNo.onclick = () => {
+        confirmArea.classList.add('hidden');
+        gameState.effectContext = null;
+        hideCardPreview();
+        // Voltear bocarriba: ahora sí cambia el estado
+        cardObj.faceDown = false;
+        cardObj._animateFlip = true;
+        updateUI();
+        triggerFlipFaceUp(cardObj, line, revSide);
+        if (!gameState.effectContext && gameState.effectQueue.length === 0) {
+            if (typeof processAbilityEffect === 'function') processAbilityEffect();
+        }
+    };
+}
+
 // Mapa protocolo español → nombre fichero imagen inglés
 const PROTOCOL_IMG_MAP = {
     // Main 1
@@ -1784,11 +1829,12 @@ function handleFieldCardClick(line, target, cardIdx) {
         // Revelar: mostrar la identidad de la carta bocabajo sin cambiar su estado
         const cardObj = gameState.field[line][target][cardIdx];
         if (!cardObj.faceDown) return; // solo bocabajo
-        gameState.lastRevealedCard = { cardObj, line, target };
+        // Cerrar efecto manualmente sin pasar por finishEffect (evita updateUI que cierra el preview)
+        gameState.effectContext = null;
+        clearEffectHighlights();
         showCardPreview(cardObj.card);
-        ctx.selected.push(cardObj);
-        if (ctx.selected.length >= ctx.count) finishEffect();
-        else updateUI();
+        // Mostrar modal directamente sin cola
+        luz2ShowPostRevealModal(cardObj, line, target);
         return;
     } else if (ctx.type === 'return') {
         // Filter: si hay filtro faceDown con targetAll, validar que la carta clicada sea bocabajo

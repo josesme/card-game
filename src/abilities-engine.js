@@ -2108,12 +2108,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         break;
       }
       if (targetPlayer === 'player') {
-        // Encolar paso 2 (acción post-reveal); paso 1 = revelar carta bocabajo (sin cambiar estado)
-        gameState.effectQueue.unshift({
-          effect: { action: 'luz2PostReveal', target, count },
-          targetPlayer,
-          cardName: triggerCardName
-        });
+        // El handler revealField en handleFieldCardClick llama luz2ShowPostRevealModal directamente
         startEffect('revealField', 'any', 1, { owner: targetPlayer });
       } else {
         // IA: revelar carta bocabajo propia con mayor valor, luego decidir acción
@@ -2159,63 +2154,6 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             updateStatus(`IA voltea ${best.card.nombre} bocarriba`);
           }
         }
-        processAbilityEffect();
-      }
-      break;
-    }
-
-    case 'luz2PostReveal': {
-      // Paso 2 de Luz 2: actuar sobre la carta recién revelada (mover bocabajo o voltear bocarriba)
-      const revealed = gameState.lastRevealedCard;
-      if (!revealed || !revealed.cardObj) { processAbilityEffect(); break; }
-      const { cardObj: revCard, line: revLine, target: revSide } = revealed;
-      // Verificar que la carta sigue en el campo
-      const revIdx = gameState.field[revLine][revSide].indexOf(revCard);
-      if (revIdx === -1) { processAbilityEffect(); break; }
-
-      // Mostrar preview de la carta revelada mientras aparece el modal
-      if (typeof showCardPreview === 'function') showCardPreview(revCard.card);
-
-      const confirmArea = document.getElementById('command-confirm');
-      const confirmMsg = document.getElementById('confirm-msg');
-      const btnYes = document.getElementById('btn-confirm-yes');
-      const btnNo = document.getElementById('btn-confirm-no');
-      if (confirmArea && btnYes && btnNo) {
-        gameState.effectContext = { type: 'confirm' };
-        confirmArea.classList.remove('hidden');
-        confirmMsg.textContent = `Luz 2 — ${revCard.card.nombre}: SÍ = Cambiar de línea (bocabajo) · NO = Voltear bocarriba`;
-        btnYes.onclick = () => {
-          confirmArea.classList.add('hidden');
-          gameState.effectContext = null;
-          if (typeof hideCardPreview === 'function') hideCardPreview();
-          // Shift pre-seleccionado, la carta sigue bocabajo
-          const currentIdx = gameState.field[revLine][revSide].indexOf(revCard);
-          if (currentIdx === -1) { processAbilityEffect(); return; }
-          gameState.effectContext = {
-            type: 'shift',
-            target: revSide,
-            count: 1,
-            selected: [],
-            selectedCard: { line: revLine, target: revSide, cardIdx: currentIdx },
-            waitingForLine: true,
-            owner: targetPlayer
-          };
-          if (typeof highlightSelectableLines === 'function') highlightSelectableLines(revLine);
-          if (typeof updateStatus === 'function') updateStatus(`Elige línea destino para mover "${revCard.card.nombre}" (bocabajo)`);
-        };
-        btnNo.onclick = () => {
-          confirmArea.classList.add('hidden');
-          gameState.effectContext = null;
-          if (typeof hideCardPreview === 'function') hideCardPreview();
-          // Voltear bocarriba: ahora sí cambia el estado
-          revCard.faceDown = false;
-          revCard._animateFlip = true;
-          updateUI();
-          if (typeof triggerFlipFaceUp === 'function') triggerFlipFaceUp(revCard, revLine, revSide);
-          else processAbilityEffect();
-        };
-      } else {
-        if (typeof hideCardPreview === 'function') hideCardPreview();
         processAbilityEffect();
       }
       break;
