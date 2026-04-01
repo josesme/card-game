@@ -438,11 +438,15 @@
 
         /* Fondo de color por jugador */
         .player-stack.vertical-stack {
-            background: linear-gradient(180deg, #2e2600 0%, #3d3200 100%);
+            background: linear-gradient(180deg,
+                color-mix(in srgb, var(--player-100) 22%, #0b0f1a) 0%,
+                color-mix(in srgb, var(--player-100) 32%, #0b0f1a) 100%);
             border-radius: 6px;
         }
         .ai-stack.vertical-stack {
-            background: linear-gradient(180deg, #1e0e30 0%, #2a1242 100%);
+            background: linear-gradient(180deg,
+                color-mix(in srgb, var(--ai-100) 28%, #0b0f1a) 0%,
+                color-mix(in srgb, var(--ai-100) 40%, #0b0f1a) 100%);
             border-radius: 6px;
         }
 
