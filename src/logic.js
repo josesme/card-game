@@ -330,7 +330,15 @@ function handleShiftTargetLine(destinationLine) {
 
     ctx.selected.push(cardObj);
     if (ctx.selected.length >= ctx.count) {
-        finishEffect();
+        // Si es Luz 2 completado, llamar a processAbilityEffect para continuar
+        if (ctx.luz2Complete) {
+            gameState.effectContext = null;
+            clearEffectHighlights();
+            updateUI();
+            if (typeof processAbilityEffect === 'function') processAbilityEffect();
+        } else {
+            finishEffect();
+        }
     } else {
         updateUI();
     }
@@ -504,13 +512,13 @@ function luz2ShowPostRevealModal(cardObj, line, revSide) {
         if (typeof processAbilityEffect === 'function') processAbilityEffect();
         return;
     }
-    gameState.effectContext = { type: 'confirm' };
+    // Mantener contexto para saber que Luz 2 está en progreso
+    gameState.effectContext = { type: 'confirm', luz2: true, line, revSide, cardObj };
     confirmArea.classList.remove('hidden');
     confirmMsg.textContent = `Luz 2 — ${cardObj.card.nombre}: SÍ = Cambiar de línea (bocabajo) · NO = Voltear bocarriba`;
 
     btnYes.onclick = () => {
         confirmArea.classList.add('hidden');
-        gameState.effectContext = null;
         hideCardPreview();
         const currentIdx = gameState.field[line][revSide].indexOf(cardObj);
         if (currentIdx === -1) { if (typeof processAbilityEffect === 'function') processAbilityEffect(); return; }
@@ -518,7 +526,8 @@ function luz2ShowPostRevealModal(cardObj, line, revSide) {
         gameState.effectContext = {
             type: 'shift', target: revSide, count: 1, selected: [],
             selectedCard: { line, target: revSide, cardIdx: currentIdx },
-            waitingForLine: true
+            waitingForLine: true,
+            luz2Complete: true // Marcar para llamar a processAbilityEffect después
         };
         highlightSelectableLines(line);
         updateStatus(`Elige línea destino para mover "${cardObj.card.nombre}" (bocabajo)`);
@@ -526,16 +535,14 @@ function luz2ShowPostRevealModal(cardObj, line, revSide) {
 
     btnNo.onclick = () => {
         confirmArea.classList.add('hidden');
-        gameState.effectContext = null;
         hideCardPreview();
         // Voltear bocarriba: ahora sí cambia el estado
         cardObj.faceDown = false;
         cardObj._animateFlip = true;
         updateUI();
         triggerFlipFaceUp(cardObj, line, revSide);
-        if (!gameState.effectContext && gameState.effectQueue.length === 0) {
-            if (typeof processAbilityEffect === 'function') processAbilityEffect();
-        }
+        // Luz 2 completado, continuar con efectos
+        if (typeof processAbilityEffect === 'function') processAbilityEffect();
     };
 }
 
@@ -1832,8 +1839,7 @@ function handleFieldCardClick(line, target, cardIdx) {
         // Revelar: mostrar la identidad de la carta bocabajo sin cambiar su estado
         const cardObj = gameState.field[line][target][cardIdx];
         if (!cardObj.faceDown) return; // solo bocabajo
-        // Cerrar efecto manualmente sin pasar por finishEffect (evita updateUI que cierra el preview)
-        gameState.effectContext = null;
+        // NO establecer effectContext = null aquí - Luz 2 aún no ha terminado
         clearEffectHighlights();
         // Mostrar carta revelada (bocarriba) en el preview
         showCardPreview(cardObj.card, true); // true = forzar bocarriba
