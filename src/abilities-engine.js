@@ -271,7 +271,7 @@ const CARD_EFFECTS = {
       value: 2,
       scope: 'line'
     },
-    onTurnStart: [
+    onPlay: [
       { action: 'flip', target: 'any', count: 1 }
     ]
   },
