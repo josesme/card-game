@@ -2361,31 +2361,38 @@ function resolveAbilityAction(actionDef, targetPlayer) {
 
       const label = isOppOnly ? 'rival' : 'propia';
 
-      if (ties.length === 1 || gameState.turn === 'ai') {
-        // Auto-eliminar (única carta o turno de IA)
+      if (ties.length === 1 || targetPlayer === 'ai') {
+        // Auto-eliminar (única carta o la IA es quien jugó Odio 2)
         const chosen = ties[0];
-        const removedCard = gameState.field[chosen.line][phasePlayer].splice(chosen.idx, 1)[0];
-        gameState[phasePlayer].trash.push(removedCard.card);
-        updateStatus(`${triggerCardName} elimina a ${removedCard.card.nombre} (${label})`);
-        if (typeof triggerUncovered === 'function') triggerUncovered(chosen.line, phasePlayer);
-
-        if (!isOppOnly) {
-          const isSelf = removedCard.card.nombre === triggerCardName;
-          if (!isSelf) {
-            gameState.effectQueue.unshift({
-              effect: { action: 'deleteHighestUncovered', target: actionDef.target, _oppOnly: true },
-              targetPlayer,
-              cardName: triggerCardName
-            });
+        const doAutoElim = () => {
+          gameState.field[chosen.line][phasePlayer].splice(chosen.idx, 1);
+          gameState[phasePlayer].trash.push(chosen.card.card);
+          gameState.eliminatedSinceLastCheck[gameState.turn] = true;
+          updateStatus(`${triggerCardName} elimina a ${chosen.card.card.nombre} (${label})`);
+          if (typeof triggerUncovered === 'function') triggerUncovered(chosen.line, phasePlayer);
+          if (!isOppOnly) {
+            const isSelf = chosen.card.card.nombre === triggerCardName;
+            if (!isSelf) {
+              gameState.effectQueue.unshift({
+                effect: { action: 'deleteHighestUncovered', target: actionDef.target, _oppOnly: true },
+                targetPlayer,
+                cardName: triggerCardName
+              });
+            }
           }
+          processAbilityEffect();
+        };
+        if (window.animCardEliminate) {
+          window.animCardEliminate(chosen.card.card.id, doAutoElim);
+        } else {
+          doAutoElim();
         }
-        processAbilityEffect();
       } else {
-        // Empate: el jugador elige cuál eliminar
+        // Empate: el dueño del efecto (targetPlayer) elige cuál eliminar
         const allowedLines = ties.map(t => t.line);
-        const opts = { allowedLines };
+        // owner: targetPlayer → quien jugó Odio 2 decide, independiente de quién sea phasePlayer
+        const opts = { allowedLines, owner: targetPlayer };
         if (!isOppOnly) {
-          // Si el jugador NO elige Odio 2 (no se suicida), activar fase del oponente
           opts._checkSuicide = {
             triggerCardName,
             queueEffect: {
