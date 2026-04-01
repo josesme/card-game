@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(copy *)",
+      "Bash(dir *)",
+      "Bash(git add *)",
+      "Bash(git reset *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(git merge *)",
+      "Bash(ls *)",
+      "Bash(mkdir *)",
+      "Bash(ffmpeg *)",
+      "Bash(\"c:\\users\\joses\\downloads\\ffmpeg-8.1\\ffmpeg.exe\" *)",
+      "Bash(where *)",
+      "Bash(7z *)",
+      "Bash(powershell *)",
+      "Bash(\"c:\\users\\joses\\downloads\\ffmpeg-2026-03-30-git-e54e117998-essentials_build\\bin\\ffmpeg.exe\" *)",
+      "Bash(del *)",
+      "Bash(ren *)",
+      "Bash(git rm *)"
+    ]
+  },
+  "$version": 3
+}

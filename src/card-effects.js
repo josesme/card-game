@@ -1,145 +1,275 @@
 /**
- * 🎴 COMPILE - Card Effects Engine
- * Efectos de cartas encapsulados para evitar lógica dispersa
+ * 🎴 COMPILE - Card Effects Engine (REFACTORED)
+ * Efectos atómicos reutilizables + composición
  * 
- * REGLA DE ORO: Cada efecto complejo tiene:
- * 1. init() - Configura estado inicial
- * 2. handlers - Procesan interacciones (click, select, etc.)
- * 3. complete() - Limpia y llama a processAbilityEffect()
+ * REGLA DE ORO:
+ * 1. Efectos atómicos (reveal, shift, flip, discard, draw, eliminate)
+ * 2. Composición de efectos para cartas específicas
+ * 3. Handlers genéricos delegan a efectos atómicos
  */
 
 /**
- * Luz 2: Revelar carta bocabajo, luego cambiar o voltear
- * 
- * Uso:
- *   CardEffects.luz2.init(line, target, cardObj)
- *   CardEffects.luz2.onCardRevealed(cardObj, line, target)
- *   CardEffects.luz2.onChoice(choice, cardObj, line, target)
+ * Efectos atómicos reutilizables
+ * Cada efecto tiene:
+ * - setup(ctx, config) → configura effectContext
+ * - execute(params) → ejecuta el efecto
+ * - onComplete(callback) → callback cuando completa
  */
-const CardEffects = {
-    luz2: {
-        /**
-         * Inicia efecto Luz 2
-         * @param {string} owner - 'player' | 'ai' (dueño del efecto)
-         */
-        init: function(owner) {
-            gameState.effectContext = {
-                type: 'luz2',
-                owner: owner,
-                step: 'reveal' // 'reveal' | 'choice' | 'complete'
+const AtomicEffects = {
+    
+    /**
+     * REVEAL: Revelar carta bocabajo (muestra identidad sin cambiar estado)
+     */
+    reveal: {
+        setup: function(ctx, config) {
+            return {
+                type: 'reveal',
+                target: config.target || 'any',      // 'any' | 'player' | 'ai'
+                filter: config.filter || 'faceDown', // 'faceDown' | 'covered'
+                onSelect: config.onSelect            // Callback cuando selecciona carta
             };
         },
-
-        /**
-         * Callback cuando se revela la carta
-         * @param {object} cardObj - Carta revelada {card, faceDown, ...}
-         * @param {string} line - Línea del campo
-         * @param {string} target - 'player' | 'ai'
-         */
-        onCardRevealed: function(cardObj, line, target) {
-            gameState.effectContext.step = 'choice';
-            gameState.effectContext.luz2Data = { cardObj, line, target };
+        
+        execute: function(cardObj, line, target, ctx) {
+            if (!cardObj.faceDown) return false;
             
             // Mostrar preview bocarriba
             if (typeof showCardPreview === 'function') {
                 showCardPreview(cardObj.card, true);
             }
             
-            // Mostrar modal de elección
-            this.showChoiceModal(cardObj, line, target);
+            // Callback personalizado (ej: mostrar modal de elección)
+            if (ctx.onSelect) {
+                ctx.onSelect(cardObj, line, target);
+            }
+            
+            return true;
+        }
+    },
+    
+    /**
+     * SHIFT: Mover carta de una línea a otra
+     */
+    shift: {
+        setup: function(ctx, config) {
+            return {
+                type: 'shift',
+                target: config.target,           // 'player' | 'ai' | 'any'
+                count: config.count || 1,
+                filter: config.filter,           // 'faceDown' | etc.
+                excludeLine: config.excludeLine, // Línea que no puede ser destino
+                onComplete: config.onComplete    // Callback cuando completa shift
+            };
         },
-
-        /**
-         * Muestra modal de elección (SÍ=shift, NO=flip)
-         */
-        showChoiceModal: function(cardObj, line, target) {
+        
+        execute: function(cardObj, line, target, cardIdx, ctx) {
+            // Setup para esperar selección de línea destino
+            ctx.selectedCard = { line, target, cardIdx };
+            ctx.waitingForLine = true;
+            
+            if (typeof clearEffectHighlights === 'function') {
+                clearEffectHighlights();
+            }
+            
+            updateStatus(`Elige línea destino para mover la carta...`);
+            if (typeof highlightSelectableLines === 'function') {
+                highlightSelectableLines();
+            }
+            
+            // Handler se ejecutará en handleShiftTargetLine
+            return 'pending'; // Indica que espera más input
+        },
+        
+        onLineSelected: function(cardObj, sourceLine, destLine, target, ctx) {
+            if (sourceLine === destLine) return false;
+            
+            // Mover carta
+            const stack = gameState.field[sourceLine][target];
+            const idx = stack.indexOf(cardObj);
+            if (idx === -1) return false;
+            
+            stack.splice(idx, 1);
+            gameState.field[destLine][target].push(cardObj);
+            
+            if (ctx.onComplete) {
+                ctx.onComplete();
+            }
+            
+            return true;
+        }
+    },
+    
+    /**
+     * FLIP: Voltear carta (faceDown ↔ faceUp)
+     */
+    flip: {
+        setup: function(ctx, config) {
+            return {
+                type: 'flip',
+                target: config.target,
+                filter: config.filter,           // 'faceDown' (solo bocabajo)
+                animate: config.animate !== false,
+                onComplete: config.onComplete
+            };
+        },
+        
+        execute: function(cardObj, line, target, ctx) {
+            cardObj.faceDown = !cardObj.faceDown;
+            
+            if (ctx.animate && cardObj.faceDown === false) {
+                cardObj._animateFlip = true;
+                if (typeof triggerFlipFaceUp === 'function') {
+                    triggerFlipFaceUp(cardObj, line, target);
+                }
+            }
+            
+            if (typeof updateUI === 'function') updateUI();
+            
+            if (ctx.onComplete) {
+                ctx.onComplete();
+            }
+            
+            return true;
+        }
+    },
+    
+    /**
+     * DISCARD: Descartar carta de la mano
+     */
+    discard: {
+        setup: function(ctx, config) {
+            return {
+                type: 'discard',
+                target: config.target,           // 'player' | 'ai'
+                count: config.count || 1,
+                any: config.any || false,        // true = descarta 0 o más
+                onComplete: config.onComplete
+            };
+        },
+        
+        execute: function(ctx) {
+            const target = ctx.target;
+            const count = ctx.count;
+            
+            if (gameState[target].hand.length === 0) {
+                if (ctx.onComplete) ctx.onComplete();
+                return true;
+            }
+            
+            // IA: descarta carta de menor valor
+            // Jugador: muestra overlay de selección
+            if (target === 'ai') {
+                const idx = aiLowestValueCardIdx('ai');
+                const card = gameState.ai.hand.splice(idx, 1)[0];
+                gameState.ai.trash.push(card);
+                
+                if (ctx.onComplete) ctx.onComplete();
+                return true;
+            } else {
+                // Jugador: delegar a showHandSelectOverlay
+                if (typeof showHandSelectOverlay === 'function') {
+                    showHandSelectOverlay('discard', count, ctx);
+                }
+                return 'pending';
+            }
+        }
+    },
+    
+    /**
+     * CHOICE: Modal de elección SÍ/NO con callbacks personalizados
+     */
+    choice: {
+        setup: function(ctx, config) {
+            return {
+                type: 'choice',
+                message: config.message,
+                yesText: config.yesText || 'SÍ',
+                noText: config.noText || 'NO',
+                onYes: config.onYes,
+                onNo: config.onNo
+            };
+        },
+        
+        execute: function(ctx) {
             const confirmArea = document.getElementById('command-confirm');
             const confirmMsg = document.getElementById('confirm-msg');
             const btnYes = document.getElementById('btn-confirm-yes');
             const btnNo = document.getElementById('btn-confirm-no');
-
+            
             if (!confirmArea || !btnYes || !btnNo) {
-                this.complete();
-                return;
+                if (ctx.onNo) ctx.onNo();
+                return false;
             }
-
+            
             confirmArea.classList.remove('hidden');
-            confirmMsg.textContent = `Luz 2 — ${cardObj.card.nombre}: SÍ = Cambiar de línea (bocabajo) · NO = Voltear bocarriba`;
-
+            confirmMsg.textContent = ctx.message;
+            btnYes.textContent = ctx.yesText;
+            btnNo.textContent = ctx.noText;
+            
             const self = this;
             
             btnYes.onclick = () => {
                 confirmArea.classList.add('hidden');
-                if (typeof hideCardPreview === 'function') hideCardPreview();
-                self.onChoice('shift', cardObj, line, target);
+                if (ctx.onYes) ctx.onYes();
             };
-
+            
             btnNo.onclick = () => {
                 confirmArea.classList.add('hidden');
-                if (typeof hideCardPreview === 'function') hideCardPreview();
-                self.onChoice('flip', cardObj, line, target);
+                if (ctx.onNo) ctx.onNo();
             };
-        },
-
-        /**
-         * Procesa elección del jugador
-         * @param {string} choice - 'shift' | 'flip'
-         */
-        onChoice: function(choice, cardObj, line, target) {
-            if (choice === 'shift') {
-                // Preparar shift
-                const currentIdx = gameState.field[line][target].indexOf(cardObj);
-                gameState.effectContext = {
-                    type: 'shift',
-                    target: target,
-                    count: 1,
-                    selected: [],
-                    selectedCard: { line, target, cardIdx: currentIdx },
-                    waitingForLine: true,
-                    onComplete: () => this.complete() // Callback cuando complete
-                };
-                
-                if (typeof highlightSelectableLines === 'function') {
-                    highlightSelectableLines(line);
-                }
-                updateStatus(`Elige línea destino para mover "${cardObj.card.nombre}" (bocabajo)`);
-                
-            } else if (choice === 'flip') {
-                // Voltear bocarriba
-                cardObj.faceDown = false;
-                cardObj._animateFlip = true;
-                
-                if (typeof updateUI === 'function') updateUI();
-                if (typeof triggerFlipFaceUp === 'function') triggerFlipFaceUp(cardObj, line, target);
-                
-                this.complete();
-            }
-        },
-
-        /**
-         * Completa el efecto y continúa con la cadena
-         */
-        complete: function() {
-            gameState.effectContext = null;
-            if (typeof clearEffectHighlights === 'function') clearEffectHighlights();
-            if (typeof updateUI === 'function') updateUI();
-            if (typeof processAbilityEffect === 'function') processAbilityEffect();
+            
+            return 'pending';
         }
-    },
+    }
+};
 
+/**
+ * Builder para componer efectos
+ */
+const EffectBuilder = {
     /**
-     * Helper: Ejecuta efecto genérico con callback
-     * @param {string} type - Tipo de efecto
-     * @param {function} onComplete - Callback al completar
+     * Crea un efecto compuesto con pasos secuenciales
+     * @param  {...object} steps - Pasos de efecto
      */
-    withCallback: function(type, onComplete) {
-        return function(...args) {
-            const result = type.apply(this, args);
-            if (onComplete) onComplete();
-            return result;
+    sequence: function(...steps) {
+        return {
+            type: 'sequence',
+            steps: steps,
+            currentStep: 0,
+            
+            execute: function(ctx) {
+                if (this.currentStep >= this.steps.length) {
+                    return 'complete';
+                }
+                
+                const step = this.steps[this.currentStep];
+                const result = step.execute(ctx);
+                
+                if (result === true || result === 'complete') {
+                    this.currentStep++;
+                    return this.execute(ctx);
+                }
+                
+                return result; // 'pending' o algo más
+            }
         };
+    },
+    
+    /**
+     * Crea un efecto con elección (if/else)
+     * @param {string} message - Mensaje del modal
+     * @param {function} onYes - Callback si elige SÍ
+     * @param {function} onNo - Callback si elige NO
+     */
+    choice: function(message, onYes, onNo) {
+        return AtomicEffects.choice.setup(null, {
+            message: message,
+            onYes: onYes,
+            onNo: onNo
+        });
     }
 };
 
 // Exportar globalmente
-window.CardEffects = CardEffects;
+window.AtomicEffects = AtomicEffects;
+window.EffectBuilder = EffectBuilder;

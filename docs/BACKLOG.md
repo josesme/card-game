@@ -4,57 +4,101 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 
 ---
 
-## 🔨 REFACTOR: Encapsulamiento de Efectos (REGLA DE ORO)
+## 🔨 REFACTOR: Efectos Atómicos + Composición (REGLA DE ORO)
 
 **Problema:** Lógica de efectos está dispersa en múltiples archivos/funciones → cambios pequeños requieren tocar 5+ sitios.
 
-**Solución:** Patrón de Efecto Encapsulado en `src/card-effects.js`
+**Solución:** Efectos atómicos reutilizables + composición
 
 ### Principios:
 
-1. **Un módulo por efecto complejo**
+1. **Efectos atómicos (reutilizables)**
    ```javascript
-   CardEffects.luz2 = {
-       init(),      // Configura estado
-       handlers{},  // Procesa interacciones
-       complete()   // Limpia + continúa
+   AtomicEffects = {
+       reveal: { setup(), execute(), onLineSelected() },
+       shift: { setup(), execute(), onLineSelected() },
+       flip: { setup(), execute() },
+       discard: { setup(), execute() },
+       choice: { setup(), execute() }
    }
    ```
 
-2. **Cero lógica hardcodeada en handlers genéricos**
-   - `handleFieldCardClick()` debe delegar, no implementar
-   - `finishEffect()` debe llamar callback, no decidir flujo
+2. **Composición para cartas específicas**
+   ```javascript
+   // Luz 2 = Revelar + Elegir (Shift o Flip)
+   const luz2 = EffectBuilder.sequence(
+       AtomicEffects.reveal({ target: 'faceDown' }),
+       EffectBuilder.choice(
+           "SÍ = Cambiar línea · NO = Voltear",
+           () => AtomicEffects.shift({ faceDown: true }),
+           () => AtomicEffects.flip({ faceUp: true })
+       )
+   );
+   
+   // Espíritu 1 = Elegir (Descartar o Voltear)
+   const espiritu1 = EffectBuilder.choice(
+       "¿Descartar 1 carta o voltear esta?",
+       () => AtomicEffects.discard({ count: 1 }),
+       () => AtomicEffects.flip({ self: true })
+   );
+   ```
 
-3. **Estado viaja con effectContext**
+3. **Handlers genéricos delegan a efectos atómicos**
+   ```javascript
+   // ANTES (hardcodeado en handleFieldCardClick):
+   if (ctx.type === 'revealField') {
+       // 20 líneas de lógica específica de Luz 2...
+   }
+   
+   // DESPUÉS (delega a efecto atómico):
+   if (ctx.type === 'reveal') {
+       return AtomicEffects.reveal.execute(cardObj, line, target, ctx);
+   }
+   ```
+
+4. **Estado + Callback chain**
    ```javascript
    gameState.effectContext = {
-       type: 'luz2',
-       step: 'reveal',
-       data: { cardObj, line, target },
-       onComplete: () => CardEffects.luz2.complete()
-   }
+       type: 'reveal',
+       target: 'faceDown',
+       onSelect: (card) => { /* siguiente paso */ }
+   };
    ```
 
-4. **Callback chain explícito**
-   ```javascript
-   // NO: if (ctx.type === 'shift') { ... finishEffect() }
-   // SÍ: ctx.onComplete = () => CardEffects.luz2.complete()
-   ```
+### Efectos atómicos a implementar:
 
-### Efectos a refactorizar:
+- [x] `reveal` - Revelar carta (muestra identidad)
+- [x] `shift` - Mover carta de línea
+- [x] `flip` - Voltear carta
+- [x] `choice` - Modal SÍ/NO con callbacks
+- [ ] `discard` - Descartar de mano
+- [ ] `draw` - Robar del mazo
+- [ ] `eliminate` - Eliminar carta
+- [ ] `return` - Devolver a mano
 
-- [ ] **Luz 2** (prioridad alta) - Actualmente en 5 funciones distintas
-- [ ] **Espíritu 1** - Confirmación de lado
-- [ ] **Diversidad 0** - Jugar carta no-Diversidad
-- [ ] **Plaga 2** - Descarte variable
-- [ ] **Odio 3** - Eliminar por valor
-- [ ] **Control Component** - Reorganizar protocolos
+### Composiciones pendientes:
+
+- [ ] **Luz 2** — reveal + choice(shift, flip)
+- [ ] **Espíritu 1** — choice(discard, flip)
+- [ ] **Diversidad 0** — choice(playCard)
+- [ ] **Plaga 2** — discard(variable) + discard(opponent)
+- [ ] **Odio 3** — choice(line) + eliminate(valueRange)
+- [ ] **Control Component** — choice(rearrange)
 
 ### Archivos:
 
-- `src/card-effects.js` - NUEVO: Módulo de efectos encapsulados
-- `src/abilities-engine.js` - Debe llamar CardEffects.init()
-- `src/logic.js` - Debe delegar a CardEffects.handlers()
+- `src/card-effects.js` — Efectos atómicos + Builder
+- `src/abilities-engine.js` — Usa EffectBuilder para cada carta
+- `src/logic.js` — Handlers delegan a AtomicEffects
+
+### Beneficios:
+
+| Antes | Después |
+|-------|---------|
+| 180 cartas = 180 lógicas dispersas | 8 efectos atómicos reutilizables |
+| Cambiar "reveal" = tocar 10 sitios | Cambiar "reveal" = tocar 1 sitio |
+| Lógica duplicada | DRY (Don't Repeat Yourself) |
+| Difícil de testear | Efectos aislados + testeables |
 
 ---
 
