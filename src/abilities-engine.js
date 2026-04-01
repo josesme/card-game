@@ -2099,7 +2099,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'maySwapOrFlip': {
-      // Prerequisite: there must be at least one face-down card to reveal (Luz 2 mechanic)
+      // Luz 2: primero revelar 1 carta bocabajo, luego cambiar o voltear esa carta concreta
       const hasFaceDown = LINES.some(l =>
         ['player', 'ai'].some(p => gameState.field[l][p].some(c => c.faceDown))
       );
@@ -2107,35 +2107,105 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         processAbilityEffect();
         break;
       }
-      // Player chooses: swap a card or flip a card
       if (targetPlayer === 'player') {
-        const confirmArea = document.getElementById('command-confirm');
-        const confirmMsg = document.getElementById('confirm-msg');
-        const btnYes = document.getElementById('btn-confirm-yes');
-        const btnNo = document.getElementById('btn-confirm-no');
-        if (confirmArea && btnYes && btnNo) {
-          gameState.effectContext = { type: 'confirm' };
-          confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = `${triggerCardName || ''}: ¿Qué quieres hacer? SÍ = Cambiar carta de línea · NO = Voltear carta`;
-          btnYes.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            startEffect('shift', resolvedTarget === 'any' ? 'any' : resolvedTarget, count || 1);
-          };
-          btnNo.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            startEffect('flip', resolvedTarget === 'any' ? 'any' : resolvedTarget, count || 1);
-          };
-        } else {
-          startEffect('flip', resolvedTarget, count || 1);
-        }
+        // Encolar paso 2 (acción post-reveal); paso 1 = revelar carta bocabajo
+        gameState.effectQueue.unshift({
+          effect: { action: 'luz2PostReveal', target, count },
+          targetPlayer,
+          cardName: triggerCardName
+        });
+        startEffect('flip', 'any', 1, { filter: 'faceDown', owner: targetPlayer });
       } else {
-        // Flip si el rival tiene cartas bocarriba (bajarlas daña más); cambiar si no
-        const canFlipOpp = LINES.some(l => { const s = gameState.field[l].player; return s.length > 0 && !s[s.length-1].faceDown; });
-        const canShift = LINES.filter(l => gameState.field[l].ai.length > 0).length >= 2;
-        const aiAction = (canFlipOpp || !canShift) ? 'flip' : 'shift';
-        resolveAbilityAction({ action: aiAction, target, count }, targetPlayer);
+        // IA: revelar carta bocabajo propia con mayor valor, luego decidir acción
+        let best = null, bestLine = null, bestTarget = null;
+        // Preferir propias bocabajo con mayor valor
+        LINES.forEach(l => {
+          gameState.field[l].ai.forEach(c => {
+            if (c.faceDown && (!best || c.card.valor > best.card.valor)) {
+              best = c; bestLine = l; bestTarget = 'ai';
+            }
+          });
+        });
+        // Fallback: bocabajo del jugador
+        if (!best) {
+          LINES.forEach(l => {
+            gameState.field[l].player.forEach(c => {
+              if (c.faceDown && (!best || c.card.valor > best.card.valor)) {
+                best = c; bestLine = l; bestTarget = 'player';
+              }
+            });
+          });
+        }
+        if (best) {
+          best.faceDown = false;
+          best._animateFlip = true;
+          updateUI();
+          // Decidir: cambiar de línea si está en línea débil, sino voltear bocarriba del rival
+          const canShift = LINES.filter(l => gameState.field[l].ai.length > 0).length >= 2;
+          if (bestTarget === 'ai' && canShift) {
+            const destLine = LINES.find(l => l !== bestLine && gameState.field[l].ai.length < gameState.field[bestLine].ai.length);
+            if (destLine) {
+              const cardObj = gameState.field[bestLine].ai.pop();
+              gameState.field[destLine].ai.push(cardObj);
+              triggerUncovered(bestLine, 'ai');
+              updateStatus(`IA reveló y cambió de línea ${best.card.nombre}`);
+            }
+          } else {
+            // Voltear de vuelta bocarriba un rival si no fue carta propia útil, o dejar revelada
+            updateStatus(`IA reveló ${best.card.nombre}`);
+          }
+        }
+        processAbilityEffect();
+      }
+      break;
+    }
+
+    case 'luz2PostReveal': {
+      // Paso 2 de Luz 2: actuar sobre la carta recién revelada (shift o voltear bocabajo)
+      const flipped = gameState.lastFlippedCard;
+      if (!flipped || !flipped.cardObj) { processAbilityEffect(); break; }
+      const { cardObj: revCard, line: revLine, target: revSide } = flipped;
+      // Verificar que la carta sigue en el campo (no fue eliminada mientras tanto)
+      const revIdx = gameState.field[revLine][revSide].indexOf(revCard);
+      if (revIdx === -1) { processAbilityEffect(); break; }
+
+      const confirmArea = document.getElementById('command-confirm');
+      const confirmMsg = document.getElementById('confirm-msg');
+      const btnYes = document.getElementById('btn-confirm-yes');
+      const btnNo = document.getElementById('btn-confirm-no');
+      if (confirmArea && btnYes && btnNo) {
+        gameState.effectContext = { type: 'confirm' };
+        confirmArea.classList.remove('hidden');
+        confirmMsg.textContent = `Luz 2 — ${revCard.card.nombre}: ¿Qué haces? SÍ = Cambiar de línea · NO = Voltear bocabajo`;
+        btnYes.onclick = () => {
+          confirmArea.classList.add('hidden');
+          gameState.effectContext = null;
+          // Shift pre-seleccionado: solo esta carta
+          const currentIdx = gameState.field[revLine][revSide].indexOf(revCard);
+          if (currentIdx === -1) { processAbilityEffect(); return; }
+          gameState.effectContext = {
+            type: 'shift',
+            target: revSide,
+            count: 1,
+            selected: [],
+            selectedCard: { line: revLine, target: revSide, cardIdx: currentIdx },
+            waitingForLine: true,
+            owner: targetPlayer
+          };
+          if (typeof highlightSelectableLines === 'function') highlightSelectableLines(revLine);
+          if (typeof updateStatus === 'function') updateStatus(`Elige línea destino para "${revCard.card.nombre}"`);
+        };
+        btnNo.onclick = () => {
+          confirmArea.classList.add('hidden');
+          gameState.effectContext = null;
+          // Voltear bocabajo la carta revelada
+          revCard.faceDown = true;
+          revCard._animateFlip = true;
+          updateUI();
+          processAbilityEffect();
+        };
+      } else {
+        processAbilityEffect();
       }
       break;
     }

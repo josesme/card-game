@@ -1731,7 +1731,7 @@ function handleFieldCardClick(line, target, cardIdx) {
         }
         const wasFaceDown = cardObj.faceDown;
         cardObj.faceDown = !cardObj.faceDown;
-        gameState.lastFlippedCard = { cardObj, line };
+        gameState.lastFlippedCard = { cardObj, line, target };
         cardObj._animateFlip = true;
         updateUI(); // inicia animación — finishEffect debe esperar
         const _isTop = cardIdx === gameState.field[line][target].length - 1;
