@@ -6,7 +6,58 @@ Historial de cambios y evolución del proyecto. Formato resumido con secciones e
 
 ## 🎯 Versión Actual
 
-**v2.1.0** — Completado pendiente de validación (AI Overhaul)
+**v2.2.0** — Animaciones y Audio
+
+<details>
+<summary><strong>Ver detalles de v2.2.0</strong></summary>
+
+### v2.2.0 — Animaciones y Audio
+
+**Fecha:** Abril 2026
+
+**Objetivo:** Añadir música de fondo continua y controles de audio al juego.
+
+#### Características Añadidas
+
+- ✅ **Música de fondo** — BGM continua en loop durante toda la partida
+- ✅ **Botón mute/unmute** — Control en las 3 pantallas (inicio, draft, juego)
+- ✅ **Preferencia persistente** — Estado de mute guardado en localStorage
+- ✅ **Auto-play** — La música inicia con la primera interacción del usuario
+- ✅ **Audio comprimido** — OGG format, 87MB → 40MB (53% reducción)
+
+#### Módulo de Audio
+
+**`src/audio.js`** — Gestor de audio del juego:
+```javascript
+AudioManager.init()      // Inicializa el sistema
+AudioManager.play()      // Reproduce música
+AudioManager.toggleMute() // Alterna mute/unmute
+AudioManager.getIsMuted() // Obtiene estado actual
+```
+
+#### Archivos Creados
+
+- `src/audio.js` — Módulo AudioManager
+- `sounds/bgm.ogg` — Música de fondo comprimida
+
+#### Archivos Modificados
+
+- `src/index.html` — Botón mute + inicialización de audio
+- `src/draft.html` — Botón mute + inicialización de audio
+- `src/game.html` — Botón mute + inicialización de audio
+- `.gitignore` — Excluye archivos de audio sin comprimir
+
+#### Limitación Conocida
+
+⚠️ **La música se reinicia al cambiar de pantalla** — Limitación de navegadores web. Cada página HTML carga un nuevo elemento de audio.
+
+**Solución futura:** Ejecutable con Electron para audio continuo y fullscreen persistente.
+
+</details>
+
+---
+
+## ✨ v2.1.2 — GSAP Animations & ScrambleText
 
 <details>
 <summary><strong>Ver detalles de v2.1.0</strong></summary>
