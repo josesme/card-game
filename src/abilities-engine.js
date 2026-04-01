@@ -2114,7 +2114,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           targetPlayer,
           cardName: triggerCardName
         });
-        startEffect('flip', 'any', 1, { filter: 'faceDown', owner: targetPlayer });
+        startEffect('flip', 'any', 1, { filter: 'faceDown', owner: targetPlayer, statusMsg: 'REVELAR' });
       } else {
         // IA: revelar carta bocabajo propia con mayor valor, luego decidir acción
         let best = null, bestLine = null, bestTarget = null;

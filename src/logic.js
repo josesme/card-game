@@ -1523,6 +1523,8 @@ function startEffect(type, target, count, opts = {}) {
         updateStatus(`Reorganizar protocolos ${ownerDesc}: intercambia líneas y pulsa Listo`);
         // Mostrar botón "Listo" para confirmar reorganización
         showRearrangeDoneButton();
+    } else if (opts.statusMsg) {
+        updateStatus(`Efecto: elige ${count} carta(s)${targetDesc} para ${opts.statusMsg}`);
     } else {
         updateStatus(`Efecto: elige ${count} carta(s)${targetDesc} para ${actionVerb}`);
     }
