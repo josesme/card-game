@@ -437,6 +437,7 @@
         }
 
         /* Fondo de color por jugador */
+        /* Col 1 — player-100 #FFE863 / ai-100 #722E9A */
         .player-stack.vertical-stack {
             background: linear-gradient(180deg,
                 color-mix(in srgb, var(--player-100) 22%, #0b0f1a) 0%,
@@ -448,6 +449,28 @@
                 color-mix(in srgb, var(--ai-100) 28%, #0b0f1a) 0%,
                 color-mix(in srgb, var(--ai-100) 40%, #0b0f1a) 100%);
             border-radius: 6px;
+        }
+        /* Col 2 — player-300 #FFD93D / ai-300 #5D2689 */
+        #line-centro .player-stack.vertical-stack {
+            background: linear-gradient(180deg,
+                color-mix(in srgb, var(--player-300) 22%, #0b0f1a) 0%,
+                color-mix(in srgb, var(--player-300) 32%, #0b0f1a) 100%);
+        }
+        #line-centro .ai-stack.vertical-stack {
+            background: linear-gradient(180deg,
+                color-mix(in srgb, var(--ai-300) 28%, #0b0f1a) 0%,
+                color-mix(in srgb, var(--ai-300) 40%, #0b0f1a) 100%);
+        }
+        /* Col 3 — player-500 #F5BD1F / ai-500 #47297B */
+        #line-derecha .player-stack.vertical-stack {
+            background: linear-gradient(180deg,
+                color-mix(in srgb, var(--player-500) 22%, #0b0f1a) 0%,
+                color-mix(in srgb, var(--player-500) 32%, #0b0f1a) 100%);
+        }
+        #line-derecha .ai-stack.vertical-stack {
+            background: linear-gradient(180deg,
+                color-mix(in srgb, var(--ai-500) 28%, #0b0f1a) 0%,
+                color-mix(in srgb, var(--ai-500) 40%, #0b0f1a) 100%);
         }
 
         /* Watermark icons — on battle-column (fixed height) instead of stacks (scrollable) */
