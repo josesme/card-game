@@ -1462,6 +1462,17 @@ function startEffect(type, target, count, opts = {}) {
         count = Math.min(count, gameState.player.hand.length);
     }
 
+    // revealField: solo necesita que haya alguna carta bocabajo en campo
+    if (type === 'revealField') {
+        const targets = target === 'any' ? ['player', 'ai'] : [target];
+        const hasFD = LINES.some(l => targets.some(p => gameState.field[l][p].some(c => c.faceDown)));
+        if (!hasFD) {
+            console.log(`⏭️ revealField omitido — sin cartas bocabajo`);
+            if (typeof processAbilityEffect === 'function') processAbilityEffect();
+            return;
+        }
+    }
+
     // Si es eliminate/flip/return/shift y no hay cartas válidas en campo, saltar efecto
     if (type === 'eliminate' || type === 'flip' || type === 'return' || type === 'shift') {
         const filterCtx = { filter: opts.filter, maxVal: opts.maxVal, minVal: opts.minVal, exactVal: opts.exactVal };
@@ -1516,6 +1527,7 @@ function startEffect(type, target, count, opts = {}) {
     else if (type === 'shift') actionVerb = 'CAMBIAR de línea';
     else if (type === 'swap') actionVerb = 'INTERCAMBIAR';
     else if (type === 'rearrange') actionVerb = 'REORGANIZAR protocolos';
+    else if (type === 'revealField') actionVerb = 'REVELAR';
 
     const targetDesc = target === 'ai' ? ' del OPONENTE' : target === 'player' ? ' TUYAS' : '';
     if (type === 'rearrange') {
@@ -1775,6 +1787,16 @@ function handleFieldCardClick(line, target, cardIdx) {
         updateStatus("Elige la línea de destino para cambiar la carta...");
         highlightSelectableLines();
         return; 
+    } else if (ctx.type === 'revealField') {
+        // Revelar: mostrar la identidad de la carta bocabajo sin cambiar su estado
+        const cardObj = gameState.field[line][target][cardIdx];
+        if (!cardObj.faceDown) return; // solo bocabajo
+        gameState.lastRevealedCard = { cardObj, line, target };
+        showCardPreview(cardObj.card);
+        ctx.selected.push(cardObj);
+        if (ctx.selected.length >= ctx.count) finishEffect();
+        else updateUI();
+        return;
     } else if (ctx.type === 'return') {
         // Filter: si hay filtro faceDown con targetAll, validar que la carta clicada sea bocabajo
         const cardObj = gameState.field[line][target][cardIdx];
@@ -2237,6 +2259,30 @@ function resolveEffectAI(type, target, count, opts = {}) {
                     updateUI();
                 }
             }
+        }
+        if (typeof processAbilityEffect === 'function') processAbilityEffect();
+        return;
+    }
+
+    if (type === 'revealField') {
+        // IA revela una carta bocabajo: preferir las del rival para ganar info
+        const targets = target === 'any' ? ['player', 'ai'] : [actualTarget];
+        let best = null, bestLine = null, bestSide = null;
+        // Primero intentar carta bocabajo del jugador (más info para la IA)
+        for (const p of ['player', 'ai']) {
+            if (!targets.includes(p)) continue;
+            LINES.forEach(l => {
+                gameState.field[l][p].forEach(c => {
+                    if (c.faceDown && (!best || c.card.valor > best.card.valor)) {
+                        best = c; bestLine = l; bestSide = p;
+                    }
+                });
+            });
+            if (best) break;
+        }
+        if (best) {
+            gameState.lastRevealedCard = { cardObj: best, line: bestLine, target: bestSide };
+            updateStatus(`IA revela ${best.card.nombre} (bocabajo) [${gameState.currentTriggerCard || ''}]`);
         }
         if (typeof processAbilityEffect === 'function') processAbilityEffect();
         return;

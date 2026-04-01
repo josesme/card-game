@@ -2108,13 +2108,13 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         break;
       }
       if (targetPlayer === 'player') {
-        // Encolar paso 2 (acción post-reveal); paso 1 = revelar carta bocabajo
+        // Encolar paso 2 (acción post-reveal); paso 1 = revelar carta bocabajo (sin cambiar estado)
         gameState.effectQueue.unshift({
           effect: { action: 'luz2PostReveal', target, count },
           targetPlayer,
           cardName: triggerCardName
         });
-        startEffect('flip', 'any', 1, { filter: 'faceDown', owner: targetPlayer, statusMsg: 'REVELAR' });
+        startEffect('revealField', 'any', 1, { owner: targetPlayer });
       } else {
         // IA: revelar carta bocabajo propia con mayor valor, luego decidir acción
         let best = null, bestLine = null, bestTarget = null;
@@ -2137,22 +2137,26 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           });
         }
         if (best) {
-          best.faceDown = false;
-          best._animateFlip = true;
-          updateUI();
-          // Decidir: cambiar de línea si está en línea débil, sino voltear bocarriba del rival
-          const canShift = LINES.filter(l => gameState.field[l].ai.length > 0).length >= 2;
-          if (bestTarget === 'ai' && canShift) {
+          // Revelar: solo muestra la identidad, no cambia estado
+          gameState.lastRevealedCard = { cardObj: best, line: bestLine, target: bestSide };
+          updateStatus(`IA revela ${best.card.nombre} (bocabajo)`);
+          // Decidir acción: cambiar de línea (bocabajo) o voltear bocarriba
+          const canShift = bestSide === 'ai' && LINES.filter(l => gameState.field[l].ai.length > 0).length >= 2;
+          if (canShift) {
+            // Mover bocabajo a línea más débil
             const destLine = LINES.find(l => l !== bestLine && gameState.field[l].ai.length < gameState.field[bestLine].ai.length);
             if (destLine) {
               const cardObj = gameState.field[bestLine].ai.pop();
-              gameState.field[destLine].ai.push(cardObj);
+              gameState.field[destLine].ai.push(cardObj); // sigue bocabajo
               triggerUncovered(bestLine, 'ai');
-              updateStatus(`IA reveló y cambió de línea ${best.card.nombre}`);
+              updateStatus(`IA cambió de línea ${best.card.nombre} (bocabajo)`);
             }
           } else {
-            // Voltear de vuelta bocarriba un rival si no fue carta propia útil, o dejar revelada
-            updateStatus(`IA reveló ${best.card.nombre}`);
+            // Voltear bocarriba (cambia estado ahora)
+            best.faceDown = false;
+            best._animateFlip = true;
+            if (typeof triggerFlipFaceUp === 'function') triggerFlipFaceUp(best, bestLine, bestSide);
+            updateStatus(`IA voltea ${best.card.nombre} bocarriba`);
           }
         }
         processAbilityEffect();
@@ -2161,13 +2165,16 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'luz2PostReveal': {
-      // Paso 2 de Luz 2: actuar sobre la carta recién revelada (shift o voltear bocabajo)
-      const flipped = gameState.lastFlippedCard;
-      if (!flipped || !flipped.cardObj) { processAbilityEffect(); break; }
-      const { cardObj: revCard, line: revLine, target: revSide } = flipped;
-      // Verificar que la carta sigue en el campo (no fue eliminada mientras tanto)
+      // Paso 2 de Luz 2: actuar sobre la carta recién revelada (mover bocabajo o voltear bocarriba)
+      const revealed = gameState.lastRevealedCard;
+      if (!revealed || !revealed.cardObj) { processAbilityEffect(); break; }
+      const { cardObj: revCard, line: revLine, target: revSide } = revealed;
+      // Verificar que la carta sigue en el campo
       const revIdx = gameState.field[revLine][revSide].indexOf(revCard);
       if (revIdx === -1) { processAbilityEffect(); break; }
+
+      // Mostrar preview de la carta revelada mientras aparece el modal
+      if (typeof showCardPreview === 'function') showCardPreview(revCard.card);
 
       const confirmArea = document.getElementById('command-confirm');
       const confirmMsg = document.getElementById('confirm-msg');
@@ -2176,11 +2183,12 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       if (confirmArea && btnYes && btnNo) {
         gameState.effectContext = { type: 'confirm' };
         confirmArea.classList.remove('hidden');
-        confirmMsg.textContent = `Luz 2 — ${revCard.card.nombre}: ¿Qué haces? SÍ = Cambiar de línea · NO = Voltear bocabajo`;
+        confirmMsg.textContent = `Luz 2 — ${revCard.card.nombre}: SÍ = Cambiar de línea (bocabajo) · NO = Voltear bocarriba`;
         btnYes.onclick = () => {
           confirmArea.classList.add('hidden');
           gameState.effectContext = null;
-          // Shift pre-seleccionado: solo esta carta
+          if (typeof hideCardPreview === 'function') hideCardPreview();
+          // Shift pre-seleccionado, la carta sigue bocabajo
           const currentIdx = gameState.field[revLine][revSide].indexOf(revCard);
           if (currentIdx === -1) { processAbilityEffect(); return; }
           gameState.effectContext = {
@@ -2193,18 +2201,21 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             owner: targetPlayer
           };
           if (typeof highlightSelectableLines === 'function') highlightSelectableLines(revLine);
-          if (typeof updateStatus === 'function') updateStatus(`Elige línea destino para "${revCard.card.nombre}"`);
+          if (typeof updateStatus === 'function') updateStatus(`Elige línea destino para mover "${revCard.card.nombre}" (bocabajo)`);
         };
         btnNo.onclick = () => {
           confirmArea.classList.add('hidden');
           gameState.effectContext = null;
-          // Voltear bocabajo la carta revelada
-          revCard.faceDown = true;
+          if (typeof hideCardPreview === 'function') hideCardPreview();
+          // Voltear bocarriba: ahora sí cambia el estado
+          revCard.faceDown = false;
           revCard._animateFlip = true;
           updateUI();
-          processAbilityEffect();
+          if (typeof triggerFlipFaceUp === 'function') triggerFlipFaceUp(revCard, revLine, revSide);
+          else processAbilityEffect();
         };
       } else {
+        if (typeof hideCardPreview === 'function') hideCardPreview();
         processAbilityEffect();
       }
       break;
