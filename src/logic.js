@@ -1072,18 +1072,14 @@ function offerControlRearrange(who, resumeAction) {
 
     gameState.pendingControlResume = { who, action: resumeAction };
 
-    const restore = () => {
-        if (actionsDiv) actionsDiv.innerHTML = `
-            <button class="ui-btn" id="btn-confirm-yes">ACEPTAR</button>
-            <button class="ui-btn ui-btn--danger" id="btn-confirm-no">CANCELAR</button>
-        `;
+    const hideConfirm = () => {
         confirmArea.classList.add('hidden');
     };
 
-    document.getElementById('btn-ctrl-mine').onclick = () => { restore(); startEffect('rearrange', 'player', 1); };
-    document.getElementById('btn-ctrl-rival').onclick = () => { restore(); startEffect('rearrange', 'ai', 1); };
+    document.getElementById('btn-ctrl-mine').onclick = () => { hideConfirm(); startEffect('rearrange', 'player', 1); };
+    document.getElementById('btn-ctrl-rival').onclick = () => { hideConfirm(); startEffect('rearrange', 'ai', 1); };
     document.getElementById('btn-ctrl-skip').onclick = () => {
-        restore();
+        hideConfirm();
         const resume = gameState.pendingControlResume;
         gameState.pendingControlResume = null;
         if (resume) resumeControlAction(resume.action, resume.who);
@@ -1369,16 +1365,13 @@ function processNextEffect() {
 
     // Check for "puedes" (optional)
     if (text.includes("puedes") && targetPlayer === 'player') {
-        ui.confirmArea.classList.remove('hidden');
-        window.scrTxt ? window.scrTxt(ui.confirmMsg, `¿Quieres usar este efecto? "${text}"`, { duration: 1.0 }) : (ui.confirmMsg.innerText = `¿Quieres usar este efecto? "${text}"`);
-        ui.btnConfirmYes.onclick = () => {
-            ui.confirmArea.classList.add('hidden');
-            resolveSentence(text, targetPlayer, opponent);
-        };
-        ui.btnConfirmNo.onclick = () => {
-            ui.confirmArea.classList.add('hidden');
-            processNextEffect(); // Skip to next
-        };
+        showConfirmDialog(
+            `¿Quieres usar este efecto? "${text}"`,
+            () => resolveSentence(text, targetPlayer, opponent),  // onYes
+            () => processNextEffect(),  // onNo
+            'SÍ',
+            'NO'
+        );
         return;
     }
 

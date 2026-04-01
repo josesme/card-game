@@ -1263,11 +1263,57 @@
             <div class="confirm-text" id="confirm-msg"></div>
         </div>
         <div class="effect-actions">
-            <button class="ui-btn" id="btn-confirm-yes">SÍ</button>
-            <button class="ui-btn ui-btn--danger" id="btn-confirm-no">NO</button>
+            <!-- Buttons injected dynamically by showConfirmDialog() -->
         </div>
     </div>
 </div>
+
+<!-- Helper function for dynamic confirm modal -->
+<script>
+/**
+ * Show confirm modal with custom texts
+ * @param {string} message - Message to display
+ * @param {string} yesText - Text for yes button (default: "SÍ")
+ * @param {string} noText - Text for no button (default: "NO")
+ * @param {function} onYes - Callback when yes is clicked
+ * @param {function} onNo - Callback when no is clicked
+ */
+function showConfirmDialog(message, onYes, onNo, yesText, noText) {
+    const confirmArea = document.getElementById('command-confirm');
+    const confirmMsg = document.getElementById('confirm-msg');
+    const actionsDiv = confirmArea.querySelector('.effect-actions');
+    
+    if (!confirmArea || !confirmMsg || !actionsDiv) return;
+    
+    // Set message with scramble effect if available
+    if (window.scrTxt) {
+        window.scrTxt(confirmMsg, message, { duration: 1.0 });
+    } else {
+        confirmMsg.textContent = message;
+    }
+    
+    // Set button texts (with defaults)
+    yesText = yesText || 'SÍ';
+    noText = noText || 'NO';
+    
+    actionsDiv.innerHTML = 
+        '<button class="ui-btn" id="btn-confirm-yes">' + yesText + '</button>' +
+        '<button class="ui-btn ui-btn--danger" id="btn-confirm-no">' + noText + '</button>';
+    
+    confirmArea.classList.remove('hidden');
+    
+    // Bind callbacks
+    document.getElementById('btn-confirm-yes').onclick = function() {
+        confirmArea.classList.add('hidden');
+        if (onYes) onYes();
+    };
+    
+    document.getElementById('btn-confirm-no').onclick = function() {
+        confirmArea.classList.add('hidden');
+        if (onNo) onNo();
+    };
+}
+</script>
 
 <!-- ACTION OVERLAY: jugar carta bocarriba/bocabajo -->
 <div id="action-modal" class="effect-overlay hidden">
