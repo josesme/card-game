@@ -34,3 +34,8 @@ personal/
 my-changes/
 local-customizations/
 images-local/
+
+# Audio original sin comprimir (usar bgm.ogg comprimido)
+sounds/*.mp3
+sounds/*.wav
+sounds/*.flac
