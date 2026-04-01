@@ -48,9 +48,10 @@
             margin: 0 auto;
             display: flex;
             flex-direction: column;
-            /* Portrait/tall viewports: cap at vw-based height to prevent endless stacks.
-               Landscape (vw > vh): the vw formula gives a larger value so vh wins — no change. */
-            height: min(calc(100vh - 130px), calc(100vw * 0.72 + 100px));
+            /* Gap proporcional sobre la hand-bar: padding-bottom escala con vh
+               en lugar de un offset fijo que no funciona igual en todas las resoluciones */
+            height: calc(100vh - 60px);
+            padding-bottom: 7vh;
             overflow: hidden;
         }
 
