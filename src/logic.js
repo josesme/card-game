@@ -478,11 +478,14 @@ function isSelectionActive() {
         ));
 }
 
-function showCardPreview(card) {
+function showCardPreview(card, forceFaceUp) {
     const panel = document.getElementById('card-preview-panel');
     const inner = document.getElementById('card-preview-inner');
     if (!panel || !inner || isSelectionActive()) return;
-    inner.innerHTML = createCardHTML(card);
+    
+    // Si forceFaceUp es true, mostrar carta bocarriba aunque esté bocabajo
+    const cardObj = forceFaceUp ? { card: card, faceDown: false } : card;
+    inner.innerHTML = createCardHTML(cardObj);
     panel.classList.add('visible');
 }
 
@@ -1832,7 +1835,8 @@ function handleFieldCardClick(line, target, cardIdx) {
         // Cerrar efecto manualmente sin pasar por finishEffect (evita updateUI que cierra el preview)
         gameState.effectContext = null;
         clearEffectHighlights();
-        showCardPreview(cardObj.card);
+        // Mostrar carta revelada (bocarriba) en el preview
+        showCardPreview(cardObj.card, true); // true = forzar bocarriba
         // Mostrar modal directamente sin cola
         luz2ShowPostRevealModal(cardObj, line, target);
         return;
