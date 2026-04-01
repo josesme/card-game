@@ -54,6 +54,49 @@ Historial de cambios y evolución del proyecto. Formato resumido con secciones e
 
 ---
 
+## ✨ v2.1.2 — GSAP Animations & ScrambleText
+
+<details>
+<summary><strong>Ver detalles de v2.1.2</strong></summary>
+
+### v2.1.2 — GSAP Animations & ScrambleText
+
+**Fecha:** Abril 2026
+
+**Objetivo:** Capa visual de animaciones sobre la mesa de juego sin tocar la lógica del motor.
+
+#### Animaciones de Carta
+
+- ✅ **ANIM-01:** Entrada al campo (jugar carta) — barrido vertical clip-path top→bottom (0.7s) + scan line cyan sincronizada
+- ✅ **ANIM-02:** Volteo de carta (flip) — barrido horizontal clip-path left→right (0.7s) + scan line vertical — con flag `_animateFlip` en el objeto de carta para sobrevivir rebuilds de DOM
+- ✅ **ANIM-03:** Entrada a mano (Actualizar) — mismo barrido vertical con stagger entre cartas nuevas
+
+#### ScrambleText
+
+- ✅ **ANIM-04:** `window.scrTxt(el, text, opts)` — helper global con GSAP ScrambleText; fallback a `textContent` si el plugin no está disponible; evita re-animar si el valor no cambió (`data-scr-last`)
+- ✅ **ANIM-05:** Aplicado a todos los textos del juego — contadores (mazo/descarte/mano), scores por línea, control indicator, status bar, confirm-msg, game-over title/reason, títulos de modales (reveal, select, action)
+- ✅ **ANIM-06:** Etiquetas estáticas — scramble en cascada al cargar la página (JUG, IA, Mazo, Desc., Mano, botones de cabecera, títulos de modales)
+- ✅ **ANIM-07:** Auto-scramble en modales vía `MutationObserver` al hacerse visibles (`reveal-modal`, `overlay-select`)
+
+#### Fixes del milestone
+
+- ✅ Cooldown global (1.5s) en `updateUI()` para evitar múltiples triggers del scramble
+- ✅ Doble-click en carta prevenido con flag de estado
+- ✅ Tipografía de protocolos igualada entre `draft.html` y `game.html`
+- ✅ Apatía 4 — `mayFlipOwnCovered` sin restricción de línea (corrección de regla)
+
+#### Archivos Modificados
+
+- `src/game.html` — CSS clip-path animations, scan line keyframes, ScrambleText init script
+- `src/animations.js` — `animCardEnterField`, `animCardEliminate`, `animCompileLine`, `flushAnimQueue`, `scrTxt`, `_initModalScramble`
+- `src/logic.js` — `renderStack` (flags de animación), `updateUI` (scrTxt en counters/scores/control), `handleFieldCardClick` (flip animation), `showGameOver` (scrTxt)
+- `src/abilities-engine.js` — `mayFlipOwnCovered`
+- `src/gsap.min.js`, `src/Flip.min.js`, `src/ScrambleText.min.js` — librerías GSAP (local)
+
+</details>
+
+---
+
 ## 🔧 v2.1.1 — Rules Audit & Fixes
 
 <details>

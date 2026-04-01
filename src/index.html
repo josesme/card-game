@@ -293,7 +293,7 @@
         <button class="ui-btn" id="btn-play">COMENZAR JUEGO</button>
     </div>
 
-    <div class="version" id="version-text">v2.1 — 2026</div>
+    <div class="version" id="version-text">v2.1.2 — 2026</div>
 </div>
 
 <!-- GSAP + ScrambleText -->
@@ -334,7 +334,7 @@ window.addEventListener('load', function() {
         if (window.scrTxt && typeof gsap !== 'undefined') {
             console.log('[Scramble] Applying to tagline and version...');
             window.scrTxt('tagline-text', 'Juego de cartas · IA adaptativa', { duration: 1.0, chars: 'upperAndLowerCase' });
-            window.scrTxt('version-text', 'v2.1 — 2026', { duration: 1.0, chars: '0123456789' });
+            window.scrTxt('version-text', 'v2.1.2 — 2026', { duration: 1.0, chars: '0123456789' });
         } else {
             console.log('[Scramble] Not available:', { scrTxt: !!window.scrTxt, gsap: typeof gsap });
         }
