@@ -6,173 +6,220 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 
 ## 📝 REFINAMIENTO COPY DE MODALES
 
-Listado completo de textos de modales para revisar y pulir. Completar uno a uno y eliminar del backlog.
+Listado completo de textos de modales/overlays para revisar y pulir. **Solo efectos con interacción UI**.
 
-### Confirmación de Efecto
-- **ID:** `CMD-01`
-- **Ubicación:** `logic.js:1373`
-- **Texto actual:** `¿Quieres usar este efecto? "{texto del efecto}"`
-- **Botones:** `SÍ` | `NO` ✅ Actualizado
-- **Estado:** ✅ Completado (v2.2.1)
+**Cómo trabajar:**
+1. Elige una tarea (ej: `CMD-02`)
+2. Propón el nuevo copy
+3. Implementa el cambio
+4. Marca como `✅ Completado (vX.X.X)`
+5. Cuando todas las de una categoría estén completas, elimina la sección
 
 ---
 
-### Control Component
-- **ID:** `CMD-02`
+### Confirm Dialog (`command-confirm`)
+
+#### CMD-01 — Confirmación de Efecto ✅
+- **Ubicación:** `logic.js:1373`, `game.html:showConfirmDialog()`
+- **Trigger:** Efectos opcionales ("puedes...")
+- **Mensaje:** `¿Quieres usar este efecto? "{texto}"`
+- **Botones:** `SÍ` | `NO` ✅ Actualizado en v2.2.1
+- **Estado:** ✅ Completado
+
+---
+
+#### CMD-02 — Control Component
 - **Ubicación:** `logic.js:1065`
-- **Texto actual:** `Control Component: ¿Reorganizas protocolos?`
-- **Botones:** `ACEPTAR` | `CANCELAR`
+- **Trigger:** Control Component (≥2 líneas ganadas)
+- **Mensaje:** `Control Component: ¿Reorganizas protocolos?`
+- **Botones:** `MIS PROTOCOLOS` | `PROTOCOLOS RIVALES` | `SALTAR`
+- **Nota:** 3 botones personalizados, no usa showConfirmDialog()
 - **Estado:** ⏳ Pendiente
 
 ---
 
-### Descartar (N cartas)
-- **ID:** `SEL-01`
-- **Ubicación:** `game.html:1401`
+#### CMD-03 — Espíritu 1 (Confirmación de lado)
+- **Ubicación:** `logic.js:2370`
+- **Trigger:** Espíritu 1 al jugar carta
+- **Mensaje:** `¿Quieres jugar esta carta en el lado del oponente?`
+- **Botones:** `SÍ` | `NO`
+- **Estado:** ⏳ Pendiente
+
+---
+
+### Hand Select Overlay (`overlay-select` — mano del jugador)
+
+#### SEL-01 — Descartar (N cartas fijas)
+- **Ubicación:** `game.html:1401`, `showHandSelectOverlay()`
+- **Trigger:** Efectos de descarte (ej: "descarta 2 cartas")
 - **Título:** `DESCARTAR`
-- **Subtítulo actual:** `Elige {N} carta{s} de tu mano`
+- **Subtítulo:** `Elige {N} carta{s} de tu mano`
 - **Botón:** `DESCARTAR`
 - **Estado:** ⏳ Pendiente
 
 ---
 
-### Descartar Cualquiera (0 o más)
-- **ID:** `SEL-02`
+#### SEL-02 — Descartar Cualquiera (0 o más)
 - **Ubicación:** `game.html:1402`
+- **Trigger:** `discardAny` (ej: "descarta las que quieras")
 - **Título:** `DESCARTAR`
-- **Subtítulo actual:** `Descarta las que quieras (0 o más)`
+- **Subtítulo:** `Descarta las que quieras (0 o más)`
 - **Botones:** `DESCARTAR` | `DETENER`
 - **Estado:** ⏳ Pendiente
 
 ---
 
-### Descartar Variable (rival descarta más)
-- **ID:** `SEL-03`
+#### SEL-03 — Descartar Variable (rival descarta más)
 - **Ubicación:** `game.html:1403`
+- **Trigger:** `discardVariable` (ej: Plaga 1)
 - **Título:** `DESCARTAR`
-- **Subtítulo actual:** `Descarta cartas — el rival descartará más`
+- **Subtítulo:** `Descarta cartas — el rival descartará más`
 - **Botones:** `DESCARTAR` | `DETENER`
 - **Estado:** ⏳ Pendiente
 
 ---
 
-### Dar al Oponente
-- **ID:** `SEL-04`
+#### SEL-04 — Dar al Oponente
 - **Ubicación:** `game.html:1404`
+- **Trigger:** Efectos de dar cartas (ej: "da 1 carta al oponente")
 - **Título:** `DAR AL OPONENTE`
-- **Subtítulo actual:** `Elige {N} carta{s} para dar al oponente`
+- **Subtítulo:** `Elige {N} carta{s} para dar al oponente`
 - **Botón:** `ENTREGAR`
 - **Estado:** ⏳ Pendiente
 
 ---
 
-### Revelar Carta
-- **ID:** `SEL-05`
+#### SEL-05 — Revelar Carta (desde mano)
 - **Ubicación:** `game.html:1405`
+- **Trigger:** Efectos de revelar (ej: Amor 4)
 - **Título:** `REVELAR CARTA`
-- **Subtítulo actual:** `Elige 1 carta para revelar al oponente`
+- **Subtítulo:** `Elige 1 carta para revelar al oponente`
 - **Botón:** `REVELAR`
 - **Estado:** ⏳ Pendiente
 
 ---
 
-### Jugar Carta (Diversidad 0)
-- **ID:** `SEL-06`
+#### SEL-06 — Jugar Carta (Diversidad 0)
 - **Ubicación:** `game.html:1406`
+- **Trigger:** Diversidad 0 al actualizar mano
 - **Título:** `JUGAR CARTA`
-- **Subtítulo actual:** `Elige 1 carta (no Diversidad) para jugar bocarriba`
+- **Subtítulo:** `Elige 1 carta (no Diversidad) para jugar bocarriba`
 - **Botón:** `JUGAR`
 - **Estado:** ⏳ Pendiente
 
 ---
 
-### Eliminar (campo)
-- **ID:** `FLD-01`
-- **Ubicación:** `game.html:1507, 1581`
+### Field Select Overlay (`overlay-select` — campo)
+
+#### FLD-01 — Eliminar (campo)
+- **Ubicación:** `game.html:1507, 1581`, `showFieldSelectOverlay()`
+- **Trigger:** Efectos de eliminar del campo
 - **Título:** `ELIMINAR`
-- **Subtítulo actual:** `Elige {N} carta{s} {del oponente/tuyas}`
+- **Subtítulo:** `Elige {N} carta{s} {del oponente/tuyas}`
 - **Botón:** `ELIMINAR`
 - **Estado:** ⏳ Pendiente
 
 ---
 
-### Voltear (campo)
-- **ID:** `FLD-02`
+#### FLD-02 — Voltear (campo)
 - **Ubicación:** `game.html:1507, 1581`
+- **Trigger:** Efectos de voltear cartas del campo
 - **Título:** `VOLTEAR`
-- **Subtítulo actual:** `Elige {N} carta{s} {del oponente/tuyas}`
+- **Subtítulo:** `Elige {N} carta{s} {del oponente/tuyas}`
 - **Botón:** `VOLTEAR`
 - **Estado:** ⏳ Pendiente
 
 ---
 
-### Devolver a Mano
-- **ID:** `FLD-03`
+#### FLD-03 — Devolver a Mano
 - **Ubicación:** `game.html:1507, 1581`
+- **Trigger:** Efectos de devolver carta del campo a la mano
 - **Título:** `DEVOLVER A MANO`
-- **Subtítulo actual:** `Elige {N} carta{s} {del oponente/tuyas}`
+- **Subtítulo:** `Elige {N} carta{s} {del oponente/tuyas}`
 - **Botón:** `DEVOLVER`
 - **Estado:** ⏳ Pendiente
 
 ---
 
-### Mover Carta (Velocidad 2)
-- **ID:** `FLD-04`
+#### FLD-04 — Mover Carta (Velocidad 2)
 - **Ubicación:** `game.html:1507, 1512`
+- **Trigger:** Velocidad 2 al compilar
 - **Título:** `MOVER CARTA`
-- **Subtítulo actual:** `Elige 1 carta para mover a otra línea`
+- **Subtítulo:** `Elige 1 carta para mover a otra línea`
 - **Botón:** `MOVER`
 - **Estado:** ⏳ Pendiente
 
 ---
 
-### Copiar Efecto (Espejo 1)
-- **ID:** `FLD-05`
+#### FLD-05 — Copiar Efecto (Espejo 1)
 - **Ubicación:** `game.html:1507, 1513`
+- **Trigger:** Espejo 1 al jugar
 - **Título:** `COPIAR EFECTO`
-- **Subtítulo actual:** `Elige 1 carta rival para copiar su efecto`
+- **Subtítulo:** `Elige 1 carta rival para copiar su efecto`
 - **Botón:** `COPIAR`
 - **Estado:** ⏳ Pendiente
 
 ---
 
-### Eliminar por Valor (Odio 3)
-- **ID:** `FLD-06`
-- **Ubicación:** `game.html:1691-1692`
+#### FLD-06 — Eliminar por Valor (Odio 3)
+- **Ubicación:** `game.html:1691-1692`, `showLineSelectOverlay()`
+- **Trigger:** Odio 3 al descubrirse
 - **Título:** `ELIMINAR POR VALOR`
-- **Subtítulo actual:** `Elige una línea — se eliminarán cartas con valor {X}-{Y}`
+- **Subtítulo:** `Elige una línea — se eliminarán cartas con valor {X}-{Y}`
 - **Botón:** `ELIMINAR`
 - **Estado:** ⏳ Pendiente
 
 ---
 
-### Intercambiar Protocolos
-- **ID:** `FLD-07`
-- **Ubicación:** `game.html:1621-1622, 1655`
-- **Título:** `INTERCAMBIAR PILAS` / `INTERCAMBIAR PROTOCOLOS`
-- **Subtítulo actual:** `Elige 2 líneas para intercambiar`
-- **Pasos:** `Elige la primera línea` → `Primera: {línea} — elige la segunda` → `Listo para intercambiar`
+#### FLD-07 — Intercambiar Protocolos
+- **Ubicación:** `game.html:1621-1622, 1655`, `showRearrangeProtocolOverlay()`
+- **Trigger:** Reorganizar protocolos (Control Component o efecto)
+- **Título:** `INTERCAMBIAR PROTOCOLOS`
+- **Subtítulo:** `Elige 2 líneas para intercambiar`
+- **Pasos:** 
+  1. `Elige la primera línea`
+  2. `Primera: {línea} — elige la segunda`
+  3. `Listo para intercambiar`
 - **Botón:** `INTERCAMBIAR`
 - **Estado:** ⏳ Pendiente
 
 ---
 
-### Revelar Carta (Modal)
-- **ID:** `REV-01`
-- **Ubicación:** `game.html` (buscar)
+### Line Select Overlay (`overlay-select` — selección de líneas)
+
+#### LIN-01 — Seleccionar Línea (Odio 3)
+- **Ubicación:** `game.html:showLineSelectOverlay()`
+- **Trigger:** Odio 3 (misma carta que FLD-06)
+- **Título:** `ELIMINAR POR VALOR`
+- **Subtítulo:** `Elige una línea — se eliminarán cartas con valor {X}-{Y}`
+- **Botón:** `ELIMINAR`
+- **Nota:** Mismo efecto que FLD-06, diferente vista (líneas vs cartas)
+- **Estado:** ⏳ Pendiente
+
+---
+
+### Reveal Modal (`reveal-modal`)
+
+#### REV-01 — Revelar Carta (modal)
+- **Ubicación:** `game.html:reveal-modal`, `showRevealModal()`
+- **Trigger:** Varios efectos (ej: carta revelada del mazo)
 - **Título:** `{nombre de la carta}`
-- **Subtítulo actual:** `Puedes descartar esta carta` / `Carta revelada`
+- **Subtítulo:** `Puedes descartar esta carta` / `Carta revelada`
 - **Botones:** `DESCARTAR` | `CERRAR`
 - **Estado:** ⏳ Pendiente
 
 ---
 
-### Espíritu 1 (Confirmación de lado)
-- **ID:** `CMD-03`
-- **Ubicación:** `logic.js:2370`
-- **Texto actual:** `¿Quieres jugar esta carta en el lado del oponente?`
-- **Botones:** `SÍ` | `NO`
-- **Estado:** ⏳ Pendiente
+## 📊 RESUMEN
+
+| Categoría | ID | Total | Completados |
+|-----------|-----|-------|-------------|
+| Confirm Dialog | CMD-xx | 3 | 1 ✅ |
+| Hand Select | SEL-xx | 6 | 0 |
+| Field Select | FLD-xx | 7 | 0 |
+| Line Select | LIN-xx | 1 | 0 |
+| Reveal Modal | REV-xx | 1 | 0 |
+| **TOTAL** | | **18** | **1** |
 
 ---
 
