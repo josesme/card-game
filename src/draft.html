@@ -514,6 +514,8 @@ function getCardImageUrl(protocol, valor) {
 let ALL_PROTOCOLS = [];
 let PROTOCOL_DEFS = {};
 
+let _gridScrambleLastT = 0; // cooldown: evita re-scramble del grid en llamadas rápidas sucesivas
+
 let draftState = {
     available: [...ALL_PROTOCOLS],
     playerSelected: [],
@@ -549,8 +551,7 @@ function applyDraftScale() {
 // ── Lógica de draft ────────────────────────────────────────────────
 function initDraft() {
     draftState.firstPlayer = Math.random() > 0.5 ? 'player' : 'ai';
-    updateDraftDisplay();
-    startRound();
+    startRound(); // startRound ya llama updateDraftDisplay — no duplicar
 }
 
 function startRound() {
@@ -772,20 +773,23 @@ function updateProtocolsGrid() {
         grid.appendChild(card);
     });
     
-    // Apply scramble to protocol card texts
+    // Apply scramble to protocol card texts — cooldown de 2s para evitar re-animar
+    // en las múltiples llamadas a updateProtocolsGrid() durante la init del draft
     if (window.scrTxt && typeof gsap !== 'undefined') {
-        setTimeout(function() {
-            // Scramble protocol titles (preserve original case: Espíritu, Muerte, etc.)
-            grid.querySelectorAll('.slot-title-text').forEach(function(el) {
-                var txt = el.textContent.trim();
-                if (txt) window.scrTxt(el, txt, { duration: 1.0, chars: 'upperAndLowerCase' });
-            });
-            // Scramble protocol abilities descriptions
-            grid.querySelectorAll('.protocol-card-abilities').forEach(function(el) {
-                var txt = el.textContent.trim();
-                if (txt) window.scrTxt(el, txt, { duration: 1.0, chars: 'upperAndLowerCase' });
-            });
-        }, 100);
+        const _now = Date.now();
+        if (_now - _gridScrambleLastT > 2000) {
+            _gridScrambleLastT = _now;
+            setTimeout(function() {
+                grid.querySelectorAll('.slot-title-text').forEach(function(el) {
+                    var txt = el.textContent.trim();
+                    if (txt) window.scrTxt(el, txt, { duration: 1.0, chars: 'upperAndLowerCase' });
+                });
+                grid.querySelectorAll('.protocol-card-abilities').forEach(function(el) {
+                    var txt = el.textContent.trim();
+                    if (txt) window.scrTxt(el, txt, { duration: 1.0, chars: 'upperAndLowerCase' });
+                });
+            }, 100);
+        }
     }
 }
 
