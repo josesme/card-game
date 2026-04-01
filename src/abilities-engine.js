@@ -2109,7 +2109,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       }
       if (targetPlayer === 'player') {
         // El handler revealField en handleFieldCardClick llama luz2ShowPostRevealModal directamente
-        startEffect('revealField', 'any', 1, { owner: targetPlayer });
+        startEffect('revealField', 'any', 1, { owner: targetPlayer, targetAll: true });
       } else {
         // IA: revelar carta bocabajo propia con mayor valor, luego decidir acción
         let best = null, bestLine = null, bestTarget = null;
