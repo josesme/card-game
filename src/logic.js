@@ -2371,6 +2371,11 @@ function discard(target, count) {
         if (typeof onForcedDiscardEffects === 'function' && gameState.turn && gameState.turn !== target) {
             onForcedDiscardEffects(target);
         }
+        // Continuar con la cola de efectos después de descartar
+        processNextEffect();
+    } else {
+        // Si no hay cartas para descartar, continuar igualmente
+        processNextEffect();
     }
 }
 
