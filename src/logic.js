@@ -480,21 +480,15 @@ function isSelectionActive() {
 
 function showCardPreview(card) {
     const panel = document.getElementById('card-preview-panel');
-    if (!panel || isSelectionActive()) return;
-    panel.classList.remove('hidden', 'stacked-view');
-    panel.classList.add('single-card');
-    panel.style.width = '370px';
-    panel.style.height = '490px';
-    panel.innerHTML = createCardHTML(card);
+    const inner = document.getElementById('card-preview-inner');
+    if (!panel || !inner || isSelectionActive()) return;
+    inner.innerHTML = createCardHTML(card);
+    panel.classList.add('visible');
 }
-
 
 function hideCardPreview() {
     const panel = document.getElementById('card-preview-panel');
-    if (panel) {
-        panel.classList.add('hidden');
-        panel.classList.remove('single-card', 'stacked-view');
-    }
+    if (panel) panel.classList.remove('visible');
 }
 
 // Mapa protocolo español → nombre fichero imagen inglés
