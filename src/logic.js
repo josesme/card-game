@@ -896,20 +896,13 @@ function renderStack(line, target) {
 
         const domCard = cEl.firstElementChild;
 
-        if (isV2) {
-            // V2: hover muestra la carta individual ampliada
-            // Regla: bocabajo del jugador se revelan, bocabajo del rival se ocultan
-            const canReveal = !cardObj.faceDown || target === 'player';
-            if (canReveal) {
-                domCard.addEventListener('mouseenter', () => showCardPreview(cardObj.card));
-                domCard.addEventListener('mouseleave', hideCardPreview);
-            }
-        } else if (!cardObj.faceDown) {
-            domCard.addEventListener('mouseenter', () => showCardPreview(cardObj.card));
+        // Preview: click abre, mouseleave cierra. Solo cartas visibles (no bocabajo rival).
+        const canPreview = !cardObj.faceDown || target === 'player';
+        if (canPreview) {
             domCard.addEventListener('mouseleave', hideCardPreview);
         }
 
-        // Add click handler for effects (eliminate/flip/shift/return)
+        // Add click handler for effects (eliminate/flip/shift/return) and preview
         domCard.onclick = (e) => {
             // In selectionMode or line-select effects, let click bubble to line handler
             if (gameState.selectionMode) return;
@@ -927,6 +920,9 @@ function renderStack(line, target) {
                     return;
                 }
                 handleFieldCardClick(line, target, idx);
+            } else if (canPreview) {
+                // Sin efecto activo: mostrar preview de la carta
+                showCardPreview(cardObj.card);
             }
         };
 

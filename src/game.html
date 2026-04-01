@@ -230,6 +230,30 @@
         }
         #log-overlay .log-close:hover { color: #fff; }
 
+        /* ── CARD PREVIEW PANEL ─────────────────────── */
+        #card-preview-panel {
+            position: fixed;
+            bottom: 70px;
+            right: 20px;
+            z-index: 500;
+            pointer-events: none;
+            opacity: 0;
+            transform: scale(0.92) translateY(8px);
+            transition: opacity 0.18s ease, transform 0.18s ease;
+        }
+        #card-preview-panel.visible {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: auto;
+        }
+        #card-preview-inner .card {
+            width: 280px;
+            height: 370px;
+            font-size: 1.3em;
+            box-shadow: 0 0 40px rgba(0,0,0,0.8), 0 0 20px rgba(0,245,255,0.15);
+            pointer-events: none;
+        }
+
         /* ── BATTLE FIELD (3 vertical columns) ──────── */
         .battle-field {
             display: flex;
@@ -1147,6 +1171,11 @@
     <div id="hand-section" style="display: none;"></div>
 </div>
 
+<!-- ═══ CARD PREVIEW PANEL ═══ -->
+<div id="card-preview-panel">
+    <div id="card-preview-inner"></div>
+</div>
+
 <!-- ═══ HAND OVERLAY (slide-up) ═══ -->
 <div id="hand-overlay">
     <div class="hand-bar">
@@ -1855,6 +1884,21 @@ window.addEventListener('load', function() {
         document.getElementById('fs-icon-expand').style.display = isFs ? 'none' : '';
         document.getElementById('fs-icon-shrink').style.display = isFs ? '' : 'none';
     }
+
+    // ── Card preview (click to show, mouseleave to hide) ──
+    window.showCardPreview = function(card) {
+        const panel = document.getElementById('card-preview-panel');
+        const inner = document.getElementById('card-preview-inner');
+        if (!panel || !inner || !card) return;
+        if (typeof createCardHTML === 'function') {
+            inner.innerHTML = createCardHTML(card);
+        }
+        panel.classList.add('visible');
+    };
+    window.hideCardPreview = function() {
+        const panel = document.getElementById('card-preview-panel');
+        if (panel) panel.classList.remove('visible');
+    };
 
     function toggleFullscreen() {
         if (!document.fullscreenElement) {
