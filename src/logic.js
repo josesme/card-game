@@ -1745,12 +1745,14 @@ function handleFieldCardClick(line, target, cardIdx) {
         const _isTop = cardIdx === gameState.field[line][target].length - 1;
         setTimeout(() => {
             ctx.selected.push(cardObj);
-            if (wasFaceDown && _isTop) {
-                triggerFlipFaceUp(cardObj, line, target);
-            } else if (ctx.selected.length >= ctx.count) {
+            if (ctx.selected.length >= ctx.count) {
                 finishEffect();
             } else {
                 updateUI();
+            }
+            // Disparar onPlay de la carta volteada DESPUÉS de cerrar el efecto actual
+            if (wasFaceDown && _isTop) {
+                triggerFlipFaceUp(cardObj, line, target);
             }
         }, 700);
         return;
