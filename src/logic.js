@@ -88,6 +88,7 @@ let gameState = {
     controlComponent: null,                                 // null = neutral, 'player' o 'ai' = dueño actual
     pendingControlResume: null,                             // { who, action } — resume tras rearrange de Control Component
     isProcessing: false,                                    // ⚠️ BLOQUEO: true mientras se resuelve una acción del jugador
+    _lastScrambleTime: 0,                                   // ⏱️ COOLDOWN GLOBAL: timestamp último scramble
 };
 
 function createDeckForPlayer(target) {
@@ -773,27 +774,25 @@ function updateUI() {
     initProtocolDisplay();
 
     // Apply scramble effect to card text zones (slot-title-text and card-img-zone-text)
-    // ⚠️ COOLDOWN: Evitar re-animar si ya se animó recientemente (misma frame o frames cercanos)
+    // ⚠️ COOLDOWN GLOBAL: Evitar re-animar si updateUI() se llamó recientemente
+    // Esto previene múltiples scrambles cuando updateUI() se llama 2-3 veces en rápida sucesión
     if (window.scrTxt) {
         const now = Date.now();
         const COOLDOWN_MS = 1500; // No re-animar en 1.5s
         
-        document.querySelectorAll('.slot-title-text').forEach(el => {
-            const text = el.textContent.trim();
-            const lastScramble = el.getAttribute('data-scr-last-time');
-            if (text && (!lastScramble || (now - parseInt(lastScramble)) > COOLDOWN_MS)) {
-                el.setAttribute('data-scr-last-time', now.toString());
-                window.scrTxt(el, text, { duration: 1.0, chars: 'upperCase' });
-            }
-        });
-        document.querySelectorAll('.card-img-zone-text').forEach(el => {
-            const text = el.textContent.trim();
-            const lastScramble = el.getAttribute('data-scr-last-time');
-            if (text && (!lastScramble || (now - parseInt(lastScramble)) > COOLDOWN_MS)) {
-                el.setAttribute('data-scr-last-time', now.toString());
-                window.scrTxt(el, text, { duration: 1.0, chars: 'upperAndLowerCase' });
-            }
-        });
+        // Check cooldown global primero
+        if (!gameState._lastScrambleTime || (now - gameState._lastScrambleTime) > COOLDOWN_MS) {
+            gameState._lastScrambleTime = now;
+            
+            document.querySelectorAll('.slot-title-text').forEach(el => {
+                const text = el.textContent.trim();
+                if (text) window.scrTxt(el, text, { duration: 1.0, chars: 'upperCase' });
+            });
+            document.querySelectorAll('.card-img-zone-text').forEach(el => {
+                const text = el.textContent.trim();
+                if (text) window.scrTxt(el, text, { duration: 1.0, chars: 'upperAndLowerCase' });
+            });
+        }
     }
 
     checkWinCondition();
