@@ -234,9 +234,16 @@
             display: flex;
             gap: 28px;
             justify-content: center;
-            height: 65vh;
-            max-height: calc(100vh - 130px); /* nunca sobrepasa el container */
-            flex-shrink: 0;
+            flex: 1;
+            min-height: 0;
+        }
+
+        /* Portrait: sin límite flex las pilas llenan pantallas de 1920px de alto */
+        @media (orientation: portrait) {
+            .battle-field {
+                flex: none;
+                height: 55vw;
+            }
         }
 
         .battle-column {
