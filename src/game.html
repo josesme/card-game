@@ -48,10 +48,7 @@
             margin: 0 auto;
             display: flex;
             flex-direction: column;
-            /* Gap proporcional sobre la hand-bar: padding-bottom escala con vh
-               en lugar de un offset fijo que no funciona igual en todas las resoluciones */
             height: calc(100vh - 60px);
-            padding-bottom: 7vh;
             overflow: hidden;
         }
 
@@ -239,6 +236,10 @@
             justify-content: center;
             flex: 1;
             min-height: 0;
+            /* margin-bottom crea el gap visible sobre la hand-bar.
+               A diferencia de padding-bottom en el padre, margin en un flex child
+               siempre genera espacio real independientemente de overflow:hidden */
+            margin-bottom: 4vh;
         }
 
         .battle-column {
@@ -425,6 +426,10 @@
             flex: 1;
             gap: 10px;
             min-height: 0;
+            /* Limita la altura de las pilas por ancho de viewport (no por alto).
+               En landscape: vw domina → pilas proporcionales al ancho de pantalla.
+               En portrait: vh domina → evita que llenen toda la pantalla vertical. */
+            max-height: min(58vh, 48vw);
             overflow-y: auto;
             overflow-x: hidden;
             scrollbar-width: thin;
