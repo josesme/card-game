@@ -12,8 +12,8 @@ Listado completo de textos de modales para revisar y pulir. Completar uno a uno 
 - **ID:** `CMD-01`
 - **Ubicación:** `logic.js:1373`
 - **Texto actual:** `¿Quieres usar este efecto? "{texto del efecto}"`
-- **Botones:** `ACEPTAR` | `CANCELAR`
-- **Estado:** ⏳ Pendiente
+- **Botones:** `SÍ` | `NO` ✅ Actualizado
+- **Estado:** ✅ Completado (v2.2.1)
 
 ---
 
