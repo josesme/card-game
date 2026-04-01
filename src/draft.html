@@ -463,9 +463,9 @@
 </head>
 <body>
 
-<button id="btn-mute" onclick="toggleMute()" title="Silenciar música">
-    <svg id="mute-icon-on" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
-    <svg id="mute-icon-off" viewBox="0 0 24 24" style="display:none"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="1" x2="1" y2="23"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+<button id="btn-mute" onclick="togglePlayPause()" title="Reproducir/Pausar música">
+    <svg id="draft-play-icon" viewBox="0 0 24 24" style="display:none"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/></svg>
+    <svg id="draft-pause-icon" viewBox="0 0 24 24"><line x1="10" y1="4" x2="10" y2="20" stroke="currentColor" stroke-width="2"/><line x1="14" y1="4" x2="14" y2="20" stroke="currentColor" stroke-width="2"/></svg>
 </button>
 <button id="btn-fullscreen" onclick="toggleFullscreen()" title="Pantalla completa">
     <svg id="fs-icon-expand" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
@@ -896,25 +896,18 @@ document.addEventListener('DOMContentLoaded', () => {
 window.addEventListener('resize', applyDraftScale);
 
 // ── Audio Control ───────────────────────────────────
-function toggleMute() {
+function togglePlayPause() {
     if (typeof AudioManager !== 'undefined') {
-        const isMuted = AudioManager.toggleMute();
-        document.getElementById('btn-mute').classList.toggle('muted', isMuted);
-        document.getElementById('mute-icon-on').style.display = isMuted ? 'none' : '';
-        document.getElementById('mute-icon-off').style.display = isMuted ? '' : 'none';
+        const isPlaying = AudioManager.togglePlayPause();
+        // Actualizar iconos: play = paused (mostrar play), pause = playing (mostrar pause)
+        document.getElementById('draft-play-icon').style.display = isPlaying ? 'none' : '';
+        document.getElementById('draft-pause-icon').style.display = isPlaying ? '' : 'none';
     }
 }
 
-// Initialize audio on first user interaction
+// Initialize audio on first user interaction (manual play, no auto)
 document.addEventListener('click', function initAudio() {
-    if (typeof AudioManager !== 'undefined') {
-        AudioManager.play();
-        // Update mute button state on load
-        const isMuted = AudioManager.getIsMuted();
-        document.getElementById('btn-mute').classList.toggle('muted', isMuted);
-        document.getElementById('mute-icon-on').style.display = isMuted ? 'none' : '';
-        document.getElementById('mute-icon-off').style.display = isMuted ? '' : 'none';
-    }
+    // Audio does NOT auto-play; user must click the play button
     document.removeEventListener('click', initAudio);
 }, { once: true });
 
@@ -988,9 +981,12 @@ window.scrTxt = function (el, text, opts) {
 
 // Apply scramble to subtitle on load
 window.addEventListener('load', function() {
-    // Initialize audio manager
+    // Initialize audio manager (do NOT auto-play)
     if (typeof AudioManager !== 'undefined') {
         AudioManager.init();
+        // Show play icon by default (music is paused)
+        document.getElementById('draft-play-icon').style.display = '';
+        document.getElementById('draft-pause-icon').style.display = 'none';
     }
 
     setTimeout(function() {

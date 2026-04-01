@@ -1,6 +1,6 @@
 /**
  * 🎵 COMPILE - Audio Manager
- * Control de música de fondo
+ * Control de música de fondo - Play/Pause (no auto-play)
  */
 
 (function() {
@@ -8,32 +8,24 @@
 
     const Audio = {
         bgm: null,
-        _isMuted: false,
+        _isPlaying: false,
+        _initialized: false,
 
-        // Inicializar el sistema de audio
+        // Inicializar el sistema de audio (sin reproducir)
         init: function() {
-            console.log('[Audio] Initializing...');
+            if (this._initialized) return;
+            
+            console.log('[Audio] Initializing (paused, manual play)...');
 
             // Crear elemento de audio para BGM
             this.bgm = document.createElement('audio');
             // Ruta relativa desde src/ hacia sounds/
-            // Usamos OGG (mejor compresión) con fallback a MP3
             this.bgm.src = '../sounds/bgm.ogg';
             this.bgm.loop = true;
             this.bgm.volume = 0.5; // Volumen al 50% por defecto
+            this.bgm.preload = 'none'; // No cargar hasta que se reproduzca
 
             console.log('[Audio] BGM src:', this.bgm.src);
-
-            // Cargar preferencia de mute desde localStorage
-            const savedMute = localStorage.getItem('bgm_muted');
-            this._isMuted = (savedMute === 'true');
-            
-            if (this._isMuted) {
-                this.bgm.muted = true;
-                console.log('[Audio] Mute preference loaded: muted');
-            } else {
-                console.log('[Audio] Mute preference loaded: unmuted');
-            }
 
             // Manejar eventos
             this.bgm.addEventListener('canplaythrough', function() {
@@ -45,47 +37,75 @@
                 console.error('[Audio] Error details:', this.bgm.error);
             });
 
-            this.bgm.addEventListener('playing', function() {
+            this.bgm.addEventListener('playing', () => {
+                this._isPlaying = true;
                 console.log('[Audio] BGM is playing');
             });
 
-            // Intentar reproducir (puede fallar si no hay interacción del usuario)
-            this.play();
-        },
-
-        // Reproducir música
-        play: function() {
-            if (!this.bgm) return;
-
-            // Los navegadores requieren interacción del usuario para reproducir audio
-            this.bgm.play().catch(function(e) {
-                console.log('[Audio] Autoplay bloqueado, se iniciará con la primera interacción');
+            this.bgm.addEventListener('pause', () => {
+                this._isPlaying = false;
+                console.log('[Audio] BGM paused');
             });
+
+            this._initialized = true;
+            console.log('[Audio] Initialized (not playing)');
         },
 
-        // Pausar música (no usar en este juego, solo para completar API)
+        // Reproducir música (inicia la carga si es necesario)
+        play: function() {
+            if (!this.bgm) this.init();
+            
+            if (this.bgm && !this._isPlaying) {
+                this.bgm.play().then(() => {
+                    this._isPlaying = true;
+                    console.log('[Audio] Playback started');
+                }).catch(e => {
+                    console.warn('[Audio] Playback failed:', e);
+                    this._isPlaying = false;
+                });
+            }
+        },
+
+        // Pausar música (detiene la reproducción y libera recursos)
         pause: function() {
-            if (!this.bgm) return;
+            if (!this.bgm || !this._isPlaying) return;
+            
             this.bgm.pause();
+            // Opcional: liberar recursos cargando nada
+            // this.bgm.src = '';
+            // this.bgm.load();
         },
 
-        // Alternar mute/unmute
-        toggleMute: function() {
-            this._isMuted = !this._isMuted;
-
-            if (this.bgm) {
-                this.bgm.muted = this._isMuted;
+        // Alternar play/pause
+        togglePlayPause: function() {
+            if (!this._initialized) {
+                this.init();
+                this.play();
+            } else if (this._isPlaying) {
+                this.pause();
+            } else {
+                this.play();
             }
 
-            // Guardar preferencia
-            localStorage.setItem('bgm_muted', String(this._isMuted));
+            // Guardar estado
+            localStorage.setItem('bgm_playing', String(this._isPlaying));
 
-            return this._isMuted;
+            return this._isPlaying;
         },
 
-        // Obtener estado actual de mute
-        getIsMuted: function() {
-            return this._isMuted;
+        // Obtener estado de reproducción
+        getIsPlaying: function() {
+            return this._isPlaying;
+        },
+
+        // Restaurar estado desde localStorage (solo si estaba playing)
+        restoreState: function() {
+            const savedPlaying = localStorage.getItem('bgm_playing');
+            if (savedPlaying === 'true') {
+                // Usuario quería música, pero no auto-play: mostrar botón en estado play
+                // El usuario debe hacer clic para iniciar realmente
+                console.log('[Audio] Previous state: playing (user must click to resume)');
+            }
         },
 
         // Setear volumen (0.0 a 1.0)
