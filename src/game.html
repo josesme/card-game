@@ -43,12 +43,12 @@
         #game-container {
             position: relative;
             z-index: 1;
-            padding: 8px 20px 0;
+            padding: 8px 20px 60px;
             max-width: 1500px;
             margin: 0 auto;
             display: flex;
             flex-direction: column;
-            height: calc(100vh - 60px);
+            height: auto;
             overflow: visible;
         }
 
@@ -234,8 +234,8 @@
             display: flex;
             gap: 28px;
             justify-content: center;
-            flex: 1;
-            min-height: 0;
+            height: 65vh;
+            flex-shrink: 0;
         }
 
         .battle-column {
@@ -419,13 +419,9 @@
             display: flex;
             flex-direction: row;
             align-items: stretch;
+            flex: 1;
             gap: 10px;
             min-height: 0;
-            /* vmin = min(vw, vh): en landscape usa vh (dim. corta), en portrait usa vw.
-               Resultado: pilas siempre proporcionales a la dimensión menor del viewport,
-               consistente en 2K/1080p landscape y portrait sin iteraciones. */
-            height: 55vmin;
-            max-height: 55vmin;
             overflow-y: auto;
             overflow-x: hidden;
             scrollbar-width: thin;
