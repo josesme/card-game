@@ -1447,8 +1447,10 @@ function startEffect(type, target, count, opts = {}) {
         // el jugador activo elige qué carta del rival devolver (flujo normal).
         isAIResolving = (target === 'ai');
     } else {
-        // Acciones sobre el tablero: el jugador del turno elige.
-        isAIResolving = (gameState.turn === 'ai');
+        // Acciones sobre el tablero: el dueño del efecto elige.
+        // opts.owner indica quién es el dueño de la carta que disparó el efecto
+        // (puede diferir del turno activo cuando se voltea una carta rival).
+        isAIResolving = opts.owner !== undefined ? (opts.owner === 'ai') : (gameState.turn === 'ai');
     }
 
     if (isAIResolving) {

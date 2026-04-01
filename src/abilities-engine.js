@@ -1300,7 +1300,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       break;
 
     case 'delete': {
-      const deleteOpts = {};
+      const deleteOpts = { owner: targetPlayer };
       if (actionDef.forceLine) deleteOpts.forceLine = actionDef.forceLine;
       if (actionDef.filter) deleteOpts.filter = actionDef.filter;
       if (actionDef.maxVal !== undefined) deleteOpts.maxVal = actionDef.maxVal;
@@ -1310,7 +1310,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'flip': {
-      const flipOpts = {};
+      const flipOpts = { owner: targetPlayer };
       if (actionDef.excludeSelf && triggerCardName) flipOpts.excludeCardName = triggerCardName;
       if (actionDef.filter) flipOpts.filter = actionDef.filter;
       if (actionDef.coveredOnly) flipOpts.coveredOnly = true;
@@ -1338,6 +1338,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
 
     case 'shift': {
       const shiftOpts = {
+        owner: targetPlayer,
         gravityConstraint: actionDef.gravityConstraint || false,
         effectLine: gameState.currentEffectLine
       };
@@ -1349,7 +1350,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'return':
-      startEffect('return', resolvedTarget, count || 1);
+      startEffect('return', resolvedTarget, count || 1, { owner: targetPlayer });
       break;
 
     case 'refresh':
@@ -1454,11 +1455,11 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       break;
 
     case 'moveCard':
-      startEffect('shift', resolvedTarget, count || 1);
+      startEffect('shift', resolvedTarget, count || 1, { owner: targetPlayer });
       break;
 
     case 'swap':
-      startEffect('swap', resolvedTarget, count || 1);
+      startEffect('swap', resolvedTarget, count || 1, { owner: targetPlayer });
       break;
 
     case 'skipPhase':
