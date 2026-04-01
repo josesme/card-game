@@ -125,13 +125,12 @@
             overflow: hidden;
             clip-path: polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%);
             z-index: 2;
+            display: flex;
+            align-items: center;
+            padding-left: 4px;
         }
-        .protocol-card .slot-title::before {
-            content: attr(data-text);
-            position: absolute;
-            left: 4px;
-            top: 50%;
-            transform: translateY(-50%) scaleX(0.82);
+        .protocol-card .slot-title-text {
+            transform: scaleX(0.82);
             transform-origin: left center;
             font-family: 'DoctorGlitch', sans-serif;
             font-size: 4.8cqw;
@@ -776,10 +775,10 @@ function updateProtocolsGrid() {
     // Apply scramble to protocol card texts
     if (window.scrTxt && typeof gsap !== 'undefined') {
         setTimeout(function() {
-            // Scramble protocol titles (UPPERCASE)
+            // Scramble protocol titles (preserve original case: Espíritu, Muerte, etc.)
             grid.querySelectorAll('.slot-title-text').forEach(function(el) {
                 var txt = el.textContent.trim();
-                if (txt) window.scrTxt(el, txt.toUpperCase(), { duration: 1.0, chars: 'upperCase' });
+                if (txt) window.scrTxt(el, txt, { duration: 1.0, chars: 'upperAndLowerCase' });
             });
             // Scramble protocol abilities descriptions
             grid.querySelectorAll('.protocol-card-abilities').forEach(function(el) {
