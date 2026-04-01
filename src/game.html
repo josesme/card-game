@@ -457,35 +457,29 @@
             border-radius: 6px;
         }
 
-        /* Watermark icons — on battle-column (fixed height) instead of stacks (scrollable) */
-        .battle-column {
-            position: relative;
-        }
-        .battle-column::before {
+        /* Watermark icons — inside each stack so they sit above the stack background
+           but below cards (cards use z-index via card-field-wrapper) */
+        .player-stack.vertical-stack::before,
+        .ai-stack.vertical-stack::before {
             content: '';
             position: absolute;
-            top: 45%;
-            left: 25%;
-            transform: translateX(-50%);
-            width: 32%;
-            height: 14.4%;
-            background: url('../images/Background/Human.png') center / contain no-repeat;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60%;
+            height: 30%;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
             opacity: 0.35;
             pointer-events: none;
             z-index: 0;
         }
-        .battle-column::after {
-            content: '';
-            position: absolute;
-            top: 45%;
-            right: 25%;
-            transform: translateX(50%);
-            width: 32%;
-            height: 14.4%;
-            background: url('../images/Background/IA_2.png') center / contain no-repeat;
-            opacity: 0.35;
-            pointer-events: none;
-            z-index: 0;
+        .player-stack.vertical-stack::before {
+            background-image: url('../images/Background/Human.png');
+        }
+        .ai-stack.vertical-stack::before {
+            background-image: url('../images/Background/IA_2.png');
         }
 
         /* Cards inside stacks: absolute positioned for overlap */
