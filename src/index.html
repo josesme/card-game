@@ -188,6 +188,71 @@
             color: #e0e0e0;
         }
 
+        /* ── Reglas opcionales ──────────────────────── */
+        .rules-label {
+            color: #00f5ff;
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .rules-grid {
+            display: flex;
+            gap: 14px;
+            margin-bottom: 36px;
+        }
+
+        .rule-btn {
+            flex: 1;
+            background: rgba(6,14,28,0.55);
+            border: 1px solid rgba(255,255,255,0.09);
+            color: #64748b;
+            padding: 14px 12px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .rule-btn:hover {
+            border-color: rgba(0,245,255,0.2);
+            color: #94a3b8;
+        }
+
+        .rule-btn.active {
+            background: rgba(0,245,255,0.08);
+            border-color: rgba(0,245,255,0.5);
+            color: #00f5ff;
+            box-shadow: 0 0 14px rgba(0,245,255,0.2);
+        }
+
+        .rule-icon {
+            font-size: 1.6em;
+            line-height: 1;
+        }
+
+        .rule-name {
+            font-size: 9px;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+
+        .rule-subdesc {
+            font-size: 8px;
+            letter-spacing: 0.5px;
+            opacity: 0.6;
+            white-space: nowrap;
+        }
+
         /* ── Botón COMENZAR JUEGO — estilos explícitos para garantizar igualdad con draft ── */
         #btn-play {
             padding: 0 20px;
@@ -289,7 +354,16 @@
         </button>
     </div>
 
-    <div style="display: flex; gap: 12px; justify-content: center; align-items: center; margin-top: 24px;">
+    <p class="rules-label" id="rules-label">Reglas opcionales</p>
+    <div class="rules-grid">
+        <button class="rule-btn" id="rule-control" onclick="toggleRule('control')">
+            <span class="rule-icon">△</span>
+            <span class="rule-name" data-text="CONTROL COMPONENT">CONTROL COMPONENT</span>
+            <span class="rule-subdesc" data-text="≥2 líneas → reorganiza protocolos">≥2 líneas → reorganiza protocolos</span>
+        </button>
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: center; align-items: center; margin-top: 0;">
         <button class="ui-btn" id="btn-play">COMENZAR JUEGO</button>
     </div>
 
@@ -376,6 +450,13 @@ const DIFFICULTY_LEVELS = [
 
 let selectedDifficulty = 3;
 let selectedProtocols = null; // 1, 2, or 'all'
+const activeRules = new Set(); // disabled by default
+
+function toggleRule(id) {
+    if (activeRules.has(id)) activeRules.delete(id);
+    else activeRules.add(id);
+    document.getElementById('rule-' + id).classList.toggle('active', activeRules.has(id));
+}
 
 function renderDiff() {
     const grid = document.getElementById('diff-grid');
@@ -490,14 +571,17 @@ function applyDiffScramble() {
     if (window.scrTxt) {
         window.scrTxt('diff-label-1', 'Nivel de compilación', { duration: 1.0, chars: 'upperCase' });
         window.scrTxt('diff-label-2', 'Protocolos disponibles', { duration: 1.0, chars: 'upperCase' });
-        // Scramble difficulty descriptions after they are set
+        window.scrTxt('rules-label', 'Reglas opcionales', { duration: 1.0, chars: 'upperCase' });
         var diffDescEl = document.getElementById('diff-desc');
         if (diffDescEl && diffDescEl.textContent) {
             window.scrTxt(diffDescEl, diffDescEl.textContent, { duration: 1.0, chars: 'upperAndLowerCase' });
         }
-        // Scramble protocol names
         document.querySelectorAll('.protocol-name').forEach(function(el) {
             var txt = el.textContent.trim();
+            if (txt) window.scrTxt(el, txt, { duration: 1.0, chars: 'upperCase' });
+        });
+        document.querySelectorAll('.rule-name').forEach(function(el) {
+            var txt = el.getAttribute('data-text') || el.textContent.trim();
             if (txt) window.scrTxt(el, txt, { duration: 1.0, chars: 'upperCase' });
         });
     }
@@ -511,6 +595,7 @@ document.getElementById('btn-play').addEventListener('click', () => {
     sessionStorage.setItem('aiDifficultyColor', diff.color);
     sessionStorage.setItem('aiDifficultyIcon', diff.icon);
     sessionStorage.setItem('selectedProtocols', selectedProtocols);
+    sessionStorage.setItem('ruleControlComponent', activeRules.has('control') ? '1' : '0');
     window.location.href = '/src/draft.html';
 });
 </script>

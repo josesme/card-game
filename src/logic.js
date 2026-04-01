@@ -614,15 +614,20 @@ function updateUI() {
     // Control Component indicator
     const controlEl = document.getElementById('control-indicator');
     if (controlEl) {
-        if (gameState.controlComponent === 'player') {
-            window.scrTxt ? window.scrTxt(controlEl, 'CTRL △', { duration: 1.0 }) : (controlEl.textContent = 'CTRL △');
-            controlEl.style.color = 'var(--player-primary)';
-        } else if (gameState.controlComponent === 'ai') {
-            window.scrTxt ? window.scrTxt(controlEl, 'CTRL △', { duration: 1.0 }) : (controlEl.textContent = 'CTRL △');
-            controlEl.style.color = 'var(--ui-purple)';
+        if (sessionStorage.getItem('ruleControlComponent') !== '1') {
+            controlEl.style.display = 'none';
         } else {
-            window.scrTxt ? window.scrTxt(controlEl, '△', { duration: 1.0 }) : (controlEl.textContent = '△');
-            controlEl.style.color = '#2a3050';
+            controlEl.style.display = '';
+            if (gameState.controlComponent === 'player') {
+                window.scrTxt ? window.scrTxt(controlEl, 'CTRL △', { duration: 1.0 }) : (controlEl.textContent = 'CTRL △');
+                controlEl.style.color = 'var(--player-primary)';
+            } else if (gameState.controlComponent === 'ai') {
+                window.scrTxt ? window.scrTxt(controlEl, 'CTRL △', { duration: 1.0 }) : (controlEl.textContent = 'CTRL △');
+                controlEl.style.color = 'var(--ui-purple)';
+            } else {
+                window.scrTxt ? window.scrTxt(controlEl, '△', { duration: 1.0 }) : (controlEl.textContent = '△');
+                controlEl.style.color = '#2a3050';
+            }
         }
     }
 
@@ -1096,6 +1101,12 @@ function offerControlRearrange(who, resumeAction) {
 }
 
 function checkControlPhase(who) {
+    // Regla opcional: si está deshabilitada, saltar directamente a compile
+    if (sessionStorage.getItem('ruleControlComponent') !== '1') {
+        checkCompilePhase(who);
+        return;
+    }
+
     const opp = who === 'player' ? 'ai' : 'player';
     const linesWon = LINES.filter(line =>
         calculateScore(gameState, line, who) > calculateScore(gameState, line, opp)
