@@ -56,8 +56,8 @@
             if (!this.bgm) this.init();
             
             if (this.bgm && !this._isPlaying) {
+                this._isPlaying = true; // Actualizar estado inmediatamente
                 this.bgm.play().then(() => {
-                    this._isPlaying = true;
                     console.log('[Audio] Playback started');
                 }).catch(e => {
                     console.warn('[Audio] Playback failed:', e);
@@ -70,10 +70,8 @@
         pause: function() {
             if (!this.bgm || !this._isPlaying) return;
             
+            this._isPlaying = false; // Actualizar estado inmediatamente
             this.bgm.pause();
-            // Opcional: liberar recursos cargando nada
-            // this.bgm.src = '';
-            // this.bgm.load();
         },
 
         // Alternar play/pause

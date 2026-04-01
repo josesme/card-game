@@ -1985,7 +1985,8 @@ window.addEventListener('load', function() {
     function togglePlayPause() {
         if (typeof AudioManager !== 'undefined') {
             const isPlaying = AudioManager.togglePlayPause();
-            // Actualizar iconos: play = paused (mostrar play), pause = playing (mostrar pause)
+            // isPlaying=true (sonando) → mostrar pause icon
+            // isPlaying=false (parado) → mostrar play icon
             document.getElementById('game-play-icon').style.display = isPlaying ? 'none' : '';
             document.getElementById('game-pause-icon').style.display = isPlaying ? '' : 'none';
         }

@@ -900,7 +900,8 @@ window.addEventListener('resize', applyDraftScale);
 function togglePlayPause() {
     if (typeof AudioManager !== 'undefined') {
         const isPlaying = AudioManager.togglePlayPause();
-        // Actualizar iconos: play = paused (mostrar play), pause = playing (mostrar pause)
+        // isPlaying=true (sonando) → mostrar pause icon
+        // isPlaying=false (parado) → mostrar play icon
         document.getElementById('draft-play-icon').style.display = isPlaying ? 'none' : '';
         document.getElementById('draft-pause-icon').style.display = isPlaying ? '' : 'none';
     }
