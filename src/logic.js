@@ -1777,12 +1777,22 @@ function handleFieldCardClick(line, target, cardIdx) {
         // Filter: si hay filtro faceDown con targetAll, validar que la carta clicada sea bocabajo
         const cardObj = gameState.field[line][target][cardIdx];
         if (ctx.filter === 'faceDown' && !cardObj.faceDown) return;
-        gameState.field[line][target].splice(cardIdx, 1);
-        const dest = ctx.beneficiary || target;
-        if (typeof applyReturnToHand === 'function') applyReturnToHand(dest, cardObj.card);
-        else gameState[dest].hand.push(cardObj.card);
-        ctx.selected.push(cardObj);
-        triggerUncovered(line, target);
+        const _doReturn = () => {
+            gameState.field[line][target].splice(cardIdx, 1);
+            const dest = ctx.beneficiary || target;
+            if (typeof applyReturnToHand === 'function') applyReturnToHand(dest, cardObj.card);
+            else gameState[dest].hand.push(cardObj.card);
+            ctx.selected.push(cardObj);
+            triggerUncovered(line, target);
+            if (ctx.selected.length >= ctx.count) finishEffect();
+            else updateUI();
+        };
+        if (window.animCardEliminate) {
+            window.animCardEliminate(cardObj.card.id, _doReturn);
+        } else {
+            _doReturn();
+        }
+        return;
     } else if (ctx.type === 'rearrange') {
         const getColumn = (l) => { const el = document.getElementById(`line-${l}`); return el ? el.parentElement : null; };
         const owner = (ctx.target === 'opponent' || ctx.target === 'ai') ? 'ai' : 'player';
@@ -2184,6 +2194,7 @@ function resolveEffectAI(type, target, count, opts = {}) {
                     });
                 });
                 if (best) {
+                    if (window.animCardEliminate) window.animCardEliminate(best.card.id, null);
                     gameState.field[bestLine][actualTarget].splice(bestIdx, 1);
                     if (typeof applyReturnToHand === 'function') applyReturnToHand(dest, best.card);
                     else gameState[dest].hand.push(best.card);
@@ -2193,6 +2204,7 @@ function resolveEffectAI(type, target, count, opts = {}) {
                 const line = aiHighestScoreLine(actualTarget);
                 if (line !== null) {
                     const cardObj = gameState.field[line][actualTarget].pop();
+                    if (window.animCardEliminate) window.animCardEliminate(cardObj.card.id, null);
                     if (typeof applyReturnToHand === 'function') applyReturnToHand(dest, cardObj.card);
                     else gameState[dest].hand.push(cardObj.card);
                     triggerUncovered(line, actualTarget);
