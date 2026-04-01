@@ -4,19 +4,21 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 
 ---
 
-## 🔨 REFACTOR: Efectos Atómicos + Composición (REGLA DE ORO)
+## 🔨 REFACTOR: Efectos Atómicos + Composición (FUTURO/INVESTIGAR)
 
-**Problema:** Lógica de efectos está dispersa en múltiples archivos/funciones → cambios pequeños requieren tocar 5+ sitios.
+**Estado:** ⏸️ En pausa - Necesita más investigación y consenso
 
-**Solución:** Efectos atómicos reutilizables + composición
+**Problema que intenta resolver:** Lógica de efectos está dispersa en múltiples archivos/funciones → cambios pequeños requieren tocar 5+ sitios.
 
-### Principios:
+**Solución propuesta:** Efectos atómicos reutilizables + composición
+
+### Principios (teóricos):
 
 1. **Efectos atómicos (reutilizables)**
    ```javascript
    AtomicEffects = {
-       reveal: { setup(), execute(), onLineSelected() },
-       shift: { setup(), execute(), onLineSelected() },
+       reveal: { setup(), execute() },
+       shift: { setup(), execute() },
        flip: { setup(), execute() },
        discard: { setup(), execute() },
        choice: { setup(), execute() }
@@ -30,75 +32,43 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
        AtomicEffects.reveal({ target: 'faceDown' }),
        EffectBuilder.choice(
            "SÍ = Cambiar línea · NO = Voltear",
-           () => AtomicEffects.shift({ faceDown: true }),
-           () => AtomicEffects.flip({ faceUp: true })
+           () => AtomicEffects.shift(),
+           () => AtomicEffects.flip()
        )
    );
-   
-   // Espíritu 1 = Elegir (Descartar o Voltear)
-   const espiritu1 = EffectBuilder.choice(
-       "¿Descartar 1 carta o voltear esta?",
-       () => AtomicEffects.discard({ count: 1 }),
-       () => AtomicEffects.flip({ self: true })
-   );
    ```
 
-3. **Handlers genéricos delegan a efectos atómicos**
-   ```javascript
-   // ANTES (hardcodeado en handleFieldCardClick):
-   if (ctx.type === 'revealField') {
-       // 20 líneas de lógica específica de Luz 2...
-   }
-   
-   // DESPUÉS (delega a efecto atómico):
-   if (ctx.type === 'reveal') {
-       return AtomicEffects.reveal.execute(cardObj, line, target, ctx);
-   }
-   ```
+### Pros (potenciales):
 
-4. **Estado + Callback chain**
-   ```javascript
-   gameState.effectContext = {
-       type: 'reveal',
-       target: 'faceDown',
-       onSelect: (card) => { /* siguiente paso */ }
-   };
-   ```
+- ✅ 8 efectos atómicos cubrirían 180 cartas
+- ✅ Cambiar "reveal" = tocar 1 sitio (no 10)
+- ✅ Nuevas cartas = componer efectos (no crear código nuevo)
+- ✅ DRY + testeable + mantenible
 
-### Efectos atómicos a implementar:
+### Contras/riesgos (identificados):
 
-- [x] `reveal` - Revelar carta (muestra identidad)
-- [x] `shift` - Mover carta de línea
-- [x] `flip` - Voltear carta
-- [x] `choice` - Modal SÍ/NO con callbacks
-- [ ] `discard` - Descartar de mano
-- [ ] `draw` - Robar del mazo
-- [ ] `eliminate` - Eliminar carta
-- [ ] `return` - Devolver a mano
+- ⚠️ **Cambio muy grande** - Requiere refactorizar TODO el sistema de efectos
+- ⚠️ **Riesgo de romper** - Efectos que funcionan podrían dejar de hacerlo
+- ⚠️ **Curva de aprendizaje** - Nuevo patrón a entender
+- ⚠️ **Over-engineering** - ¿Realmente necesario para este proyecto?
+- ⚠️ **Tiempo** - Semanas de trabajo vs. horas de beneficio
 
-### Composiciones pendientes:
+### Alternativas a investigar:
 
-- [ ] **Luz 2** — reveal + choice(shift, flip)
-- [ ] **Espíritu 1** — choice(discard, flip)
-- [ ] **Diversidad 0** — choice(playCard)
-- [ ] **Plaga 2** — discard(variable) + discard(opponent)
-- [ ] **Odio 3** — choice(line) + eliminate(valueRange)
-- [ ] **Control Component** — choice(rearrange)
+1. **Refactor incremental** - Empezar con 1 efecto (ej: Luz 2) y ver si mejora
+2. **Patrones más simples** - ¿Bastaría con mejor documentación + convenciones?
+3. **Mantener estado actual** - ¿El coste/beneficio realmente vale la pena?
 
-### Archivos:
+### Decisiones pendientes:
 
-- `src/card-effects.js` — Efectos atómicos + Builder
-- `src/abilities-engine.js` — Usa EffectBuilder para cada carta
-- `src/logic.js` — Handlers delegan a AtomicEffects
+- [ ] ¿Realmente necesitamos este refactor?
+- [ ] ¿Hay otros enfoques más simples?
+- [ ] ¿Podemos hacer un MVP con 1-2 efectos para probar?
+- [ ] ¿Cuál es el ROI real?
 
-### Beneficios:
+### Archivos existentes (para referencia):
 
-| Antes | Después |
-|-------|---------|
-| 180 cartas = 180 lógicas dispersas | 8 efectos atómicos reutilizables |
-| Cambiar "reveal" = tocar 10 sitios | Cambiar "reveal" = tocar 1 sitio |
-| Lógica duplicada | DRY (Don't Repeat Yourself) |
-| Difícil de testear | Efectos aislados + testeables |
+- `src/card-effects.js` — Prototipo de efectos atómicos (NO USADO EN PRODUCCIÓN)
 
 ---
 
