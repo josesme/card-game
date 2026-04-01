@@ -4,6 +4,60 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 
 ---
 
+## 🔨 REFACTOR: Encapsulamiento de Efectos (REGLA DE ORO)
+
+**Problema:** Lógica de efectos está dispersa en múltiples archivos/funciones → cambios pequeños requieren tocar 5+ sitios.
+
+**Solución:** Patrón de Efecto Encapsulado en `src/card-effects.js`
+
+### Principios:
+
+1. **Un módulo por efecto complejo**
+   ```javascript
+   CardEffects.luz2 = {
+       init(),      // Configura estado
+       handlers{},  // Procesa interacciones
+       complete()   // Limpia + continúa
+   }
+   ```
+
+2. **Cero lógica hardcodeada en handlers genéricos**
+   - `handleFieldCardClick()` debe delegar, no implementar
+   - `finishEffect()` debe llamar callback, no decidir flujo
+
+3. **Estado viaja con effectContext**
+   ```javascript
+   gameState.effectContext = {
+       type: 'luz2',
+       step: 'reveal',
+       data: { cardObj, line, target },
+       onComplete: () => CardEffects.luz2.complete()
+   }
+   ```
+
+4. **Callback chain explícito**
+   ```javascript
+   // NO: if (ctx.type === 'shift') { ... finishEffect() }
+   // SÍ: ctx.onComplete = () => CardEffects.luz2.complete()
+   ```
+
+### Efectos a refactorizar:
+
+- [ ] **Luz 2** (prioridad alta) - Actualmente en 5 funciones distintas
+- [ ] **Espíritu 1** - Confirmación de lado
+- [ ] **Diversidad 0** - Jugar carta no-Diversidad
+- [ ] **Plaga 2** - Descarte variable
+- [ ] **Odio 3** - Eliminar por valor
+- [ ] **Control Component** - Reorganizar protocolos
+
+### Archivos:
+
+- `src/card-effects.js` - NUEVO: Módulo de efectos encapsulados
+- `src/abilities-engine.js` - Debe llamar CardEffects.init()
+- `src/logic.js` - Debe delegar a CardEffects.handlers()
+
+---
+
 ## 📝 REFINAMIENTO COPY DE MODALES
 
 Listado completo de textos de modales/overlays para revisar y pulir. **Solo efectos con interacción UI**.
