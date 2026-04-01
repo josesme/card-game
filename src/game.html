@@ -28,6 +28,18 @@
             display: none !important;
         }
 
+        #mtx-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+        #game-container, #hand-overlay, #log-overlay,
+        .effect-overlay, #card-preview-panel {
+            position: relative;
+            z-index: 1;
+        }
+
         #game-container {
             position: relative;
             z-index: 1;
@@ -1035,6 +1047,7 @@
     </style>
 </head>
 <body>
+<canvas id="mtx-bg"></canvas>
 
 <div id="game-container">
     <!-- HEADER -->
@@ -1967,6 +1980,100 @@ window.addEventListener('load', function() {
             }
         }
     });
+</script>
+<script>
+// ── MTX-2 background ─────────────────────────────────────────────
+(function () {
+    var canvas = document.getElementById('mtx-bg');
+    var ctx = canvas.getContext('2d');
+
+    function resize() {
+        canvas.width  = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    var FS = 20;
+    var drops, speeds, frozen, frozenT;
+
+    function init() {
+        var numCols = Math.floor(canvas.width / FS);
+        drops   = [];
+        speeds  = [];
+        frozen  = [];
+        frozenT = [];
+        for (var i = 0; i < numCols; i++) {
+            drops[i]  = Math.random() * -(canvas.height / FS * 1.5);
+            speeds[i] = 0.12 + Math.random() * 0.22;
+            frozen[i] = false;
+            frozenT[i] = 0;
+        }
+        ctx.fillStyle = '#0b0f1a';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    init();
+    window.addEventListener('resize', init);
+
+    var staticBurst = 0;
+
+    function draw() {
+        requestAnimationFrame(draw);
+        var W = canvas.width, H = canvas.height;
+        var now = Date.now();
+
+        ctx.fillStyle = 'rgba(11,15,26,0.07)';
+        ctx.fillRect(0, 0, W, H);
+
+        // Ráfaga horizontal cada ~4s
+        if (now - staticBurst > 4000 && Math.random() > 0.995) {
+            staticBurst = now;
+            ctx.fillStyle = 'rgba(0,245,255,0.06)';
+            ctx.fillRect(0, Math.random() * H, W, 4 + Math.random() * 18);
+        }
+
+        ctx.font = FS + 'px "JetBrains Mono", monospace';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+
+        var numCols = Math.floor(W / FS);
+        for (var i = 0; i < numCols; i++) {
+            // Congelar/descongelar aleatoriamente
+            if (!frozen[i] && Math.random() > 0.9985) {
+                frozen[i] = true;
+                frozenT[i] = now + 600 + Math.random() * 1400;
+            }
+            if (frozen[i] && now > frozenT[i]) frozen[i] = false;
+
+            var y = Math.floor(drops[i]) * FS;
+            if (y < -FS || y > H) {
+                if (y > H && Math.random() > 0.985) drops[i] = Math.random() * -40;
+                if (!frozen[i]) drops[i] += speeds[i];
+                continue;
+            }
+
+            if (frozen[i]) {
+                if (Math.random() > 0.7) {
+                    ctx.shadowBlur = 4;
+                    ctx.shadowColor = '#00f5ff';
+                    ctx.fillStyle = 'rgba(0,200,220,' + (0.15 + Math.random() * 0.35) + ')';
+                    ctx.fillText(Math.random() > 0.5 ? '1' : '0', i * FS, y);
+                    ctx.shadowBlur = 0;
+                }
+                continue;
+            }
+
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#00ffff';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(Math.random() > 0.5 ? '1' : '0', i * FS, y);
+            ctx.shadowBlur = 0;
+            drops[i] += speeds[i];
+        }
+    }
+
+    draw();
+})();
 </script>
 </body>
 </html>
