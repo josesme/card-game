@@ -463,7 +463,7 @@ const CARD_EFFECTS = {
 
   'Agua 3': {
     onPlay: [
-      { action: 'returnCardsWithValueFromLine', target: 'opponent', value: 2 }
+      { action: 'returnAllCardsWithValueFromLine', value: 2 }
     ]
   },
 
@@ -1163,6 +1163,7 @@ function flipAndTrigger(cardObj, line, owner) {
 function triggerCardEffect(card, trigger, targetPlayer, opts = {}) {
   const cardName = card.nombre;
   const effectDef = CARD_EFFECTS[cardName];
+  console.log(`🔵 triggerCardEffect: card=${cardName}, trigger=${trigger}, targetPlayer=${targetPlayer}`);
 
   // Miedo 0: bloquear onPlay del rival solo durante el turno del dueño de Miedo 0
   if (trigger === 'onPlay') {
@@ -1817,6 +1818,52 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             }
           });
           gameState.field[bestLine][resolvedTarget] = remaining;
+        }
+        processAbilityEffect();
+      }
+      break;
+    }
+
+    case 'returnAllCardsWithValueFromLine': {
+      // Agua 3: Return ALL face-up cards with value 2 from 1 chosen line (both players)
+      const val = actionDef.value;
+      if (targetPlayer === 'player') {
+        const linesWithCards = LINES.filter(l =>
+          gameState.field[l].player.some(c => !c.faceDown && c.card.valor === val) ||
+          gameState.field[l].ai.some(c => !c.faceDown && c.card.valor === val)
+        );
+
+        if (linesWithCards.length === 0) {
+          // No lines with value 2 cards - skip
+          if (typeof updateStatus === 'function') {
+            updateStatus(`Agua 3: No hay cartas con valor ${val} en ninguna línea`);
+          }
+          processAbilityEffect();
+        } else {
+          // Always show overlay so player can choose the line
+          startEffect('massReturnByValueBoth', 'any', 1, { value: val, lines: linesWithCards });
+        }
+      } else {
+        // AI: pick the line with the most matching cards (both players)
+        let bestLine = null, bestCount = 0;
+        LINES.forEach(l => {
+          const playerCount = gameState.field[l].player.filter(c => !c.faceDown && c.card.valor === val).length;
+          const aiCount = gameState.field[l].ai.filter(c => !c.faceDown && c.card.valor === val).length;
+          const count = playerCount + aiCount;
+          if (count > bestCount) { bestCount = count; bestLine = l; }
+        });
+        if (bestLine) {
+          ['player', 'ai'].forEach(p => {
+            const remaining = [];
+            gameState.field[bestLine][p].forEach(c => {
+              if (!c.faceDown && c.card.valor === val) {
+                gameState[p].hand.push(c.card);
+              } else {
+                remaining.push(c);
+              }
+            });
+            gameState.field[bestLine][p] = remaining;
+          });
         }
         processAbilityEffect();
       }
@@ -5149,6 +5196,7 @@ function lineHasIgnoreMiddleCommands(line) {
  */
 function executeNewEffect(card, targetPlayer) {
   const line = gameState.currentEffectLine;
+  console.log(`🔵 executeNewEffect: card=${card.nombre}, line=${line}, targetPlayer=${targetPlayer}`);
   // Apatía 2: ignora comandos de acción (onPlay/middle zone) en esta línea
   if (lineHasIgnoreMiddleCommands(line)) {
     console.log(`⛔ Apatía 2 activa en ${line} — onPlay de ${card.nombre} ignorado`);
