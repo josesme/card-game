@@ -1781,6 +1781,59 @@ function showLineSelectOverlay(ctx) {
     ov.classList.remove('hidden');
 }
 
+function showReturnByValueLineOverlay(ctx) {
+    const ov = document.getElementById('overlay-select');
+    ov.className = 'effect-overlay';
+
+    document.getElementById('select-title').textContent = 'DEVOLVER A MANO';
+    document.getElementById('select-subtitle').textContent = `Elige una línea — se devuelven cartas con valor ${ctx.value} del oponente`;
+    document.getElementById('select-source').textContent = ctx._triggerName || '';
+
+    const LINES = ['izquierda', 'centro', 'derecha'];
+    const eligibleLines = LINES.filter(l =>
+        gameState.field[l][ctx.target].some(c => !c.faceDown && c.card.valor === ctx.value)
+    );
+
+    if (eligibleLines.length === 0) {
+        closeHandSelectOverlay();
+        if (typeof finishEffect === 'function') finishEffect();
+        return;
+    }
+
+    let selected = null;
+
+    function render() {
+        const cardsEl = document.getElementById('select-cards');
+        cardsEl.innerHTML = eligibleLines.map((l, i) => {
+            const cls = selected === i ? 'selected' : 'selectable';
+            const count = gameState.field[l][ctx.target]
+                .filter(c => !c.faceDown && c.card.valor === ctx.value).length;
+            return `<div class="effect-card ${cls}" data-idx="${i}" style="width:160px;height:80px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;">
+                <div style="font-size:11px;font-weight:700;color:var(--ui-cyan);letter-spacing:1px;text-transform:uppercase;">${l}</div>
+                <div style="font-size:9px;color:#8899aa;">${count} carta${count !== 1 ? 's' : ''} a devolver</div>
+            </div>`;
+        }).join('');
+
+        cardsEl.querySelectorAll('.effect-card').forEach(el => {
+            el.onclick = () => { selected = parseInt(el.dataset.idx); render(); };
+        });
+
+        document.getElementById('select-counter').innerHTML = selected !== null ? `Línea: <strong>${eligibleLines[selected]}</strong>` : 'Elige una línea';
+        document.getElementById('select-actions').innerHTML =
+            `<button class="ui-btn" id="ov-select-confirm" ${selected === null ? 'disabled' : ''}>DEVOLVER</button>`;
+
+        const btn = document.getElementById('ov-select-confirm');
+        if (btn) btn.onclick = () => {
+            if (selected === null) return;
+            closeHandSelectOverlay();
+            if (typeof executeReturnByValueFromLine === 'function') executeReturnByValueFromLine(eligibleLines[selected]);
+        };
+    }
+
+    render();
+    ov.classList.remove('hidden');
+}
+
 function processFieldSelection(type, selectedSet, eligible, ctx) {
     const items = [...selectedSet].map(i => eligible[i]);
     items.forEach(item => {

@@ -1620,7 +1620,27 @@ function highlightEffectTargets() {
         if (typeof showLineSelectOverlay === 'function') {
             showLineSelectOverlay(ctx);
         }
+    } else if (ctx.type === 'massReturnByValue') {
+        if (typeof showReturnByValueLineOverlay === 'function') {
+            showReturnByValueLineOverlay(ctx);
+        }
     }
+}
+
+function executeReturnByValueFromLine(line) {
+    const ctx = gameState.effectContext;
+    if (!ctx || ctx.type !== 'massReturnByValue') return;
+    const { value, target } = ctx;
+    const remaining = [];
+    gameState.field[line][target].forEach(c => {
+        if (!c.faceDown && c.card.valor === value) {
+            gameState[target].hand.push(c.card);
+        } else {
+            remaining.push(c);
+        }
+    });
+    gameState.field[line][target] = remaining;
+    finishEffect();
 }
 
 function executeMassDeleteByValueRange(line) {

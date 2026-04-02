@@ -463,7 +463,7 @@ const CARD_EFFECTS = {
 
   'Agua 3': {
     onPlay: [
-      { action: 'returnCardsWithValue', target: 'self', value: 2, count: 'all' }
+      { action: 'returnCardsWithValueFromLine', target: 'opponent', value: 2 }
     ]
   },
 
@@ -1775,7 +1775,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'returnCardsWithValue': {
-      // Return all self cards across all lines with the given value back to hand
+      // Return all cards with the given value from ALL lines (legacy/fallback)
       const targetValue = actionDef.value;
       LINES.forEach(l => {
         const toReturn = [];
@@ -1791,6 +1791,35 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         toReturn.forEach(c => gameState[resolvedTarget].hand.push(c.card));
       });
       processAbilityEffect();
+      break;
+    }
+
+    case 'returnCardsWithValueFromLine': {
+      // Return all face-up cards with a specific value from 1 chosen line (player picks)
+      const val = actionDef.value;
+      if (targetPlayer === 'player') {
+        startEffect('massReturnByValue', resolvedTarget, 1, { value: val });
+      } else {
+        // AI: pick the line with the most matching cards to maximize disruption
+        let bestLine = null, bestCount = 0;
+        LINES.forEach(l => {
+          const count = gameState.field[l][resolvedTarget]
+            .filter(c => !c.faceDown && c.card.valor === val).length;
+          if (count > bestCount) { bestCount = count; bestLine = l; }
+        });
+        if (bestLine) {
+          const remaining = [];
+          gameState.field[bestLine][resolvedTarget].forEach(c => {
+            if (!c.faceDown && c.card.valor === val) {
+              gameState[resolvedTarget].hand.push(c.card);
+            } else {
+              remaining.push(c);
+            }
+          });
+          gameState.field[bestLine][resolvedTarget] = remaining;
+        }
+        processAbilityEffect();
+      }
       break;
     }
 
