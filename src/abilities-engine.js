@@ -2446,10 +2446,10 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         if (typeof showConfirmDialog === 'function') {
           showConfirmDialog(
             `${triggerCardName || 'Espíritu 1'}: ¿Qué quieres hacer: Descartar 1 carta o Voltear esta carta?`,
-            flipSelf,
             doDiscard,
-            'VOLTEAR',
-            'CANCELAR'
+            flipSelf,
+            'DESCARTAR',
+            'VOLTEAR'
           );
         } else {
           // fallback
