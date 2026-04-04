@@ -408,42 +408,6 @@
             box-shadow: 0 0 18px rgba(0,245,255,0.5), 0 0 6px rgba(0,245,255,0.7);
         }
 
-        #btn-mute {
-            position: fixed;
-            top: 12px; right: 72px;
-            width: 44px;
-            height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--ui-bg);
-            border: 1.5px solid var(--ui-cyan);
-            border-radius: 8px;
-            cursor: pointer;
-            padding: 0;
-            z-index: 100;
-            box-shadow: 0 0 12px var(--ui-cyan-glow), 0 0 3px rgba(0,245,255,0.55);
-            transition: box-shadow 0.25s, background 0.25s;
-        }
-        #btn-mute svg {
-            width: 22px;
-            height: 22px;
-            stroke: var(--ui-cyan);
-            stroke-width: 2;
-            fill: none;
-            filter: drop-shadow(0 0 8px rgba(0,245,255,0.66));
-        }
-        #btn-mute svg polygon,
-        #btn-mute svg line {
-            fill: var(--ui-cyan);
-            stroke: var(--ui-cyan);
-            filter: drop-shadow(0 0 8px rgba(0,245,255,0.66));
-        }
-        #btn-mute:hover {
-            background: #061220;
-            box-shadow: 0 0 18px rgba(0,245,255,0.5), 0 0 6px rgba(0,245,255,0.7);
-        }
-
         .nav-btn {
             position: fixed;
             top: 12px;
@@ -465,10 +429,6 @@
 </head>
 <body>
 
-<button id="btn-mute" onclick="togglePlayPause()" title="Reproducir/Pausar música">
-    <svg id="draft-play-icon" viewBox="0 0 24 24" style="display:none"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/></svg>
-    <svg id="draft-pause-icon" viewBox="0 0 24 24"><line x1="10" y1="4" x2="10" y2="20" stroke="currentColor" stroke-width="2"/><line x1="14" y1="4" x2="14" y2="20" stroke="currentColor" stroke-width="2"/></svg>
-</button>
 <button id="btn-fullscreen" onclick="toggleFullscreen()" title="Pantalla completa">
     <svg id="fs-icon-expand" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
     <svg id="fs-icon-shrink" viewBox="0 0 24 24" style="display:none"><path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/><path d="M3 21l7-7"/></svg>
@@ -897,23 +857,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.addEventListener('resize', applyDraftScale);
 
-// ── Audio Control ───────────────────────────────────
-function togglePlayPause() {
-    if (typeof AudioManager !== 'undefined') {
-        const isPlaying = AudioManager.togglePlayPause();
-        // isPlaying=true (sonando) → mostrar pause icon
-        // isPlaying=false (parado) → mostrar play icon
-        document.getElementById('draft-play-icon').style.display = isPlaying ? 'none' : '';
-        document.getElementById('draft-pause-icon').style.display = isPlaying ? '' : 'none';
-    }
-}
-
-// Initialize audio on first user interaction (manual play, no auto)
-document.addEventListener('click', function initAudio() {
-    // Audio does NOT auto-play; user must click the play button
-    document.removeEventListener('click', initAudio);
-}, { once: true });
-
 function setFsIcons(isFs) {
     document.getElementById('fs-icon-expand').style.display = isFs ? 'none' : '';
     document.getElementById('fs-icon-shrink').style.display = isFs ? '' : 'none';
@@ -951,7 +894,6 @@ document.getElementById('start-game-btn').addEventListener('click', function() {
 // ── Scramble Text Effect ───────────────────────────────────
 // Load GSAP and ScrambleText
 </script>
-<script src="audio.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script>
     console.log('[GSAP Check - Draft]', { gsap: typeof gsap, version: gsap ? gsap.version : 'not loaded' });
@@ -984,14 +926,6 @@ window.scrTxt = function (el, text, opts) {
 
 // Apply scramble to subtitle on load
 window.addEventListener('load', function() {
-    // Initialize audio manager (do NOT auto-play)
-    if (typeof AudioManager !== 'undefined') {
-        AudioManager.init();
-        // Show play icon by default (music is paused)
-        document.getElementById('draft-play-icon').style.display = '';
-        document.getElementById('draft-pause-icon').style.display = 'none';
-    }
-
     setTimeout(function() {
         if (window.scrTxt && typeof gsap !== 'undefined') {
             console.log('[Scramble] Applying to draft subtitle...');
