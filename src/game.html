@@ -1265,7 +1265,8 @@
             <div class="confirm-text" id="confirm-msg"></div>
         </div>
         <div class="effect-actions">
-            <!-- Buttons injected dynamically by showConfirmDialog() -->
+            <button class="ui-btn" id="btn-confirm-yes">SÍ</button>
+            <button class="ui-btn ui-btn--danger" id="btn-confirm-no">NO</button>
         </div>
     </div>
 </div>
@@ -1796,6 +1797,9 @@ function showReturnByValueLineOverlay(ctx) {
 
     if (eligibleLines.length === 0) {
         closeHandSelectOverlay();
+        if (typeof updateStatus === 'function') {
+            updateStatus(`Agua 3: No hay cartas con valor ${ctx.value} boca arriba en el lado del oponente`);
+        }
         if (typeof finishEffect === 'function') finishEffect();
         return;
     }
@@ -1827,6 +1831,51 @@ function showReturnByValueLineOverlay(ctx) {
             if (selected === null) return;
             closeHandSelectOverlay();
             if (typeof executeReturnByValueFromLine === 'function') executeReturnByValueFromLine(eligibleLines[selected]);
+        };
+    }
+
+    render();
+    ov.classList.remove('hidden');
+}
+
+function showReturnByValueLineOverlayBoth(ctx) {
+    // Agua 3: show overlay to select line when 2+ lines have cards with value 2
+    const ov = document.getElementById('overlay-select');
+    ov.className = 'effect-overlay';
+
+    document.getElementById('select-title').textContent = 'DEVOLVER A MANO';
+    document.getElementById('select-subtitle').textContent = `Elige una línea — se devuelven TODAS las cartas con valor ${ctx.value} (ambos jugadores)`;
+    document.getElementById('select-source').textContent = ctx._triggerName || '';
+
+    const eligibleLines = ctx.lines || ['izquierda', 'centro', 'derecha'];
+    let selected = null;
+
+    function render() {
+        const cardsEl = document.getElementById('select-cards');
+        cardsEl.innerHTML = eligibleLines.map((l, i) => {
+            const cls = selected === i ? 'selected' : 'selectable';
+            const playerCount = gameState.field[l].player.filter(c => !c.faceDown && c.card.valor === ctx.value).length;
+            const aiCount = gameState.field[l].ai.filter(c => !c.faceDown && c.card.valor === ctx.value).length;
+            const totalCount = playerCount + aiCount;
+            return `<div class="effect-card ${cls}" data-idx="${i}" style="width:160px;height:80px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;">
+                <div style="font-size:11px;font-weight:700;color:var(--ui-cyan);letter-spacing:1px;text-transform:uppercase;">${l}</div>
+                <div style="font-size:9px;color:#8899aa;">${totalCount} carta${totalCount !== 1 ? 's' : ''} a devolver</div>
+            </div>`;
+        }).join('');
+
+        cardsEl.querySelectorAll('.effect-card').forEach(el => {
+            el.onclick = () => { selected = parseInt(el.dataset.idx); render(); };
+        });
+
+        document.getElementById('select-counter').innerHTML = selected !== null ? `Línea: <strong>${eligibleLines[selected]}</strong>` : 'Elige una línea';
+        document.getElementById('select-actions').innerHTML =
+            `<button class="ui-btn" id="ov-select-confirm" ${selected === null ? 'disabled' : ''}>DEVOLVER</button>`;
+
+        const btn = document.getElementById('ov-select-confirm');
+        if (btn) btn.onclick = () => {
+            if (selected === null) return;
+            closeHandSelectOverlay();
+            if (typeof executeReturnByValueFromLineBoth === 'function') executeReturnByValueFromLineBoth(eligibleLines[selected]);
         };
     }
 

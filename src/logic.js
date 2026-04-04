@@ -1624,6 +1624,11 @@ function highlightEffectTargets() {
         if (typeof showReturnByValueLineOverlay === 'function') {
             showReturnByValueLineOverlay(ctx);
         }
+    } else if (ctx.type === 'massReturnByValueBoth') {
+        // Agua 3: return cards from both players in selected line
+        if (typeof showReturnByValueLineOverlayBoth === 'function') {
+            showReturnByValueLineOverlayBoth(ctx);
+        }
     }
 }
 
@@ -1640,6 +1645,27 @@ function executeReturnByValueFromLine(line) {
         }
     });
     gameState.field[line][target] = remaining;
+    finishEffect();
+}
+
+function executeReturnByValueFromLineBoth(line) {
+    // Agua 3: return cards with value 2 from BOTH players in selected line
+    const ctx = gameState.effectContext;
+    if (!ctx || ctx.type !== 'massReturnByValueBoth') return;
+    const { value } = ctx;
+    
+    ['player', 'ai'].forEach(p => {
+        const remaining = [];
+        gameState.field[line][p].forEach(c => {
+            if (!c.faceDown && c.card.valor === value) {
+                gameState[p].hand.push(c.card);
+            } else {
+                remaining.push(c);
+            }
+        });
+        gameState.field[line][p] = remaining;
+    });
+    
     finishEffect();
 }
 
