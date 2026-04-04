@@ -1257,6 +1257,38 @@ function processAbilityEffect() {
 }
 
 /**
+ * Muestra el diálogo de confirmación de habilidad.
+ * Usa showConfirmDialog (game.html) si está disponible — crea botones frescos cada vez.
+ * Fallback: manipulación DOM directa para entornos sin showConfirmDialog.
+ */
+function _confirmDialog(msg, onYes, onNo) {
+  gameState.effectContext = { type: 'confirm' };
+  if (typeof showConfirmDialog === 'function') {
+    showConfirmDialog(msg,
+      () => { gameState.effectContext = null; onYes(); },
+      () => { gameState.effectContext = null; onNo(); }
+    );
+    return;
+  }
+  // Fallback directo (tests / entornos sin showConfirmDialog)
+  const confirmArea = document.getElementById('command-confirm');
+  if (!confirmArea) { gameState.effectContext = null; onNo(); return; }
+  const actionsDiv = confirmArea.querySelector('.effect-actions');
+  if (actionsDiv) {
+    actionsDiv.innerHTML =
+      '<button class="ui-btn" id="btn-confirm-yes">SÍ</button>' +
+      '<button class="ui-btn ui-btn--danger" id="btn-confirm-no">NO</button>';
+  }
+  const confirmMsg = document.getElementById('confirm-msg');
+  if (confirmMsg) confirmMsg.textContent = msg;
+  confirmArea.classList.remove('hidden');
+  const btnYes = document.getElementById('btn-confirm-yes');
+  const btnNo  = document.getElementById('btn-confirm-no');
+  if (btnYes) btnYes.onclick = () => { confirmArea.classList.add('hidden'); gameState.effectContext = null; onYes(); };
+  if (btnNo)  btnNo.onclick  = () => { confirmArea.classList.add('hidden'); gameState.effectContext = null; onNo(); };
+}
+
+/**
  * Resuelve una acción individual de efecto
  */
 function resolveAbilityAction(actionDef, targetPlayer) {
@@ -1402,31 +1434,16 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           processAbilityEffect();
           break;
         }
-        const confirmArea = document.getElementById('command-confirm');
-        const confirmMsg = document.getElementById('confirm-msg');
-        const btnYes = document.getElementById('btn-confirm-yes');
-        const btnNo = document.getElementById('btn-confirm-no');
-        if (confirmArea && btnYes && btnNo) {
-          gameState.effectContext = { type: 'confirm', selected: [], count: 0 };
-          confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = `${triggerCardName || ''}: ¿Descartas 1 carta para activar el efecto?`;
-          btnYes.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            // Queue the ifThen action, then do the interactive discard
+        _confirmDialog(
+          `${triggerCardName || ''}: ¿Descartas 1 carta para activar el efecto?`,
+          () => {
             if (ifThenAction) {
               gameState.effectQueue.unshift({ effect: { action: ifThenAction, target: ifThenTarget, count: ifThenCount }, targetPlayer });
             }
             startEffect('discard', 'player', count || 1);
-          };
-          btnNo.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            processAbilityEffect();
-          };
-        } else {
-          processAbilityEffect();
-        }
+          },
+          () => processAbilityEffect()
+        );
       } else {
         // IA descarta solo si tiene ventaja en mano (más de 3 cartas) o si el efecto vale la pena
         const aiScore = LINES.reduce((s, l) => s + calculateScore(gameState, l, 'ai'), 0);
@@ -1492,31 +1509,15 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     case 'mayFlip': {
       const flipOpts = actionDef.filter ? { filter: actionDef.filter } : {};
       if (targetPlayer === 'player') {
-        const confirmArea = document.getElementById('command-confirm');
-        const confirmMsg = document.getElementById('confirm-msg');
-        const btnYes = document.getElementById('btn-confirm-yes');
-        const btnNo = document.getElementById('btn-confirm-no');
-        if (confirmArea && btnYes && btnNo) {
-          gameState.effectContext = { type: 'confirm' };
-          confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = target === 'self'
-            ? `${triggerCardName}: ¿Quieres voltear esta carta?`
-            : flipOpts.filter === 'faceDown'
-              ? `${triggerCardName || ''}: ¿Quieres voltear 1 carta bocabajo?`
-              : `${triggerCardName || ''}: ¿Quieres voltear 1 carta?`;
-          btnYes.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            startEffect('flip', resolvedTarget === 'any' ? 'any' : resolvedTarget, count || 1, flipOpts);
-          };
-          btnNo.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            processAbilityEffect();
-          };
-        } else {
-          processAbilityEffect();
-        }
+        const msg = target === 'self'
+          ? `${triggerCardName}: ¿Quieres voltear esta carta?`
+          : flipOpts.filter === 'faceDown'
+            ? `${triggerCardName || ''}: ¿Quieres voltear 1 carta bocabajo?`
+            : `${triggerCardName || ''}: ¿Quieres voltear 1 carta?`;
+        _confirmDialog(msg,
+          () => startEffect('flip', resolvedTarget === 'any' ? 'any' : resolvedTarget, count || 1, flipOpts),
+          () => processAbilityEffect()
+        );
       } else {
         resolveAbilityAction({ action: 'flip', target, count, ...flipOpts }, targetPlayer);
       }
@@ -1542,44 +1543,26 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     case 'mayShift': {
       // Oscuridad 1: opcionalmente mover la carta recién volteada a otra línea
       if (targetPlayer === 'player') {
-        const confirmArea = document.getElementById('command-confirm');
-        const confirmMsg = document.getElementById('confirm-msg');
-        const btnYes = document.getElementById('btn-confirm-yes');
-        const btnNo = document.getElementById('btn-confirm-no');
         const flipped = gameState.lastFlippedCard;
-        if (confirmArea && btnYes && btnNo && flipped) {
-          gameState.effectContext = { type: 'confirm' };
-          confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = `¿Quieres cambiar de línea "${flipped.cardObj.card.nombre}"?`;
-          btnYes.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            // Shift forzado a esa carta específica
+        if (!flipped) { processAbilityEffect(); break; }
+        _confirmDialog(
+          `¿Quieres cambiar de línea "${flipped.cardObj.card.nombre}"?`,
+          () => {
             const { cardObj, line } = flipped;
             const cardIdx = gameState.field[line][resolvedTarget].indexOf(cardObj);
             if (cardIdx !== -1) {
               gameState.effectContext = {
-                type: 'shift',
-                target: resolvedTarget,
-                count: 1,
-                selected: [],
-                selectedCard: { line, target: resolvedTarget, cardIdx },
-                waitingForLine: true
+                type: 'shift', target: resolvedTarget, count: 1, selected: [],
+                selectedCard: { line, target: resolvedTarget, cardIdx }, waitingForLine: true
               };
               updateStatus(`Elige línea destino para "${cardObj.card.nombre}"`);
               highlightSelectableLines(line);
             } else {
               processAbilityEffect();
             }
-          };
-          btnNo.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            processAbilityEffect();
-          };
-        } else {
-          processAbilityEffect();
-        }
+          },
+          () => processAbilityEffect()
+        );
       } else {
         // IA: mover la carta recién volteada a línea aleatoria
         const flipped = gameState.lastFlippedCard;
@@ -1619,28 +1602,15 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         if (!gameState.drawnLastTurn?.[targetPlayer]) { processAbilityEffect(); break; }
       }
       if (targetPlayer === 'player') {
-        const confirmArea = document.getElementById('command-confirm');
-        const confirmMsg = document.getElementById('confirm-msg');
-        const btnYes = document.getElementById('btn-confirm-yes');
-        const btnNo = document.getElementById('btn-confirm-no');
-        if (confirmArea && btnYes && btnNo) {
-          gameState.effectContext = { type: 'confirm' };
-          confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = `¿Quieres mover ${triggerCardName} a otra línea?`;
-          btnYes.onclick = () => {
-            confirmArea.classList.add('hidden');
+        _confirmDialog(
+          `¿Quieres mover ${triggerCardName} a otra línea?`,
+          () => {
             gameState.effectContext = { type: 'shiftSelf', sourceLine: selfLine, target: 'player', count: 1, selected: [], waitingForLine: true };
             updateStatus(`${triggerCardName}: elige línea destino`);
             highlightSelectableLines(selfLine);
-          };
-          btnNo.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            processAbilityEffect();
-          };
-        } else {
-          processAbilityEffect();
-        }
+          },
+          () => processAbilityEffect()
+        );
       } else {
         // IA: mover a línea distinta
         const otherLines = LINES.filter(l => l !== selfLine);
@@ -1667,30 +1637,18 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       const flippedIdx = gameState.field[flippedLine]?.[targetPlayer]?.indexOf(flippedCard);
       if (flippedIdx === undefined || flippedIdx === -1) { processAbilityEffect(); break; }
       if (targetPlayer === 'player') {
-        const confirmArea = document.getElementById('command-confirm');
-        const confirmMsg = document.getElementById('confirm-msg');
-        const btnYes = document.getElementById('btn-confirm-yes');
-        const btnNo = document.getElementById('btn-confirm-no');
-        if (confirmArea && btnYes && btnNo) {
-          gameState.effectContext = { type: 'confirm' };
-          confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = `${triggerCardName || ''}: ¿Cambias ${flippedCard.card.nombre} a otra línea?`;
-          btnYes.onclick = () => {
-            confirmArea.classList.add('hidden');
+        _confirmDialog(
+          `${triggerCardName || ''}: ¿Cambias ${flippedCard.card.nombre} a otra línea?`,
+          () => {
             gameState.effectContext = {
               type: 'shiftSelf', sourceLine: flippedLine, target: 'player',
-              count: 1, selected: [], waitingForLine: true,
-              cardRef: flippedCard
+              count: 1, selected: [], waitingForLine: true, cardRef: flippedCard
             };
             updateStatus(`${triggerCardName}: elige línea destino para ${flippedCard.card.nombre}`);
             if (typeof highlightSelectableLines === 'function') highlightSelectableLines(flippedLine);
-          };
-          btnNo.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            processAbilityEffect();
-          };
-        } else { processAbilityEffect(); }
+          },
+          () => processAbilityEffect()
+        );
       } else {
         // IA: mover la carta volteada a la línea que mejore su posición
         const dest = typeof aiPickDestLine === 'function'
@@ -2143,27 +2101,11 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     case 'mayShiftOrFlip': {
       // Miedo 0: elige Cambiar (shift) o Voltear (flip) cualquier carta del campo
       if (targetPlayer === 'player') {
-        const confirmArea = document.getElementById('command-confirm');
-        const confirmMsg  = document.getElementById('confirm-msg');
-        const btnYes      = document.getElementById('btn-confirm-yes');
-        const btnNo       = document.getElementById('btn-confirm-no');
-        if (confirmArea && btnYes && btnNo) {
-          gameState.effectContext = { type: 'confirm' };
-          confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = `${triggerCardName || 'Miedo 0'}: ¿qué quieres hacer? SÍ = Cambiar carta de línea · NO = Voltear carta`;
-          btnYes.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            startEffect('shift', 'any', 1);
-          };
-          btnNo.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            startEffect('flip', 'any', 1);
-          };
-        } else {
-          startEffect('flip', 'any', 1);
-        }
+        _confirmDialog(
+          `${triggerCardName || 'Miedo 0'}: ¿qué quieres hacer? SÍ = Cambiar carta de línea · NO = Voltear carta`,
+          () => startEffect('shift', 'any', 1),
+          () => startEffect('flip', 'any', 1)
+        );
       } else {
         // IA: voltear si el rival tiene cartas boca arriba que dañen; cambiar si tiene ventaja en alguna línea
         const canFlipOpp = LINES.some(l => { const s = gameState.field[l].player; return s.length > 0 && !s[s.length-1].faceDown; });
@@ -2238,33 +2180,18 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     case 'mayReturnAndFlip': {
       // "Puedes devolver 1 carta del oponente. Si lo haces, voltea esta carta."
       if (targetPlayer === 'player') {
-        const confirmArea = document.getElementById('command-confirm');
-        const confirmMsg = document.getElementById('confirm-msg');
-        const btnYes = document.getElementById('btn-confirm-yes');
-        const btnNo = document.getElementById('btn-confirm-no');
-        if (confirmArea && btnYes && btnNo) {
-          gameState.effectContext = { type: 'confirm' };
-          confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = `¿Quieres devolver 1 carta del oponente? (Si lo haces, ${triggerCardName} se voltea)`;
-          btnYes.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            // Si devuelve → encolar flipSelf después del return
+        _confirmDialog(
+          `¿Quieres devolver 1 carta del oponente? (Si lo haces, ${triggerCardName} se voltea)`,
+          () => {
             gameState.effectQueue.unshift({
               effect: { action: 'flipSelf', target: 'self' },
               targetPlayer,
               cardName: triggerCardName
             });
             startEffect('return', resolvedTarget, count || 1);
-          };
-          btnNo.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            processAbilityEffect();
-          };
-        } else {
-          processAbilityEffect();
-        }
+          },
+          () => processAbilityEffect()
+        );
       } else {
         // IA: si hay cartas del oponente en campo, devuelve una y se voltea
         const l = gameState.currentEffectLine || LINES.find(l => gameState.field[l][resolvedTarget].length > 0);
@@ -2329,17 +2256,9 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     case 'optionalDrawThenDelete': {
       // Muerte 1 errata: optionally draw 1 → if you do, delete 1 opponent card → then delete self
       if (targetPlayer === 'player') {
-        const confirmArea = document.getElementById('command-confirm');
-        const confirmMsg = document.getElementById('confirm-msg');
-        const btnYes = document.getElementById('btn-confirm-yes');
-        const btnNo = document.getElementById('btn-confirm-no');
-        if (confirmArea && btnYes && btnNo) {
-          gameState.effectContext = { type: 'confirm' };
-          confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = `${triggerCardName || ''}: ¿Robas 1 carta? (Si lo haces, elimina 1 carta rival y luego esta carta se destruye)`;
-          btnYes.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
+        _confirmDialog(
+          `${triggerCardName || ''}: ¿Robas 1 carta? (Si lo haces, elimina 1 carta rival y luego esta carta se destruye)`,
+          () => {
             draw(targetPlayer, 1);
             // Queue: delete opponent, then delete self
             gameState.effectQueue.unshift(
@@ -2347,15 +2266,9 @@ function resolveAbilityAction(actionDef, targetPlayer) {
               { effect: { action: actionDef.ifThenAction || 'delete', target: actionDef.ifThenTarget || 'opponent', count: actionDef.ifThenCount || 1 }, targetPlayer }
             );
             processAbilityEffect();
-          };
-          btnNo.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            processAbilityEffect();
-          };
-        } else {
-          processAbilityEffect();
-        }
+          },
+          () => processAbilityEffect()
+        );
       } else {
         // AI: draw if hand is small, then delete + self-destruct
         if (gameState.ai.hand.length < 3 && gameState.ai.deck.length > 0) {
@@ -2515,34 +2428,20 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     case 'optionalDiscardOrFlipSelf': {
       // Espíritu 1: el jugador elige descartar 1 carta O voltear esta carta
       if (targetPlayer === 'player') {
-        const confirmArea = document.getElementById('command-confirm');
-        const confirmMsg = document.getElementById('confirm-msg');
-        const btnYes = document.getElementById('btn-confirm-yes');
-        const btnNo = document.getElementById('btn-confirm-no');
-        if (confirmArea && btnYes && btnNo) {
-          gameState.effectContext = { type: 'confirm' };
-          confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = `${triggerCardName || ''}: ¿Qué quieres hacer? SÍ = Descarta 1 carta · NO = Voltea esta carta`;
-          btnYes.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            startEffect('discard', 'player', 1);
-          };
-          btnNo.onclick = () => {
-            confirmArea.classList.add('hidden');
+        _confirmDialog(
+          `${triggerCardName || ''}: ¿Qué quieres hacer? SÍ = Descarta 1 carta · NO = Voltea esta carta`,
+          () => startEffect('discard', 'player', 1),
+          () => {
             // Buscar Espíritu 1 por nombre en todas las líneas y voltearla
             LINES.forEach(l => {
               const stack = gameState.field[l][targetPlayer];
               const cardObj = stack.find(c => c.card.nombre === triggerCardName);
               if (cardObj) cardObj.faceDown = true;
             });
-            gameState.effectContext = null;
             updateUI();
             processAbilityEffect();
-          };
-        } else {
-          processAbilityEffect();
-        }
+          }
+        );
       } else {
         // IA: descarta si tiene cartas
         if (gameState.ai.hand.length > 0) discard('ai', 1);
@@ -2580,54 +2479,31 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         processAbilityEffect();
         break;
       }
-      const confirmArea = document.getElementById('command-confirm');
-      const confirmMsg = document.getElementById('confirm-msg');
-      const btnYes = document.getElementById('btn-confirm-yes');
-      const btnNo = document.getElementById('btn-confirm-no');
-      if (!confirmArea) { draw('player', n + 1); processAbilityEffect(); break; }
-      gameState.effectContext = { type: 'confirm', selected: [] };
-      confirmArea.classList.remove('hidden');
-      confirmMsg.textContent = `${triggerCardName || ''}: ¿Descartas otra carta? Robas ${n + 1} si paras ahora.`;
-      btnYes.onclick = () => {
-        confirmArea.classList.add('hidden');
-        gameState.effectContext = null;
-        gameState.effectQueue.unshift({ effect: { action: '_discardForDrawLoop', discardedSoFar: n + 1 }, targetPlayer });
-        startEffect('discard', 'player', 1);
-      };
-      btnNo.onclick = () => {
-        confirmArea.classList.add('hidden');
-        gameState.effectContext = null;
-        draw('player', n + 1);
-        processAbilityEffect();
-      };
+      _confirmDialog(
+        `${triggerCardName || ''}: ¿Descartas otra carta? Robas ${n + 1} si paras ahora.`,
+        () => {
+          gameState.effectQueue.unshift({ effect: { action: '_discardForDrawLoop', discardedSoFar: n + 1 }, targetPlayer });
+          startEffect('discard', 'player', 1);
+        },
+        () => {
+          draw('player', n + 1);
+          processAbilityEffect();
+        }
+      );
       break;
     }
 
     case 'optionalShiftThenFlipSelf': {
       // Velocidad 3 Final: puedes cambiar 1 carta tuya; si lo haces, voltea esta carta
       if (targetPlayer === 'player') {
-        const confirmArea = document.getElementById('command-confirm');
-        const confirmMsg = document.getElementById('confirm-msg');
-        const btnYes = document.getElementById('btn-confirm-yes');
-        const btnNo = document.getElementById('btn-confirm-no');
-        if (confirmArea && btnYes && btnNo) {
-          gameState.effectContext = { type: 'confirm' };
-          confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = `¿Cambias 1 de tus cartas de línea? (${triggerCardName} se volteará si lo haces)`;
-          btnYes.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
+        _confirmDialog(
+          `¿Cambias 1 de tus cartas de línea? (${triggerCardName} se volteará si lo haces)`,
+          () => {
             gameState.effectQueue.unshift({ effect: { action: 'flipSelf', target: 'self' }, targetPlayer, cardName: triggerCardName });
             startEffect('shift', 'player', 1);
-          };
-          btnNo.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            processAbilityEffect();
-          };
-        } else {
-          processAbilityEffect();
-        }
+          },
+          () => processAbilityEffect()
+        );
       } else {
         // IA cambia si hay línea destino ventajosa; si no, omite
         const destLine = aiPickDestLine([gameState.currentEffectLine]);
@@ -2683,28 +2559,11 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       const hasCoveredInLine = hasCoveredOwn || hasCoveredOpp;
       if (targetPlayer === 'player') {
         if (!hasCoveredInLine) { processAbilityEffect(); break; }
-        const confirmArea = document.getElementById('command-confirm');
-        const confirmMsg = document.getElementById('confirm-msg');
-        const btnYes = document.getElementById('btn-confirm-yes');
-        const btnNo = document.getElementById('btn-confirm-no');
-        if (confirmArea && btnYes && btnNo) {
-          gameState.effectContext = { type: 'confirm' };
-          confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = `${triggerCardName || ''}: ¿Quieres voltear una carta cubierta de esta línea?`;
-          btnYes.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            // target 'any' para poder elegir carta propia o rival
-            startEffect('flip', 'any', 1, { forceLine: line, coveredOnly: true });
-          };
-          btnNo.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            processAbilityEffect();
-          };
-        } else {
-          processAbilityEffect();
-        }
+        _confirmDialog(
+          `${triggerCardName || ''}: ¿Quieres voltear una carta cubierta de esta línea?`,
+          () => startEffect('flip', 'any', 1, { forceLine: line, coveredOnly: true }),
+          () => processAbilityEffect()
+        );
       } else {
         // IA: prefiere voltear cubierta propia de mayor valor (la activa);
         // si no tiene, voltea la cubierta rival de mayor valor (boca arriba→abajo = pierde puntos)
@@ -2733,25 +2592,11 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       );
       if (!hasOwnCoveredFaceUp) { processAbilityEffect(); break; }
       if (targetPlayer === 'player') {
-        const confirmArea = document.getElementById('command-confirm');
-        const confirmMsg  = document.getElementById('confirm-msg');
-        const btnYes = document.getElementById('btn-confirm-yes');
-        const btnNo  = document.getElementById('btn-confirm-no');
-        if (confirmArea && btnYes && btnNo) {
-          gameState.effectContext = { type: 'confirm' };
-          confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = `${triggerCardName || ''}: ¿Quieres voltear una de tus cartas bocarriba cubiertas?`;
-          btnYes.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            startEffect('flip', 'player', 1, { coveredOnly: true, filter: 'faceUp' });
-          };
-          btnNo.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            processAbilityEffect();
-          };
-        } else { processAbilityEffect(); }
+        _confirmDialog(
+          `${triggerCardName || ''}: ¿Quieres voltear una de tus cartas bocarriba cubiertas?`,
+          () => startEffect('flip', 'player', 1, { coveredOnly: true, filter: 'faceUp' }),
+          () => processAbilityEffect()
+        );
       } else {
         // IA: voltea la carta cubierta bocarriba propia de mayor valor
         let bestTarget = null, bestLine = null, bestIdx = -1;
@@ -2777,25 +2622,11 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       );
       if (!hasCoveredFaceUp) { processAbilityEffect(); break; }
       if (targetPlayer === 'player') {
-        const confirmArea = document.getElementById('command-confirm');
-        const confirmMsg = document.getElementById('confirm-msg');
-        const btnYes = document.getElementById('btn-confirm-yes');
-        const btnNo = document.getElementById('btn-confirm-no');
-        if (confirmArea && btnYes && btnNo) {
-          gameState.effectContext = { type: 'confirm' };
-          confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = `${triggerCardName || ''}: ¿Volteas una carta cubierta bocarriba?`;
-          btnYes.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            startEffect('flip', 'any', 1, { coveredOnly: true, filter: 'faceUp', targetAll: true });
-          };
-          btnNo.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            processAbilityEffect();
-          };
-        } else { processAbilityEffect(); }
+        _confirmDialog(
+          `${triggerCardName || ''}: ¿Volteas una carta cubierta bocarriba?`,
+          () => startEffect('flip', 'any', 1, { coveredOnly: true, filter: 'faceUp', targetAll: true }),
+          () => processAbilityEffect()
+        );
       } else {
         // IA: voltear la cubierta bocarriba de mayor valor del oponente; si no hay, la propia de mayor valor
         let bestTarget = null, bestLine = null, bestSide = null, bestIdx = -1;
@@ -2837,27 +2668,16 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         if (gameState.player.hand.length === 0) { processAbilityEffect(); break; }
         if (actionDef.may) {
           // Opcional: preguntar antes de jugar bocabajo
-          const confirmArea = document.getElementById('command-confirm');
-          const confirmMsg = document.getElementById('confirm-msg');
-          const btnYes = document.getElementById('btn-confirm-yes');
-          const btnNo = document.getElementById('btn-confirm-no');
-          if (confirmArea && btnYes && btnNo) {
-            gameState.effectContext = { type: 'confirm' };
-            confirmArea.classList.remove('hidden');
-            confirmMsg.textContent = `${triggerCardName || 'Carta'}: ¿Jugar 1 carta bocabajo?`;
-            btnYes.onclick = () => {
-              confirmArea.classList.add('hidden');
+          _confirmDialog(
+            `${triggerCardName || 'Carta'}: ¿Jugar 1 carta bocabajo?`,
+            () => {
               gameState.effectContext = { type: 'pickHandFaceDown', excludeLine, allowedLines };
               const lineMsg = excludeLine ? ' en otra línea' : '';
               updateStatus(`${triggerCardName || 'Carta'}: elige una carta de tu mano para jugar bocabajo${lineMsg}`);
               if (typeof highlightSelectableLines === 'function') highlightSelectableLines(excludeLine, allowedLines);
-            };
-            btnNo.onclick = () => {
-              confirmArea.classList.add('hidden');
-              gameState.effectContext = null;
-              processAbilityEffect();
-            };
-          } else { processAbilityEffect(); }
+            },
+            () => processAbilityEffect()
+          );
           break;
         }
         gameState.effectContext = { type: 'pickHandFaceDown', excludeLine, allowedLines };
@@ -3172,34 +2992,15 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       if (targetPlayer === 'player') {
         if (gameState.player.hand.length === 0) { processAbilityEffect(); break; }
         
-        const confirmArea = document.getElementById('command-confirm');
-        const confirmMsg = document.getElementById('confirm-msg');
-        const btnYes = document.getElementById('btn-confirm-yes');
-        const btnNo = document.getElementById('btn-confirm-no');
-        
-        if (confirmArea && btnYes && btnNo) {
-          gameState.effectQueue.unshift({ effect: { action: '_drawAfterGive', count }, targetPlayer });
-          gameState.effectContext = { type: 'confirm' };
-          confirmArea.style.display = 'flex';
-          confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = `${triggerCardName || ''}: ¿Das 1 carta a tu oponente para robar ${count || 2} cartas?`;
-          
-          btnYes.onclick = () => {
-            confirmArea.style.display = 'none';
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            startEffect('give', 'player', 1);
-          };
-          btnNo.onclick = () => {
-            confirmArea.style.display = 'none';
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
+        gameState.effectQueue.unshift({ effect: { action: '_drawAfterGive', count }, targetPlayer });
+        _confirmDialog(
+          `${triggerCardName || ''}: ¿Das 1 carta a tu oponente para robar ${count || 2} cartas?`,
+          () => startEffect('give', 'player', 1),
+          () => {
             gameState.effectQueue.shift(); // quitar _drawAfterGive
             processAbilityEffect();
-          };
-        } else {
-          processAbilityEffect();
-        }
+          }
+        );
       } else {
         // IA: dar si tiene ventaja en mano o el mazo tiene cartas valiosas
         if (gameState.ai.hand.length >= 2 && gameState.ai.deck.length > 0) {
@@ -3327,26 +3128,11 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       // Clarity 4, Time 2: baraja descarte en mazo (opcional)
       if (gameState[targetPlayer].trash.length === 0) { processAbilityEffect(); break; }
       if (targetPlayer === 'player') {
-        const confirmArea = document.getElementById('command-confirm');
-        const confirmMsg = document.getElementById('confirm-msg');
-        const btnYes = document.getElementById('btn-confirm-yes');
-        const btnNo = document.getElementById('btn-confirm-no');
-        if (confirmArea && btnYes && btnNo) {
-          gameState.effectContext = { type: 'confirm' };
-          confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = `${triggerCardName || ''}: ¿Barajes tu descarte (${gameState.player.trash.length} cartas) en tu mazo?`;
-          btnYes.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            shuffleDiscardIntoDeck('player');
-            processAbilityEffect();
-          };
-          btnNo.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            processAbilityEffect();
-          };
-        } else { processAbilityEffect(); }
+        _confirmDialog(
+          `${triggerCardName || ''}: ¿Barajes tu descarte (${gameState.player.trash.length} cartas) en tu mazo?`,
+          () => { shuffleDiscardIntoDeck('player'); processAbilityEffect(); },
+          () => processAbilityEffect()
+        );
       } else {
         // IA baraja si el mazo tiene menos de 3 cartas
         if (gameState.ai.deck.length < 3) shuffleDiscardIntoDeck('ai');
@@ -3515,26 +3301,14 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       // Valor 0 onTurnEnd: puedes descartar 1; si lo haces, oponente descarta 1
       if (targetPlayer === 'player') {
         if (gameState.player.hand.length === 0) { processAbilityEffect(); break; }
-        const confirmArea = document.getElementById('command-confirm');
-        const confirmMsg  = document.getElementById('confirm-msg');
-        const btnYes      = document.getElementById('btn-confirm-yes');
-        const btnNo       = document.getElementById('btn-confirm-no');
-        if (confirmArea && btnYes && btnNo) {
-          gameState.effectContext = { type: 'confirm' };
-          confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = `${triggerCardName || ''}: ¿Descartas 1 carta? Si lo haces, tu oponente también descartará 1.`;
-          btnYes.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
+        _confirmDialog(
+          `${triggerCardName || ''}: ¿Descartas 1 carta? Si lo haces, tu oponente también descartará 1.`,
+          () => {
             gameState.effectQueue.unshift({ effect: { action: 'discard', target: 'opponent', count: 1 }, targetPlayer, cardName: triggerCardName });
             startEffect('discard', 'player', 1);
-          };
-          btnNo.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            processAbilityEffect();
-          };
-        } else { processAbilityEffect(); }
+          },
+          () => processAbilityEffect()
+        );
       } else {
         if (gameState.ai.hand.length > 3) { discard('ai', 1); discard('player', 1); }
         processAbilityEffect();
@@ -3855,17 +3629,9 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         calculateScore(gameState, l, opponent) > calculateScore(gameState, best, opponent) ? l : best, LINES[0]);
       if (bestLine === curLine) { processAbilityEffect(); break; }
       if (targetPlayer === 'player') {
-        const confirmArea = document.getElementById('command-confirm');
-        const confirmMsg  = document.getElementById('confirm-msg');
-        const btnYes      = document.getElementById('btn-confirm-yes');
-        const btnNo       = document.getElementById('btn-confirm-no');
-        if (confirmArea && btnYes && btnNo) {
-          gameState.effectContext = { type: 'confirm' };
-          confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = `Valor 3: ¿Cambias esta carta a ${bestLine} (línea más fuerte del rival)?`;
-          btnYes.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
+        _confirmDialog(
+          `Valor 3: ¿Cambias esta carta a ${bestLine} (línea más fuerte del rival)?`,
+          () => {
             const srcStack = gameState.field[curLine][targetPlayer];
             if (srcStack.length > 0) {
               const cardObj = srcStack.pop();
@@ -3874,9 +3640,9 @@ function resolveAbilityAction(actionDef, targetPlayer) {
               updateUI();
             }
             processAbilityEffect();
-          };
-          btnNo.onclick = () => { confirmArea.classList.add('hidden'); gameState.effectContext = null; processAbilityEffect(); };
-        } else { processAbilityEffect(); }
+          },
+          () => processAbilityEffect()
+        );
       } else {
         if (calculateScore(gameState, bestLine, 'player') > calculateScore(gameState, curLine, 'player')) {
           const srcStack = gameState.field[curLine].ai;
@@ -3945,26 +3711,14 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           processAbilityEffect();
           break;
         }
-        const confirmArea = document.getElementById('command-confirm');
-        const confirmMsg  = document.getElementById('confirm-msg');
-        const btnYes      = document.getElementById('btn-confirm-yes');
-        const btnNo       = document.getElementById('btn-confirm-no');
-        if (confirmArea && btnYes && btnNo) {
-          gameState.effectContext = { type: 'confirm' };
-          confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = `${triggerCardName || ''}: ¿Descartas 1 carta? NO = esta carta es eliminada.`;
-          btnYes.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            startEffect('discard', 'player', 1);
-          };
-          btnNo.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
+        _confirmDialog(
+          `${triggerCardName || ''}: ¿Descartas 1 carta? NO = esta carta es eliminada.`,
+          () => startEffect('discard', 'player', 1),
+          () => {
             gameState.effectQueue.unshift({ effect: { action: '_deleteSelf' }, targetPlayer, cardName: triggerCardName });
             processAbilityEffect();
-          };
-        } else { processAbilityEffect(); }
+          }
+        );
       } else {
         if (gameState.ai.hand.length > 0) discard('ai', 1);
         else { gameState.effectQueue.unshift({ effect: { action: '_deleteSelf' }, targetPlayer, cardName: triggerCardName }); }
@@ -4054,23 +3808,15 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           processAbilityEffect();
         };
         if (gameState.player.hand.length === 0) { doFlip(); break; }
-        const confirmArea = document.getElementById('command-confirm');
-        const confirmMsg  = document.getElementById('confirm-msg');
-        const btnYes      = document.getElementById('btn-confirm-yes');
-        const btnNo       = document.getElementById('btn-confirm-no');
-        if (confirmArea && btnYes && btnNo) {
-          gameState.effectContext = { type: 'confirm' };
-          confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = 'Paz 3: ¿Descartas 1 carta? (opcional)';
-          btnYes.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
+        _confirmDialog(
+          'Paz 3: ¿Descartas 1 carta? (opcional)',
+          () => {
             // minValue 'dynamic': se calcula tras el descarte como handCount + 1
             gameState.effectQueue.unshift({ effect: { action: '_flipMinValue', minValue: 'dynamic' }, targetPlayer, cardName: triggerCardName });
             startEffect('discard', 'player', 1);
-          };
-          btnNo.onclick = () => { confirmArea.classList.add('hidden'); gameState.effectContext = null; doFlip(); };
-        } else { doFlip(); }
+          },
+          () => doFlip()
+        );
       } else {
         if (gameState.ai.hand.length > 2) discard('ai', 1);
         const handCount = gameState.ai.hand.length;
@@ -4127,27 +3873,11 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       const selfCard = st.find(c => c.card.nombre === triggerCardName);
       if (!selfCard) { processAbilityEffect(); break; }
       if (targetPlayer === 'player') {
-        const confirmArea = document.getElementById('command-confirm');
-        const confirmMsg = document.getElementById('confirm-msg');
-        const btnYes = document.getElementById('btn-confirm-yes');
-        const btnNo = document.getElementById('btn-confirm-no');
-        if (confirmArea && btnYes && btnNo) {
-          gameState.effectContext = { type: 'confirm' };
-          confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = `${triggerCardName}: ¿Voltear esta carta?`;
-          btnYes.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            flipAndTrigger(selfCard, line, targetPlayer);
-            updateUI();
-            processAbilityEffect();
-          };
-          btnNo.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            processAbilityEffect();
-          };
-        } else { processAbilityEffect(); }
+        _confirmDialog(
+          `${triggerCardName}: ¿Voltear esta carta?`,
+          () => { flipAndTrigger(selfCard, line, targetPlayer); updateUI(); processAbilityEffect(); },
+          () => processAbilityEffect()
+        );
       } else {
         // IA: voltea si está bocarriba (para ocultarla) — decisión simple
         flipAndTrigger(selfCard, line, targetPlayer);
@@ -4219,17 +3949,11 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       );
       if (!hasOtherUnity) { processAbilityEffect(); break; }
       if (targetPlayer === 'player') {
-        const confirmArea = document.getElementById('command-confirm');
-        const confirmMsg  = document.getElementById('confirm-msg');
-        const btnYes      = document.getElementById('btn-confirm-yes');
-        const btnNo       = document.getElementById('btn-confirm-no');
-        if (confirmArea && btnYes && btnNo) {
-          gameState.effectContext = { type: 'confirm' };
-          confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = 'Unidad 0: ¿Volteas 1 carta (SÍ) o Robas 1 carta (NO)?';
-          btnYes.onclick = () => { confirmArea.classList.add('hidden'); gameState.effectContext = null; startEffect('flip', 'any', 1); };
-          btnNo.onclick  = () => { confirmArea.classList.add('hidden'); gameState.effectContext = null; draw('player', 1); processAbilityEffect(); };
-        } else { processAbilityEffect(); }
+        _confirmDialog(
+          'Unidad 0: ¿Volteas 1 carta (SÍ) o Robas 1 carta (NO)?',
+          () => startEffect('flip', 'any', 1),
+          () => { draw('player', 1); processAbilityEffect(); }
+        );
       } else {
         if (gameState.ai.hand.length < 4) { draw('ai', 1); }
         else {
@@ -4350,16 +4074,9 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       if (selfIdx < 0 || selfIdx === st.length - 1) { processAbilityEffect(); break; }
       const cardObj = st[selfIdx];
       if (targetPlayer === 'player') {
-        const confirmArea = document.getElementById('command-confirm');
-        const confirmMsg  = document.getElementById('confirm-msg');
-        const btnYes      = document.getElementById('btn-confirm-yes');
-        const btnNo       = document.getElementById('btn-confirm-no');
-        if (confirmArea && btnYes && btnNo) {
-          gameState.effectContext = { type: 'confirm' };
-          confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = `${triggerCardName}: está cubierta. ¿Quieres cambiarla a otra línea?`;
-          btnYes.onclick = () => {
-            confirmArea.classList.add('hidden');
+        _confirmDialog(
+          `${triggerCardName}: está cubierta. ¿Quieres cambiarla a otra línea?`,
+          () => {
             gameState.effectContext = {
               type: 'shiftSelf', sourceLine: line, target: 'player',
               count: 1, selected: [], waitingForLine: true,
@@ -4367,9 +4084,9 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             };
             updateStatus(`${triggerCardName}: elige línea destino`);
             if (typeof highlightSelectableLines === 'function') highlightSelectableLines(line);
-          };
-          btnNo.onclick = () => { confirmArea.classList.add('hidden'); gameState.effectContext = null; processAbilityEffect(); };
-        } else { processAbilityEffect(); }
+          },
+          () => processAbilityEffect()
+        );
       } else {
         const destLine = LINES.filter(l => l !== line)
           .reduce((b, l) => calculateScore(gameState, l, 'ai') > calculateScore(gameState, b, 'ai') ? l : b, LINES.filter(l => l !== line)[0] || line);
@@ -4402,15 +4119,13 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       // 6 protocolos en juego (3 jugador + 3 rival, sin duplicados)
       const allProtos = [...new Set([...gameState[targetPlayer].protocols, ...gameState[opponent].protocols])].filter(Boolean);
       if (targetPlayer === 'player') {
+        gameState.effectContext = { type: 'confirm' };
         const confirmArea = document.getElementById('command-confirm');
         const confirmMsg = document.getElementById('confirm-msg');
-        const btnYes = document.getElementById('btn-confirm-yes');
-        const btnNo = document.getElementById('btn-confirm-no');
-        if (confirmArea && btnYes && btnNo) {
-          gameState.effectContext = { type: 'confirm' };
-          confirmArea.classList.remove('hidden');
-          const dropItems = allProtos.map(p => `<div class="ui-dropdown-item" data-val="${p}"><span class="drop-dot"></span><span class="drop-text">${p}</span></div>`).join('');
-          confirmMsg.innerHTML = `${triggerCardName || ''}: Declara un Protocolo
+        if (!confirmArea || !confirmMsg) { gameState.effectContext = null; processAbilityEffect(); break; }
+        const actionsDiv = confirmArea.querySelector('.effect-actions');
+        const dropItems = allProtos.map(p => `<div class="ui-dropdown-item" data-val="${p}"><span class="drop-dot"></span><span class="drop-text">${p}</span></div>`).join('');
+        confirmMsg.innerHTML = `${triggerCardName || ''}: Declara un Protocolo
             <div class="ui-dropdown" id="luck3-dropdown" style="margin-top:10px;">
               <div class="ui-dropdown-trigger" id="luck3-trigger">
                 <span class="drop-placeholder" id="luck3-placeholder">Elige protocolo</span>
@@ -4419,45 +4134,47 @@ function resolveAbilityAction(actionDef, targetPlayer) {
               </div>
               <div class="ui-dropdown-list">${dropItems}</div>
             </div>`;
-          // Dropdown behavior
-          const dd3 = document.getElementById('luck3-dropdown');
-          dd3.querySelector('.ui-dropdown-trigger').onclick = () => dd3.classList.toggle('open');
-          dd3.querySelectorAll('.ui-dropdown-item').forEach(it => {
-            it.onclick = () => {
-              dd3.querySelectorAll('.ui-dropdown-item').forEach(x => x.classList.remove('active'));
-              it.classList.add('active');
-              dd3.dataset.selected = it.dataset.val;
-              document.getElementById('luck3-placeholder').style.display = 'none';
-              const valEl = document.getElementById('luck3-value');
-              valEl.style.display = 'flex';
-              document.getElementById('luck3-val-text').textContent = it.dataset.val;
-              dd3.classList.remove('open');
-            };
-          });
-          btnYes.onclick = () => {
-            const declared = dd3.dataset.selected || allProtos[0];
-            confirmArea.classList.add('hidden');
-            confirmMsg.innerHTML = '';
-            gameState.effectContext = null;
-            // Ahora descarta top del rival
-            const topCard = gameState[opponent].deck.pop();
-            gameState[opponent].trash.push(topCard);
-            if (topCard.protocol === declared) {
-              updateStatus(`${triggerCardName}: ¡Coincide! ${topCard.nombre} es ${declared} → elimina 1 carta`);
-              startEffect('eliminate', 'any', 1);
-            } else {
-              updateStatus(`${triggerCardName}: Fallo — carta era ${topCard.nombre} (${topCard.protocol})`);
-              updateUI();
-              processAbilityEffect();
-            }
+        if (actionsDiv) {
+          actionsDiv.innerHTML = '<button class="ui-btn" id="btn-confirm-yes">SÍ</button><button class="ui-btn ui-btn--danger" id="btn-confirm-no">NO</button>';
+        }
+        confirmArea.classList.remove('hidden');
+        // Dropdown behavior
+        const dd3 = document.getElementById('luck3-dropdown');
+        dd3.querySelector('.ui-dropdown-trigger').onclick = () => dd3.classList.toggle('open');
+        dd3.querySelectorAll('.ui-dropdown-item').forEach(it => {
+          it.onclick = () => {
+            dd3.querySelectorAll('.ui-dropdown-item').forEach(x => x.classList.remove('active'));
+            it.classList.add('active');
+            dd3.dataset.selected = it.dataset.val;
+            document.getElementById('luck3-placeholder').style.display = 'none';
+            const valEl = document.getElementById('luck3-value');
+            valEl.style.display = 'flex';
+            document.getElementById('luck3-val-text').textContent = it.dataset.val;
+            dd3.classList.remove('open');
           };
-          btnNo.onclick = () => {
-            confirmArea.classList.add('hidden');
-            confirmMsg.innerHTML = '';
-            gameState.effectContext = null;
+        });
+        document.getElementById('btn-confirm-yes').onclick = () => {
+          const declared = dd3.dataset.selected || allProtos[0];
+          confirmArea.classList.add('hidden');
+          confirmMsg.innerHTML = '';
+          gameState.effectContext = null;
+          const topCard = gameState[opponent].deck.pop();
+          gameState[opponent].trash.push(topCard);
+          if (topCard.protocol === declared) {
+            updateStatus(`${triggerCardName}: ¡Coincide! ${topCard.nombre} es ${declared} → elimina 1 carta`);
+            startEffect('eliminate', 'any', 1);
+          } else {
+            updateStatus(`${triggerCardName}: Fallo — carta era ${topCard.nombre} (${topCard.protocol})`);
+            updateUI();
             processAbilityEffect();
-          };
-        } else { processAbilityEffect(); }
+          }
+        };
+        document.getElementById('btn-confirm-no').onclick = () => {
+          confirmArea.classList.add('hidden');
+          confirmMsg.innerHTML = '';
+          gameState.effectContext = null;
+          processAbilityEffect();
+        };
       } else {
         // IA: elige el protocolo del oponente con más cartas en su mazo
         const bestProto = gameState[opponent].protocols.reduce((best, p) => {
@@ -4515,15 +4232,13 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     case 'luckDraw3PickByValue': {
       // Suerte 0: declara un número 0-6, roba 3, selecciona 1 al azar — si coincide, la juegas
       if (targetPlayer === 'player') {
+        gameState.effectContext = { type: 'confirm' };
         const confirmArea = document.getElementById('command-confirm');
         const confirmMsg = document.getElementById('confirm-msg');
-        const btnYes = document.getElementById('btn-confirm-yes');
-        const btnNo = document.getElementById('btn-confirm-no');
-        if (confirmArea && btnYes && btnNo) {
-          gameState.effectContext = { type: 'confirm' };
-          confirmArea.classList.remove('hidden');
-          const numItems = [0,1,2,3,4,5,6].map(n => `<div class="ui-dropdown-item" data-val="${n}"><span class="drop-dot"></span><span class="drop-text">${n}</span></div>`).join('');
-          confirmMsg.innerHTML = `${triggerCardName || ''}: ¿Qué número declaras? (0–6)
+        if (!confirmArea || !confirmMsg) { gameState.effectContext = null; processAbilityEffect(); break; }
+        const actionsDiv = confirmArea.querySelector('.effect-actions');
+        const numItems = [0,1,2,3,4,5,6].map(n => `<div class="ui-dropdown-item" data-val="${n}"><span class="drop-dot"></span><span class="drop-text">${n}</span></div>`).join('');
+        confirmMsg.innerHTML = `${triggerCardName || ''}: ¿Qué número declaras? (0–6)
             <div class="ui-dropdown" id="luck0-dropdown" style="margin-top:10px;">
               <div class="ui-dropdown-trigger" id="luck0-trigger">
                 <span class="drop-placeholder" id="luck0-placeholder">Elige número</span>
@@ -4532,55 +4247,55 @@ function resolveAbilityAction(actionDef, targetPlayer) {
               </div>
               <div class="ui-dropdown-list">${numItems}</div>
             </div>`;
-          const dd0 = document.getElementById('luck0-dropdown');
-          dd0.querySelector('.ui-dropdown-trigger').onclick = () => dd0.classList.toggle('open');
-          dd0.querySelectorAll('.ui-dropdown-item').forEach(it => {
-            it.onclick = () => {
-              dd0.querySelectorAll('.ui-dropdown-item').forEach(x => x.classList.remove('active'));
-              it.classList.add('active');
-              dd0.dataset.selected = it.dataset.val;
-              document.getElementById('luck0-placeholder').style.display = 'none';
-              const valEl = document.getElementById('luck0-value');
-              valEl.style.display = 'flex';
-              document.getElementById('luck0-val-text').textContent = it.dataset.val;
-              dd0.classList.remove('open');
-            };
-          });
-          btnYes.onclick = () => {
-            const declaredVal = parseInt(dd0.dataset.selected ?? '0');
-            confirmArea.classList.add('hidden');
-            confirmMsg.innerHTML = '';
-            gameState.effectContext = null;
-            // Robar 3 cartas
-            const handBefore = gameState.player.hand.length;
-            draw('player', 3);
-            const drawn = gameState.player.hand.length - handBefore;
-            if (drawn === 0) { processAbilityEffect(); return; }
-            // Seleccionar 1 al azar de las robadas
-            const randomOffset = Math.floor(Math.random() * drawn);
-            const pickedIdx = handBefore + randomOffset;
-            const pickedCard = gameState.player.hand[pickedIdx];
-            if (pickedCard.valor === declaredVal) {
-              // ¡Coincide! Jugar en línea elegida
-              updateStatus(`${triggerCardName}: ¡coincide! ${pickedCard.nombre} (Valor ${declaredVal}) — elige una línea`);
-              const isOwn = gameState.player.protocols && gameState.player.protocols.includes(pickedCard.protocol);
-              const isFaceDown = !isOwn;
-              gameState.effectContext = { type: 'luckPlay_lineSelect', handIdx: pickedIdx, faceDown: isFaceDown };
-              if (typeof highlightSelectableLines === 'function') highlightSelectableLines();
-              updateUI();
-            } else {
-              updateStatus(`${triggerCardName}: no coincide — dijiste ${declaredVal}, carta: ${pickedCard.nombre} (Valor ${pickedCard.valor})`);
-              updateUI();
-              processAbilityEffect();
-            }
+        if (actionsDiv) {
+          actionsDiv.innerHTML = '<button class="ui-btn" id="btn-confirm-yes">SÍ</button><button class="ui-btn ui-btn--danger" id="btn-confirm-no">NO</button>';
+        }
+        confirmArea.classList.remove('hidden');
+        const dd0 = document.getElementById('luck0-dropdown');
+        dd0.querySelector('.ui-dropdown-trigger').onclick = () => dd0.classList.toggle('open');
+        dd0.querySelectorAll('.ui-dropdown-item').forEach(it => {
+          it.onclick = () => {
+            dd0.querySelectorAll('.ui-dropdown-item').forEach(x => x.classList.remove('active'));
+            it.classList.add('active');
+            dd0.dataset.selected = it.dataset.val;
+            document.getElementById('luck0-placeholder').style.display = 'none';
+            const valEl = document.getElementById('luck0-value');
+            valEl.style.display = 'flex';
+            document.getElementById('luck0-val-text').textContent = it.dataset.val;
+            dd0.classList.remove('open');
           };
-          btnNo.onclick = () => {
-            confirmArea.classList.add('hidden');
-            confirmMsg.innerHTML = '';
-            gameState.effectContext = null;
+        });
+        document.getElementById('btn-confirm-yes').onclick = () => {
+          const declaredVal = parseInt(dd0.dataset.selected ?? '0');
+          confirmArea.classList.add('hidden');
+          confirmMsg.innerHTML = '';
+          gameState.effectContext = null;
+          const handBefore = gameState.player.hand.length;
+          draw('player', 3);
+          const drawn = gameState.player.hand.length - handBefore;
+          if (drawn === 0) { processAbilityEffect(); return; }
+          const randomOffset = Math.floor(Math.random() * drawn);
+          const pickedIdx = handBefore + randomOffset;
+          const pickedCard = gameState.player.hand[pickedIdx];
+          if (pickedCard.valor === declaredVal) {
+            updateStatus(`${triggerCardName}: ¡coincide! ${pickedCard.nombre} (Valor ${declaredVal}) — elige una línea`);
+            const isOwn = gameState.player.protocols && gameState.player.protocols.includes(pickedCard.protocol);
+            const isFaceDown = !isOwn;
+            gameState.effectContext = { type: 'luckPlay_lineSelect', handIdx: pickedIdx, faceDown: isFaceDown };
+            if (typeof highlightSelectableLines === 'function') highlightSelectableLines();
+            updateUI();
+          } else {
+            updateStatus(`${triggerCardName}: no coincide — dijiste ${declaredVal}, carta: ${pickedCard.nombre} (Valor ${pickedCard.valor})`);
+            updateUI();
             processAbilityEffect();
-          };
-        } else { processAbilityEffect(); }
+          }
+        };
+        document.getElementById('btn-confirm-no').onclick = () => {
+          confirmArea.classList.add('hidden');
+          confirmMsg.innerHTML = '';
+          gameState.effectContext = null;
+          processAbilityEffect();
+        };
       } else {
         // IA: declara número aleatorio, roba 3, selecciona 1 al azar, si coincide juega
         const aiDeclaredVal = Math.floor(Math.random() * 7);
@@ -4925,16 +4640,9 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       if (nonDivCards.length === 0) { processAbilityEffect(); break; }
       const effectLine = gameState.currentEffectLine || LINES[0];
       if (targetPlayer === 'player') {
-        const confirmArea = document.getElementById('command-confirm');
-        const confirmMsg  = document.getElementById('confirm-msg');
-        const btnYes      = document.getElementById('btn-confirm-yes');
-        const btnNo       = document.getElementById('btn-confirm-no');
-        if (confirmArea && btnYes && btnNo) {
-          gameState.effectContext = { type: 'confirm' };
-          confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = `Diversidad 0 Final: ¿Jugar 1 carta (no Diversidad) bocarriba en esta línea?`;
-          btnYes.onclick = () => {
-            confirmArea.classList.add('hidden');
+        _confirmDialog(
+          `Diversidad 0 Final: ¿Jugar 1 carta (no Diversidad) bocarriba en esta línea?`,
+          () => {
             gameState.effectContext = {
               type: 'playNonDiversity',
               line: effectLine,
@@ -4942,9 +4650,9 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             };
             updateStatus('Elige una carta de tu mano (no Diversidad) para jugar en esta línea');
             updateUI();
-          };
-          btnNo.onclick = () => { confirmArea.classList.add('hidden'); gameState.effectContext = null; processAbilityEffect(); };
-        } else { processAbilityEffect(); }
+          },
+          () => processAbilityEffect()
+        );
       } else {
         // IA: juega la carta no-Diversidad de mayor valor
         const best = nonDivCards.reduce((b, c) => c.valor > b.valor ? c : b);
@@ -4974,17 +4682,9 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       });
       if (availCards.length === 0) { processAbilityEffect(); break; }
       if (targetPlayer === 'player') {
-        const confirmArea = document.getElementById('command-confirm');
-        const confirmMsg = document.getElementById('confirm-msg');
-        const btnYes = document.getElementById('btn-confirm-yes');
-        const btnNo = document.getElementById('btn-confirm-no');
-        if (confirmArea && btnYes && btnNo) {
-          gameState.effectContext = { type: 'confirm' };
-          confirmArea.classList.remove('hidden');
-          confirmMsg.textContent = `${triggerCardName || ''}: ¿Copias el efecto de una carta del rival?`;
-          btnYes.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
+        _confirmDialog(
+          `${triggerCardName || ''}: ¿Copias el efecto de una carta del rival?`,
+          () => {
             if (availCards.length === 1) {
               const chosen = availCards[0];
               updateStatus(`Espejo 1: copiando efecto de ${chosen.card.nombre}`);
@@ -4997,13 +4697,9 @@ function resolveAbilityAction(actionDef, targetPlayer) {
               if (typeof highlightEffectTargets === 'function') highlightEffectTargets();
               updateUI();
             }
-          };
-          btnNo.onclick = () => {
-            confirmArea.classList.add('hidden');
-            gameState.effectContext = null;
-            processAbilityEffect();
-          };
-        } else { processAbilityEffect(); }
+          },
+          () => processAbilityEffect()
+        );
       } else {
         // IA: elige la carta rival con mayor valor
         const best = availCards.reduce((b, x) => x.card.valor > b.card.valor ? x : b);
