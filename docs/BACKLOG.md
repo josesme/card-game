@@ -106,15 +106,6 @@ Listado completo de textos de modales/overlays para revisar y pulir. **Solo efec
 
 ---
 
-#### CMD-03 — Espíritu 1 (Confirmación de lado)
-- **Ubicación:** `logic.js:2370`
-- **Trigger:** Espíritu 1 al jugar carta
-- **Mensaje:** `¿Quieres jugar esta carta en el lado del oponente?`
-- **Botones:** `SÍ` | `NO`
-- **Estado:** ⏳ Pendiente
-
----
-
 ### Hand Select Overlay (`overlay-select` — mano del jugador)
 
 #### SEL-01 — Descartar (N cartas fijas)

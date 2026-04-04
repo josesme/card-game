@@ -2426,22 +2426,39 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'optionalDiscardOrFlipSelf': {
-      // Espíritu 1: el jugador elige descartar 1 carta O voltear esta carta
+      // Espíritu 1: el jugador elige voltear esta carta O descartar 1 carta
       if (targetPlayer === 'player') {
-        _confirmDialog(
-          `${triggerCardName || ''}: ¿Qué quieres hacer? SÍ = Descarta 1 carta · NO = Voltea esta carta`,
-          () => startEffect('discard', 'player', 1),
-          () => {
-            // Buscar Espíritu 1 por nombre en todas las líneas y voltearla
-            LINES.forEach(l => {
-              const stack = gameState.field[l][targetPlayer];
-              const cardObj = stack.find(c => c.card.nombre === triggerCardName);
-              if (cardObj) cardObj.faceDown = true;
-            });
-            updateUI();
-            processAbilityEffect();
-          }
-        );
+        gameState.effectContext = { type: 'confirm' };
+        const flipSelf = () => {
+          gameState.effectContext = null;
+          LINES.forEach(l => {
+            const stack = gameState.field[l][targetPlayer];
+            const cardObj = stack.find(c => c.card.nombre === triggerCardName);
+            if (cardObj) cardObj.faceDown = true;
+          });
+          updateUI();
+          processAbilityEffect();
+        };
+        const doDiscard = () => {
+          gameState.effectContext = null;
+          startEffect('discard', 'player', 1);
+        };
+        if (typeof showConfirmDialog === 'function') {
+          showConfirmDialog(
+            `${triggerCardName || 'Espíritu 1'}: ¿Qué quieres hacer: Descartar 1 carta o Voltear esta carta?`,
+            flipSelf,
+            doDiscard,
+            'VOLTEAR',
+            'CANCELAR'
+          );
+        } else {
+          // fallback
+          _confirmDialog(
+            `${triggerCardName || 'Espíritu 1'}: ¿Voltear esta carta? (NO = descartar 1 carta)`,
+            flipSelf,
+            doDiscard
+          );
+        }
       } else {
         // IA: descarta si tiene cartas
         if (gameState.ai.hand.length > 0) discard('ai', 1);
