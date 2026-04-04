@@ -1780,9 +1780,13 @@ function finalizeDiscardVariable() {
     const ctx = gameState.effectContext;
     if (!ctx || ctx.type !== 'discardVariable') return;
     const n = ctx.selected.length;
+    const isAIInitiated = !!ctx._aiFollowUp;
+    gameState._plaga2PlayerDiscarded = n;
     finishEffect();
-    discard('ai', n + 1);
-    updateStatus(`Plaga 2: descartaste ${n}, la IA descarta ${n + 1}`);
+    if (!isAIInitiated) {
+        discard('ai', n + 1);
+        updateStatus(`Plaga 2: descartaste ${n}, la IA descarta ${n + 1}`);
+    }
 }
 
 function handleFieldCardClick(line, target, cardIdx) {

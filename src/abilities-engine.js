@@ -2713,16 +2713,36 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     case 'discardForOpponentMore': {
       // Plaga 2: descarta 1+ cartas; el oponente descarta total+1
       if (targetPlayer === 'player') {
+        // Jugador juega Plaga 2: jugador descarta ≥1, luego IA descarta total+1
         if (gameState.player.hand.length === 0) { processAbilityEffect(); break; }
         gameState.effectContext = { type: 'discardVariable', selected: [], target: 'player' };
         updateStatus('Plaga 2: descarta 1 o más cartas — el rival descartará tu total +1');
         highlightEffectTargets();
       } else {
-        const n = Math.max(1, Math.floor(gameState.ai.hand.length / 2));
-        discard('ai', n);
-        discard('player', n + 1);
-        processAbilityEffect();
+        // IA juega Plaga 2: jugador está obligado a descartar ≥1 (si tiene cartas); luego IA descarta total+1
+        if (gameState.player.hand.length === 0) {
+          // Sin cartas en mano del jugador: la IA descarta 1 (total 0 + 1)
+          discard('ai', 1);
+          processAbilityEffect();
+          break;
+        }
+        // _aiFollowUp=true → processHandSelection no llamará discard('ai') directamente;
+        // en su lugar usa gameState._plaga2PlayerDiscarded para que finishEffect lo procese vía _discardForOpponentMoreAIPhase
+        gameState.effectQueue.unshift({ effect: { action: '_discardForOpponentMoreAIPhase' }, targetPlayer: 'ai', cardName: triggerCardName });
+        gameState.effectContext = { type: 'discardVariable', selected: [], target: 'player', _aiFollowUp: true };
+        updateStatus('Plaga 2 (IA): descarta 1 o más cartas — la IA descartará tu total +1');
+        highlightEffectTargets();
       }
+      break;
+    }
+
+    case '_discardForOpponentMoreAIPhase': {
+      // Continuación de Plaga 2 cuando la jugó la IA: la IA descarta lo que descartó el jugador + 1
+      const n = gameState._plaga2PlayerDiscarded || 0;
+      gameState._plaga2PlayerDiscarded = undefined;
+      discard('ai', n + 1);
+      updateStatus(`Plaga 2: la IA descarta ${n + 1} carta${n + 1 !== 1 ? 's' : ''}`);
+      processAbilityEffect();
       break;
     }
 

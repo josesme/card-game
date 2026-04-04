@@ -1459,13 +1459,15 @@ function showHandSelectOverlay(type, count, ctx) {
         }
 
         // Actions
-        const canConfirm = isVariable ? true : (isReveal || isPlayNonDiv ? selected.size === 1 : selected.size >= count);
+        const minRequired = (type === 'discardVariable') ? 1 : 0; // discardVariable exige ≥1; discardAny permite 0
+        const canConfirm = isVariable ? selected.size >= minRequired : (isReveal || isPlayNonDiv ? selected.size === 1 : selected.size >= count);
+        const canStop = isVariable && selected.size >= minRequired;
         const actionsEl = document.getElementById('select-actions');
         const btnLabel = isDiscard ? 'DESCARTAR' : isGive ? 'ENTREGAR' : isPlayNonDiv ? 'JUGAR' : 'REVELAR';
         const btnClass = isDiscard ? 'ui-btn ui-btn--danger' : 'ui-btn';
         actionsEl.innerHTML = `
             <button class="${btnClass}" id="ov-select-confirm" ${!canConfirm ? 'disabled' : ''}>${btnLabel}</button>
-            ${isVariable ? `<button class="ui-btn ui-btn--danger" id="ov-select-stop">DETENER</button>` : ''}
+            ${isVariable ? `<button class="ui-btn ui-btn--danger" id="ov-select-stop" ${!canStop ? 'disabled' : ''}>DETENER</button>` : ''}
         `;
 
         document.getElementById('ov-select-confirm').onclick = () => {
@@ -1477,6 +1479,7 @@ function showHandSelectOverlay(type, count, ctx) {
         const stopBtn = document.getElementById('ov-select-stop');
         if (stopBtn) {
             stopBtn.onclick = () => {
+                if (!canStop) return;
                 closeHandSelectOverlay();
                 processHandSelection(type, selected, ctx);
             };
@@ -1970,9 +1973,14 @@ function processHandSelection(type, selectedSet, ctx) {
 
     if (type === 'discardVariable') {
         const n = ctx.selected.length;
-        finishEffect();
-        discard('ai', n + 1);
-        updateStatus(`Plaga 2: descartaste ${n}, la IA descarta ${n + 1}`);
+        const isAIInitiated = !!ctx._aiFollowUp;
+        // Guardar el conteo para que _discardForOpponentMoreAIPhase lo use si fue la IA quien jugó
+        gameState._plaga2PlayerDiscarded = n;
+        finishEffect(); // Si _aiFollowUp, esto procesará _discardForOpponentMoreAIPhase de la cola
+        if (!isAIInitiated) {
+            discard('ai', n + 1);
+            updateStatus(`Plaga 2: descartaste ${n}, la IA descarta ${n + 1}`);
+        }
     } else {
         finishEffect();
     }
