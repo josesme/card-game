@@ -1234,6 +1234,8 @@ function processAbilityEffect() {
       const who = gameState.pendingCheckCompile;
       gameState.pendingCheckCompile = null;
       setTimeout(() => checkCompilePhase(who), 600);
+    } else if (gameState.processingEndTriggers) {
+      processNextEndTrigger(gameState.pendingEndTurnWho);
     } else if (gameState.pendingStartTurn) {
       const next = gameState.pendingStartTurn;
       gameState.pendingStartTurn = null;
@@ -5013,9 +5015,10 @@ function onTurnStartEffects(player) {
  * 2) normales (h_final "Final:"): si la carta es top descubierta al final del turno
  */
 function onTurnEndEffects(player) {
+  gameState.pendingEndTriggers = [];
+
   LINES.forEach(line => {
     if (gameState.ignoreEffectsLines && gameState.ignoreEffectsLines[line]) return;
-    gameState.currentEffectLine = line;
     const stack = gameState.field[line][player];
     if (stack.length === 0) return;
 
@@ -5023,7 +5026,7 @@ function onTurnEndEffects(player) {
     if (gameState.armedEndEffects && gameState.armedEndEffects.size > 0) {
       stack.forEach(cardObj => {
         if (!cardObj.faceDown && gameState.armedEndEffects.has(cardObj.card.id)) {
-          triggerCardEffect(cardObj.card, 'onTurnEnd', player);
+          gameState.pendingEndTriggers.push({ card: cardObj.card, line, player });
         }
       });
     }
@@ -5033,11 +5036,69 @@ function onTurnEndEffects(player) {
     if (!top.faceDown) {
       const ef = CARD_EFFECTS[top.card.nombre];
       if (ef?.onTurnEnd && !ef.persistentEnd) {
-        triggerCardEffect(top.card, 'onTurnEnd', player);
+        gameState.pendingEndTriggers.push({ card: top.card, line, player });
       }
     }
   });
+
   gameState.armedEndEffects = null;
+}
+
+/**
+ * Procesa los triggers de fin de turno uno a uno.
+ * Si hay múltiples y el jugador humano es quien actúa, muestra modal de elección.
+ */
+function processNextEndTrigger(who) {
+  if (!gameState.pendingEndTriggers || gameState.pendingEndTriggers.length === 0) {
+    gameState.processingEndTriggers = false;
+    gameState.pendingEndTurnWho = null;
+    if (typeof continueAfterEndEffects === 'function') continueAfterEndEffects(who);
+    return;
+  }
+
+  gameState.processingEndTriggers = true;
+
+  // Solo 1 trigger, o turno de IA: disparar automáticamente el primero
+  if (gameState.pendingEndTriggers.length === 1 || who === 'ai') {
+    const trigger = gameState.pendingEndTriggers.shift();
+    gameState.currentEffectLine = trigger.line;
+    triggerCardEffect(trigger.card, 'onTurnEnd', trigger.player);
+    return;
+  }
+
+  // Múltiples triggers y es turno del jugador: mostrar modal de elección
+  const confirmArea = document.getElementById('command-confirm');
+  const confirmMsg = document.getElementById('confirm-msg');
+  if (!confirmArea || !confirmMsg) {
+    // Fallback sin UI: disparar primero automáticamente
+    const trigger = gameState.pendingEndTriggers.shift();
+    gameState.currentEffectLine = trigger.line;
+    triggerCardEffect(trigger.card, 'onTurnEnd', trigger.player);
+    return;
+  }
+
+  const actionsDiv = confirmArea.querySelector('.effect-actions');
+  if (window.scrTxt) {
+    window.scrTxt(confirmMsg, 'Elige qué efecto Final activar primero:', { duration: 0.8 });
+  } else {
+    confirmMsg.textContent = 'Elige qué efecto Final activar primero:';
+  }
+
+  actionsDiv.innerHTML = gameState.pendingEndTriggers
+    .map((t, i) => `<button class="ui-btn" data-idx="${i}">${t.card.nombre}</button>`)
+    .join('');
+
+  confirmArea.classList.remove('hidden');
+
+  actionsDiv.querySelectorAll('button[data-idx]').forEach(btn => {
+    btn.onclick = function () {
+      const idx = parseInt(this.dataset.idx);
+      const trigger = gameState.pendingEndTriggers.splice(idx, 1)[0];
+      confirmArea.classList.add('hidden');
+      gameState.currentEffectLine = trigger.line;
+      triggerCardEffect(trigger.card, 'onTurnEnd', trigger.player);
+    };
+  });
 }
 
 

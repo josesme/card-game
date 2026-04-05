@@ -3048,6 +3048,16 @@ function continueEndTurn(who) {
         onTurnEndEffects(who);
     }
 
+    if (gameState.pendingEndTriggers && gameState.pendingEndTriggers.length > 0) {
+        gameState.pendingEndTurnWho = who;
+        if (typeof processNextEndTrigger === 'function') processNextEndTrigger(who);
+        return;
+    }
+
+    continueAfterEndEffects(who);
+}
+
+function continueAfterEndEffects(who) {
     // I-01: Tiempo 2 onDeckShuffle — dispara DESPUÉS del refresh+caché, no durante el robo
     if (gameState.pendingDeckShuffle && gameState.pendingDeckShuffle.length > 0) {
         const pending = gameState.pendingDeckShuffle;

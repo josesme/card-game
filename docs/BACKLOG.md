@@ -90,7 +90,11 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
     - Card stack para mazo
     - Infinite card slider para mano
 - **Sonidos básicos de interfaz** — Sin feedback sonoro.
-
+- **Mejoras zona mano 
+    - Carrusel - https://demos.gsap.com/demo/flip-carousel/
+    - Datos jugador - IA
+    - Opción "ver descartes"
+    - Detalles ampliados de la jugada actual??
 
 ---
 
@@ -110,8 +114,7 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 - [ ] **Gravedad 0: las cartas jugadas en su línea aterrizan por debajo de ella**, no encima. La cola committed aplica igualmente.
 
 ### Fases y Efectos
-- [ ] **Efectos Start/End solo se activan si estaban visibles al inicio de la fase.** Los que se revelan durante la fase no cuentan.
-- [ ] **Con múltiples efectos Start o End simultáneos, el jugador en turno elige el orden de ejecución.** Las condiciones se evalúan en el momento de procesar cada trigger (no al inicio de la fase).
+- [ ] **Con múltiples efectos Start simultáneos, el jugador en turno elige el orden de ejecución.** Las condiciones se evalúan en el momento de procesar cada trigger (no al inicio de la fase).
 - [ ] **Velocidad 0: al activarse, bloquea el aterrizaje de la carta desplazada** hasta que Speed 0 resuelve su efecto. Actualmente aparece el mensaje pero el juego no continúa correctamente.
 
 ### Palabras Clave
