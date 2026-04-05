@@ -2149,8 +2149,9 @@ window.addEventListener('load', function() {
         // Stat labels (Mazo, Desc., Mano...)
         document.querySelectorAll('.stat-label').forEach(function (e) { stagger(e, 0.5); });
 
-        // Etiquetas JUG / IA (spans con color inline en hand-bar)
-        document.querySelectorAll('#hand-overlay .hand-bar-inner span[style*="color"]').forEach(function (e) {
+        // Etiquetas JUG / IA (spans con color inline en hand-bar) — excluir .stat-value
+        // (los contadores son gestionados por updateUI/scrTxt y leer textContent aquí los sobreescribe mid-scramble)
+        document.querySelectorAll('#hand-overlay .hand-bar-inner span[style*="color"]:not(.stat-value)').forEach(function (e) {
             if (e.textContent.trim().length <= 4) stagger(e, 0.5);
         });
 

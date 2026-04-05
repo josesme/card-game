@@ -577,7 +577,8 @@ function applyDiffScramble() {
             window.scrTxt(diffDescEl, diffDescEl.textContent, { duration: 1.0, chars: 'upperAndLowerCase' });
         }
         document.querySelectorAll('.protocol-name').forEach(function(el) {
-            var txt = el.textContent.trim();
+            // Usar data-text (texto canónico) para evitar leer textContent mid-scramble
+            var txt = el.getAttribute('data-text') || el.textContent.trim();
             if (txt) window.scrTxt(el, txt, { duration: 1.0, chars: 'upperCase' });
         });
         document.querySelectorAll('.rule-name').forEach(function(el) {
