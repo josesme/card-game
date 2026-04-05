@@ -17,23 +17,23 @@ const MODAL_COPY = {
     yes: 'SÍ', no: 'NO'
   },
   optionalDiscardOrFlipSelf: {
-    msg: '{name}: ¿Qué quieres hacer: Descartar 1 carta o Voltear esta carta?',
+    msg: '{name}: ¿Qué quieres hacer: Descartar 1 carta o voltear esta carta?',
     yes: 'DESCARTAR', no: 'VOLTEAR'
   },
   optionalDiscardOrDeleteSelf: {
-    msg: '{name}: ¿Descartas 1 carta? NO = esta carta es eliminada.',
-    yes: 'SÍ', no: 'NO'
+    msg: '{name}: ¿Descartas 1 carta o eliminas esta carta?',
+    yes: 'DESCARTAR', no: 'ELIMINAR'
   },
   optionalDiscardThenOpponentDiscard: {
-    msg: '{name}: ¿Descartas 1 carta? Si lo haces, tu oponente también descartará 1.',
+    msg: '{name}: ¿Quieres descartar 1 carta? Si lo haces, tu oponente también descartará 1.',
     yes: 'SÍ', no: 'NO'
   },
   optionalDiscardThenFlipHighValue: {
-    msg: 'Paz 3: ¿Descartas 1 carta? (opcional)',
+    msg: '{name}: ¿Quieres descartar 1 carta?',
     yes: 'SÍ', no: 'NO'
   },
   _discardForDrawLoop: {
-    msg: '{name}: ¿Descartas otra carta? Robas {n} si paras ahora.',
+    msg: '{name}: ¿Quieres descartar otra carta? Robas {n} si paras ahora.',
     yes: 'SÍ', no: 'NO'
   },
 
@@ -63,12 +63,12 @@ const MODAL_COPY = {
     yes: 'SÍ', no: 'NO'
   },
   mayFlipCoveredFaceUp: {
-    msg: '{name}: ¿Volteas una carta cubierta bocarriba?',
+    msg: '{name}: ¿Quieres voltear una carta cubierta bocarriba?',
     yes: 'SÍ', no: 'NO'
   },
   mayFlipOrDrawIfUnityOnField: {
-    msg: 'Unidad 0: ¿Volteas 1 carta (SÍ) o Robas 1 carta (NO)?',
-    yes: 'SÍ', no: 'NO'
+    msg: '{name}: ¿Volteas 1 carta o Robas 1 carta?',
+    yes: 'VOLTEAR', no: 'ROBAR'
   },
 
   // ── Mover / Cambiar ──────────────────────────────────────────────────────
@@ -85,15 +85,15 @@ const MODAL_COPY = {
     yes: 'SÍ', no: 'NO'
   },
   mayShiftOrFlip: {
-    msg: '{name}: ¿qué quieres hacer? SÍ = Cambiar carta de línea · NO = Voltear carta',
-    yes: 'SÍ', no: 'NO'
+    msg: '{name}: ¿Qué quieres hacer: Cambiar carta de línea o Voltear carta?',
+    yes: 'CAMBIAR', no: 'VOLTEAR'
   },
   mayShiftSelfIfCovered: {
-    msg: '{name}: está cubierta. ¿Quieres cambiarla a otra línea?',
+    msg: '{name}: Está cubierta. ¿Quieres cambiarla a otra línea?',
     yes: 'SÍ', no: 'NO'
   },
   mayShiftSelfToHighestOpponentLine: {
-    msg: 'Valor 3: ¿Cambias esta carta a {line} (línea más fuerte del rival)?',
+    msg: '{name}: ¿Cambias esta carta a {line} (línea más fuerte del rival)?',
     yes: 'SÍ', no: 'NO'
   },
   optionalShiftThenFlipSelf: {
@@ -113,7 +113,7 @@ const MODAL_COPY = {
 
   // ── Robar / Eliminar ─────────────────────────────────────────────────────
   optionalDrawThenDelete: {
-    msg: '{name}: ¿Robas 1 carta? (Si lo haces, elimina 1 carta rival y luego esta carta se destruye)',
+    msg: '{name}: ¿Robas 1 carta? (Si lo haces, elimina 1 carta rival y luego esta carta se elimina)',
     yes: 'SÍ', no: 'NO'
   },
 
@@ -125,27 +125,27 @@ const MODAL_COPY = {
 
   // ── Jugar carta ──────────────────────────────────────────────────────────
   playHandFaceDown_may: {
-    msg: '{name}: ¿Jugar 1 carta bocabajo?',
+    msg: '{name}: ¿Quieres jugar 1 carta bocabajo?',
     yes: 'SÍ', no: 'NO'
   },
   playNonDiversityCard: {
-    msg: 'Diversidad 0 Final: ¿Jugar 1 carta (no Diversidad) bocarriba en esta línea?',
+    msg: 'Diversidad 0 Final: ¿Quieres jugar 1 carta (no Diversidad) bocarriba en esta línea?',
     yes: 'SÍ', no: 'NO'
   },
 
   // ── Efectos especiales ───────────────────────────────────────────────────
   copyOpponentCardEffect: {
-    msg: '{name}: ¿Copias el efecto de una carta del rival?',
+    msg: '{name}: ¿Quieres copiar el efecto de una carta del rival?',
     yes: 'SÍ', no: 'NO'
   },
 
   // ── Cartas con dropdown (el msg va en confirmMsg.innerHTML, los botones los lee el código) ──
   luckCallProtocolDiscard: {
-    msg: '{name}: Declara un Protocolo',
-    yes: 'SÍ', no: 'NO'
+    msg: '{name}: Elige un Protocolo',
+    yes: 'CONFIRMAR', no: 'CANCELAR'
   },
   luckDraw3PickByValue: {
-    msg: '{name}: ¿Qué número declaras? (0–6)',
-    yes: 'SÍ', no: 'NO'
+    msg: '{name}: Elige un valor numérico (0–6)',
+    yes: 'CONFIRMAR', no: 'CANCELAR'
   },
 };

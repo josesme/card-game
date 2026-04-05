@@ -4153,7 +4153,9 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         if (!confirmArea || !confirmMsg) { gameState.effectContext = null; processAbilityEffect(); break; }
         const actionsDiv = confirmArea.querySelector('.effect-actions');
         const dropItems = allProtos.map(p => `<div class="ui-dropdown-item" data-val="${p}"><span class="drop-dot"></span><span class="drop-text">${p}</span></div>`).join('');
-        confirmMsg.innerHTML = `${triggerCardName || ''}: Declara un Protocolo
+        const luck3Copy = (typeof MODAL_COPY !== 'undefined' && MODAL_COPY.luckCallProtocolDiscard) ? MODAL_COPY.luckCallProtocolDiscard : { msg: '{name}: Elige un Protocolo', yes: 'CONFIRMAR', no: 'CANCELAR' };
+        const luck3Msg = luck3Copy.msg.replace('{name}', triggerCardName || '');
+        confirmMsg.innerHTML = `${luck3Msg}
             <div class="ui-dropdown" id="luck3-dropdown" style="margin-top:10px;">
               <div class="ui-dropdown-trigger" id="luck3-trigger">
                 <span class="drop-placeholder" id="luck3-placeholder">Elige protocolo</span>
@@ -4163,7 +4165,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
               <div class="ui-dropdown-list">${dropItems}</div>
             </div>`;
         if (actionsDiv) {
-          actionsDiv.innerHTML = '<button class="ui-btn" id="btn-confirm-yes">SÍ</button><button class="ui-btn ui-btn--danger" id="btn-confirm-no">NO</button>';
+          actionsDiv.innerHTML = `<button class="ui-btn" id="btn-confirm-yes">${luck3Copy.yes}</button><button class="ui-btn ui-btn--danger" id="btn-confirm-no">${luck3Copy.no}</button>`;
         }
         confirmArea.classList.remove('hidden');
         // Dropdown behavior
@@ -4235,7 +4237,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       if (hasMatch) {
         if (targetPlayer === 'player') {
           // filter exactValue + targetAll: permite seleccionar cubierta o descubierta
-          startEffect('eliminate', 'any', 1, { filter: 'exactValue', exactVal: targetVal, targetAll: true });
+          startEffect('eliminate', 'any', 1, { filter: 'exactValue', exactVal: targetVal, targetAll: true, statusMsg: `ELIMINAR (Valor ${targetVal})` });
         } else {
           let done = false;
           LINES.forEach(l => {
@@ -4266,7 +4268,9 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         if (!confirmArea || !confirmMsg) { gameState.effectContext = null; processAbilityEffect(); break; }
         const actionsDiv = confirmArea.querySelector('.effect-actions');
         const numItems = [0,1,2,3,4,5,6].map(n => `<div class="ui-dropdown-item" data-val="${n}"><span class="drop-dot"></span><span class="drop-text">${n}</span></div>`).join('');
-        confirmMsg.innerHTML = `${triggerCardName || ''}: ¿Qué número declaras? (0–6)
+        const luck0Copy = (typeof MODAL_COPY !== 'undefined' && MODAL_COPY.luckDraw3PickByValue) ? MODAL_COPY.luckDraw3PickByValue : { msg: '{name}: Elige un valor numérico (0–6)', yes: 'CONFIRMAR', no: 'CANCELAR' };
+        const luck0Msg = luck0Copy.msg.replace('{name}', triggerCardName || '');
+        confirmMsg.innerHTML = `${luck0Msg}
             <div class="ui-dropdown" id="luck0-dropdown" style="margin-top:10px;">
               <div class="ui-dropdown-trigger" id="luck0-trigger">
                 <span class="drop-placeholder" id="luck0-placeholder">Elige número</span>
@@ -4276,7 +4280,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
               <div class="ui-dropdown-list">${numItems}</div>
             </div>`;
         if (actionsDiv) {
-          actionsDiv.innerHTML = '<button class="ui-btn" id="btn-confirm-yes">SÍ</button><button class="ui-btn ui-btn--danger" id="btn-confirm-no">NO</button>';
+          actionsDiv.innerHTML = `<button class="ui-btn" id="btn-confirm-yes">${luck0Copy.yes}</button><button class="ui-btn ui-btn--danger" id="btn-confirm-no">${luck0Copy.no}</button>`;
         }
         confirmArea.classList.remove('hidden');
         const dd0 = document.getElementById('luck0-dropdown');
