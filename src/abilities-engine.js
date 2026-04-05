@@ -4085,15 +4085,21 @@ function resolveAbilityAction(actionDef, targetPlayer) {
 
     case 'compileSelfIfFiveOrMoreUnity': {
       // Unidad 1 onPlay: si hay 5+ Unidad en campo (cualquier lado, cualquier estado), compila esta línea
+      // Solo actúa si la línea no está ya compilada por este jugador (no genera recompile draw)
       const totalUnity = LINES.reduce((acc, l) =>
         acc + ['player', 'ai'].reduce((a2, p) =>
           a2 + gameState.field[l][p].filter(c => c.card.nombre.startsWith('Unidad')).length, 0), 0);
       if (totalUnity >= 5) {
         const line = gameState.currentEffectLine;
         if (line && typeof compileLine === 'function') {
-          updateStatus(`${triggerCardName}: 5+ Unidad en campo — compilando ${line} automáticamente`);
-          compileLine(line, targetPlayer);
-          updateUI();
+          if (gameState.field[line].compiledBy === targetPlayer) {
+            // Línea ya compilada por este jugador — efecto no aplica (no recompile)
+            updateStatus(`${triggerCardName}: línea ya compilada por este jugador`);
+          } else {
+            updateStatus(`${triggerCardName}: 5+ Unidad en campo — compilando ${line} automáticamente`);
+            compileLine(line, targetPlayer);
+            updateUI();
+          }
         }
       }
       processAbilityEffect();
