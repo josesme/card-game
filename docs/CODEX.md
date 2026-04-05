@@ -1,6 +1,6 @@
 # 📖 CODEX DE COMPILE
 **Fuente única de verdad para reglas, erratas y aclaraciones.**
-Basado en: Compile Rules V2 (reglamento oficial) + Códice Oficial (rev. 16 DIC 2024).
+Basado en: Compile Rules V2 (reglamento oficial) + The Compile Codex (rev. 22 SEP 2025).
 Los PDFs originales han sido eliminados tras consolidar toda su información aquí.
 
 ---
@@ -128,6 +128,20 @@ El comando central (texto del medio) de una carta se activa en **3 casos**:
 > **Excepción:** Suerte 1 voltea la carta "sin comandos centrales" (regla de carta).
 
 > Solo se activa si la carta es la **descubierta** (top de la pila). Una carta cubierta que se voltea bocarriba no activa su comando central.
+
+### Texto al Entrar en Juego
+Cuando el texto de una carta entra en juego (al jugarse, voltearse o descubrirse), el **propietario** de esa carta decide cómo se resuelve.
+
+### Cartas Comprometidas (Committed Cards)
+Cuando una carta se mueve entre zonas (mano/mazo → campo, desplazamiento, eliminación al descarte), primero **abandona su zona actual** y queda "comprometida" hacia la nueva zona. Las consecuencias de abandonar la zona anterior (p. ej. descubrir la carta de debajo y activar su comando central) se resuelven **antes** de que la carta comprometida aterrice.
+
+- Mientras está comprometida (en tránsito), la carta **no puede ser manipulada** por ningún efecto.
+- Nada puede impedir que una carta comprometida entre en la zona a la que fue comprometida.
+- Si la carta comprometida va a cubrir una carta con texto "Cuando esta carta vaya a ser cubierta: primero…", ese efecto se resuelve antes de que aterrice. Durante ese efecto, la carta comprometida **no es selección válida**.
+- Varias cartas pueden estar comprometidas a una línea al mismo tiempo; entran en el orden en que fueron comprometidas.
+
+### Efectos "After" (Después de)
+Un efecto que dispara "después de" algo ocurre cuando el efecto desencadenante **y todas sus consecuencias** han terminado completamente. Ejemplo: "Después de que tu oponente compila:" — los pasos compile+control+eliminar+voltear protocolo finalizan antes de que este efecto dispare.
 
 ### Resolución de Efectos (LIFO)
 - Cuando un texto activo entra en juego (al jugarse, voltearse boca arriba o descubrirse), se resuelve **interrumpiendo cualquier otro texto hasta completarse**.
@@ -259,6 +273,9 @@ No. Solo la carta superior de una pila está descubierta.
 
 ### 🔴 Muerte (Death)
 
+**Muerte 0**
+- ACLARACIÓN: Cuando su comando medio dispara, el propietario anota las líneas afectadas. Luego elige en qué orden procesarlas, una a una. En cada línea, selecciona una carta descubierta para eliminar y resuelve las consecuencias antes de pasar a la siguiente línea.
+
 **Muerte 1**
 - ERRATA (10/2024) — Comando superior: *"Inicio: Puedes robar 1 carta. Si lo haces, elimina 1 carta adicional. Luego, elimina esta carta."*
 - No puede ser movida, volteada ni eliminada por efectos externos. Solo se elimina mediante su propio texto.
@@ -276,10 +293,18 @@ No. Solo la carta superior de una pila está descubierta.
 
 ---
 
+### ⚖️ Gravedad (Gravity)
+
+**Gravedad 2**
+- ACLARACIÓN: Desplazará la carta volteada aunque esté cubierta. El texto "esa carta" hace referencia directa a una carta específica, lo que anula la regla general de no poder manipular cartas cubiertas.
+
+---
+
 ### 🟢 Vida (Life)
 
 **Vida 0**
 - ERRATA (10/2024) — Comando superior: *"Fin: Si esta carta está cubierta, elimínala."* No tiene comando inferior.
+- ACLARACIÓN: Cuando su comando medio dispara, el propietario anota las líneas afectadas, las procesa una a una. Si Vida 0 queda cubierta durante el proceso, su comando medio se detiene.
 - Jugar desde la parte superior del mazo no obliga a barajar si el mazo está vacío.
 
 ---
@@ -288,7 +313,7 @@ No. Solo la carta superior de una pila está descubierta.
 
 **Luz 0**
 - ACLARACIÓN: Voltea 1 carta descubierta. Luego, roba cartas igual a su **valor actual** (tras el volteo).
-- FALLO: Si la carta es eliminada durante este proceso, aún se usa como referencia para el número de cartas a robar.
+- FALLO/RULING: Si la carta seleccionada es eliminada durante el proceso, se sigue usando como referencia para el número de cartas a robar. Si está en el descarte, su valor es el impreso (face-up). Si fue barajada al mazo (información privada), su valor se trata como 2.
 
 **Luz 3**
 - ACLARACIÓN: Las cartas movidas boca abajo mantienen su posición relativa y se mueven a la misma línea.
@@ -342,6 +367,90 @@ No. Solo la carta superior de una pila está descubierta.
 **Odio 2**
 - ERRATA (10/2024) — Comando medio: *"Elimina tu carta descubierta de mayor valor. Elimina la del oponente de mayor valor."*
 - ACLARACIÓN: Si Odio 2 es tu carta de mayor valor descubierta, se elimina a sí misma. El segundo efecto (eliminar carta del oponente) **no se activa**.
+
+---
+
+## 🃏 Main 2 — Erratas y Aclaraciones
+
+### 🌀 Caos (Chaos)
+
+**Caos 0**
+- ERRATA (9/2025) — Comando medio: *"Voltea 1 carta cubierta en cada línea."*
+- ACLARACIÓN: Cuando dispara, el propietario anota cada línea afectada y las procesa una a una. En cada línea, selecciona una carta cubierta para voltear y resuelve las consecuencias antes de pasar a la siguiente. Las cartas cubiertas que se voltean **no activan** su comando central.
+
+**Caos 1**
+- ACLARACIÓN: Debes hacer un cambio en los protocolos de **ambos** jugadores (no solo uno).
+
+---
+
+### 💀 Corrupción (Corruption)
+
+**Corrupción 6**
+- ACLARACIÓN: Si se elimina a sí misma al final del turno, activa el comando central de la carta que estaba cubriendo.
+
+---
+
+### 💪 Valor (Courage)
+
+**Valor 3**
+- ACLARACIÓN: Varias líneas pueden empatar en "valor total más alto". En ese caso, el jugador elige.
+
+---
+
+### ❄️ Hielo (Ice)
+
+**Hielo 6**
+- ACLARACIÓN: Las cartas se roban en bloque. Actualizar con 0 cartas en mano roba 5 cartas.
+
+---
+
+### 🍀 Suerte (Luck)
+
+**Suerte 0**
+- ACLARACIÓN: La carta jugada debe ser una de las 3 cartas robadas con Suerte 0. Puede jugarse boca arriba o boca abajo.
+
+**Suerte 1**
+- ERRATA (9/2025) — Comando medio: *"Juega la carta superior de tu mazo boca abajo. Voltea esa carta, ignorando su comando central."*
+- ACLARACIÓN: Solo se ignora el comando central para ese volteo concreto.
+
+**Suerte 3**
+- ERRATA (8/2025) — Comando medio: *"Declara un protocolo. Descarta la carta superior del mazo de tu oponente. Si la carta descartada coincide con el protocolo declarado, elimina 1 carta."*
+
+---
+
+### 🪞 Espejo (Mirror)
+
+**Espejo 1**
+- ACLARACIÓN: Su texto inferior queda bloqueado por Miedo 0 porque el texto se trata "como si estuviera en esta carta", pero no hay texto que copiar porque Miedo 0 dice que "las cartas no tienen comandos centrales".
+
+**Espejo 2**
+- ACLARACIÓN: Las cartas intercambiadas mantienen sus posiciones relativas dentro de sus pilas. Cada pila debe tener al menos 1 carta para poder intercambiar.
+
+**Espejo 3**
+- ACLARACIÓN: Si Espejo 3 se voltea a sí mismo primero, el segundo volteo no ocurre.
+
+---
+
+### ☮️ Paz (Peace)
+
+**Paz 1**
+- ACLARACIÓN: El propietario de la carta decide qué jugador descarta su mano primero.
+
+---
+
+### 💨 Humo (Smoke)
+
+**Humo 0 y Humo 3**
+- ACLARACIÓN: Ambas cartas cuentan las cartas boca abajo del **oponente** para determinar qué líneas son válidas. Una línea califica si cualquiera de los dos jugadores tiene al menos una carta boca abajo en ella.
+- ✅ Implementado correctamente.
+
+---
+
+### ⏱️ Tiempo (Time) — actualización
+
+**Tiempo 2**
+- ERRATA (8/2025) — Comando superior: *"Después de que barajes tu mazo: Roba 1 carta. Luego, puedes desplazar esta carta."*
+- ACLARACIÓN confirmada: Dispara con cualquier barajado de tu mazo, independientemente de quién lo cause (incluyendo barajados provocados por el oponente).
 
 ---
 
