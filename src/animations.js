@@ -96,6 +96,8 @@
         var dur   = (opts && opts.duration !== undefined) ? opts.duration : 1.0;
         var chars = (opts && opts.chars)   || 'upperCase';
         var speed = (opts && opts.speed)   || 0.5;
+        // Cancelar tweens anteriores en este elemento antes de animar (evita conflicto de valores)
+        gsap.killTweensOf(el);
         gsap.to(el, { duration: dur, scrambleText: { text: t, chars: chars, speed: speed, revealDelay: 0 } });
     };
 
