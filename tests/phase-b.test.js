@@ -234,19 +234,32 @@ describe('Acciones Fase B (resolución directa)', () => {
     expect(GS.player.deck).toHaveLength(0);
   });
 
-  test('flipCoveredInEachLine voltea la primera carta cubierta de cada pila', () => {
+  test('flipCoveredInEachLine (AI): voltea la primera carta cubierta de cada pila', () => {
+    const covered = { card: makeCard('Covered'), faceDown: true };
+    const top = { card: makeCard('Top'), faceDown: false };
+    GS.field['alpha'].ai = [covered, top];
+    runAction({ action: 'flipCoveredInEachLine' }, 'ai');
+    expect(GS.field['alpha'].ai[0].faceDown).toBe(false);
+  });
+
+  test('flipCoveredInEachLine (player): encola sub-efecto interactivo por línea', () => {
     const covered = { card: makeCard('Covered'), faceDown: true };
     const top = { card: makeCard('Top'), faceDown: false };
     GS.field['alpha'].player = [covered, top];
-    runAction({ action: 'flipCoveredInEachLine' });
-    expect(GS.field['alpha'].player[0].faceDown).toBe(false);
+    runAction({ action: 'flipCoveredInEachLine' }, 'player');
+    // El player path llama a startEffect (interactivo) para que el jugador elija
+    expect(global.startEffect).toHaveBeenCalledWith(
+      'flip', 'any', 1, expect.objectContaining({ coveredOnly: true, forceLine: 'alpha' })
+    );
+    // La carta no se voltea automáticamente — espera input del jugador
+    expect(GS.field['alpha'].player[0].faceDown).toBe(true);
   });
 
-  test('flipCoveredInEachLine no voltea la top card', () => {
+  test('flipCoveredInEachLine no voltea la top card (AI)', () => {
     const only = { card: makeCard('Solo'), faceDown: true };
-    GS.field['alpha'].player = [only]; // solo una carta (es top y cubierta)
-    runAction({ action: 'flipCoveredInEachLine' });
-    expect(GS.field['alpha'].player[0].faceDown).toBe(true); // no cambia (es top)
+    GS.field['alpha'].ai = [only]; // solo una carta — es top, no está cubierta
+    runAction({ action: 'flipCoveredInEachLine' }, 'ai');
+    expect(GS.field['alpha'].ai[0].faceDown).toBe(true); // no cambia
   });
 
   test('drawFromOpponentDeck: roba la carta top del mazo rival', () => {

@@ -3172,18 +3172,41 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'flipCoveredInEachLine': {
-      // Caos 0: en cada línea, voltea (alterna) la primera carta cubierta (sea bocaarriba o bocabajo)
-      LINES.forEach(l => {
-        ['player', 'ai'].forEach(p => {
-          const stack = gameState.field[l][p];
-          // Cualquier carta que no sea la top está cubierta — voltea la inmediatamente bajo la top
-          if (stack.length >= 2) {
-            flipAndTrigger(stack[stack.length - 2], l, p);
-          }
+      // Caos 0: voltea 1 carta cubierta en cada línea (el jugador elige cuál)
+      const linesToProcess = LINES.filter(l =>
+        ['player', 'ai'].some(p => gameState.field[l][p].length >= 2)
+      );
+      if (linesToProcess.length === 0) { processAbilityEffect(); break; }
+      if (targetPlayer === 'player') {
+        // Encolar un sub-efecto interactivo por cada línea
+        const subEffects = linesToProcess.map(l => ({
+          effect: { action: '_flipCoveredInLine', line: l },
+          targetPlayer: 'player',
+          cardName: triggerCardName
+        }));
+        gameState.effectQueue.unshift(...subEffects);
+        processAbilityEffect();
+      } else {
+        // IA: voltea automáticamente la carta inmediatamente bajo la top en cada línea
+        linesToProcess.forEach(l => {
+          ['player', 'ai'].forEach(p => {
+            const stack = gameState.field[l][p];
+            if (stack.length >= 2) flipAndTrigger(stack[stack.length - 2], l, p);
+          });
         });
-      });
-      updateUI();
-      processAbilityEffect();
+        updateUI();
+        processAbilityEffect();
+      }
+      break;
+    }
+
+    case '_flipCoveredInLine': {
+      // Caos 0: sub-efecto — el jugador elige qué carta cubierta voltear en una línea concreta
+      const covLine = actionDef.line;
+      if (!covLine) { processAbilityEffect(); break; }
+      const hasCovered = ['player', 'ai'].some(p => gameState.field[covLine][p].length >= 2);
+      if (!hasCovered) { processAbilityEffect(); break; }
+      startEffect('flip', 'any', 1, { forceLine: covLine, coveredOnly: true });
       break;
     }
 
@@ -3931,6 +3954,10 @@ function resolveAbilityAction(actionDef, targetPlayer) {
 
     case 'flipOpponentSameLine': {
       // Espejo 3: voltea 1 carta del oponente en la misma línea donde se volteó la propia
+      // Si Espejo 3 se volteó a sí mismo en el primer paso, el segundo volteo no ocurre
+      if (gameState.lastFlippedCard && gameState.lastFlippedCard.cardObj?.card?.nombre === triggerCardName) {
+        processAbilityEffect(); break;
+      }
       const line = (gameState.lastFlippedCard && gameState.lastFlippedCard.line) || gameState.currentEffectLine;
       if (!line || gameState.field[line][opponent].length === 0) { processAbilityEffect(); break; }
       if (targetPlayer === 'player') {
