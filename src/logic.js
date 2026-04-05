@@ -3055,6 +3055,8 @@ function continueEndTurn(who) {
         }
         if (typeof onRefreshEffects === 'function') onRefreshEffects(who);
         if (typeof onOpponentRefreshEffects === 'function') onOpponentRefreshEffects(who);
+        // Refresh cuenta como draw — disparar onOpponentDraw de cartas del oponente (ej. Espejo 4, Guerra 0)
+        if (typeof onOpponentDrawEffects === 'function') onOpponentDrawEffects(who);
     }
 
     // Si onTurnEnd/onRefresh dejó efectos interactivos pendientes, esperar a que se resuelvan
