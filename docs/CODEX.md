@@ -68,9 +68,8 @@ El jugador que eligió primero en el draft va primero. El Control Component comi
 Durante la fase "Verificar Compilación": si tienes **valor ≥ 10** en una línea **Y** ese valor es **mayor que el de tu oponente** en la misma línea, **debes compilar** esa línea.
 
 **Proceso:**
-1. Elimina todas las cartas de esa línea en tu lado → van a tu descarte.
-2. Tu oponente elimina todas las cartas de esa línea en su lado → van a su descarte.
-3. Voltea tu carta de protocolo en esa línea al lado "Compiled".
+1. El jugador que compila elimina **todas** las cartas de la línea — tanto las suyas como las del oponente — y van al descarte de su propietario original.
+2. Voltea tu carta de protocolo en esa línea al lado "Compiled".
 
 **Restricciones:**
 - Solo puedes compilar **una línea por turno**, aunque cumplas condiciones en varias.
@@ -79,8 +78,11 @@ Durante la fase "Verificar Compilación": si tienes **valor ≥ 10** en una lín
 **Recompilar:** Si compilas una línea con tu protocolo que ya está compilada:
 - Se eliminan todas las cartas como de costumbre.
 - En lugar de voltear el protocolo (ya está compilado), **robas la carta superior del mazo de tu oponente**. Ahora eres su propietario.
+- El robo activa el barajado del mazo del oponente si está vacío.
 
 > Durante la compilación, **todas las cartas se eliminan simultáneamente** sin activar efectos.
+
+> ⚠️ `Diversidad 0` y `Unidad 1` **no son compilaciones** — no activan ventanas "After compile", no interactúan con `Guerra 2` o `Velocidad 2`, y no activan el Control Component.
 
 ---
 
@@ -98,8 +100,12 @@ Durante la fase "Verificar Compilación": si tienes **valor ≥ 10** en una lín
 - Solo cambian de posición, **no de lado**.
 - Las cartas en las líneas de esos protocolos **no se mueven**.
 - El jugador **debe hacer algún cambio** — no puede dejar los protocolos en la misma posición.
+- La reorganización ocurre **antes** de compilar (o de actualizar). El jugador no ve su nueva mano antes de reordenar.
+- Es válido reordenar protocolos para elegir qué línea compilar a continuación.
 
 > El Control Component se restablece al compilar o actualizar **incluso si no se usa** para reorganizar.
+
+> **No puedes usar el Control Component si no puedes actualizar** (es decir, si tienes 5 o más cartas en mano).
 
 **Estado en el juego digital:** ❌ **NO IMPLEMENTADO**. Falta la fase "Verificar Control" en el ciclo de turno y toda la mecánica de reorganización vinculada al Control Component.
 
@@ -112,12 +118,22 @@ Durante la fase "Verificar Compilación": si tienes **valor ≥ 10** en una lín
 - La carta **descubierta** (uncovered) es la que está en el extremo de la pila, más alejada del protocolo — es la **única que puede ser manipulada** en esa línea, salvo que un efecto especifique "cartas cubiertas" o "todas las cartas".
 - Una carta cubierta **no puede descubrirse** mientras está en una pila. Solo la carta superior está descubierta.
 - El valor y el comando superior (Persistent) son siempre visibles aunque la carta esté cubierta.
-- **Comando superior con "Inicial:" o "Final:"**: estos efectos están en el slot persistente (h_inicio) y aplican aunque la carta esté cubierta.
-  - **"Inicial:"** se dispara al inicio del turno para todas las cartas bocarriba (cubiertas o no).
-  - **"Final:"** se **arma** al inicio del turno (se registran las cartas con onTurnEnd presentes en ese momento). Solo se dispara al final del turno si la carta sigue en juego y bocarriba. Consecuencias:
-    - Una carta jugada durante la fase de acción **no** dispara su "Final:" ese turno (no estaba al inicio).
-    - Una carta armada al inicio pero eliminada/compilada antes del final **no** dispara su "Final:" (ya no está en juego).
-  - Implementación: `onTurnStartEffects` registra IDs en `gameState.armedEndEffects`; `onTurnEndEffects` solo dispara para IDs armados y aún presentes.
+- Un jugador puede mirar sus propias cartas boca abajo, **no las del oponente**.
+- Los cementerios son **información pública** — cualquier jugador puede consultarlos en cualquier momento.
+- Las cartas boca abajo en el campo valen **2**, independientemente de su valor impreso.
+- El valor de una línea puede ser **negativo** (es un estado válido — p.ej. Metal 0 reduce el valor de la pila a -2).
+
+### "All Cards" (Todas las cartas)
+"All cards" se refiere exclusivamente a cartas **en el campo** (cubiertas y descubiertas). No incluye cartas en la mano, mazo o cementerio.
+
+### Efectos Iniciales y Finales (Start/End)
+**"Inicial:" y "Final:"** están en el slot persistente y se rigen por estas reglas:
+- Todos los efectos "Inicial:" y "Final:" se activan **al inicio de su fase respectiva**, y solo entonces.
+- Si una carta con efecto "Final:" se revela o juega **durante** la fase Final, **no se activa**.
+- Si un efecto "Final:" activo descubre otra carta con "Final:", esa segunda **no se activa** (la ventana ya pasó).
+- Si una carta "Final:" queda cubierta durante la resolución del End step, **su efecto se cancela**.
+- Con **múltiples efectos activos** al inicio de la fase, el jugador en turno los recoge todos y elige **uno a la vez** en el orden que prefiera. Las condiciones se evalúan **al procesar** cada trigger, no al inicio de la fase.
+- Implementación: `onTurnStartEffects` registra IDs en `gameState.armedEndEffects`; `onTurnEndEffects` solo dispara para IDs armados y aún presentes.
 
 ### Activación del Comando Central
 El comando central (texto del medio) de una carta se activa en **3 casos**:
@@ -135,18 +151,22 @@ Cuando el texto de una carta entra en juego (al jugarse, voltearse o descubrirse
 ### Cartas Comprometidas (Committed Cards)
 Cuando una carta se mueve entre zonas (mano/mazo → campo, desplazamiento, eliminación al descarte), primero **abandona su zona actual** y queda "comprometida" hacia la nueva zona. Las consecuencias de abandonar la zona anterior (p. ej. descubrir la carta de debajo y activar su comando central) se resuelven **antes** de que la carta comprometida aterrice.
 
+Un shift tiene dos partes: **leaving** (recoger la carta, puede descubrir la de debajo) y **landing** (aterrizar en la pila destino, puede cubrir la carta de encima de destino). Una carta desplazada siempre queda como la **descubierta** (top) de la pila destino.
+
 - Mientras está comprometida (en tránsito), la carta **no puede ser manipulada** por ningún efecto.
+- Las cartas comprometidas **no están en el campo** — no cuentan para valores de línea ni para efectos de `Unity`.
 - Nada puede impedir que una carta comprometida entre en la zona a la que fue comprometida.
 - Si la carta comprometida va a cubrir una carta con texto "Cuando esta carta vaya a ser cubierta: primero…", ese efecto se resuelve antes de que aterrice. Durante ese efecto, la carta comprometida **no es selección válida**.
-- Varias cartas pueden estar comprometidas a una línea al mismo tiempo; entran en el orden en que fueron comprometidas.
+- Varias cartas pueden estar comprometidas a una línea al mismo tiempo; la cola es **FIFO** — la primera committed aterriza, activa sus efectos, y solo entonces aterriza la siguiente.
 
 ### Efectos "After" (Después de)
-Un efecto que dispara "después de" algo ocurre cuando el efecto desencadenante **y todas sus consecuencias** han terminado completamente. Ejemplo: "Después de que tu oponente compila:" — los pasos compile+control+eliminar+voltear protocolo finalizan antes de que este efecto dispare.
+Un efecto que dispara "después de" algo ocurre cuando el efecto desencadenante **y todas sus consecuencias** han terminado completamente. Ejemplo: "Después de que tu oponente compila:" — los pasos compile+control+eliminar+voltear protocolo finalizan antes de que este efecto dispare. No es necesario que el texto "After" estuviera visible al inicio del efecto desencadenante, solo al llegar a esa ventana.
 
-### Resolución de Efectos (LIFO)
+### Resolución de Efectos (LIFO / FIFO)
 - Cuando un texto activo entra en juego (al jugarse, voltearse boca arriba o descubrirse), se resuelve **interrumpiendo cualquier otro texto hasta completarse**.
-- **Último en entrar, primero en salir (LIFO).**
-- Si varios efectos se resolverían simultáneamente, el jugador en turno decide el orden.
+- **Último en entrar, primero en salir (LIFO)** — es el orden general del juego.
+- **Excepción: la cola de committed usa FIFO** — la primera carta comprometida aterriza primero.
+- Si varios efectos se resolverían simultáneamente, el **jugador en turno** decide el orden, independientemente de quién posea las cartas.
 - Un texto activo que queda cubierto, volteado o eliminado **deja de estar activo**, aunque quedara texto pendiente.
 
 ### Objetivos de Efectos
@@ -160,7 +180,10 @@ Un efecto que dispara "después de" algo ocurre cuando el efecto desencadenante 
 
 ### Mazo Vacío
 - Cuando necesitas robar y tu mazo está vacío, **baraja el descarte para formar uno nuevo**.
-- Solo el robo desencadena esta reconstrucción — los efectos que involucran la carta superior del mazo (sin robar) **no pueden resolverse** si el mazo está vacío.
+- Solo el robo desencadena esta reconstrucción — los efectos que involucran la carta superior del mazo (sin robar) **fizzlean** si el mazo está vacío.
+- Si robas del mazo del oponente y está vacío, se baraja **su** descarte.
+- Un draw no se interrumpe por el barajado — si el mazo se agota a mitad de un robo múltiple, se baraja el descarte y se continúa.
+- Barajar un mazo con 0 o 1 carta **no activa** triggers de "After you shuffle" (el estado del juego no cambia realmente).
 
 ### Propiedad de Cartas
 - Si una carta cambia de propietario, mantiene su nueva propiedad hasta el fin de la partida o hasta que cambie de nuevo.
@@ -217,6 +240,21 @@ No. Todas las cartas se eliminan simultáneamente sin activar efectos.
 **¿Puedo compilar en una línea que mi oponente ya ha compilado?**
 Sí (recompilar). No ganas un nuevo protocolo, pero robas la carta superior del mazo rival.
 
+**¿El Actualizar cuenta como Draw para efectos tipo "After you draw"?**
+Sí. Actualizar cuenta como draw.
+
+**¿Devolver una carta a la mano cuenta como Draw?**
+No. "Return" (devolver) no es draw.
+
+**¿Puedo Actualizar si tengo exactamente 5 cartas en mano?**
+No. Solo puedes actualizar si tienes menos de 5 cartas (robarías al menos 1).
+
+**¿Puede el valor de una línea ser negativo?**
+Sí. Un valor negativo es válido y gana la línea si es mayor (menos negativo) que el del oponente.
+
+**¿Si un efecto no puede cambiar el estado del juego, ocurre algo?**
+No. Si un efecto no puede cambiar el estado del juego, no ocurre nada y las ventanas "After" asociadas no se abren.
+
 **¿Qué significa "revelar"?**
 Mostrar a ambos jugadores la información revelada y devolverla a su estado anterior. No tiene efecto permanente.
 
@@ -264,6 +302,7 @@ No. Solo la carta superior de una pila está descubierta.
 
 **Espíritu 0**
 - Actualizar como indica la carta es una acción normal, incluyendo el uso del Control Component.
+- ACLARACIÓN: Espíritu 3, al desplazarse, queda committed — mientras está committed no es un objetivo válido para nuevos desplazamientos, rompiendo cualquier posible bucle.
 
 **Espíritu 1**
 - ERRATA (10/2024) — Comando superior: *"Cuando juegas cartas boca arriba, pueden jugarse sin coincidir con protocolos."*
@@ -282,6 +321,7 @@ No. Solo la carta superior de una pila está descubierta.
 
 **Muerte 2**
 - ACLARACIÓN: "Todas las cartas con Valor 1 o 2 de una línea" afecta a **toda la pila de esa línea**, incluyendo cartas cubiertas. El calificador numérico (valor exacto) penetra la cobertura, a diferencia de efectos genéricos que solo afectan a la carta superior.
+- ACLARACIÓN: El dueño de Muerte 2 debe elegir una línea donde haya al menos una carta afectable (debe cambiar el estado del juego).
 
 ---
 
@@ -295,6 +335,9 @@ No. Solo la carta superior de una pila está descubierta.
 
 ### ⚖️ Gravedad (Gravity)
 
+**Gravedad 0**
+- ACLARACIÓN: Las cartas que Gravedad 0 juega no aterrizan encima de la pila — aterrizan **justo debajo de Gravedad 0**. La cola committed aplica igualmente: la carta committed no aterriza encima sino debajo de Gravedad 0.
+
 **Gravedad 2**
 - ACLARACIÓN: Desplazará la carta volteada aunque esté cubierta. El texto "esa carta" hace referencia directa a una carta específica, lo que anula la regla general de no poder manipular cartas cubiertas.
 
@@ -306,6 +349,13 @@ No. Solo la carta superior de una pila está descubierta.
 - ERRATA (10/2024) — Comando superior: *"Fin: Si esta carta está cubierta, elimínala."* No tiene comando inferior.
 - ACLARACIÓN: Cuando su comando medio dispara, el propietario anota las líneas afectadas, las procesa una a una. Si Vida 0 queda cubierta durante el proceso, su comando medio se detiene.
 - Jugar desde la parte superior del mazo no obliga a barajar si el mazo está vacío.
+- ACLARACIÓN: La restricción "líneas donde tengas una carta" se evalúa al inicio del efecto. Una línea vacía en ese momento no califica aunque reciba cartas después.
+
+**Vida 2**
+- ACLARACIÓN: La carta seleccionada debe estar **descubierta**.
+
+**Vida 3**
+- ACLARACIÓN: La carta jugada por Vida 3 aterriza como parte normal de su acción — nada bloquea su aterrizaje.
 
 ---
 
@@ -334,12 +384,18 @@ No. Solo la carta superior de una pila está descubierta.
 
 ### 🟣 Plaga (Plague)
 
+**Plaga 1**
+- ACLARACIÓN: Limpiar caché (descartar con 5+ cartas) activa Plaga 1.
+
 **Plaga 3**
-- ACLARACIÓN: *"Voltea cada otra carta descubierta."* — Solo afecta cartas **descubiertas**, no cubiertas.
+- ACLARACIÓN: *"Voltea cada otra carta descubierta."* — Afecta todas las cartas descubiertas boca arriba en el campo (propias y del oponente), excepto a sí misma. Las cartas cubiertas están excluidas.
 
 ---
 
 ### ⏱️ Tiempo (Time)
+
+**Tiempo 0**
+- ACLARACIÓN: Baraja el mazo aunque el cementerio esté vacío (no especifica un mínimo de cartas).
 
 **Tiempo 2**
 - Dispara `onDeckShuffle` con cualquier barajado del mazo — tanto explícito (usar su propio efecto) como automático (mazo vacío durante un robo).
@@ -349,6 +405,9 @@ No. Solo la carta superior de una pila está descubierta.
 ---
 
 ### 🔵 Velocidad (Speed)
+
+**Velocidad 0**
+- ACLARACIÓN: Se activa cuando una carta es desplazada desde su pila. Mientras Velocidad 0 resuelve su efecto, la carta desplazada está en estado committed y **no aterriza** hasta que Velocidad 0 termina. Si hay otra carta committed bloqueando la misma pila, espera a que esa otra aterrice primero.
 
 **Velocidad 2**
 - ACLARACIÓN: Durante la compilación, se eliminan todas las cartas simultáneamente. Velocidad 2 **se desplaza a otra línea en lugar de eliminarse**.
@@ -362,11 +421,23 @@ No. Solo la carta superior de una pila está descubierta.
 
 ---
 
+### 🤝 Unidad (Unity)
+
+**Unidad 1**
+- ACLARACIÓN: Unidad 1 **nunca puede recompilar** — si la línea ya está compilada por este jugador, no voltea el protocolo ni genera el robo de recompilación, pero **siempre borra** las cartas cuando se activa su trigger.
+- ACLARACIÓN: Al no ser una compilación real, **no activa el Control Component** ni interactúa con efectos tipo "After compile" (Guerra 2, Velocidad 2...).
+
+---
+
 ### ⚔️ Odio (Hate)
 
 **Odio 2**
 - ERRATA (10/2024) — Comando medio: *"Elimina tu carta descubierta de mayor valor. Elimina la del oponente de mayor valor."*
 - ACLARACIÓN: Si Odio 2 es tu carta de mayor valor descubierta, se elimina a sí misma. El segundo efecto (eliminar carta del oponente) **no se activa**.
+- ACLARACIÓN: Odio 2 usa "highest value **uncovered** card" — no puede afectar cartas cubiertas.
+
+**Odio 3**
+- ACLARACIÓN: Odio 3 se activa por cada carta que elimine **su propietario**. Al compilar, el compilador borra todas las cartas; si el compilador es el oponente de Odio 3, su propietario no está borrando → Odio 3 no dispara.
 
 ---
 
@@ -377,6 +448,9 @@ No. Solo la carta superior de una pila está descubierta.
 **Caos 0**
 - ERRATA (9/2025) — Comando medio: *"Voltea 1 carta cubierta en cada línea."*
 - ACLARACIÓN: Cuando dispara, el propietario anota cada línea afectada y las procesa una a una. En cada línea, selecciona una carta cubierta para voltear y resuelve las consecuencias antes de pasar a la siguiente. Las cartas cubiertas que se voltean **no activan** su comando central.
+- ACLARACIÓN: Si Caos 0 voltea una Metal 6 que ya estaba cubierta (de bocabajo a bocarriba), Metal 6 permanece en el campo — el trigger "would be covered" ya pasó.
+
+**Caos 1**
 
 **Caos 1**
 - ACLARACIÓN: Debes hacer un cambio en los protocolos de **ambos** jugadores (no solo uno).
@@ -384,6 +458,9 @@ No. Solo la carta superior de una pila está descubierta.
 ---
 
 ### 💀 Corrupción (Corruption)
+
+**Corrupción 2**
+- ACLARACIÓN: Corrupción 2 reacciona a la keyword "discard". Se activa aunque el origen del descarte no sea la mano (ej: descartar desde la parte superior del mazo).
 
 **Corrupción 6**
 - ACLARACIÓN: Si se elimina a sí misma al final del turno, activa el comando central de la carta que estaba cubriendo.
@@ -395,9 +472,23 @@ No. Solo la carta superior de una pila está descubierta.
 **Valor 3**
 - ACLARACIÓN: Varias líneas pueden empatar en "valor total más alto". En ese caso, el jugador elige.
 
+### 🌈 Diversidad (Diversity)
+
+**Diversidad 0**
+- ACLARACIÓN: Bypasea las restricciones de protocolo — permite jugar cartas boca arriba en cualquier línea.
+- ACLARACIÓN: La comprobación de "todos los protocolos diferentes" incluye cartas **cubiertas y descubiertas** en el campo. Las cartas boca abajo no tienen protocolo visible → cuentan como non-Diversity.
+- ACLARACIÓN: La comprobación ocurre **solo al activarse el trigger**, no de forma continua.
+- ACLARACIÓN: Diversidad 0 **no es una compilación** — no interactúa con Guerra 2, Velocidad 2, ni activa el Control Component.
+
 ---
 
 ### ❄️ Hielo (Ice)
+
+**Hielo 3**
+- ACLARACIÓN: Si Hielo 3 estaba descubierto al inicio del End step, su trigger se recoge aunque después quede cubierto (ej. por Valor 3). La condición "estar cubierto" solo se evalúa cuando se elige procesar ese trigger, no al recogerlo. Si se procesa Valor 3 primero (cubriendo Hielo 3) y luego se procesa Hielo 3, el efecto se activa porque en ese momento Hielo 3 está cubierto.
+
+**Hielo 4**
+- ACLARACIÓN: Hielo 4 es inmune a efectos que la apunten directamente para voltearla. Efectos que la voltean sin apuntarla (como "all") sí pueden voltearla.
 
 **Hielo 6**
 - ACLARACIÓN: Las cartas se roban en bloque. Actualizar con 0 cartas en mano roba 5 cartas.
@@ -415,6 +506,8 @@ No. Solo la carta superior de una pila está descubierta.
 
 **Suerte 3**
 - ERRATA (8/2025) — Comando medio: *"Declara un protocolo. Descarta la carta superior del mazo de tu oponente. Si la carta descartada coincide con el protocolo declarado, elimina 1 carta."*
+- ACLARACIÓN: La carta descartada va al cementerio del **oponente** (el texto será actualizado para aclararlo).
+- ACLARACIÓN: Se puede declarar cualquier protocolo del juego, incluso uno que no esté en partida (puede cambiar en futuras actualizaciones).
 
 ---
 
@@ -424,7 +517,8 @@ No. Solo la carta superior de una pila está descubierta.
 - ACLARACIÓN: Su texto inferior queda bloqueado por Miedo 0 porque el texto se trata "como si estuviera en esta carta", pero no hay texto que copiar porque Miedo 0 dice que "las cartas no tienen comandos centrales".
 
 **Espejo 2**
-- ACLARACIÓN: Las cartas intercambiadas mantienen sus posiciones relativas dentro de sus pilas. Cada pila debe tener al menos 1 carta para poder intercambiar.
+- ACLARACIÓN: Las cartas intercambiadas mantienen sus posiciones relativas dentro de sus pilas. Cada pila debe tener al menos 1 carta para poder intercambiar — no se puede hacer swap con una línea vacía.
+- ACLARACIÓN: Las cartas committed permanecen comprometidas a su pila original cuando el swap ocurre — aterrizan en la pila a la que fueron comprometidas, no en la que quedó en su lugar tras el swap.
 
 **Espejo 3**
 - ACLARACIÓN: Si Espejo 3 se voltea a sí mismo primero, el segundo volteo no ocurre.
@@ -454,18 +548,4 @@ No. Solo la carta superior de una pila está descubierta.
 
 ---
 
-## 🖥️ Estado de Implementación
 
-| Mecánica | Estado |
-|---|---|
-| Ciclo de turno (5 fases base) | ✅ Implementado |
-| Compilación y recompilación | ✅ Implementado |
-| Mazo vacío → reconstruir desde descarte | ✅ Implementado |
-| Cartas boca abajo valor = 2 | ✅ Implementado |
-| LIFO para resolución de efectos | ✅ Implementado |
-| Metal 1 bloquea compilación (solo si visible al activar) | ✅ Implementado |
-| Espíritu 1 — jugar sin protocolo | ✅ Implementado |
-| Fuego 0 — efecto `onCover` | ✅ Implementado |
-| Odio 2 — se elimina a sí mismo si es el más alto | ✅ Implementado |
-| Velocidad 2 — se desplaza en lugar de eliminarse en compilación | ✅ Implementado |
-| **Control Component** (fase Verificar Control + reorganización) | ❌ No implementado |

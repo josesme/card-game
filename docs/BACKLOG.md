@@ -72,216 +72,6 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 
 ---
 
-## 📝 REFINAMIENTO COPY DE MODALES
-
-Listado completo de textos de modales/overlays para revisar y pulir. **Solo efectos con interacción UI**.
-
-**Cómo trabajar:**
-1. Elige una tarea (ej: `CMD-02`)
-2. Propón el nuevo copy
-3. Implementa el cambio
-4. Marca como `✅ Completado (vX.X.X)`
-5. Cuando todas las de una categoría estén completas, elimina la sección
-
----
-
-### Confirm Dialog (`command-confirm`)
-
-#### CMD-01 — Confirmación de Efecto ✅
-- **Ubicación:** `logic.js:1373`, `game.html:showConfirmDialog()`
-- **Trigger:** Efectos opcionales ("puedes...")
-- **Mensaje:** `¿Quieres usar este efecto? "{texto}"`
-- **Botones:** `SÍ` | `NO` ✅ Actualizado en v2.2.1
-- **Estado:** ✅ Completado
-
----
-
-#### CMD-02 — Control Component
-- **Ubicación:** `logic.js:1065`
-- **Trigger:** Control Component (≥2 líneas ganadas)
-- **Mensaje:** `Control Component: ¿Reorganizas protocolos?`
-- **Botones:** `MIS PROTOCOLOS` | `PROTOCOLOS RIVALES` | `SALTAR`
-- **Nota:** 3 botones personalizados, no usa showConfirmDialog()
-- **Estado:** ⏳ Pendiente
-
----
-
-### Hand Select Overlay (`overlay-select` — mano del jugador)
-
-#### SEL-01 — Descartar (N cartas fijas)
-- **Ubicación:** `game.html:1401`, `showHandSelectOverlay()`
-- **Trigger:** Efectos de descarte (ej: "descarta 2 cartas")
-- **Título:** `DESCARTAR`
-- **Subtítulo:** `Elige {N} carta{s} de tu mano`
-- **Botón:** `DESCARTAR`
-- **Estado:** ⏳ Pendiente
-
----
-
-#### SEL-02 — Descartar Cualquiera (0 o más)
-- **Ubicación:** `game.html:1402`
-- **Trigger:** `discardAny` (ej: "descarta las que quieras")
-- **Título:** `DESCARTAR`
-- **Subtítulo:** `Descarta las que quieras (0 o más)`
-- **Botones:** `DESCARTAR` | `DETENER`
-- **Estado:** ⏳ Pendiente
-
----
-
-#### SEL-03 — Descartar Variable (rival descarta más)
-- **Ubicación:** `game.html:1403`
-- **Trigger:** `discardVariable` (ej: Plaga 1)
-- **Título:** `DESCARTAR`
-- **Subtítulo:** `Descarta cartas — el rival descartará más`
-- **Botones:** `DESCARTAR` | `DETENER`
-- **Estado:** ⏳ Pendiente
-
----
-
-#### SEL-04 — Dar al Oponente
-- **Ubicación:** `game.html:1404`
-- **Trigger:** Efectos de dar cartas (ej: "da 1 carta al oponente")
-- **Título:** `DAR AL OPONENTE`
-- **Subtítulo:** `Elige {N} carta{s} para dar al oponente`
-- **Botón:** `ENTREGAR`
-- **Estado:** ⏳ Pendiente
-
----
-
-#### SEL-05 — Revelar Carta (desde mano)
-- **Ubicación:** `game.html:1405`
-- **Trigger:** Efectos de revelar (ej: Amor 4)
-- **Título:** `REVELAR CARTA`
-- **Subtítulo:** `Elige 1 carta para revelar al oponente`
-- **Botón:** `REVELAR`
-- **Estado:** ⏳ Pendiente
-
----
-
-#### SEL-06 — Jugar Carta (Diversidad 0)
-- **Ubicación:** `game.html:1406`
-- **Trigger:** Diversidad 0 al actualizar mano
-- **Título:** `JUGAR CARTA`
-- **Subtítulo:** `Elige 1 carta (no Diversidad) para jugar bocarriba`
-- **Botón:** `JUGAR`
-- **Estado:** ⏳ Pendiente
-
----
-
-### Field Select Overlay (`overlay-select` — campo)
-
-#### FLD-01 — Eliminar (campo)
-- **Ubicación:** `game.html:1507, 1581`, `showFieldSelectOverlay()`
-- **Trigger:** Efectos de eliminar del campo
-- **Título:** `ELIMINAR`
-- **Subtítulo:** `Elige {N} carta{s} {del oponente/tuyas}`
-- **Botón:** `ELIMINAR`
-- **Estado:** ⏳ Pendiente
-
----
-
-#### FLD-02 — Voltear (campo)
-- **Ubicación:** `game.html:1507, 1581`
-- **Trigger:** Efectos de voltear cartas del campo
-- **Título:** `VOLTEAR`
-- **Subtítulo:** `Elige {N} carta{s} {del oponente/tuyas}`
-- **Botón:** `VOLTEAR`
-- **Estado:** ⏳ Pendiente
-
----
-
-#### FLD-03 — Devolver a Mano
-- **Ubicación:** `game.html:1507, 1581`
-- **Trigger:** Efectos de devolver carta del campo a la mano
-- **Título:** `DEVOLVER A MANO`
-- **Subtítulo:** `Elige {N} carta{s} {del oponente/tuyas}`
-- **Botón:** `DEVOLVER`
-- **Estado:** ⏳ Pendiente
-
----
-
-#### FLD-04 — Mover Carta (Velocidad 2)
-- **Ubicación:** `game.html:1507, 1512`
-- **Trigger:** Velocidad 2 al compilar
-- **Título:** `MOVER CARTA`
-- **Subtítulo:** `Elige 1 carta para mover a otra línea`
-- **Botón:** `MOVER`
-- **Estado:** ⏳ Pendiente
-
----
-
-#### FLD-05 — Copiar Efecto (Espejo 1)
-- **Ubicación:** `game.html:1507, 1513`
-- **Trigger:** Espejo 1 al jugar
-- **Título:** `COPIAR EFECTO`
-- **Subtítulo:** `Elige 1 carta rival para copiar su efecto`
-- **Botón:** `COPIAR`
-- **Estado:** ⏳ Pendiente
-
----
-
-#### FLD-06 — Eliminar por Valor (Odio 3)
-- **Ubicación:** `game.html:1691-1692`, `showLineSelectOverlay()`
-- **Trigger:** Odio 3 al descubrirse
-- **Título:** `ELIMINAR POR VALOR`
-- **Subtítulo:** `Elige una línea — se eliminarán cartas con valor {X}-{Y}`
-- **Botón:** `ELIMINAR`
-- **Estado:** ⏳ Pendiente
-
----
-
-#### FLD-07 — Intercambiar Protocolos
-- **Ubicación:** `game.html:1621-1622, 1655`, `showRearrangeProtocolOverlay()`
-- **Trigger:** Reorganizar protocolos (Control Component o efecto)
-- **Título:** `INTERCAMBIAR PROTOCOLOS`
-- **Subtítulo:** `Elige 2 líneas para intercambiar`
-- **Pasos:** 
-  1. `Elige la primera línea`
-  2. `Primera: {línea} — elige la segunda`
-  3. `Listo para intercambiar`
-- **Botón:** `INTERCAMBIAR`
-- **Estado:** ⏳ Pendiente
-
----
-
-### Line Select Overlay (`overlay-select` — selección de líneas)
-
-#### LIN-01 — Seleccionar Línea (Odio 3)
-- **Ubicación:** `game.html:showLineSelectOverlay()`
-- **Trigger:** Odio 3 (misma carta que FLD-06)
-- **Título:** `ELIMINAR POR VALOR`
-- **Subtítulo:** `Elige una línea — se eliminarán cartas con valor {X}-{Y}`
-- **Botón:** `ELIMINAR`
-- **Nota:** Mismo efecto que FLD-06, diferente vista (líneas vs cartas)
-- **Estado:** ⏳ Pendiente
-
----
-
-### Reveal Modal (`reveal-modal`)
-
-#### REV-01 — Revelar Carta (modal)
-- **Ubicación:** `game.html:reveal-modal`, `showRevealModal()`
-- **Trigger:** Varios efectos (ej: carta revelada del mazo)
-- **Título:** `{nombre de la carta}`
-- **Subtítulo:** `Puedes descartar esta carta` / `Carta revelada`
-- **Botones:** `DESCARTAR` | `CERRAR`
-- **Estado:** ⏳ Pendiente
-
----
-
-## 📊 RESUMEN
-
-| Categoría | ID | Total | Completados |
-|-----------|-----|-------|-------------|
-| Confirm Dialog | CMD-xx | 3 | 1 ✅ |
-| Hand Select | SEL-xx | 6 | 0 |
-| Field Select | FLD-xx | 7 | 0 |
-| Line Select | LIN-xx | 1 | 0 |
-| Reveal Modal | REV-xx | 1 | 0 |
-| **TOTAL** | | **18** | **1** |
-
----
-
 ## IA
 
 - **Mejorar evaluación de efectos complejos** — La IA no evalúa correctamente jugadas que disparan cadenas de efectos (por ejemplo, cartas que encadenan robo, descarte o volteo). Impacta la calidad de decisión en niveles 4-5.
@@ -309,3 +99,30 @@ Listado completo de textos de modales/overlays para revisar y pulir. **Solo efec
 - **Guardado local** — Persistir estado de partida en `localStorage`.
 - **Historial de partidas** — Log de resultados anteriores.
 - **Log de eventos detallado** — Registro por turno de todas las jugadas.
+
+---
+
+## Bugs
+
+### Compilación y Control
+- [ ] **Al compilar, el compilador borra TODAS las cartas de la línea** (propias y del oponente). Actualmente cada jugador borra las suyas. Afecta a Odio 3: solo dispara cuando su propietario es quien borra.
+- [ ] **Diversidad 0 y Unidad 1 no son compilaciones.** Unidad 1 borra cartas pero no es una compilación → no interactúa con Guerra 2, Velocidad 2, ni activa el Control Component.
+- [ ] **Gravedad 0: las cartas jugadas en su línea aterrizan por debajo de ella**, no encima. La cola committed aplica igualmente.
+
+### Fases y Efectos
+- [ ] **Efectos Start/End solo se activan si estaban visibles al inicio de la fase.** Los que se revelan durante la fase no cuentan.
+- [ ] **Con múltiples efectos Start o End simultáneos, el jugador en turno elige el orden de ejecución.** Las condiciones se evalúan en el momento de procesar cada trigger (no al inicio de la fase).
+- [ ] **Velocidad 0: al activarse, bloquea el aterrizaje de la carta desplazada** hasta que Speed 0 resuelve su efecto. Actualmente aparece el mensaje pero el juego no continúa correctamente.
+
+### Palabras Clave
+- [ ] **Limpiar caché cuenta como descartar** — dispara efectos "After you discard" (Corrupción 2, Plaga 1...).
+- [ ] **Shift de una carta no activa su onPlay.** Excepción: si estaba cubierta y queda descubierta al llegar, sí activa su comando central.
+- [ ] **Voltear una carta cubierta NO activa su comando central** (el texto sigue oculto).
+- [ ] **Una línea puede tener valor negativo** (ej: Metal 0 sobre la pila rival). La lógica debe manejar valores negativos como estado válido.
+
+### Cartas Específicas
+- [ ] **Suerte 3: la carta descartada va al cementerio del oponente** (confirmar implementación — aclarado explícitamente por el diseñador).
+
+### Información
+- [ ] **Los cementerios son públicos** — cualquier jugador puede consultarlos en cualquier momento (implementar acceso en UI).
+
