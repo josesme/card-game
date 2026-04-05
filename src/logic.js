@@ -3474,6 +3474,13 @@ function startGameFromDraft() {
     gameState.ai.hand = [];
     gameState.ai.trash = [];
     gameState.ai.compiled = [];
+
+    // Limpiar data-scr-last en contadores para forzar re-animación con valores correctos
+    // (bfcache puede preservar atributos de sesiones anteriores con valores erróneos)
+    ['player-deck-count','player-trash-count','ai-deck-count','ai-trash-count','ai-hand-count','hand-count-badge'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.removeAttribute('data-scr-last');
+    });
     gameState.field = {
         izquierda: { player: [], ai: [], compiledBy: null },
         centro: { player: [], ai: [], compiledBy: null },
