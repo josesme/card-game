@@ -39,3 +39,6 @@ images-local/
 sounds/*.mp3
 sounds/*.wav
 sounds/*.flac
+docs/*-es.md
+docs/strategy-chat-es.md
+docs/*.pdf
