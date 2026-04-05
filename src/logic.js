@@ -685,14 +685,7 @@ function updateUI() {
     const playerTrashEl = document.getElementById('player-trash-count');
     const aiDeckEl = document.getElementById('ai-deck-count');
     const aiTrashEl = document.getElementById('ai-trash-count');
-    // Solo animar si el valor cambia — evita scramble visual en la primera llamada
-    const _s = (el, v) => {
-        const str = String(v);
-        if (!el) return;
-        if (el.innerText === str) return; // sin cambio: no animar
-        if (window.scrTxt) window.scrTxt(el, str, { duration: 1.0, chars: '0123456789' });
-        else el.innerText = str;
-    };
+    const _s = (el, v) => window.scrTxt ? window.scrTxt(el, String(v), { duration: 1.0, chars: '0123456789' }) : (el.innerText = v);
     if (playerDeckEl)  _s(playerDeckEl,  gameState.player.deck.length);
     if (playerTrashEl) _s(playerTrashEl, gameState.player.trash.length);
     if (aiDeckEl)      _s(aiDeckEl,      gameState.ai.deck.length);
@@ -708,22 +701,12 @@ function updateUI() {
     const aiHandCountEl = document.getElementById('ai-hand-count');
     if (aiHandCountEl) {
         const n = gameState.ai.hand.length;
-        const nStr = String(n);
-        if (aiHandCountEl.textContent !== nStr) {
-            if (window.scrTxt) window.scrTxt(aiHandCountEl, nStr, { duration: 1.0, chars: '0123456789' });
-            else aiHandCountEl.textContent = nStr;
-        }
+        window.scrTxt ? window.scrTxt(aiHandCountEl, String(n), { duration: 1.0, chars: '0123456789' }) : (aiHandCountEl.textContent = n);
         aiHandCountEl.style.color = n === 0 ? '#ef4444' : 'var(--ui-pink)';
     }
     // V2: update hand count badge
     const handBadge = document.getElementById('hand-count-badge');
-    if (handBadge) {
-        const hStr = String(gameState.player.hand.length);
-        if (handBadge.textContent !== hStr) {
-            if (window.scrTxt) window.scrTxt(handBadge, hStr, { duration: 1.0, chars: '0123456789' });
-            else handBadge.textContent = hStr;
-        }
-    }
+    if (handBadge) { window.scrTxt ? window.scrTxt(handBadge, String(gameState.player.hand.length), { duration: 1.0, chars: '0123456789' }) : (handBadge.textContent = gameState.player.hand.length); }
     
     // Attach events to player hand
     document.querySelectorAll('#player-hand .card').forEach((cardEl, index) => {
@@ -811,8 +794,8 @@ function updateUI() {
         // Try to update score display if it exists
         const pScoreEl = document.querySelector(`#proto-${line}-player .player-score`);
         const aiScoreEl = document.querySelector(`#proto-${line}-ai .ai-score`);
-        if (pScoreEl  && pScoreEl.innerText  !== String(pScore))  { window.scrTxt ? window.scrTxt(pScoreEl,  String(pScore),  { duration: 1.0, chars: '0123456789' }) : (pScoreEl.innerText  = pScore);  }
-        if (aiScoreEl && aiScoreEl.innerText !== String(aiScore)) { window.scrTxt ? window.scrTxt(aiScoreEl, String(aiScore), { duration: 1.0, chars: '0123456789' }) : (aiScoreEl.innerText = aiScore); }
+        if (pScoreEl)  { window.scrTxt ? window.scrTxt(pScoreEl,  String(pScore),  { duration: 1.0, chars: '0123456789' }) : (pScoreEl.innerText  = pScore);  }
+        if (aiScoreEl) { window.scrTxt ? window.scrTxt(aiScoreEl, String(aiScore), { duration: 1.0, chars: '0123456789' }) : (aiScoreEl.innerText = aiScore); }
 
         // Visual blocking indicators
         const lineEl = document.getElementById(`line-${line}`);
