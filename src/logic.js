@@ -325,12 +325,24 @@ function handleShiftTargetLine(destinationLine) {
 
     if (line === destinationLine) return; // Must move to a different line
 
+    // Determinar si la carta era la descubierta (top) antes de moverla
+    const wasTop = cardIdx === gameState.field[line][target].length - 1;
     const cardObj = gameState.field[line][target].splice(cardIdx, 1)[0];
     gameState.field[destinationLine][target].push(cardObj);
 
     ctx.selected.push(cardObj);
     if (ctx.selected.length >= ctx.count) {
-        // Si es Luz 2 completado, llamar a processAbilityEffect para continuar
+        // Activar el comando de la carta que queda expuesta:
+        // - Si la desplazada era la top → trigger en origen (carta de debajo queda descubierta)
+        // - Si era cubierta y está bocarriba → trigger en destino (la propia carta queda descubierta)
+        // Pattern idéntico al eliminate handler: triggerUncovered encola el efecto y processAbilityEffect
+        // sale pronto (effectContext activo); finishEffect/processAbilityEffect lo procesa después.
+        if (wasTop) {
+            triggerUncovered(line, target);
+        } else if (!cardObj.faceDown) {
+            triggerUncovered(destinationLine, target);
+        }
+
         if (ctx.luz2Complete) {
             gameState.effectContext = null;
             clearEffectHighlights();

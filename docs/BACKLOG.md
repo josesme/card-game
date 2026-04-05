@@ -116,7 +116,6 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 
 ### Palabras Clave
 - [ ] **Limpiar caché cuenta como descartar** — dispara efectos "After you discard" (Corrupción 2, Plaga 1...).
-- [ ] **Shift de una carta no activa su onPlay.** Excepción: si estaba cubierta y queda descubierta al llegar, sí activa su comando central.
 - [ ] **Voltear una carta cubierta NO activa su comando central** (el texto sigue oculto).
 - [ ] **Una línea puede tener valor negativo** (ej: Metal 0 sobre la pila rival). La lógica debe manejar valores negativos como estado válido.
 
