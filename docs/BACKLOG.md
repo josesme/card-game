@@ -108,23 +108,25 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 
 ## Bugs
 
+> Estimaciones: **Coste** = esfuerzo de implementación (Muy bajo / Bajo / Medio / Alto). **Valor** = impacto en experiencia de juego. Orden recomendado: Suerte 3 → Valor negativo → Cache como discard → Voltear cubierta → Gravedad 0 → Start simultáneos → Velocidad 0 → Diversidad/Unidad → Compilador borra todo → Cementerios UI.
+
 ### Compilación y Control
-- [ ] **Al compilar, el compilador borra TODAS las cartas de la línea** (propias y del oponente). Actualmente cada jugador borra las suyas. Afecta a Odio 3: solo dispara cuando su propietario es quien borra.
-- [ ] **Diversidad 0 y Unidad 1 no son compilaciones.** Unidad 1 borra cartas pero no es una compilación → no interactúa con Guerra 2, Velocidad 2, ni activa el Control Component.
-- [ ] **Gravedad 0: las cartas jugadas en su línea aterrizan por debajo de ella**, no encima. La cola committed aplica igualmente.
+- [ ] **Al compilar, el compilador borra TODAS las cartas de la línea** (propias y del oponente). Actualmente cada jugador borra las suyas. Afecta a Odio 3: solo dispara cuando su propietario es quien borra. `Coste: Alto` `Valor: Alto`
+- [ ] **Diversidad 0 y Unidad 1 no son compilaciones.** Unidad 1 borra cartas pero no es una compilación → no interactúa con Guerra 2, Velocidad 2, ni activa el Control Component. `Coste: Medio` `Valor: Medio`
+- [ ] **Gravedad 0: las cartas jugadas en su línea aterrizan por debajo de ella**, no encima. La cola committed aplica igualmente. `Coste: Medio` `Valor: Alto`
 
 ### Fases y Efectos
-- [ ] **Con múltiples efectos Start simultáneos, el jugador en turno elige el orden de ejecución.** Las condiciones se evalúan en el momento de procesar cada trigger (no al inicio de la fase).
-- [ ] **Velocidad 0: al activarse, bloquea el aterrizaje de la carta desplazada** hasta que Speed 0 resuelve su efecto. Actualmente aparece el mensaje pero el juego no continúa correctamente.
+- [ ] **Con múltiples efectos Start simultáneos, el jugador en turno elige el orden de ejecución.** Las condiciones se evalúan en el momento de procesar cada trigger (no al inicio de la fase). `Coste: Bajo` `Valor: Bajo`
+- [ ] **Velocidad 0: al activarse, bloquea el aterrizaje de la carta desplazada** hasta que Speed 0 resuelve su efecto. Actualmente aparece el mensaje pero el juego no continúa correctamente. `Coste: Medio` `Valor: Medio`
 
 ### Palabras Clave
-- [ ] **Limpiar caché cuenta como descartar** — dispara efectos "After you discard" (Corrupción 2, Plaga 1...).
-- [ ] **Voltear una carta cubierta NO activa su comando central** (el texto sigue oculto).
-- [ ] **Una línea puede tener valor negativo** (ej: Metal 0 sobre la pila rival). La lógica debe manejar valores negativos como estado válido.
+- [ ] **Limpiar caché cuenta como descartar** — dispara efectos "After you discard" (Corrupción 2, Plaga 1...). `Coste: Bajo` `Valor: Medio`
+- [ ] **Voltear una carta cubierta NO activa su comando central** (el texto sigue oculto). `Coste: Bajo` `Valor: Bajo`
+- [ ] **Una línea puede tener valor negativo** (ej: Metal 0 sobre la pila rival). La lógica debe manejar valores negativos como estado válido. `Coste: Muy bajo` `Valor: Bajo`
 
 ### Cartas Específicas
-- [ ] **Suerte 3: la carta descartada va al cementerio del oponente** (confirmar implementación — aclarado explícitamente por el diseñador).
+- [ ] **Suerte 3: la carta descartada va al cementerio del oponente** (confirmar implementación — aclarado explícitamente por el diseñador). `Coste: Muy bajo` `Valor: Medio`
 
 ### Información
-- [ ] **Los cementerios son públicos** — cualquier jugador puede consultarlos en cualquier momento (implementar acceso en UI).
+- [ ] **Los cementerios son públicos** — cualquier jugador puede consultarlos en cualquier momento (implementar acceso en UI). `Coste: Medio` `Valor: Medio`
 
