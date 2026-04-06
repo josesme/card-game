@@ -204,6 +204,25 @@ describe('onTurnStartEffects — colección de triggers', () => {
     expect(GS.pendingStartTriggers[0].card.nombre).toBe('Odio 3');
   });
 
+  test('Odio 3: eliminatedLastTurn.player sobrevive al turno intermedio de IA (snapshot por jugador)', () => {
+    // Simula: jugador eliminó carta durante su turno
+    GS.eliminatedSinceLastCheck = { player: true, ai: false };
+
+    // startTurn('ai') — solo snapshot/reset del jugador 'ai'; player NO se toca
+    GS.eliminatedLastTurn['ai'] = GS.eliminatedSinceLastCheck['ai']; // false
+    GS.eliminatedSinceLastCheck['ai'] = false;
+
+    // startTurn('player') — snapshot/reset del jugador 'player'; ahora captura el true
+    GS.eliminatedLastTurn['player'] = GS.eliminatedSinceLastCheck['player']; // true
+    GS.eliminatedSinceLastCheck['player'] = false;
+
+    // Odio 3 debe aparecer en el nuevo turno del jugador
+    GS.field.izquierda.player = [{ card: makeCard('Odio 3'), faceDown: false }];
+    ENGINE.onTurnStartEffects('player');
+    expect(GS.pendingStartTriggers).toHaveLength(1);
+    expect(GS.pendingStartTriggers[0].card.nombre).toBe('Odio 3');
+  });
+
   test('ignora cartas bocabajo', () => {
     GS.field.izquierda.player = [{ card: makeCard('Muerte 1'), faceDown: true }];
     ENGINE.onTurnStartEffects('player');

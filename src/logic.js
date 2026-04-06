@@ -1025,12 +1025,12 @@ function startTurn(who) {
     gameState.phase = 'start';
     gameState.ignoreEffectsLines = {};
     gameState.uncoveredThisTurn = new Set();
-    // Snapshot del flag de robo del turno anterior (para Espíritu 3), luego resetear
-    gameState.drawnLastTurn = { player: gameState.drawnSinceLastCheck.player, ai: gameState.drawnSinceLastCheck.ai };
-    gameState.drawnSinceLastCheck = { player: false, ai: false };
-    // Snapshot del flag de eliminación del turno anterior (para Odio 3), luego resetear
-    gameState.eliminatedLastTurn = { player: gameState.eliminatedSinceLastCheck.player, ai: gameState.eliminatedSinceLastCheck.ai };
-    gameState.eliminatedSinceLastCheck = { player: false, ai: false };
+    // Snapshot solo del jugador ACTUAL: captura lo que hizo en SU turno anterior.
+    // No tocar el flag del oponente — su snapshot se hará cuando arranque su propio turno.
+    gameState.drawnLastTurn[who] = gameState.drawnSinceLastCheck[who];
+    gameState.drawnSinceLastCheck[who] = false;
+    gameState.eliminatedLastTurn[who] = gameState.eliminatedSinceLastCheck[who];
+    gameState.eliminatedSinceLastCheck[who] = false;
     gameState.refreshedThisTurn = null;
     // Limpiar cartas reveladas que ya no están en la mano del jugador
     gameState.revealedPlayerCards = gameState.revealedPlayerCards.filter(
