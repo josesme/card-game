@@ -2120,6 +2120,9 @@ function finishEffect() {
     if (gameState.pendingEndTurnFor) {
         const who = gameState.pendingEndTurnFor;
         gameState.pendingEndTurnFor = null;
+        // Cache discard cuenta como descartar — disparar efectos reactivos (igual que el path de IA)
+        if (typeof onOpponentDiscardEffects === 'function') onOpponentDiscardEffects(who);
+        if (typeof onOwnDiscardEffects === 'function') onOwnDiscardEffects(who);
         continueEndTurn(who);
         return;
     }

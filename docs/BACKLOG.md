@@ -119,7 +119,6 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 - [ ] **Velocidad 0: al activarse, bloquea el aterrizaje de la carta desplazada** hasta que Speed 0 resuelve su efecto. Actualmente aparece el mensaje pero el juego no continúa correctamente. `Coste: Medio` `Valor: Medio`
 
 ### Palabras Clave
-- [ ] **Limpiar caché cuenta como descartar** — dispara efectos "After you discard" (Corrupción 2, Plaga 1...). `Coste: Bajo` `Valor: Medio`
 - [ ] **Voltear una carta cubierta NO activa su comando central** (el texto sigue oculto). `Coste: Bajo` `Valor: Bajo`
 - [ ] **Una línea puede tener valor negativo** (ej: Metal 0 sobre la pila rival). La lógica debe manejar valores negativos como estado válido. `Coste: Muy bajo` `Valor: Bajo`
 
