@@ -887,7 +887,7 @@ function calculateScore(state, line, target) {
     if (typeof applyPersistentValueModifiers === 'function') {
         const netModifier = applyPersistentValueModifiers(state, line, target);
         // netModifier positivo = reducción; negativo = bono al score
-        score = Math.max(0, score - netModifier);
+        score = score - netModifier;
     }
     
     return score;

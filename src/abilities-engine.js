@@ -5298,7 +5298,7 @@ function calculateScoreWithModifiers(state, line, player) {
 
   // Aplicar modificadores persistentes del oponente
   const reduction = applyPersistentValueModifiers(state, line, player);
-  score = Math.max(0, score - reduction); // No puede ser negativo
+  score = score - reduction;
 
   return score;
 }
