@@ -4,75 +4,6 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 
 ---
 
-## 🔨 REFACTOR: Efectos Atómicos + Composición (FUTURO/INVESTIGAR)
-
-**Estado:** ⏸️ En pausa - Necesita más investigación y consenso
-
-**Problema que intenta resolver:** Lógica de efectos está dispersa en múltiples archivos/funciones → cambios pequeños requieren tocar 5+ sitios.
-
-**Solución propuesta:** Efectos atómicos reutilizables + composición
-
-### Principios (teóricos):
-
-1. **Efectos atómicos (reutilizables)**
-   ```javascript
-   AtomicEffects = {
-       reveal: { setup(), execute() },
-       shift: { setup(), execute() },
-       flip: { setup(), execute() },
-       discard: { setup(), execute() },
-       choice: { setup(), execute() }
-   }
-   ```
-
-2. **Composición para cartas específicas**
-   ```javascript
-   // Luz 2 = Revelar + Elegir (Shift o Flip)
-   const luz2 = EffectBuilder.sequence(
-       AtomicEffects.reveal({ target: 'faceDown' }),
-       EffectBuilder.choice(
-           "SÍ = Cambiar línea · NO = Voltear",
-           () => AtomicEffects.shift(),
-           () => AtomicEffects.flip()
-       )
-   );
-   ```
-
-### Pros (potenciales):
-
-- ✅ 8 efectos atómicos cubrirían 180 cartas
-- ✅ Cambiar "reveal" = tocar 1 sitio (no 10)
-- ✅ Nuevas cartas = componer efectos (no crear código nuevo)
-- ✅ DRY + testeable + mantenible
-
-### Contras/riesgos (identificados):
-
-- ⚠️ **Cambio muy grande** - Requiere refactorizar TODO el sistema de efectos
-- ⚠️ **Riesgo de romper** - Efectos que funcionan podrían dejar de hacerlo
-- ⚠️ **Curva de aprendizaje** - Nuevo patrón a entender
-- ⚠️ **Over-engineering** - ¿Realmente necesario para este proyecto?
-- ⚠️ **Tiempo** - Semanas de trabajo vs. horas de beneficio
-
-### Alternativas a investigar:
-
-1. **Refactor incremental** - Empezar con 1 efecto (ej: Luz 2) y ver si mejora
-2. **Patrones más simples** - ¿Bastaría con mejor documentación + convenciones?
-3. **Mantener estado actual** - ¿El coste/beneficio realmente vale la pena?
-
-### Decisiones pendientes:
-
-- [ ] ¿Realmente necesitamos este refactor?
-- [ ] ¿Hay otros enfoques más simples?
-- [ ] ¿Podemos hacer un MVP con 1-2 efectos para probar?
-- [ ] ¿Cuál es el ROI real?
-
-### Archivos existentes (para referencia):
-
-- `src/card-effects.js` — Prototipo de efectos atómicos (NO USADO EN PRODUCCIÓN)
-
----
-
----
 
 ## IA
 
@@ -122,6 +53,5 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 - [ ] **Los cementerios son públicos** — cualquier jugador puede consultarlos en cualquier momento (implementar acceso en UI). `Coste: Medio` `Valor: Medio`
 
 
-- Muerte 1 no deja moverla cuando está bocabajo, la excepción debería ser exclusiva para cuando está bocarriba
-- Al jugar Psique 2, no me ha dado opcion de reorganizar protocolos del rival
-- Psique 4 no deja elegir qué carta devolver, la carta a devolver la elige quien juega la carta
+- [ ] **Psique 2 no ofrece reorganizar protocolos del rival** — Al jugar Psique 2, no aparece la opción de reorganizar. `Coste: Bajo` `Valor: Bajo`
+- [ ] **Psique 4 no deja elegir qué carta devolver** — La carta a devolver la elige quien juega la carta, debería elegirla el dueño. `Coste: Bajo` `Valor: Bajo`
