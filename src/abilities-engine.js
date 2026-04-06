@@ -5054,14 +5054,9 @@ function processNextStartTrigger(who) {
     const txt = (c.h_final && c.h_final.includes('Inicial:')) ? c.h_final
               : (c.h_inicio && c.h_inicio.includes('Inicial:')) ? c.h_inicio
               : (c.h_inicio || c.h_final || '');
-    return `\n  - ${c.nombre}${txt ? ': ' + txt : ''}`;
+    return `<br>&nbsp;&nbsp;- ${c.nombre}${txt ? ': ' + txt : ''}`;
   }).join('');
-  const fullMsg = 'Elige qué efecto Inicio activar primero:' + bullets;
-  if (window.scrTxt) {
-    window.scrTxt(confirmMsg, fullMsg, { duration: 0.8 });
-  } else {
-    confirmMsg.textContent = fullMsg;
-  }
+  confirmMsg.innerHTML = 'Elige qué efecto Inicio activar primero:' + bullets;
 
   actionsDiv.innerHTML = gameState.pendingStartTriggers
     .map((t, i) => `<button class="ui-btn" data-idx="${i}">${t.card.nombre}</button>`)
@@ -5154,14 +5149,9 @@ function processNextEndTrigger(who) {
     const txt = (c.h_final && c.h_final.includes('Final:')) ? c.h_final
               : (c.h_inicio && c.h_inicio.includes('Final:')) ? c.h_inicio
               : (c.h_final || c.h_inicio || '');
-    return `\n  - ${c.nombre}${txt ? ': ' + txt : ''}`;
+    return `<br>&nbsp;&nbsp;- ${c.nombre}${txt ? ': ' + txt : ''}`;
   }).join('');
-  const fullMsg = 'Elige qué efecto Final activar primero:' + bullets;
-  if (window.scrTxt) {
-    window.scrTxt(confirmMsg, fullMsg, { duration: 0.8 });
-  } else {
-    confirmMsg.textContent = fullMsg;
-  }
+  confirmMsg.innerHTML = 'Elige qué efecto Final activar primero:' + bullets;
 
   actionsDiv.innerHTML = gameState.pendingEndTriggers
     .map((t, i) => `<button class="ui-btn" data-idx="${i}">${t.card.nombre}</button>`)
