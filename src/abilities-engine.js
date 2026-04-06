@@ -5049,23 +5049,22 @@ function processNextStartTrigger(who) {
   }
 
   const actionsDiv = confirmArea.querySelector('.effect-actions');
+  const bullets = gameState.pendingStartTriggers.map(t => {
+    const c = t.card;
+    const txt = (c.h_final && c.h_final.includes('Inicial:')) ? c.h_final
+              : (c.h_inicio && c.h_inicio.includes('Inicial:')) ? c.h_inicio
+              : (c.h_inicio || c.h_final || '');
+    return `\n  - ${c.nombre}${txt ? ': ' + txt : ''}`;
+  }).join('');
+  const fullMsg = 'Elige qué efecto Inicio activar primero:' + bullets;
   if (window.scrTxt) {
-    window.scrTxt(confirmMsg, 'Elige qué efecto Inicio activar primero:', { duration: 0.8 });
+    window.scrTxt(confirmMsg, fullMsg, { duration: 0.8 });
   } else {
-    confirmMsg.textContent = 'Elige qué efecto Inicio activar primero:';
+    confirmMsg.textContent = fullMsg;
   }
 
   actionsDiv.innerHTML = gameState.pendingStartTriggers
-    .map((t, i) => {
-      const c = t.card;
-      const txt = (c.h_final && c.h_final.includes('Inicial:')) ? c.h_final
-                : (c.h_inicio && c.h_inicio.includes('Inicial:')) ? c.h_inicio
-                : (c.h_inicio || c.h_final || '');
-      return `<div style="display:flex;flex-direction:column;gap:4px;width:100%">
-        ${txt ? `<span style="padding:0 4px;line-height:1.3">▸ ${txt}</span>` : ''}
-        <button class="ui-btn" data-idx="${i}">${c.nombre}</button>
-      </div>`;
-    })
+    .map((t, i) => `<button class="ui-btn" data-idx="${i}">${t.card.nombre}</button>`)
     .join('');
 
   confirmArea.classList.remove('hidden');
@@ -5150,23 +5149,22 @@ function processNextEndTrigger(who) {
   }
 
   const actionsDiv = confirmArea.querySelector('.effect-actions');
+  const bullets = gameState.pendingEndTriggers.map(t => {
+    const c = t.card;
+    const txt = (c.h_final && c.h_final.includes('Final:')) ? c.h_final
+              : (c.h_inicio && c.h_inicio.includes('Final:')) ? c.h_inicio
+              : (c.h_final || c.h_inicio || '');
+    return `\n  - ${c.nombre}${txt ? ': ' + txt : ''}`;
+  }).join('');
+  const fullMsg = 'Elige qué efecto Final activar primero:' + bullets;
   if (window.scrTxt) {
-    window.scrTxt(confirmMsg, 'Elige qué efecto Final activar primero:', { duration: 0.8 });
+    window.scrTxt(confirmMsg, fullMsg, { duration: 0.8 });
   } else {
-    confirmMsg.textContent = 'Elige qué efecto Final activar primero:';
+    confirmMsg.textContent = fullMsg;
   }
 
   actionsDiv.innerHTML = gameState.pendingEndTriggers
-    .map((t, i) => {
-      const c = t.card;
-      const txt = (c.h_final && c.h_final.includes('Final:')) ? c.h_final
-                : (c.h_inicio && c.h_inicio.includes('Final:')) ? c.h_inicio
-                : (c.h_final || c.h_inicio || '');
-      return `<div style="display:flex;flex-direction:column;gap:4px;width:100%">
-        ${txt ? `<span style="padding:0 4px;line-height:1.3">▸ ${txt}</span>` : ''}
-        <button class="ui-btn" data-idx="${i}">${c.nombre}</button>
-      </div>`;
-    })
+    .map((t, i) => `<button class="ui-btn" data-idx="${i}">${t.card.nombre}</button>`)
     .join('');
 
   confirmArea.classList.remove('hidden');
