@@ -1250,8 +1250,10 @@ function showConfirmDialog(message, onYes, onNo, yesText, noText) {
     
     if (!confirmArea || !confirmMsg || !actionsDiv) return;
     
-    // Clear any previous HTML (e.g. bullet lists from trigger-ordering modal) before setting new content
+    // Clear any previous HTML (e.g. bullet lists from trigger-ordering modal) before setting new content.
+    // Also reset data-scr-last so scrTxt doesn't skip animation thinking the text hasn't changed.
     confirmMsg.innerHTML = '';
+    confirmMsg.removeAttribute('data-scr-last');
     // Set message with scramble effect if available
     if (window.scrTxt) {
         window.scrTxt(confirmMsg, message, { duration: 1.0 });
