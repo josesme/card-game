@@ -1045,9 +1045,11 @@ function startTurn(who) {
     }
     if (gameState.pendingStartTriggers && gameState.pendingStartTriggers.length > 0) {
         gameState.pendingStartTurnWho = who;
+        if (typeof processNextStartTrigger === 'function') processNextStartTrigger(who);
+    } else {
+        // Sin efectos Start, avanzar directamente
+        if (typeof processAbilityEffect === 'function') processAbilityEffect();
     }
-    // Si no hubo efectos (cola vacía), avanzar manualmente
-    if (typeof processAbilityEffect === 'function') processAbilityEffect();
 }
 
 function resumeControlAction(action, who) {

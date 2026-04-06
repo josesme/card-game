@@ -5024,7 +5024,8 @@ function processNextStartTrigger(who) {
   if (!gameState.pendingStartTriggers || gameState.pendingStartTriggers.length === 0) {
     gameState.processingStartTriggers = false;
     gameState.pendingStartTurnWho = null;
-    return; // continúa en processAbilityEffect → pendingCheckCompile
+    if (typeof processAbilityEffect === 'function') processAbilityEffect(); // → pendingCheckCompile
+    return;
   }
 
   gameState.processingStartTriggers = true;
@@ -5461,6 +5462,8 @@ if (typeof window !== 'undefined') {
   window.onForcedDiscardEffects = onForcedDiscardEffects;
   window.onOwnDiscardEffects = onOwnDiscardEffects;
   window.applyReturnToHand = applyReturnToHand;
+  window.processNextStartTrigger = processNextStartTrigger;
+  window.processNextEndTrigger = processNextEndTrigger;
 }
 
 /**
