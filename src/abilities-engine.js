@@ -5057,8 +5057,8 @@ function processNextStartTrigger(who) {
 
   actionsDiv.innerHTML = gameState.pendingStartTriggers
     .map((t, i) => `<div style="display:flex;flex-direction:column;gap:4px;width:100%">
+      ${t.card.h_inicio ? `<span style="padding:0 4px;line-height:1.3">▸ ${t.card.h_inicio}</span>` : ''}
       <button class="ui-btn" data-idx="${i}">${t.card.nombre}</button>
-      ${t.card.h_inicio ? `<span style="font-size:9px;color:#aaa;padding:0 4px;line-height:1.3">▸ ${t.card.h_inicio}</span>` : ''}
     </div>`)
     .join('');
 
@@ -5152,8 +5152,8 @@ function processNextEndTrigger(who) {
 
   actionsDiv.innerHTML = gameState.pendingEndTriggers
     .map((t, i) => `<div style="display:flex;flex-direction:column;gap:4px;width:100%">
+      ${t.card.h_final ? `<span style="padding:0 4px;line-height:1.3">▸ ${t.card.h_final}</span>` : ''}
       <button class="ui-btn" data-idx="${i}">${t.card.nombre}</button>
-      ${t.card.h_final ? `<span style="font-size:9px;color:#aaa;padding:0 4px;line-height:1.3">▸ ${t.card.h_final}</span>` : ''}
     </div>`)
     .join('');
 
