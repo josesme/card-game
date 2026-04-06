@@ -123,9 +123,6 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 - [ ] **Voltear una carta cubierta NO activa su comando central** (el texto sigue oculto). `Coste: Bajo` `Valor: Bajo`
 - [ ] **Una línea puede tener valor negativo** (ej: Metal 0 sobre la pila rival). La lógica debe manejar valores negativos como estado válido. `Coste: Muy bajo` `Valor: Bajo`
 
-### Cartas Específicas
-- [ ] **Suerte 3: la carta descartada va al cementerio del oponente** (confirmar implementación — aclarado explícitamente por el diseñador). `Coste: Muy bajo` `Valor: Medio`
-
 ### Información
 - [ ] **Los cementerios son públicos** — cualquier jugador puede consultarlos en cualquier momento (implementar acceso en UI). `Coste: Medio` `Valor: Medio`
 
