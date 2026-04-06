@@ -72,6 +72,13 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 
 ---
 
+## Deuda Técnica
+
+- [ ] **Tests de integración logic.js + abilities-engine.js** — Los tests actuales cargan solo un archivo a la vez; los bugs que surgen de la interacción entre los dos motores no se detectan automáticamente. `Coste: Medio` `Valor: Alto`
+  > **Cuándo atacarlo:** cuando detectes una clase recurrente de bugs que los tests no pillan y que impliquen que un cambio en `logic.js` rompe algo en `abilities-engine.js` (o viceversa) sin aviso. Un ejemplo sería si `startTurn` se rompe de una manera que el test unitario del snapshot no simula. No hacerlo antes — el coste es infraestructura, no corrección de bug inmediato.
+
+---
+
 ## IA
 
 - **Mejorar evaluación de efectos complejos** — La IA no evalúa correctamente jugadas que disparan cadenas de efectos (por ejemplo, cartas que encadenan robo, descarte o volteo). Impacta la calidad de decisión en niveles 4-5.
