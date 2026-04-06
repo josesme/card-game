@@ -47,12 +47,22 @@ let gameState = {
     player: {
         deck: [], trash: [], hand: [],
         protocols: JSON.parse(sessionStorage.getItem('playerProtocols') || '["Espíritu", "Muerte", "Fuego"]'),
-        compiled: []
+        compiled: [],
+        discardedSinceLastCheck: false,
+        drawnSinceLastCheck: false,
+        drawnLastTurn: false,
+        eliminatedSinceLastCheck: false,
+        eliminatedLastTurn: false,
     },
     ai: {
         deck: [], trash: [], hand: [],
         protocols: JSON.parse(sessionStorage.getItem('aiProtocols') || '["Vida", "Luz", "Oscuridad"]'),
-        compiled: []
+        compiled: [],
+        discardedSinceLastCheck: false,
+        drawnSinceLastCheck: false,
+        drawnLastTurn: false,
+        eliminatedSinceLastCheck: false,
+        eliminatedLastTurn: false,
     },
     field: {
         izquierda: { player: [], ai: [], compiledBy: null },
@@ -74,11 +84,6 @@ let gameState = {
     pendingEndTurnFor: null,    // set when endTurn is waiting for interactive discard
     pendingTurnEnd: null,       // set when finalizePlay is waiting for effects to resolve
     pendingCompileShift: null,  // Velocidad 2: card to move after compile
-    discardedSinceLastCheck: { player: false, ai: false },  // flag consumido por Plaga 1 al robar
-    drawnSinceLastCheck: { player: false, ai: false },      // flag: robó cartas este turno
-    drawnLastTurn: { player: false, ai: false },            // snapshot al inicio de turno (para Espíritu 3)
-    eliminatedSinceLastCheck: { player: false, ai: false }, // flag: eliminó cartas este turno
-    eliminatedLastTurn: { player: false, ai: false },       // snapshot al inicio de turno (para Odio 3)
     uncoveredThisTurn: new Set(),                           // IDs de cartas ya activadas por onUncovered este turno
     pendingLanding: null,                                   // carta en commit queue: aterriza tras resolver onCover
     refreshedThisTurn: null,                                // quién usó Refresh este turno (para Velocidad 1)
@@ -1027,10 +1032,10 @@ function startTurn(who) {
     gameState.uncoveredThisTurn = new Set();
     // Snapshot solo del jugador ACTUAL: captura lo que hizo en SU turno anterior.
     // No tocar el flag del oponente — su snapshot se hará cuando arranque su propio turno.
-    gameState.drawnLastTurn[who] = gameState.drawnSinceLastCheck[who];
-    gameState.drawnSinceLastCheck[who] = false;
-    gameState.eliminatedLastTurn[who] = gameState.eliminatedSinceLastCheck[who];
-    gameState.eliminatedSinceLastCheck[who] = false;
+    gameState[who].drawnLastTurn = gameState[who].drawnSinceLastCheck;
+    gameState[who].drawnSinceLastCheck = false;
+    gameState[who].eliminatedLastTurn = gameState[who].eliminatedSinceLastCheck;
+    gameState[who].eliminatedSinceLastCheck = false;
     gameState.refreshedThisTurn = null;
     // Limpiar cartas reveladas que ya no están en la mano del jugador
     gameState.revealedPlayerCards = gameState.revealedPlayerCards.filter(
@@ -1741,7 +1746,7 @@ function handleDiscardChoice(handIndex) {
         gameState._discardToOpponentTrash = false;
     } else {
         gameState.player.trash.push(card);
-        gameState.discardedSinceLastCheck.player = true;
+        gameState.player.discardedSinceLastCheck = true;
     }
     ctx.selected.push(card);
 
@@ -1827,7 +1832,7 @@ function handleFieldCardClick(line, target, cardIdx) {
         const _doElim = () => {
             gameState.field[line][target].splice(cardIdx, 1);
             gameState[target].trash.push(cardObj.card);
-            gameState.eliminatedSinceLastCheck[gameState.turn] = true;
+            gameState[gameState.turn].eliminatedSinceLastCheck = true;
             ctx.selected.push(cardObj);
             // Odio 2 tie-break: if the chosen card is NOT Odio 2 itself, queue opponent phase
             if (ctx._checkSuicide) {
@@ -2259,7 +2264,7 @@ function resolveEffectAI(type, target, count, opts = {}) {
                 if (window.animCardEliminate) window.animCardEliminate(cardObj.card.id, null);
                 gameState.field[line][actualTarget].pop();
                 gameState[actualTarget].trash.push(cardObj.card);
-                gameState.eliminatedSinceLastCheck[gameState.turn] = true;
+                gameState[gameState.turn].eliminatedSinceLastCheck = true;
                 triggerUncovered(line, actualTarget);
             }
         }
@@ -2433,7 +2438,7 @@ function draw(target, count) {
         if (drawCard(target)) drawn++;
     }
     if (drawn > 0) {
-        gameState.drawnSinceLastCheck[target] = true;
+        gameState[target].drawnSinceLastCheck = true;
         updateStatus(`${target === 'player' ? 'Robas' : 'IA roba'} ${drawn} carta${drawn !== 1 ? 's' : ''}`);
         if (typeof onOpponentDrawEffects === 'function') onOpponentDrawEffects(target);
     } else if (count > 0) {
@@ -2449,7 +2454,7 @@ function discard(target, count) {
             const idx = target === 'ai' ? aiLowestValueCardIdx('ai') : Math.floor(Math.random() * gameState[target].hand.length);
             const card = gameState[target].hand.splice(idx, 1)[0];
             gameState[target].trash.push(card);
-            gameState.discardedSinceLastCheck[target] = true;
+            gameState[target].discardedSinceLastCheck = true;
             discarded++;
         }
     }
@@ -3051,7 +3056,7 @@ function endTurn(who) {
             // AI discards randomly
             while(gameState.ai.hand.length > 5) {
                 gameState.ai.trash.push(gameState.ai.hand.pop());
-                gameState.discardedSinceLastCheck.ai = true;
+                gameState.ai.discardedSinceLastCheck = true;
             }
             // I-03: cache discard fires reactive discard effects
             if (typeof onOpponentDiscardEffects === 'function') onOpponentDiscardEffects('ai');

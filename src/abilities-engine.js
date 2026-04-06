@@ -1326,8 +1326,8 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     case 'draw': {
       if (actionDef.condition === 'opponentDiscardedLastTurn') {
         const opp = targetPlayer === 'player' ? 'ai' : 'player';
-        if (!gameState.discardedSinceLastCheck[opp]) { processAbilityEffect(); break; }
-        gameState.discardedSinceLastCheck[opp] = false; // consumir el flag
+        if (!gameState[opp].discardedSinceLastCheck) { processAbilityEffect(); break; }
+        gameState[opp].discardedSinceLastCheck = false; // consumir el flag
       }
       draw(resolvedTarget, count || 1);
       updateUI();
@@ -1600,7 +1600,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
 
     case 'drawIfEliminatedLastTurn': {
       // Odio 3: roba 1 carta si eliminaste cartas en el turno anterior
-      if (!gameState.eliminatedLastTurn?.[targetPlayer]) { processAbilityEffect(); break; }
+      if (!gameState[targetPlayer]?.eliminatedLastTurn) { processAbilityEffect(); break; }
       drawCard(targetPlayer);
       if (typeof onOpponentDrawEffects === 'function') onOpponentDrawEffects(targetPlayer);
       processAbilityEffect();
@@ -1613,7 +1613,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       const selfLine = gameState.currentEffectLine;
       if (!selfLine) { processAbilityEffect(); break; }
       if (actionDef.condition === 'drawnSinceLastCheck') {
-        if (!gameState.drawnLastTurn?.[targetPlayer]) { processAbilityEffect(); break; }
+        if (!gameState[targetPlayer]?.drawnLastTurn) { processAbilityEffect(); break; }
       }
       if (targetPlayer === 'player') {
         _confirmDialog('mayShiftSelf',
@@ -2370,7 +2370,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         const doAutoElim = () => {
           gameState.field[chosen.line][phasePlayer].splice(chosen.idx, 1);
           gameState[phasePlayer].trash.push(chosen.card.card);
-          gameState.eliminatedSinceLastCheck[gameState.turn] = true;
+          gameState[gameState.turn].eliminatedSinceLastCheck = true;
           updateStatus(`${triggerCardName} elimina a ${chosen.card.card.nombre} (${label})`);
           if (typeof triggerUncovered === 'function') triggerUncovered(chosen.line, phasePlayer);
           if (!isOppOnly) {
@@ -5002,15 +5002,15 @@ function canTriggerNow(card, actions, line, player) {
   // Condiciones declaradas en la definición de la acción
   switch (first.condition) {
     case 'drawnSinceLastCheck':
-      return !!gameState.drawnLastTurn?.[player];
+      return !!gameState[player]?.drawnLastTurn;
     case 'opponentDiscardedLastTurn':
-      return !!gameState.discardedSinceLastCheck?.[opp];
+      return !!gameState[opp]?.discardedSinceLastCheck;
   }
 
   // Condiciones implícitas en el nombre de la acción
   switch (first.action) {
     case 'drawIfEliminatedLastTurn':
-      return !!gameState.eliminatedLastTurn?.[player];
+      return !!gameState[player]?.eliminatedLastTurn;
     case 'deleteSelfIfCoveredAndWarned': {
       const stack = gameState.field[line]?.[player] || [];
       return stack.some(co => co.card.id === card.id && co.coveredWarning);

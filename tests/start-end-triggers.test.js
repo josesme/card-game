@@ -29,8 +29,8 @@ function makeCard(nombre, valor = 1) {
 
 function makeGameState() {
   return {
-    player: { hand: [], deck: Array.from({ length: 10 }, (_, i) => makeCard(`dummy-${i}`)), trash: [], protocols: [] },
-    ai:     { hand: [], deck: Array.from({ length: 10 }, (_, i) => makeCard(`dummy-ai-${i}`)), trash: [], protocols: [] },
+    player: { hand: [], deck: Array.from({ length: 10 }, (_, i) => makeCard(`dummy-${i}`)), trash: [], protocols: [], drawnSinceLastCheck: false, discardedSinceLastCheck: false, drawnLastTurn: false, eliminatedSinceLastCheck: false, eliminatedLastTurn: false },
+    ai:     { hand: [], deck: Array.from({ length: 10 }, (_, i) => makeCard(`dummy-ai-${i}`)), trash: [], protocols: [], drawnSinceLastCheck: false, discardedSinceLastCheck: false, drawnLastTurn: false, eliminatedSinceLastCheck: false, eliminatedLastTurn: false },
     field: makeEmptyField(),
     effectQueue: [],
     effectContext: null,
@@ -47,9 +47,6 @@ function makeGameState() {
     pendingStartTurn: null,
     pendingTurnEnd: null,
     pendingLanding: null,
-    drawnSinceLastCheck: { player: false, ai: false },
-    discardedSinceLastCheck: { player: false, ai: false },
-    eliminatedLastTurn: { player: false, ai: false },
     uncoveredThisTurn: new Set(),
     ignoreEffectsLines: {},
     _inOpponentDrawEffects: false,
@@ -140,9 +137,11 @@ function resetGS() {
   GS.pendingTurnEnd = null;
   GS.pendingLanding = null;
   GS.currentEffectLine = null;
-  GS.drawnSinceLastCheck = { player: false, ai: false };
-  GS.eliminatedLastTurn = { player: false, ai: false };
-  GS.discardedSinceLastCheck = { player: false, ai: false };
+  GS.player.drawnSinceLastCheck = false; GS.ai.drawnSinceLastCheck = false;
+  GS.player.eliminatedLastTurn = false;  GS.ai.eliminatedLastTurn = false;
+  GS.player.eliminatedSinceLastCheck = false; GS.ai.eliminatedSinceLastCheck = false;
+  GS.player.discardedSinceLastCheck = false; GS.ai.discardedSinceLastCheck = false;
+  GS.player.drawnLastTurn = false; GS.ai.drawnLastTurn = false;
   GS.uncoveredThisTurn = new Set();
   GS.ignoreEffectsLines = {};
   GS._inOpponentDrawEffects = false;
@@ -190,14 +189,14 @@ describe('onTurnStartEffects — colección de triggers', () => {
   });
 
   test('Odio 3: no se recoge si eliminatedLastTurn es false', () => {
-    GS.eliminatedLastTurn = { player: false, ai: false };
+    GS.player.eliminatedLastTurn = false;
     GS.field.izquierda.player = [{ card: makeCard('Odio 3'), faceDown: false }];
     ENGINE.onTurnStartEffects('player');
     expect(GS.pendingStartTriggers).toHaveLength(0);
   });
 
   test('Odio 3: se recoge si eliminatedLastTurn es true', () => {
-    GS.eliminatedLastTurn = { player: true, ai: false };
+    GS.player.eliminatedLastTurn = true;
     GS.field.izquierda.player = [{ card: makeCard('Odio 3'), faceDown: false }];
     ENGINE.onTurnStartEffects('player');
     expect(GS.pendingStartTriggers).toHaveLength(1);
@@ -206,15 +205,16 @@ describe('onTurnStartEffects — colección de triggers', () => {
 
   test('Odio 3: eliminatedLastTurn.player sobrevive al turno intermedio de IA (snapshot por jugador)', () => {
     // Simula: jugador eliminó carta durante su turno
-    GS.eliminatedSinceLastCheck = { player: true, ai: false };
+    GS.player.eliminatedSinceLastCheck = true;
+    GS.ai.eliminatedSinceLastCheck = false;
 
     // startTurn('ai') — solo snapshot/reset del jugador 'ai'; player NO se toca
-    GS.eliminatedLastTurn['ai'] = GS.eliminatedSinceLastCheck['ai']; // false
-    GS.eliminatedSinceLastCheck['ai'] = false;
+    GS.ai.eliminatedLastTurn = GS.ai.eliminatedSinceLastCheck; // false
+    GS.ai.eliminatedSinceLastCheck = false;
 
     // startTurn('player') — snapshot/reset del jugador 'player'; ahora captura el true
-    GS.eliminatedLastTurn['player'] = GS.eliminatedSinceLastCheck['player']; // true
-    GS.eliminatedSinceLastCheck['player'] = false;
+    GS.player.eliminatedLastTurn = GS.player.eliminatedSinceLastCheck; // true
+    GS.player.eliminatedSinceLastCheck = false;
 
     // Odio 3 debe aparecer en el nuevo turno del jugador
     GS.field.izquierda.player = [{ card: makeCard('Odio 3'), faceDown: false }];
@@ -279,7 +279,7 @@ describe('processNextStartTrigger — comportamiento', () => {
   test('con 1 trigger: currentEffectLine se establece con la línea del trigger', () => {
     GS.turn = 'ai';
     const card = makeCard('Odio 3'); // onTurnStart condicional: si condición false, no hace nada interactivo
-    GS.eliminatedLastTurn = { player: false, ai: false }; // condición false → efecto se salta
+    GS.ai.eliminatedLastTurn = false; // condición false → efecto se salta
     GS.field.centro.ai = [{ card, faceDown: false }];
     GS.pendingStartTriggers = [{ card, line: 'centro', player: 'ai' }];
     GS.pendingStartTurnWho = 'ai';
@@ -293,7 +293,7 @@ describe('processNextStartTrigger — comportamiento', () => {
     // Odio 3: condición false → salta sin interacción, procesa rapidísimo
     const card1 = makeCard('Odio 3');
     const card2 = makeCard('Odio 3');
-    GS.eliminatedLastTurn = { player: false, ai: false };
+    GS.ai.eliminatedLastTurn = false;
     GS.field.izquierda.ai = [{ card: card1, faceDown: false }];
     GS.field.centro.ai    = [{ card: card2, faceDown: false }];
     GS.pendingStartTriggers = [

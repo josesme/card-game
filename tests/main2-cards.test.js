@@ -20,15 +20,13 @@ function makeCard(nombre, valor = 1) {
 
 function makeGameState() {
   return {
-    player: { hand: [], deck: [], trash: [] },
-    ai: { hand: [], deck: [], trash: [] },
+    player: { hand: [], deck: [], trash: [], drawnSinceLastCheck: false, discardedSinceLastCheck: false, drawnLastTurn: false, eliminatedSinceLastCheck: false, eliminatedLastTurn: false },
+    ai:     { hand: [], deck: [], trash: [], drawnSinceLastCheck: false, discardedSinceLastCheck: false, drawnLastTurn: false, eliminatedSinceLastCheck: false, eliminatedLastTurn: false },
     field: makeEmptyField(),
     effectQueue: [],
     effectContext: null,
     turn: 'player',
     currentEffectLine: null,
-    drawnSinceLastCheck: { player: false, ai: false },
-    discardedSinceLastCheck: { player: false, ai: false },
     _inOpponentDrawEffects: false,
     _inOpponentDiscardEffects: false,
   };
@@ -57,14 +55,14 @@ function getEngine() {
   });
   global.draw = jest.fn((target, count) => {
     for (let i = 0; i < count; i++) global.drawCard(target);
-    if (count > 0) GS.drawnSinceLastCheck[target] = true;
+    if (count > 0) GS[target].drawnSinceLastCheck = true;
   });
   global.discard = jest.fn((target, count) => {
     let n = 0;
     for (let i = 0; i < count; i++) {
       if (GS[target].hand.length > 0) { GS[target].trash.push(GS[target].hand.pop()); n++; }
     }
-    if (n > 0) GS.discardedSinceLastCheck[target] = true;
+    if (n > 0) GS[target].discardedSinceLastCheck = true;
   });
   global.startEffect = jest.fn();
   global.highlightSelectableLines = jest.fn();

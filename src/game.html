@@ -1864,7 +1864,7 @@ function processFieldSelection(type, selectedSet, eligible, ctx) {
         if (type === 'eliminate') {
             stack.splice(curIdx, 1);
             gameState[player].trash.push(cardObj.card);
-            gameState.eliminatedSinceLastCheck[gameState.turn] = true;
+            gameState[gameState.turn].eliminatedSinceLastCheck = true;
             ctx.selected.push(cardObj);
             // Odio 2 tie-break: if the chosen card is NOT Odio 2 itself, queue opponent phase
             if (ctx._checkSuicide) {
@@ -1963,7 +1963,7 @@ function processHandSelection(type, selectedSet, ctx) {
             gameState._discardToOpponentTrash = false;
         } else {
             gameState.player.trash.push(card);
-            gameState.discardedSinceLastCheck.player = true;
+            gameState.player.discardedSinceLastCheck = true;
         }
         ctx.selected.push(card);
     });
