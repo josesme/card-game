@@ -83,6 +83,22 @@ Lo que NO es refactoring proactivo (no hacerlo sin pedirlo):
 - Reorganización de archivos o módulos.
 - Refactors grandes (>50 líneas cambiadas) que no tienen tests de cobertura suficiente.
 
+### Señalar oportunidades al cerrar una tarea
+
+Al terminar cualquier tarea, si durante el trabajo se ha detectado una oportunidad de mejora estructural que **no se ha aplicado** (porque excede el alcance del cambio actual), incluirla en la respuesta final con este formato exacto:
+
+> **💡 Oportunidad detectada:** [descripción en 1-2 líneas] — Coste estimado: Bajo/Medio. Beneficio: [qué clase de bugs evita o qué simplifica].
+
+Criterio para incluirla: la oportunidad debe cumplir al menos uno de estos:
+- Evita una clase de bug que ya ha ocurrido en este proyecto.
+- Elimina un patrón que requiere recordar hacer algo en múltiples sitios.
+- Reduce el coste de cambios futuros en un área que se toca frecuentemente.
+
+Criterio para NO incluirla:
+- Es solo estilo o legibilidad sin impacto en robustez.
+- Ya está en el backlog.
+- El beneficio es hipotético, no basado en un problema real observado.
+
 ---
 
 ## Flujo de trabajo recomendado
