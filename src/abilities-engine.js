@@ -5222,16 +5222,19 @@ function onCacheClearEffects(player) {
   gameState.armedCacheClearEffects = null; // consumir: no repetir si se llama dos veces
   if (!armed || armed.size === 0) return;
 
+  // Igual que onTurnEndEffects para persistentes: iterar TODA la pila, no solo el top.
+  // El arme al inicio del turno es temporal (evita mid-turn), no posicional.
   LINES.forEach(line => {
     const stack = gameState.field[line][player];
-    if (stack.length === 0) return;
-    const top = stack[stack.length - 1];
-    if (top.faceDown) return;
-    const effectDef = CARD_EFFECTS[top.card.nombre];
-    if (effectDef && effectDef.onCacheClear && armed.has(top.card.id)) {
-      gameState.currentEffectLine = line;
-      triggerCardEffect(top.card, 'onCacheClear', player);
-    }
+    stack.forEach(cardObj => {
+      if (!cardObj.faceDown && armed.has(cardObj.card.id)) {
+        const effectDef = CARD_EFFECTS[cardObj.card.nombre];
+        if (effectDef && effectDef.onCacheClear) {
+          gameState.currentEffectLine = line;
+          triggerCardEffect(cardObj.card, 'onCacheClear', player);
+        }
+      }
+    });
   });
 }
 
