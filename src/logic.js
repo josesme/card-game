@@ -1043,6 +1043,9 @@ function startTurn(who) {
     if (typeof onTurnStartEffects === 'function') {
         onTurnStartEffects(who);
     }
+    if (gameState.pendingStartTriggers && gameState.pendingStartTriggers.length > 0) {
+        gameState.pendingStartTurnWho = who;
+    }
     // Si no hubo efectos (cola vacía), avanzar manualmente
     if (typeof processAbilityEffect === 'function') processAbilityEffect();
 }

@@ -115,7 +115,6 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 - [ ] **Diversidad 0 y Unidad 1 no son compilaciones.** Unidad 1 borra cartas pero no es una compilación → no interactúa con Guerra 2, Velocidad 2, ni activa el Control Component. `Coste: Medio` `Valor: Medio`
 
 ### Fases y Efectos
-- [ ] **Con múltiples efectos Start simultáneos, el jugador en turno elige el orden de ejecución.** Las condiciones se evalúan en el momento de procesar cada trigger (no al inicio de la fase). `Coste: Bajo` `Valor: Bajo`
 - [ ] **Velocidad 0: al activarse, bloquea el aterrizaje de la carta desplazada** hasta que Speed 0 resuelve su efecto. Actualmente aparece el mensaje pero el juego no continúa correctamente. `Coste: Medio` `Valor: Medio`
 
 ### Palabras Clave

@@ -1230,7 +1230,9 @@ function processAbilityEffect() {
       landPendingCard();
       return;
     }
-    if (gameState.pendingCheckCompile) {
+    if (gameState.processingStartTriggers) {
+      processNextStartTrigger(gameState.pendingStartTurnWho);
+    } else if (gameState.pendingCheckCompile) {
       const who = gameState.pendingCheckCompile;
       gameState.pendingCheckCompile = null;
       setTimeout(() => checkCompilePhase(who), 600);
@@ -4996,18 +4998,76 @@ function onTurnStartEffects(player) {
   // Armar efectos persistentes de fin de turno (persistentEnd: true, h_inicio con "Final:")
   // Solo las cartas bocarriba AHORA con persistentEnd dispararán su onTurnEnd
   gameState.armedEndEffects = new Set();
+  gameState.pendingStartTriggers = [];
+
   LINES.forEach(line => {
     if (gameState.ignoreEffectsLines && gameState.ignoreEffectsLines[line]) return;
-    gameState.currentEffectLine = line;
     gameState.field[line][player].forEach(cardObj => {
       if (!cardObj.faceDown) {
         const ef = CARD_EFFECTS[cardObj.card.nombre];
         if (ef?.persistentEnd && ef.onTurnEnd) {
           gameState.armedEndEffects.add(cardObj.card.id);
         }
-        triggerCardEffect(cardObj.card, 'onTurnStart', player);
+        if (ef?.onTurnStart) {
+          gameState.pendingStartTriggers.push({ card: cardObj.card, line, player });
+        }
       }
     });
+  });
+}
+
+/**
+ * Procesa los triggers de inicio de turno uno a uno.
+ * Si hay múltiples y el jugador humano es quien actúa, muestra modal de elección.
+ */
+function processNextStartTrigger(who) {
+  if (!gameState.pendingStartTriggers || gameState.pendingStartTriggers.length === 0) {
+    gameState.processingStartTriggers = false;
+    gameState.pendingStartTurnWho = null;
+    return; // continúa en processAbilityEffect → pendingCheckCompile
+  }
+
+  gameState.processingStartTriggers = true;
+
+  // Solo 1 trigger, o turno de IA: disparar automáticamente el primero
+  if (gameState.pendingStartTriggers.length === 1 || who === 'ai') {
+    const trigger = gameState.pendingStartTriggers.shift();
+    gameState.currentEffectLine = trigger.line;
+    triggerCardEffect(trigger.card, 'onTurnStart', trigger.player);
+    return;
+  }
+
+  // Múltiples triggers y es turno del jugador: mostrar modal de elección
+  const confirmArea = document.getElementById('command-confirm');
+  const confirmMsg = document.getElementById('confirm-msg');
+  if (!confirmArea || !confirmMsg) {
+    const trigger = gameState.pendingStartTriggers.shift();
+    gameState.currentEffectLine = trigger.line;
+    triggerCardEffect(trigger.card, 'onTurnStart', trigger.player);
+    return;
+  }
+
+  const actionsDiv = confirmArea.querySelector('.effect-actions');
+  if (window.scrTxt) {
+    window.scrTxt(confirmMsg, 'Elige qué efecto Inicio activar primero:', { duration: 0.8 });
+  } else {
+    confirmMsg.textContent = 'Elige qué efecto Inicio activar primero:';
+  }
+
+  actionsDiv.innerHTML = gameState.pendingStartTriggers
+    .map((t, i) => `<button class="ui-btn" data-idx="${i}">${t.card.nombre}</button>`)
+    .join('');
+
+  confirmArea.classList.remove('hidden');
+
+  actionsDiv.querySelectorAll('button[data-idx]').forEach(btn => {
+    btn.onclick = function () {
+      const idx = parseInt(this.dataset.idx);
+      const trigger = gameState.pendingStartTriggers.splice(idx, 1)[0];
+      confirmArea.classList.add('hidden');
+      gameState.currentEffectLine = trigger.line;
+      triggerCardEffect(trigger.card, 'onTurnStart', trigger.player);
+    };
   });
 }
 
