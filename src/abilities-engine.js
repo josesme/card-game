@@ -4991,6 +4991,39 @@ function onCardFlipped(card, targetPlayer, line) {
 }
 
 /**
+ * Comprueba si el efecto de una carta realmente se activará dadas las condiciones actuales.
+ * Evita mostrar en el modal de ordenación efectos que serán no-op.
+ */
+function canTriggerNow(card, actions, line, player) {
+  if (!actions || actions.length === 0) return false;
+  const first = actions[0];
+  const opp = player === 'player' ? 'ai' : 'player';
+
+  // Condiciones declaradas en la definición de la acción
+  switch (first.condition) {
+    case 'drawnSinceLastCheck':
+      return !!gameState.drawnLastTurn?.[player];
+    case 'opponentDiscardedLastTurn':
+      return !!gameState.discardedSinceLastCheck?.[opp];
+  }
+
+  // Condiciones implícitas en el nombre de la acción
+  switch (first.action) {
+    case 'drawIfEliminatedLastTurn':
+      return !!gameState.eliminatedLastTurn?.[player];
+    case 'deleteSelfIfCoveredAndWarned': {
+      const stack = gameState.field[line]?.[player] || [];
+      return stack.some(co => co.card.id === card.id && co.coveredWarning);
+    }
+    case 'drawIfOpponentWinsLine':
+      return typeof calculateScore === 'function' &&
+        calculateScore(gameState, line, opp) > calculateScore(gameState, line, player);
+  }
+
+  return true; // sin condición conocida → siempre se activa
+}
+
+/**
  * Hook para inicio de turno — todas las cartas bocarriba de la pila
  * (el comando inicio es siempre visible aunque la carta esté cubierta)
  */
@@ -5008,7 +5041,7 @@ function onTurnStartEffects(player) {
         if (ef?.persistentEnd && ef.onTurnEnd) {
           gameState.armedEndEffects.add(cardObj.card.id);
         }
-        if (ef?.onTurnStart) {
+        if (ef?.onTurnStart && canTriggerNow(cardObj.card, ef.onTurnStart, line, player)) {
           gameState.pendingStartTriggers.push({ card: cardObj.card, line, player });
         }
       }
@@ -5092,7 +5125,10 @@ function onTurnEndEffects(player) {
     if (gameState.armedEndEffects && gameState.armedEndEffects.size > 0) {
       stack.forEach(cardObj => {
         if (!cardObj.faceDown && gameState.armedEndEffects.has(cardObj.card.id)) {
-          gameState.pendingEndTriggers.push({ card: cardObj.card, line, player });
+          const ef = CARD_EFFECTS[cardObj.card.nombre];
+          if (canTriggerNow(cardObj.card, ef?.onTurnEnd, line, player)) {
+            gameState.pendingEndTriggers.push({ card: cardObj.card, line, player });
+          }
         }
       });
     }
@@ -5101,7 +5137,7 @@ function onTurnEndEffects(player) {
     const top = stack[stack.length - 1];
     if (!top.faceDown) {
       const ef = CARD_EFFECTS[top.card.nombre];
-      if (ef?.onTurnEnd && !ef.persistentEnd) {
+      if (ef?.onTurnEnd && !ef.persistentEnd && canTriggerNow(top.card, ef.onTurnEnd, line, player)) {
         gameState.pendingEndTriggers.push({ card: top.card, line, player });
       }
     }

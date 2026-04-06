@@ -181,12 +181,27 @@ describe('onTurnStartEffects — colección de triggers', () => {
 
   test('recoge 2 triggers con 2 cartas en líneas distintas', () => {
     GS.field.izquierda.player = [{ card: makeCard('Muerte 1'), faceDown: false }];
-    GS.field.centro.player    = [{ card: makeCard('Odio 3'),   faceDown: false }];
+    GS.field.centro.player    = [{ card: makeCard('Caos 0'),   faceDown: false }]; // sin condición
     ENGINE.onTurnStartEffects('player');
     expect(GS.pendingStartTriggers).toHaveLength(2);
     const names = GS.pendingStartTriggers.map(t => t.card.nombre);
     expect(names).toContain('Muerte 1');
-    expect(names).toContain('Odio 3');
+    expect(names).toContain('Caos 0');
+  });
+
+  test('Odio 3: no se recoge si eliminatedLastTurn es false', () => {
+    GS.eliminatedLastTurn = { player: false, ai: false };
+    GS.field.izquierda.player = [{ card: makeCard('Odio 3'), faceDown: false }];
+    ENGINE.onTurnStartEffects('player');
+    expect(GS.pendingStartTriggers).toHaveLength(0);
+  });
+
+  test('Odio 3: se recoge si eliminatedLastTurn es true', () => {
+    GS.eliminatedLastTurn = { player: true, ai: false };
+    GS.field.izquierda.player = [{ card: makeCard('Odio 3'), faceDown: false }];
+    ENGINE.onTurnStartEffects('player');
+    expect(GS.pendingStartTriggers).toHaveLength(1);
+    expect(GS.pendingStartTriggers[0].card.nombre).toBe('Odio 3');
   });
 
   test('ignora cartas bocabajo', () => {
