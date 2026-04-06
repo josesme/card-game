@@ -1250,6 +1250,8 @@ function showConfirmDialog(message, onYes, onNo, yesText, noText) {
     
     if (!confirmArea || !confirmMsg || !actionsDiv) return;
     
+    // Clear any previous HTML (e.g. bullet lists from trigger-ordering modal) before setting new content
+    confirmMsg.innerHTML = '';
     // Set message with scramble effect if available
     if (window.scrTxt) {
         window.scrTxt(confirmMsg, message, { duration: 1.0 });
