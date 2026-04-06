@@ -128,17 +128,31 @@ describe('Velocidad 1 — onCacheClear roba 1 carta', () => {
     expect(ef.onRefresh).toBeUndefined();
   });
 
-  test('onCacheClearEffects dispara draw-1 si Velocidad 1 está bocarriba', () => {
-    GS.field.alpha.player = [{ card: makeCard('Velocidad 1'), faceDown: false }];
+  test('onCacheClearEffects dispara draw-1 si Velocidad 1 estaba armada desde inicio de turno', () => {
+    const card = makeCard('Velocidad 1');
+    GS.field.alpha.player = [{ card, faceDown: false }];
     GS.player.deck = [makeCard('dummy')];
+    GS.armedCacheClearEffects = new Set([card.id]);
     const before = GS.player.hand.length;
     ENGINE.onCacheClearEffects('player');
     expect(GS.player.hand.length).toBe(before + 1);
   });
 
   test('onCacheClearEffects NO dispara si Velocidad 1 está bocabajo', () => {
-    GS.field.alpha.player = [{ card: makeCard('Velocidad 1'), faceDown: true }];
+    const card = makeCard('Velocidad 1');
+    GS.field.alpha.player = [{ card, faceDown: true }];
     GS.player.deck = [makeCard('dummy')];
+    GS.armedCacheClearEffects = new Set([card.id]);
+    const before = GS.player.hand.length;
+    ENGINE.onCacheClearEffects('player');
+    expect(GS.player.hand.length).toBe(before);
+  });
+
+  test('onCacheClearEffects NO dispara si Velocidad 1 fue jugada este turno (no armada)', () => {
+    const card = makeCard('Velocidad 1');
+    GS.field.alpha.player = [{ card, faceDown: false }];
+    GS.player.deck = [makeCard('dummy')];
+    GS.armedCacheClearEffects = new Set(); // no armada
     const before = GS.player.hand.length;
     ENGINE.onCacheClearEffects('player');
     expect(GS.player.hand.length).toBe(before);

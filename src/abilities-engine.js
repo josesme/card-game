@@ -5028,9 +5028,12 @@ function canTriggerNow(card, actions, line, player) {
  * (el comando inicio es siempre visible aunque la carta esté cubierta)
  */
 function onTurnStartEffects(player) {
-  // Armar efectos persistentes de fin de turno (persistentEnd: true, h_inicio con "Final:")
-  // Solo las cartas bocarriba AHORA con persistentEnd dispararán su onTurnEnd
+  // Armar efectos que requieren estar en mesa AL INICIO del turno:
+  // - armedEndEffects: persistentEnd cards que dispararán onTurnEnd
+  // - armedCacheClearEffects: cards con onCacheClear (ej. Velocidad 1)
+  // Si la carta se juega DESPUÉS (fase de acción), no estará armada y no disparará.
   gameState.armedEndEffects = new Set();
+  gameState.armedCacheClearEffects = new Set();
   gameState.pendingStartTriggers = [];
 
   LINES.forEach(line => {
@@ -5040,6 +5043,9 @@ function onTurnStartEffects(player) {
         const ef = CARD_EFFECTS[cardObj.card.nombre];
         if (ef?.persistentEnd && ef.onTurnEnd) {
           gameState.armedEndEffects.add(cardObj.card.id);
+        }
+        if (ef?.onCacheClear) {
+          gameState.armedCacheClearEffects.add(cardObj.card.id);
         }
         if (ef?.onTurnStart && canTriggerNow(cardObj.card, ef.onTurnStart, line, player)) {
           gameState.pendingStartTriggers.push({ card: cardObj.card, line, player });
@@ -5212,13 +5218,17 @@ function processNextEndTrigger(who) {
  * Solo se llama cuando realmente hubo descarte (mano > 5 al final del turno).
  */
 function onCacheClearEffects(player) {
+  const armed = gameState.armedCacheClearEffects;
+  gameState.armedCacheClearEffects = null; // consumir: no repetir si se llama dos veces
+  if (!armed || armed.size === 0) return;
+
   LINES.forEach(line => {
     const stack = gameState.field[line][player];
     if (stack.length === 0) return;
     const top = stack[stack.length - 1];
     if (top.faceDown) return;
     const effectDef = CARD_EFFECTS[top.card.nombre];
-    if (effectDef && effectDef.onCacheClear) {
+    if (effectDef && effectDef.onCacheClear && armed.has(top.card.id)) {
       gameState.currentEffectLine = line;
       triggerCardEffect(top.card, 'onCacheClear', player);
     }
