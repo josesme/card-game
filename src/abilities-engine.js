@@ -5056,7 +5056,10 @@ function processNextStartTrigger(who) {
   }
 
   actionsDiv.innerHTML = gameState.pendingStartTriggers
-    .map((t, i) => `<button class="ui-btn" data-idx="${i}">${t.card.nombre}</button>`)
+    .map((t, i) => `<div style="display:flex;flex-direction:column;gap:4px;width:100%">
+      <button class="ui-btn" data-idx="${i}">${t.card.nombre}</button>
+      ${t.card.h_inicio ? `<span style="font-size:9px;color:#aaa;padding:0 4px;line-height:1.3">▸ ${t.card.h_inicio}</span>` : ''}
+    </div>`)
     .join('');
 
   confirmArea.classList.remove('hidden');
@@ -5148,7 +5151,10 @@ function processNextEndTrigger(who) {
   }
 
   actionsDiv.innerHTML = gameState.pendingEndTriggers
-    .map((t, i) => `<button class="ui-btn" data-idx="${i}">${t.card.nombre}</button>`)
+    .map((t, i) => `<div style="display:flex;flex-direction:column;gap:4px;width:100%">
+      <button class="ui-btn" data-idx="${i}">${t.card.nombre}</button>
+      ${t.card.h_final ? `<span style="font-size:9px;color:#aaa;padding:0 4px;line-height:1.3">▸ ${t.card.h_final}</span>` : ''}
+    </div>`)
     .join('');
 
   confirmArea.classList.remove('hidden');
