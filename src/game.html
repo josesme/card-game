@@ -1551,7 +1551,7 @@ function showFieldSelectOverlay(type, count, ctx) {
                 // coveredOnly: excluir la descubierta (top)
                 if (ctx.coveredOnly && isUncovered) return;
                 if (!cardMatchesFilter(cardObj, ctx)) return;
-                if (isFlip && typeof getPersistentModifiers === 'function' && getPersistentModifiers(cardObj.card).preventFlip) return;
+                if (isFlip && typeof getPersistentModifiers === 'function' && getPersistentModifiers(cardObj).preventFlip) return;
                 // selectCardToCopy: only face-up cards with onPlay effects
                 if (type === 'selectCardToCopy') {
                     if (cardObj.faceDown) return;

@@ -4819,9 +4819,15 @@ function resolveAbilityAction(actionDef, targetPlayer) {
 // ============================================================================
 
 /**
- * Calcula modificadores persistentes de una carta
+ * Calcula modificadores persistentes de una carta.
+ * Acepta cardObj ({ card, faceDown }) o directamente card ({ nombre, ... }).
+ * Si la carta está bocabajo, devuelve {} — sus efectos están inactivos.
  */
-function getPersistentModifiers(card) {
+function getPersistentModifiers(cardOrObj) {
+  // Soporte para ambas firmas: cardObj ({ card, faceDown }) o card directo
+  const faceDown = cardOrObj.faceDown;
+  const card = cardOrObj.card ?? cardOrObj;
+  if (faceDown) return {};
   const cardName = card.nombre;
   const effectDef = CARD_EFFECTS[cardName];
 
@@ -4889,8 +4895,8 @@ function applyPersistentValueModifiers(state, line, player) {
   const oppStack = state.field[line][opponent];
   if (oppStack.length > 0) {
     const topCardObj = oppStack[oppStack.length - 1];
-    if (!topCardObj.faceDown) {
-      const modifiers = getPersistentModifiers(topCardObj.card);
+    {
+      const modifiers = getPersistentModifiers(topCardObj);
       if (modifiers.valueReduction) {
         totalReduction += modifiers.valueReduction;
       }
@@ -5458,9 +5464,7 @@ function isPlayBlockedByPersistent(targetLine, playingPlayer, isFaceDown = false
   if (stack.length === 0) return false;
   
   const topCardObj = stack[stack.length - 1];
-  if (topCardObj.faceDown) return false;
-  
-  const mods = getPersistentModifiers(topCardObj.card);
+  const mods = getPersistentModifiers(topCardObj);
   if (mods.preventOpponentPlay) return true;
   // Metal 2: bloquea solo jugadas bocabajo
   if (isFaceDown && mods.preventFaceDown) return true;
@@ -5482,7 +5486,7 @@ function applyReturnToHand(dest, card) {
     const stack = gameState.field[l][rival];
     if (stack.length === 0) return false;
     const top = stack[stack.length - 1];
-    return !top.faceDown && getPersistentModifiers(top.card).redirectReturnToTopDeck;
+    return getPersistentModifiers(top).redirectReturnToTopDeck;
   });
   if (redirected) {
     gameState[dest].deck.push(card); // tope del mazo = último elemento (pop/push)

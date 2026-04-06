@@ -449,7 +449,7 @@ function drawCard(target) {
             const stack = gameState.field[l][opp];
             if (stack.length === 0) return false;
             const top = stack[stack.length - 1];
-            return !top.faceDown && getPersistentModifiers(top.card).preventDraw;
+            return getPersistentModifiers(top).preventDraw;
         });
         if (blocked) {
             updateStatus(`Hielo 6: ${target === 'player' ? 'no puedes' : 'IA no puede'} robar cartas`);
@@ -1570,8 +1570,8 @@ function startEffect(type, target, count, opts = {}) {
                 }
                 const topCard = stack[stack.length - 1];
                 if (opts.excludeCardName && topCard.card.nombre === opts.excludeCardName) return false;
-                if (typeof getPersistentModifiers === 'function' && !topCard.faceDown) {
-                    const mods = getPersistentModifiers(topCard.card);
+                if (typeof getPersistentModifiers === 'function') {
+                    const mods = getPersistentModifiers(topCard);
                     if (type === 'flip' && mods.preventFlip) return false;
                     if (type === 'shift' && mods.preventShift) return false;
                     if (type === 'eliminate' && mods.preventEliminate) return false;
@@ -1825,7 +1825,7 @@ function handleFieldCardClick(line, target, cardIdx) {
         const cardObj = gameState.field[line][target][cardIdx];
         if (!cardMatchesFilter(cardObj, ctx)) return;
         // preventEliminate: Muerte 1 no puede ser eliminada por efectos externos (solo bocarriba)
-        if (typeof getPersistentModifiers === 'function' && !cardObj.faceDown && getPersistentModifiers(cardObj.card).preventEliminate) {
+        if (typeof getPersistentModifiers === 'function' && getPersistentModifiers(cardObj).preventEliminate) {
             updateStatus(`${cardObj.card.nombre} no puede ser eliminada por efectos externos`);
             return;
         }
@@ -1859,7 +1859,7 @@ function handleFieldCardClick(line, target, cardIdx) {
         if (ctx.coveredOnly && cardIdx === gameState.field[line][target].length - 1) return;
         if (ctx.filter && !cardMatchesFilter(cardObj, ctx)) return;
         // preventFlip: Hielo 4 no puede ser volteada por ningún efecto (solo bocarriba)
-        if (typeof getPersistentModifiers === 'function' && !cardObj.faceDown && getPersistentModifiers(cardObj.card).preventFlip) {
+        if (typeof getPersistentModifiers === 'function' && getPersistentModifiers(cardObj).preventFlip) {
             updateStatus(`${cardObj.card.nombre} no puede ser volteada`);
             return;
         }
@@ -1891,7 +1891,7 @@ function handleFieldCardClick(line, target, cardIdx) {
         // Bloquear si el filtro no pasa (ej. solo bocabajo)
         if (ctx.filter && !cardMatchesFilter(cardObj, ctx)) return;
         // preventShift: Muerte 1 no puede ser cambiada de línea por efectos externos (solo bocarriba)
-        if (typeof getPersistentModifiers === 'function' && !cardObj.faceDown && getPersistentModifiers(cardObj.card).preventShift) {
+        if (typeof getPersistentModifiers === 'function' && getPersistentModifiers(cardObj).preventShift) {
             updateStatus(`${cardObj.card.nombre} no puede ser movida por efectos externos`);
             return;
         }
@@ -2026,7 +2026,7 @@ function checkDeleteOnCover(line, owner) {
     const coveredObj = stack[stack.length - 2]; // la que acaba de quedar tapada
     if (coveredObj.faceDown) return;
     if (typeof getPersistentModifiers !== 'function') return;
-    const mods = getPersistentModifiers(coveredObj.card);
+    const mods = getPersistentModifiers(coveredObj);
     if (mods.deleteOnModify) {
         stack.splice(stack.length - 2, 1);
         gameState[owner].trash.push(coveredObj.card);
@@ -2216,7 +2216,7 @@ function aiPickEliminateLine(target, opts = {}) {
             const stack = gameState.field[l][target];
             if (!stack.length) return false;
             const topCard = stack[stack.length - 1];
-            if (typeof getPersistentModifiers === 'function' && !topCard.faceDown && getPersistentModifiers(topCard.card).preventEliminate) return false;
+            if (typeof getPersistentModifiers === 'function' && getPersistentModifiers(topCard).preventEliminate) return false;
             return cardMatchesFilter(topCard, filterCtx);
         })
         .sort((a, b) => calculateScore(gameState, b, target) - calculateScore(gameState, a, target));
@@ -2309,7 +2309,7 @@ function resolveEffectAI(type, target, count, opts = {}) {
                     const stack = gameState.field[line][actualTarget];
                     if (actualTarget === 'player') {
                         const topCard = stack[stack.length - 1];
-                        if (!(typeof getPersistentModifiers === 'function' && getPersistentModifiers(topCard.card).preventFlip)) {
+                        if (!(typeof getPersistentModifiers === 'function' && getPersistentModifiers(topCard).preventFlip)) {
                             topCard.faceDown = !topCard.faceDown;
                             if (!topCard.faceDown) {
                                 topCard._animateFlip = true;
@@ -2335,7 +2335,7 @@ function resolveEffectAI(type, target, count, opts = {}) {
             if (!sourceLine) continue;
             const sourceStack = gameState.field[sourceLine][actualTarget];
             const sourceTop = sourceStack[sourceStack.length - 1];
-            if (sourceTop && !sourceTop.faceDown && typeof getPersistentModifiers === 'function' && getPersistentModifiers(sourceTop.card).preventShift) continue;
+            if (sourceTop && typeof getPersistentModifiers === 'function' && getPersistentModifiers(sourceTop).preventShift) continue;
             const destLine = aiPickDestLine([sourceLine], actualTarget);
             if (!destLine) continue;
             const cardObj = gameState.field[sourceLine][actualTarget].pop();

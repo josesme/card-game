@@ -67,6 +67,24 @@ Al terminar cualquier trabajo, seguir estas reglas según el tipo de cambio:
 - **Un diagnóstico, una verificación.** Hacer un solo cambio, confirmar si resolvió el problema, y solo entonces continuar. Los cambios especulativos en cadena sin verificación empeoran el estado y confunden la causa.
 - Cuando el usuario muestra capturas indicando diferencia visual, asumir que tiene razón sobre el hecho aunque no sobre la causa. No descartar el problema como "sutil" o "de contexto" sin haber verificado con DevTools.
 
+## Refactoring proactivo
+
+El asistente debe identificar y ejecutar mejoras de coste/beneficio favorable **sin esperar a que el usuario las pida**. La regla es: si al resolver un bug o añadir una feature se detecta una oportunidad clara, aplicarla en el mismo commit o en el siguiente, y explicar brevemente qué se hizo y por qué.
+
+Situaciones que siempre deben triggear refactoring proactivo:
+
+- **Lógica duplicada en 2+ sitios** — extraer a una función compartida. Si los sitios divergen (como pasó con `onCacheClearEffects` vs `onTurnEndEffects`), los bugs en uno no se reflejan en el otro.
+- **Guard externo que debería ser interno** — si un caller tiene que recordar `&& !faceDown` antes de llamar a `getPersistentModifiers`, mover ese check dentro de la función. Cualquier caller futuro que lo olvide introduce un bug.
+- **Inconsistencia de firma** — si la misma función se llama con `.card` en unos sitios y con el objeto completo en otros, unificar para que la función acepte el formato canónico.
+- **Test unitario que prueba implementación, no comportamiento** — si un test requiere 3+ mocks o testea detalles internos en lugar del resultado observable, reemplazarlo por un test de integración.
+
+Lo que NO es refactoring proactivo (no hacerlo sin pedirlo):
+- Cambios de nombre o estilo sin impacto en robustez.
+- Reorganización de archivos o módulos.
+- Refactors grandes (>50 líneas cambiadas) que no tienen tests de cobertura suficiente.
+
+---
+
 ## Flujo de trabajo recomendado
 
 1. **Entender la tarea** → Si hay ambigüedad, preguntar antes de actuar.
