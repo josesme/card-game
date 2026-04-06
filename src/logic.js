@@ -2708,7 +2708,8 @@ function finalizePlay(targetLine, isFaceDown) {
 
         if (gameState.pendingPlayCard) {
             gameState.pendingPlayCard = false;
-            console.log(`🎴 playCard effect resolved — continuing effect queue`);
+            gameState.isProcessing = false; // desbloquear UI para que el jugador pueda jugar la carta extra
+            console.log(`🎴 playCard effect resolved — player can now play extra card`);
             updateUI();
             if (gameState.effectQueue.length > 0) {
                 processAbilityEffect();
