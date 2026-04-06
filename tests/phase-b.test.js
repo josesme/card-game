@@ -118,6 +118,33 @@ beforeEach(() => {
   global.processAbilityEffect = jest.fn();
 });
 
+// ─── Velocidad 1 onCacheClear ─────────────────────────────────────────────────
+describe('Velocidad 1 — onCacheClear roba 1 carta', () => {
+  test('Velocidad 1 usa onCacheClear (no onRefresh)', () => {
+    const ef = ENGINE.CARD_EFFECTS['Velocidad 1'];
+    expect(ef.onCacheClear).toBeDefined();
+    expect(ef.onCacheClear[0].action).toBe('draw');
+    expect(ef.onCacheClear[0].count).toBe(1);
+    expect(ef.onRefresh).toBeUndefined();
+  });
+
+  test('onCacheClearEffects dispara draw-1 si Velocidad 1 está bocarriba', () => {
+    GS.field.alpha.player = [{ card: makeCard('Velocidad 1'), faceDown: false }];
+    GS.player.deck = [makeCard('dummy')];
+    const before = GS.player.hand.length;
+    ENGINE.onCacheClearEffects('player');
+    expect(GS.player.hand.length).toBe(before + 1);
+  });
+
+  test('onCacheClearEffects NO dispara si Velocidad 1 está bocabajo', () => {
+    GS.field.alpha.player = [{ card: makeCard('Velocidad 1'), faceDown: true }];
+    GS.player.deck = [makeCard('dummy')];
+    const before = GS.player.hand.length;
+    ENGINE.onCacheClearEffects('player');
+    expect(GS.player.hand.length).toBe(before);
+  });
+});
+
 // ─── CARD_EFFECTS ────────────────────────────────────────────────────────────
 describe('CARD_EFFECTS — entradas Fase B', () => {
   test('War 0: onRefresh=mayFlipSelf, onOpponentDraw=mayDelete', () => {

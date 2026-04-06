@@ -411,7 +411,7 @@ const CARD_EFFECTS = {
     onPlay: [
       { action: 'draw', target: 'self', count: 2 }
     ],
-    onRefresh: [
+    onCacheClear: [
       { action: 'draw', target: 'self', count: 1 }
     ]
   },
@@ -5208,7 +5208,25 @@ function processNextEndTrigger(who) {
 
 
 /**
- * Velocidad 1: dispara onRefresh para cartas bocarriba del jugador que usó Refresh.
+ * Dispara onCacheClear para las cartas bocarriba del jugador que acaba de borrar su cache.
+ * Solo se llama cuando realmente hubo descarte (mano > 5 al final del turno).
+ */
+function onCacheClearEffects(player) {
+  LINES.forEach(line => {
+    const stack = gameState.field[line][player];
+    if (stack.length === 0) return;
+    const top = stack[stack.length - 1];
+    if (top.faceDown) return;
+    const effectDef = CARD_EFFECTS[top.card.nombre];
+    if (effectDef && effectDef.onCacheClear) {
+      gameState.currentEffectLine = line;
+      triggerCardEffect(top.card, 'onCacheClear', player);
+    }
+  });
+}
+
+/**
+ * Dispara onRefresh para cartas bocarriba del jugador que usó Refresh (Actualizar).
  */
 function onRefreshEffects(player) {
   LINES.forEach(line => {
@@ -5487,6 +5505,7 @@ if (typeof window !== 'undefined') {
   window.calculateScoreWithModifiers = calculateScoreWithModifiers;
   window.getPersistentModifiers = getPersistentModifiers;
   window.onRefreshEffects = onRefreshEffects;
+  window.onCacheClearEffects = onCacheClearEffects;
   window.hasAllowAnyProtocol = hasAllowAnyProtocol;
   window.getUnityPlayLine = getUnityPlayLine;
   window.canPlayAnywhere = canPlayAnywhere;

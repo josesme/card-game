@@ -2130,9 +2130,10 @@ function finishEffect() {
     if (gameState.pendingEndTurnFor) {
         const who = gameState.pendingEndTurnFor;
         gameState.pendingEndTurnFor = null;
-        // Cache discard cuenta como descartar — disparar efectos reactivos (igual que el path de IA)
+        // Cache discard cuenta como descartar — disparar efectos reactivos + onCacheClear (ej. Velocidad 1)
         if (typeof onOpponentDiscardEffects === 'function') onOpponentDiscardEffects(who);
         if (typeof onOwnDiscardEffects === 'function') onOwnDiscardEffects(who);
+        if (typeof onCacheClearEffects === 'function') onCacheClearEffects(who);
         continueEndTurn(who);
         return;
     }
@@ -3059,9 +3060,10 @@ function endTurn(who) {
                 gameState.ai.trash.push(gameState.ai.hand.pop());
                 gameState.ai.discardedSinceLastCheck = true;
             }
-            // I-03: cache discard fires reactive discard effects
+            // I-03: cache discard fires reactive discard effects + onCacheClear (ej. Velocidad 1)
             if (typeof onOpponentDiscardEffects === 'function') onOpponentDiscardEffects('ai');
             if (typeof onOwnDiscardEffects === 'function') onOwnDiscardEffects('ai');
+            if (typeof onCacheClearEffects === 'function') onCacheClearEffects('ai');
         }
     }
 
@@ -3094,7 +3096,7 @@ function continueAfterEndEffects(who) {
         }
     }
 
-    // Velocidad 1: si este jugador usó Refresh este turno, roba 1 carta extra DESPUÉS del cache check
+    // Actualizar (Refresh): dispara onRefresh + onOpponentRefresh para cartas en mesa (Guerra 0, Amor 4, etc.)
     if (gameState.refreshedThisTurn === who) {
         gameState.refreshedThisTurn = null;
         // Control Component: ofrecer reorganización al actualizar antes de los efectos de refresh
