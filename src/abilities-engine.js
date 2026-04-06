@@ -2875,8 +2875,10 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       for (let i = 0; i < pairs; i++) {
         if (gameState[targetPlayer].deck.length > 0) {
           const top = gameState[targetPlayer].deck.pop();
-          // Insertar debajo de la carta actual (posición antes del último elemento)
-          stack.splice(stack.length - 1, 0, { card: top, faceDown: true });
+          // Insertar justo debajo de Gravedad 0 (buscar su posición actual)
+          const g0Idx = stack.findIndex(c => !c.faceDown && c.card.nombre === 'Gravedad 0');
+          const insertAt = g0Idx >= 0 ? g0Idx : stack.length - 1;
+          stack.splice(insertAt, 0, { card: top, faceDown: true });
         }
       }
       processAbilityEffect();

@@ -2024,10 +2024,23 @@ function checkDeleteOnCover(line, owner) {
     }
 }
 
+/**
+ * Inserts a card into a stack respecting Gravedad 0's rule:
+ * if Gravedad 0 is face-up anywhere in the stack, new cards land just below it.
+ */
+function insertCardIntoStack(stack, cardObj) {
+    const g0Idx = stack.findIndex(c => !c.faceDown && c.card.nombre === 'Gravedad 0');
+    if (g0Idx >= 0) {
+        stack.splice(g0Idx, 0, cardObj);
+    } else {
+        stack.push(cardObj);
+    }
+}
+
 function landPendingCard() {
     const { line, cardObj, owner, isFaceDown } = gameState.pendingLanding;
     gameState.pendingLanding = null;
-    gameState.field[line][owner].push(cardObj);
+    insertCardIntoStack(gameState.field[line][owner], cardObj);
     checkDeleteOnCover(line, owner);
     window._animPendingField = { line, target: owner };
     updateUI();
@@ -2657,7 +2670,7 @@ function finalizePlay(targetLine, isFaceDown) {
         triggerCardEffect(topCardBeforePush.card, 'onCover', targetSide);
         gameState.coveringCard = null;
     }
-    gameState.field[targetLine][targetSide].push(playedCard);
+    insertCardIntoStack(gameState.field[targetLine][targetSide], playedCard);
     checkDeleteOnCover(targetLine, targetSide);
     window._animPendingField = { line: targetLine, target: targetSide };
     updateUI(); // Sincronizar DOM antes de disparar efectos — animación de entrada empieza aquí
@@ -2980,7 +2993,7 @@ function executeAIMove(move) {
         }
     }
 
-    gameState.field[move.line][landSide].push({
+    insertCardIntoStack(gameState.field[move.line][landSide], {
         card: movedCard,
         faceDown: !move.faceUp
     });
