@@ -72,11 +72,6 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 
 ---
 
-## Deuda Técnica
-
-- [ ] **Tests de integración logic.js + abilities-engine.js** — Los tests actuales cargan solo un archivo a la vez; los bugs que surgen de la interacción entre los dos motores no se detectan automáticamente. `Coste: Medio` `Valor: Alto`
-  > **Cuándo atacarlo:** cuando detectes una clase recurrente de bugs que los tests no pillan y que impliquen que un cambio en `logic.js` rompe algo en `abilities-engine.js` (o viceversa) sin aviso. Un ejemplo sería si `startTurn` se rompe de una manera que el test unitario del snapshot no simula. No hacerlo antes — el coste es infraestructura, no corrección de bug inmediato.
-
 ---
 
 ## IA
@@ -126,3 +121,7 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 ### Información
 - [ ] **Los cementerios son públicos** — cualquier jugador puede consultarlos en cualquier momento (implementar acceso en UI). `Coste: Medio` `Valor: Medio`
 
+
+- Muerte 1 no deja moverla cuando está bocabajo, la excepción debería ser exclusiva para cuando está bocarriba
+- Al jugar Psique 2, no me ha dado opcion de reorganizar protocolos del rival
+- Psique 4 no deja elegir qué carta devolver, la carta a devolver la elige quien juega la carta

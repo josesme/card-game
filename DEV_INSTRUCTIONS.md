@@ -15,6 +15,28 @@
 - Lanzar los tests (`npm test`) al terminar cada cambio para verificar que todo funciona.
 - No mergear/pushear sin tests pasando.
 
+### Tests de integración
+
+Los tests de integración prueban el flujo real del juego (startTurn → acción → endTurn), no funciones aisladas. La cobertura crece orgánicamente: **cada bug encontrado en el juego real debe dejar un test de integración** que garantice que no vuelve.
+
+**Cuándo crear uno:**
+- Al corregir un bug que los tests unitarios no detectaron.
+- Al implementar un flujo que involucra dos o más funciones de motores distintos (`logic.js` + `abilities-engine.js`).
+- Nunca de forma especulativa — solo cuando el escenario ya ha fallado en el juego real.
+
+**Dónde van:** `tests/integration/` — un archivo por flujo o familia de carta (ej: `velocidad.integration.test.js`).
+
+**Qué debe hacer un test de integración:**
+1. Construir un `gameState` realista (con mazo, campo, mano).
+2. Llamar a las funciones del motor en el orden real del juego (no mockear `drawCard`, `discard`, etc. — esas deben ejecutarse de verdad).
+3. Afirmar el estado final observable (tamaño de mano, cartas en campo, etc.).
+
+**Mantenimiento de tests — reglas para evitar deuda:**
+- Si un test unitario queda absorbido por un test de integración que cubre el mismo escenario con más fidelidad, **eliminar el unitario**.
+- Si al cambiar una función un test unitario empieza a fallar pero el test de integración sigue pasando, investigar si el unitario testea un detalle de implementación (no un comportamiento) — en ese caso, eliminarlo.
+- Si un test necesita más de 3 mocks para funcionar, es señal de que debería ser un test de integración en su lugar.
+- Revisar los tests existentes al cerrar cada bug: si alguno hubiera detectado el bug y no lo hizo, o si ya no aporta frente a los nuevos, actualizarlo o eliminarlo.
+
 ## Backlog
 
 `docs/BACKLOG.md` es un backlog real: **solo contiene trabajo pendiente**. No hay secciones de "completado", "recientemente cerrado" ni historial.
