@@ -5119,27 +5119,40 @@ function processNextStartTrigger(who) {
  * 1) persistentEnd (h_inicio "Final:"): solo si armadas al inicio Y siguen bocarriba (cubiertas o no)
  * 2) normales (h_final "Final:"): si la carta es top descubierta al final del turno
  */
+/**
+ * Itera todas las cartas bocarriba de la pila del jugador que están en el set
+ * armado e invoca callback(cardObj, line) para cada una.
+ * Uso: onTurnEndEffects (persistentEnd) y onCacheClearEffects (onCacheClear).
+ */
+function forEachArmedCard(player, armedSet, callback) {
+  LINES.forEach(line => {
+    if (gameState.ignoreEffectsLines && gameState.ignoreEffectsLines[line]) return;
+    gameState.field[line][player].forEach(cardObj => {
+      if (!cardObj.faceDown && armedSet.has(cardObj.card.id)) {
+        callback(cardObj, line);
+      }
+    });
+  });
+}
+
 function onTurnEndEffects(player) {
   gameState.pendingEndTriggers = [];
 
+  // 1) Persistentes armadas: cualquier carta bocarriba cuyo ID fue registrado al inicio
+  if (gameState.armedEndEffects && gameState.armedEndEffects.size > 0) {
+    forEachArmedCard(player, gameState.armedEndEffects, (cardObj, line) => {
+      const ef = CARD_EFFECTS[cardObj.card.nombre];
+      if (canTriggerNow(cardObj.card, ef?.onTurnEnd, line, player)) {
+        gameState.pendingEndTriggers.push({ card: cardObj.card, line, player });
+      }
+    });
+  }
+
+  // 2) Normales: solo la top descubierta, si tiene onTurnEnd y NO es persistentEnd
   LINES.forEach(line => {
     if (gameState.ignoreEffectsLines && gameState.ignoreEffectsLines[line]) return;
     const stack = gameState.field[line][player];
     if (stack.length === 0) return;
-
-    // 1) Persistentes armadas: cualquier carta bocarriba cuyo ID fue registrado al inicio
-    if (gameState.armedEndEffects && gameState.armedEndEffects.size > 0) {
-      stack.forEach(cardObj => {
-        if (!cardObj.faceDown && gameState.armedEndEffects.has(cardObj.card.id)) {
-          const ef = CARD_EFFECTS[cardObj.card.nombre];
-          if (canTriggerNow(cardObj.card, ef?.onTurnEnd, line, player)) {
-            gameState.pendingEndTriggers.push({ card: cardObj.card, line, player });
-          }
-        }
-      });
-    }
-
-    // 2) Normales: solo la top descubierta, si tiene onTurnEnd y NO es persistentEnd
     const top = stack[stack.length - 1];
     if (!top.faceDown) {
       const ef = CARD_EFFECTS[top.card.nombre];
@@ -5217,24 +5230,21 @@ function processNextEndTrigger(who) {
  * Dispara onCacheClear para las cartas bocarriba del jugador que acaba de borrar su cache.
  * Solo se llama cuando realmente hubo descarte (mano > 5 al final del turno).
  */
+/**
+ * Dispara onCacheClear para las cartas bocarriba del jugador que acaba de borrar su cache.
+ * Solo se llama cuando realmente hubo descarte (mano > 5 al final del turno).
+ */
 function onCacheClearEffects(player) {
   const armed = gameState.armedCacheClearEffects;
   gameState.armedCacheClearEffects = null; // consumir: no repetir si se llama dos veces
   if (!armed || armed.size === 0) return;
 
-  // Igual que onTurnEndEffects para persistentes: iterar TODA la pila, no solo el top.
-  // El arme al inicio del turno es temporal (evita mid-turn), no posicional.
-  LINES.forEach(line => {
-    const stack = gameState.field[line][player];
-    stack.forEach(cardObj => {
-      if (!cardObj.faceDown && armed.has(cardObj.card.id)) {
-        const effectDef = CARD_EFFECTS[cardObj.card.nombre];
-        if (effectDef && effectDef.onCacheClear) {
-          gameState.currentEffectLine = line;
-          triggerCardEffect(cardObj.card, 'onCacheClear', player);
-        }
-      }
-    });
+  forEachArmedCard(player, armed, (cardObj, line) => {
+    const effectDef = CARD_EFFECTS[cardObj.card.nombre];
+    if (effectDef && effectDef.onCacheClear) {
+      gameState.currentEffectLine = line;
+      triggerCardEffect(cardObj.card, 'onCacheClear', player);
+    }
   });
 }
 
