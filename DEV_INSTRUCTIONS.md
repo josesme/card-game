@@ -12,7 +12,7 @@
 ## Testing
 
 - Crear tests para cada funcionalidad nueva o cambio realizado.
-- Lanzar los tests (`npm test`) al terminar cada cambio para verificar que todo funciona.
+- Lanzar los tests (`pnpm test`) al terminar cada cambio para verificar que todo funciona.
 - No mergear/pushear sin tests pasando.
 
 ### Tests de integración
@@ -106,7 +106,7 @@ Criterio para NO incluirla:
 1. **Entender la tarea** → Si hay ambigüedad, preguntar antes de actuar.
 2. **Planificar** → Para tareas complejas, usar `todo_write` para trackear pasos.
 3. **Implementar** → Hacer cambios mínimos y focalizados.
-4. **Verificar** → `npm test` + revisar visualmente si aplica.
+4. **Verificar** → `pnpm test` + revisar visualmente si aplica.
 5. **Documentar** → Eliminar del BACKLOG. Distribuir info según tabla de "Documentación al cerrar tareas".
 6. **Commit** → Mensaje descriptivo, push inmediato.
 
