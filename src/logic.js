@@ -1502,9 +1502,6 @@ function startEffect(type, target, count, opts = {}) {
     if (type === 'discard' || type === 'discardAny' || type === 'give' || type === 'reveal') {
         // Acciones sobre la mano: el dueño de la mano elige.
         isAIResolving = (target === 'ai');
-    } else if (type === 'rearrange') {
-        // Reorganizar protocolos: el dueño de los protocolos decide, no el jugador del turno.
-        isAIResolving = (target === 'ai');
     } else if (type === 'return' && (target === 'ai' || target === 'player')) {
         // Devolver carta propia a mano: el dueño elige cuál devolver, no el jugador del turno.
         // Solo aplica cuando el target es concreto (self resuelto). Si es 'any' u 'opponent',

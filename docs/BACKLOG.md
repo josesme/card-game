@@ -53,5 +53,4 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 - [ ] **Los cementerios son públicos** — cualquier jugador puede consultarlos en cualquier momento (implementar acceso en UI). `Coste: Medio` `Valor: Medio`
 
 
-- [ ] **Psique 2 no ofrece reorganizar protocolos del rival** — Al jugar Psique 2, no aparece la opción de reorganizar. `Coste: Bajo` `Valor: Bajo`
 - [ ] **Psique 4 no deja elegir qué carta devolver** — La carta a devolver la elige quien juega la carta, debería elegirla el dueño. `Coste: Bajo` `Valor: Bajo`
