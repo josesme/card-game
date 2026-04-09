@@ -131,3 +131,29 @@ describe('Psique 2 — rearrange de protocolos del rival', () => {
   });
 
 });
+
+// ─── Psique 4 — el jugador debe poder elegir qué carta del rival devolver ─────
+
+describe('Psique 4 — mayReturnAndFlip: el jugador elige la carta a devolver', () => {
+
+  test('jugador tiene Psique 4: al confirmar devolver, startEffect recibe return con owner=player', () => {
+    // Bug histórico: startEffect('return','ai',1) sin owner → isAIResolving=true → IA elegía sola.
+    // Fix: se pasa { owner: targetPlayer } para que el jugador activo resuelva la selección.
+    // En test, mockear showConfirmDialog para que llame al onYes inmediatamente.
+    global.showConfirmDialog = jest.fn((msg, onYes) => onYes());
+
+    const psique4 = makeCard('Psique 4', 4);
+    GS.field.alpha.player = [{ card: psique4, faceDown: false }];
+    GS.turn = 'player';
+    GS.currentEffectLine = 'alpha';
+
+    ENGINE.onTurnEndEffects('player');
+    ENGINE.processNextEndTrigger('player');
+
+    // startEffect debe haberse llamado con return, target=ai, owner=player
+    expect(global.startEffect).toHaveBeenCalledWith('return', 'ai', 1, expect.objectContaining({ owner: 'player' }));
+
+    delete global.showConfirmDialog;
+  });
+
+});

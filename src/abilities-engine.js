@@ -2201,7 +2201,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
               targetPlayer,
               cardName: triggerCardName
             });
-            startEffect('return', resolvedTarget, count || 1);
+            startEffect('return', resolvedTarget, count || 1, { owner: targetPlayer });
           },
           () => processAbilityEffect(),
           { name: triggerCardName }

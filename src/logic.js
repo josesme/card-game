@@ -1503,10 +1503,9 @@ function startEffect(type, target, count, opts = {}) {
         // Acciones sobre la mano: el dueño de la mano elige.
         isAIResolving = (target === 'ai');
     } else if (type === 'return' && (target === 'ai' || target === 'player')) {
-        // Devolver carta propia a mano: el dueño elige cuál devolver, no el jugador del turno.
-        // Solo aplica cuando el target es concreto (self resuelto). Si es 'any' u 'opponent',
-        // el jugador activo elige qué carta del rival devolver (flujo normal).
-        isAIResolving = (target === 'ai');
+        // Cuando el target es concreto, usar opts.owner si está disponible (quién juega la carta).
+        // Fallback: gameState.turn — el jugador activo elige, no el dueño de las cartas target.
+        isAIResolving = opts.owner !== undefined ? (opts.owner === 'ai') : (gameState.turn === 'ai');
     } else {
         // Acciones sobre el tablero: el dueño del efecto elige.
         // opts.owner indica quién es el dueño de la carta que disparó el efecto
