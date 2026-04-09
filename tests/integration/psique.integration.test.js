@@ -114,7 +114,7 @@ describe('Psique 2 — rearrange de protocolos del rival', () => {
     // El segundo efecto (rearrangeProtocols opponent) debe llamar a
     // startEffect con target='ai' — el jugador (no la IA) debe resolver el UI.
     // Este dispatch es el que startEffect recibe antes de decidir quién resuelve.
-    expect(global.startEffect).toHaveBeenCalledWith('rearrange', 'ai', 1);
+    expect(global.startEffect).toHaveBeenCalledWith('rearrange', 'ai', 1, expect.objectContaining({ owner: 'player' }));
   });
 
   test('IA juega Psique 2: primero pide al jugador descartar (startEffect discard)', () => {

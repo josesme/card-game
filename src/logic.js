@@ -1500,16 +1500,11 @@ function startEffect(type, target, count, opts = {}) {
     let isAIResolving = false;
     
     if (type === 'discard' || type === 'discardAny' || type === 'give' || type === 'reveal') {
-        // Acciones sobre la mano: el dueño de la mano elige.
+        // Efectos de mano: el dueño de la mano elige qué descartar/dar/revelar.
         isAIResolving = (target === 'ai');
-    } else if (type === 'return' && (target === 'ai' || target === 'player')) {
-        // Cuando el target es concreto, usar opts.owner si está disponible (quién juega la carta).
-        // Fallback: gameState.turn — el jugador activo elige, no el dueño de las cartas target.
-        isAIResolving = opts.owner !== undefined ? (opts.owner === 'ai') : (gameState.turn === 'ai');
     } else {
-        // Acciones sobre el tablero: el dueño del efecto elige.
-        // opts.owner indica quién es el dueño de la carta que disparó el efecto
-        // (puede diferir del turno activo cuando se voltea una carta rival).
+        // Efectos de campo: el dueño de la carta (opts.owner) decide quién interactúa.
+        // Fallback: gameState.turn — cubre llamadas sin opts.owner explícito.
         isAIResolving = opts.owner !== undefined ? (opts.owner === 'ai') : (gameState.turn === 'ai');
     }
 

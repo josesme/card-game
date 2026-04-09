@@ -1475,7 +1475,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'swapProtocols':
-      startEffect('rearrange', resolvedTarget, count || 1);
+      startEffect('rearrange', resolvedTarget, count || 1, { owner: targetPlayer });
       break;
 
     case 'moveAllCardsInLine':
@@ -1515,7 +1515,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       if (actionDef.maxVal !== undefined) mayDelOpts.maxVal = actionDef.maxVal;
       if (actionDef.minVal !== undefined) mayDelOpts.minVal = actionDef.minVal;
       if (targetPlayer === 'player') {
-        startEffect('eliminate', resolvedTarget, count || 1, mayDelOpts);
+        startEffect('eliminate', resolvedTarget, count || 1, { owner: targetPlayer, ...mayDelOpts });
       } else {
         resolveAbilityAction({ action: 'delete', target, count, ...mayDelOpts }, targetPlayer);
       }
@@ -1528,7 +1528,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         const copyKey = target === 'self' ? 'mayFlip_self'
           : flipOpts.filter === 'faceDown' ? 'mayFlip_faceDown' : 'mayFlip_any';
         _confirmDialog(copyKey,
-          () => startEffect('flip', resolvedTarget === 'any' ? 'any' : resolvedTarget, count || 1, flipOpts),
+          () => startEffect('flip', resolvedTarget === 'any' ? 'any' : resolvedTarget, count || 1, { owner: targetPlayer, ...flipOpts }),
           () => processAbilityEffect(),
           { name: triggerCardName || '' }
         );
@@ -1540,7 +1540,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
 
     case 'mayReturn':
       if (targetPlayer === 'player') {
-        startEffect('return', resolvedTarget, count || 1);
+        startEffect('return', resolvedTarget, count || 1, { owner: targetPlayer });
       } else {
         resolveAbilityAction({ action: 'return', target, count }, targetPlayer);
       }
@@ -1548,7 +1548,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
 
     case 'maySwap':
       if (targetPlayer === 'player') {
-        startEffect('swap', resolvedTarget, count || 1);
+        startEffect('swap', resolvedTarget, count || 1, { owner: targetPlayer });
       } else {
         resolveAbilityAction({ action: 'swap', target, count }, targetPlayer);
       }
@@ -1595,7 +1595,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'swapCard':
-      startEffect('swap', resolvedTarget === 'any' ? 'any' : resolvedTarget, count || 1);
+      startEffect('swap', resolvedTarget === 'any' ? 'any' : resolvedTarget, count || 1, { owner: targetPlayer });
       break;
 
     case 'drawIfEliminatedLastTurn': {
@@ -1682,15 +1682,15 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'moveOpponentCard':
-      startEffect('shift', opponent, count || 1);
+      startEffect('shift', opponent, count || 1, { owner: targetPlayer });
       break;
 
     case 'rearrangeProtocols':
-      startEffect('rearrange', resolvedTarget, count || 1);
+      startEffect('rearrange', resolvedTarget, count || 1, { owner: targetPlayer });
       break;
 
     case 'forceSwapProtocols':
-      startEffect('rearrange', opponent, count || 2);
+      startEffect('rearrange', opponent, count || 2, { owner: targetPlayer });
       break;
 
     case 'drawPerCard': {
@@ -1727,7 +1727,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         const oppCount = gameState.field[line][resolvedTarget].length;
         if (oppCount > myCount) {
           if (targetPlayer === 'player') {
-            startEffect('return', resolvedTarget, count || 1);
+            startEffect('return', resolvedTarget, count || 1, { owner: targetPlayer });
           } else {
             // AI auto-returns
             if (gameState.field[line][resolvedTarget].length > 0) {
@@ -1846,7 +1846,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       // Reveal a face-down opponent card and return it to their hand
       if (targetPlayer === 'player') {
         // Use startEffect to let player pick a face-down opponent card to return
-        startEffect('return', resolvedTarget, count || 1);
+        startEffect('return', resolvedTarget, count || 1, { owner: targetPlayer });
       } else {
         // AI: find player face-down cards and return one
         const validLines = LINES.filter(l => gameState.field[l][resolvedTarget].some(c => c.faceDown));
@@ -3293,7 +3293,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       if (targetPlayer === 'player') {
         // beneficiary='player' → la carta va a la mano del jugador, no del oponente
         // targetAll=true → permite seleccionar cartas cubiertas
-        startEffect('return', 'ai', 1, { filter: 'faceDown', targetAll: true, beneficiary: 'player' });
+        startEffect('return', 'ai', 1, { owner: targetPlayer, filter: 'faceDown', targetAll: true, beneficiary: 'player' });
       } else {
         // IA: roba la bocabajo del jugador de mayor valor (cubierta o top)
         let best = null, bestLine = null, bestIdx = -1;
