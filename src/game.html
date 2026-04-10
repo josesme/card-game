@@ -245,6 +245,61 @@
         .hs-log-latest  { color: #d0e4f4; border-left-color: var(--ui-cyan); background: rgba(0,212,255,0.05); }
         .hand-side--ai .hs-log-latest { color: #f4d0ec; border-left-color: var(--ui-pink); background: rgba(255,110,199,0.04); }
 
+        /* ── Turn state visuals ── */
+
+        /* AI turn: player cards go dark and unclickable */
+        #hand-overlay.ai-turn #player-hand .card {
+            opacity: 0.35;
+            filter: saturate(0.15) brightness(0.65);
+            pointer-events: none !important;
+            cursor: default;
+            transition: opacity 0.35s ease, filter 0.35s ease;
+        }
+        #hand-overlay.ai-turn #player-hand .card:hover {
+            transform: none !important;
+            box-shadow: none !important;
+        }
+        /* AI turn: hand-bar border shifts to AI purple */
+        #hand-overlay.ai-turn .hand-bar {
+            border-top-color: rgba(155, 89, 182, 0.5);
+        }
+        /* AI turn: subtle pink glow on AI side panel */
+        #hand-overlay.ai-turn #hand-side-ai {
+            border-left-color: rgba(255, 110, 199, 0.15);
+        }
+
+        /* Effect pending: hand-bar border pulses orange — jugador debe actuar */
+        #hand-overlay.effect-pending .hand-bar {
+            border-top-color: #e07b00;
+            animation: pulse-border-effect 1.1s ease-in-out infinite;
+        }
+        @keyframes pulse-border-effect {
+            0%, 100% { border-top-color: #e07b00; box-shadow: 0 -2px 12px rgba(224,123,0,0.4); }
+            50%       { border-top-color: rgba(224,123,0,0.25); box-shadow: none; }
+        }
+        /* Effect pending: player cards still interactive but highlighted */
+        #hand-overlay.effect-pending #player-hand .card {
+            transition: opacity 0.2s;
+        }
+
+        /* #game-status states */
+        #game-status.gs-ai     { color: rgba(155,89,182,0.7); letter-spacing: 2px; }
+        #game-status.gs-player { color: var(--ui-cyan); letter-spacing: 2px; }
+        #game-status.gs-effect {
+            color: #e07b00;
+            letter-spacing: 2px;
+            animation: pulse-text-effect 1.1s ease-in-out infinite;
+        }
+        @keyframes pulse-text-effect {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.45; }
+        }
+
+        /* Transiciones suaves del hand-bar entre estados */
+        #hand-overlay .hand-bar {
+            transition: border-top-color 0.4s ease, box-shadow 0.4s ease;
+        }
+
         /* ── Peek mode ── */
         #hand-overlay.peek-mode .hand-bar {
             height: 0;

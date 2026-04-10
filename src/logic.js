@@ -871,6 +871,36 @@ function updateUI() {
     checkWinCondition();
     if (typeof window.flushAnimQueue === 'function') window.flushAnimQueue();
     updateHandSidePanels();
+    updateTurnVisuals();
+}
+
+function updateTurnVisuals() {
+    const overlay = document.getElementById('hand-overlay');
+    const statusEl = document.getElementById('game-status');
+    if (!overlay) return;
+
+    // effectContext siempre requiere input del jugador (la IA resuelve sin pasar por effectContext)
+    const needsPlayerInput = !!gameState.effectContext;
+    const isAITurn = gameState.turn === 'ai' && !needsPlayerInput;
+    const isPlayerTurn = gameState.turn === 'player' && gameState.phase === 'action' && !needsPlayerInput;
+
+    overlay.classList.toggle('ai-turn', isAITurn);
+    overlay.classList.toggle('effect-pending', needsPlayerInput);
+
+    if (!statusEl) return;
+    if (needsPlayerInput) {
+        statusEl.textContent = '← ACCIÓN REQUERIDA';
+        statusEl.className = 'gs-effect';
+    } else if (isAITurn) {
+        statusEl.textContent = 'IA →';
+        statusEl.className = 'gs-ai';
+    } else if (isPlayerTurn) {
+        statusEl.textContent = 'TU TURNO';
+        statusEl.className = 'gs-player';
+    } else {
+        statusEl.textContent = '—';
+        statusEl.className = '';
+    }
 }
 
 function calculateScore(state, line, target) {
@@ -1250,6 +1280,7 @@ function actionPhase(who) {
     gameState.phase = 'action';
     console.log(`🎮 ACTION PHASE for ${who} - game is now playable`);
     updateStatus(who === 'player' ? 'Juega una carta o Recarga' : 'IA eligiendo acción...');
+    updateTurnVisuals();
 
     if (who === 'ai') {
         setTimeout(playAITurn, 1500);
