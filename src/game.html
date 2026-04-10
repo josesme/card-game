@@ -2333,7 +2333,9 @@ window.addEventListener('load', function() {
         // Close immediately on leave; CSS transition (250ms) acts as natural buffer
         // Keep a minimal 80ms guard only to absorb cursor jitter at the edge
         let closeTimer;
-        overlay.addEventListener('mouseleave', () => {
+        overlay.addEventListener('mouseleave', (e) => {
+            // Don't close if cursor exited through the bottom edge (e.g. Windows taskbar)
+            if (e.clientY >= window.innerHeight - 2) return;
             closeTimer = setTimeout(() => {
                 if (!hasActiveModal()) overlay.classList.remove('open');
             }, 80);
