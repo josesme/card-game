@@ -94,6 +94,7 @@ let gameState = {
     pendingControlResume: null,                             // { who, action } — resume tras rearrange de Control Component
     isProcessing: false,                                    // ⚠️ BLOQUEO: true mientras se resuelve una acción del jugador
     _lastScrambleTime: 0,                                   // ⏱️ COOLDOWN GLOBAL: timestamp último scramble
+    actionLog: [],                                          // ring buffer para paneles laterales de la mano: [{isAI, icon, msg}], max 20
 };
 
 function createDeckForPlayer(target) {
@@ -713,6 +714,7 @@ function updateUI() {
         ui.playerHand.innerHTML = gameState.player.hand
             .map(c => createCardHTML(c))
             .join('');
+        if (typeof updateSlider === 'function') updateSlider();
     }
     // AI hand: just show count
     const aiHandCountEl = document.getElementById('ai-hand-count');
@@ -868,6 +870,7 @@ function updateUI() {
 
     checkWinCondition();
     if (typeof window.flushAnimQueue === 'function') window.flushAnimQueue();
+    updateHandSidePanels();
 }
 
 function calculateScore(state, line, target) {
@@ -2080,15 +2083,22 @@ function setRearrangeActiveColumns(active) {
 
 function showRearrangeDoneButton() {
     setRearrangeActiveColumns(true);
+    // Asegurar que el drawer está abierto para que el jugador vea el botón
+    const overlay = document.getElementById('hand-overlay');
+    if (overlay) overlay.classList.add('open');
+
     let btn = document.getElementById('btn-rearrange-done');
     if (!btn) {
-        const statusEl = document.getElementById('game-status');
-        if (!statusEl) return;
         btn = document.createElement('button');
         btn.id = 'btn-rearrange-done';
         btn.textContent = 'LISTO';
-        btn.style.cssText = 'margin-left: 8px; padding: 4px 16px; background: var(--ui-cyan); color: #0a0e27; font-family: var(--ui-font); font-size: 10px; font-weight: 700; border: none; border-radius: 4px; cursor: pointer; letter-spacing: 1px;';
-        statusEl.parentElement.insertBefore(btn, statusEl.nextSibling);
+        btn.className = 'ui-btn ui-btn--sm';
+        btn.style.cssText = 'background: var(--ui-cyan); color: #0a0e27; font-weight: 700;';
+        // Insertar en el header del panel IA (prioritario) o en el bar como fallback
+        const aiHeader = document.getElementById('hs-log-ai-header');
+        const fallback = document.getElementById('game-status');
+        if (aiHeader) aiHeader.appendChild(btn);
+        else if (fallback) fallback.parentElement.insertBefore(btn, fallback.nextSibling);
     }
     btn.classList.remove('hidden');
     btn.onclick = () => {
@@ -3171,13 +3181,90 @@ function updateStatus(msg) {
     entry.classList.add('log-latest');
 
     log.appendChild(entry);
-    
+
     // Auto-scroll al final
     log.scrollTo({
         top: log.scrollHeight,
         behavior: 'smooth'
     });
+
+    // Ring buffer para paneles laterales (max 20 entradas)
+    if (!msg.startsWith('---')) {
+        gameState.actionLog.push({ isAI, icon, msg });
+        if (gameState.actionLog.length > 20) gameState.actionLog.shift();
+    }
 }
+
+function updateHandSidePanels() {
+    const overlay = document.getElementById('hand-overlay');
+    if (!overlay || !overlay.classList.contains('open')) return;
+    _updateHandSidePanel('player');
+    _updateHandSidePanel('ai');
+}
+
+function _updateHandSidePanel(side) {
+    const isAI = side === 'ai';
+    const fanEl = document.getElementById(isAI ? 'hs-fan-ai' : 'hs-fan-player');
+    const logEl = document.getElementById(isAI ? 'hs-log-ai' : 'hs-log-player');
+    if (!fanEl || !logEl) return;
+
+    const trash = gameState[side].trash;
+    const accentVar = isAI ? 'var(--ui-pink)' : 'var(--player-primary)';
+    const accentRgb = isAI ? '255,110,199' : '255,217,61';
+    const fanClass  = isAI ? 'hs-fan--ai' : 'hs-fan--player';
+
+    // --- Fan (pila de descarte) ---
+    const last3 = trash.slice(-3);
+    if (last3.length === 0) {
+        fanEl.innerHTML = `
+            <div class="hs-fan-title" style="color:${accentVar};">DESCARTE</div>
+            <div class="hs-fan-empty">vacío</div>`;
+    } else {
+        const cards = last3.map(c => `
+            <div class="hs-fan-card" style="color:${accentVar};border-color:rgba(${accentRgb},0.4);">
+                <div class="hs-fan-val">${c.valor}</div>
+                <div class="hs-fan-name">${c.nombre || ''}</div>
+            </div>`).join('');
+        fanEl.innerHTML = `
+            <div class="hs-fan-title" style="color:${accentVar};">DESCARTE</div>
+            <div class="hs-discard-fan ${fanClass}" onclick="showDiscardModal('${side}')" title="Ver cementerio completo">
+                ${cards}
+            </div>
+            <div class="hs-fan-count" style="color:rgba(${accentRgb},0.5);">${trash.length} carta${trash.length !== 1 ? 's' : ''}</div>`;
+    }
+
+    // --- Log (últimas 5 entradas de este bando) — solo actualiza entries, no el header ---
+    const entriesEl = document.getElementById(isAI ? 'hs-log-ai-entries' : 'hs-log-player-entries');
+    if (!entriesEl) return;
+    const sideLog = gameState.actionLog.filter(e => !!e.isAI === isAI).slice(-5);
+    entriesEl.innerHTML = sideLog.length === 0
+        ? `<div class="hs-log-entry" style="color:var(--ui-dim);">—</div>`
+        : sideLog.map((e, i) => `
+            <div class="hs-log-entry ${i === sideLog.length - 1 ? 'hs-log-latest' : ''}">
+                ${e.icon} ${e.msg}
+            </div>`).join('');
+}
+
+function showDiscardModal(side) {
+    const trash = gameState[side].trash;
+    const modal     = document.getElementById('reveal-modal');
+    const title     = document.getElementById('reveal-title');
+    const subtitle  = document.getElementById('reveal-subtitle');
+    const container = document.getElementById('reveal-cards-container');
+    const closeBtn  = document.getElementById('btn-reveal-close');
+    if (!modal || !container) return;
+
+    title.textContent    = side === 'player' ? 'CEMENTERIO — JUGADOR' : 'CEMENTERIO — IA';
+    subtitle.textContent = `${trash.length} carta${trash.length !== 1 ? 's' : ''} descartadas`;
+    container.innerHTML  = trash.length === 0
+        ? `<div style="color:var(--ui-dim);padding:20px;font-family:'JetBrains Mono',monospace;font-size:12px;">Vacío</div>`
+        : [...trash].reverse().map(c => `<div class="reveal-card-select no-select">${createCardHTML(c)}</div>`).join('');
+
+    closeBtn.textContent = 'CERRAR';
+    closeBtn.onclick = () => modal.classList.add('hidden');
+    modal.classList.remove('hidden');
+}
+window.showDiscardModal = showDiscardModal;
 
 function checkWinCondition() {
     if (gameState.player.compiled.length >= 3) {
