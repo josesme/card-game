@@ -3227,10 +3227,11 @@ function _updateHandSidePanel(side) {
             </div>`).join('');
         fanEl.innerHTML = `
             <div class="hs-fan-title" style="color:${accentVar};">DESCARTE</div>
-            <div class="hs-discard-fan ${fanClass}" onclick="showDiscardModal('${side}')" title="Ver cementerio completo">
+            <div class="hs-discard-fan ${fanClass}" title="Ver cementerio completo">
                 ${cards}
             </div>
             <div class="hs-fan-count" style="color:rgba(${accentRgb},0.5);">${trash.length} carta${trash.length !== 1 ? 's' : ''}</div>`;
+        fanEl.querySelector('.hs-discard-fan').onclick = () => showDiscardModal(side);
     }
 
     // --- Log (últimas 5 entradas de este bando) — solo actualiza entries, no el header ---

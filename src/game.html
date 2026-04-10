@@ -2538,6 +2538,7 @@ function _applySlider() {
     const step  = cardW + gapW;
 
     hand.style.transform = `translateX(-${handSliderIdx * step}px)`;
+    hand.style.justifyContent = total <= HAND_WINDOW ? 'center' : 'flex-start';
 
     // Edge fades
     vp.classList.toggle('has-prev', handSliderIdx > 0);
