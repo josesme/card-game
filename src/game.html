@@ -158,11 +158,11 @@
             max-height: 0;
             overflow: hidden;
             background: rgba(10,14,39,0.97);
-            transition: max-height 0.3s ease;
+            transition: max-height 0.25s cubic-bezier(0.25, 0, 0.2, 1);
             padding: 0 20px;
         }
         #hand-overlay.open .hand-content {
-            max-height: 70vh;
+            max-height: 390px;
             overflow-x: auto;
             overflow-y: visible;
             padding: 12px 20px;
@@ -293,7 +293,7 @@
         }
         /* Drawer expandido: sin decoración de barra */
         #hand-overlay.peek-mode.open .hand-content {
-            max-height: 70vh;
+            max-height: 390px;
             overflow: visible;
         }
         #hand-overlay.peek-mode.open #player-hand {
@@ -2337,7 +2337,7 @@ window.addEventListener('load', function() {
         overlay.addEventListener('mouseleave', () => {
             closeTimer = setTimeout(() => {
                 if (!hasActiveModal()) overlay.classList.remove('open');
-            }, 200);
+            }, 300);
         });
         overlay.addEventListener('mouseenter', () => clearTimeout(closeTimer));
     })();
