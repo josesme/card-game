@@ -532,6 +532,7 @@ function luz2ShowPostRevealModal(cardObj, line, revSide) {
     }
     // Mantener contexto para saber que Luz 2 está en progreso
     gameState.effectContext = { type: 'confirm', luz2: true, line, revSide, cardObj };
+    updateTurnVisuals();
     confirmArea.classList.remove('hidden');
     confirmMsg.textContent = `Luz 2 — ${cardObj.card.nombre}: SÍ = Cambiar de línea (bocabajo) · NO = Voltear bocarriba`;
 
@@ -547,6 +548,7 @@ function luz2ShowPostRevealModal(cardObj, line, revSide) {
             waitingForLine: true,
             luz2Complete: true // Marcar para llamar a processAbilityEffect después
         };
+        updateTurnVisuals();
         highlightSelectableLines(line);
         updateStatus(`Elige línea destino para mover "${cardObj.card.nombre}" (bocabajo)`);
     };
@@ -1259,6 +1261,7 @@ function checkCompilePhase(who) {
         if (gameState.pendingCompileShift) {
             const { cards, sourceLine } = gameState.pendingCompileShift;
             gameState.effectContext = { type: 'compileShift', cards, sourceLine, resumeFor: who, waitingForLine: true };
+            updateTurnVisuals();
             updateStatus('Velocidad 2: elige línea donde cambiar la carta');
             highlightSelectableLines(sourceLine);
         } else {
@@ -1636,6 +1639,7 @@ function startEffect(type, target, count, opts = {}) {
         updateStatus(`Efecto: elige ${count} carta(s)${targetDesc} para ${actionVerb}`);
     }
     highlightEffectTargets();
+    updateTurnVisuals();
 }
 
 function highlightEffectTargets() {
@@ -3156,6 +3160,7 @@ function continueAfterEndEffects(who) {
 function updateStatus(msg) {
     const log = document.getElementById('game-log');
     if (!log) return;
+    updateTurnVisuals();
 
     // Detectar tipo de mensaje para icono y color
     let icon = '•';
