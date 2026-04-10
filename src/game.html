@@ -2326,13 +2326,13 @@ window.addEventListener('load', function() {
             }
         });
 
-        // Leaving the entire overlay closes (with small delay to avoid flicker)
-        // BUT not if there's an active modal requiring player action
+        // Close immediately on leave; CSS transition (250ms) acts as natural buffer
+        // Keep a minimal 80ms guard only to absorb cursor jitter at the edge
         let closeTimer;
         overlay.addEventListener('mouseleave', () => {
             closeTimer = setTimeout(() => {
                 if (!hasActiveModal()) overlay.classList.remove('open');
-            }, 300);
+            }, 80);
         });
         overlay.addEventListener('mouseenter', () => clearTimeout(closeTimer));
     })();
