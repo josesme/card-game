@@ -9,6 +9,13 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="ui-components.css">
     <style>
+        :root {
+            --hand-card-w: 215px;
+            --hand-card-gap: 10px;
+            --hand-w: calc(5 * 215px + 4 * 10px);
+            --peek-h: 72px;
+        }
+
         @font-face {
             font-family: 'DoctorGlitch';
             src: url('../src/fonts/DoctorGlitch.otf') format('opentype');
@@ -281,7 +288,7 @@
             min-height: 0 !important;
         }
         #hand-overlay.peek-mode:not(.open) .slider-viewport {
-            overflow: visible;
+            overflow: hidden;
             height: var(--peek-h);
         }
         /* Drawer expandido: sin decoración de barra */
