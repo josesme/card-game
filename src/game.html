@@ -245,6 +245,28 @@
         .hs-log-latest  { color: #d0e4f4; border-left-color: var(--ui-cyan); background: rgba(0,212,255,0.05); }
         .hand-side--ai .hs-log-latest { color: #f4d0ec; border-left-color: var(--ui-pink); background: rgba(255,110,199,0.04); }
 
+        /* === FIELD TARGETING — revertir: borrar este bloque completo === */
+        #game-container.field-targeting .proto-row,
+        #game-container.field-targeting .line-separator-h {
+            opacity: 0.18;
+            filter: saturate(0.05);
+            transition: opacity 0.25s ease, filter 0.25s ease;
+            pointer-events: none;
+        }
+        #game-container.field-targeting .card-field-wrapper {
+            opacity: 0.18;
+            filter: saturate(0.05) brightness(0.5);
+            transition: opacity 0.25s ease, filter 0.25s ease;
+            pointer-events: none;
+        }
+        #game-container.field-targeting .card-field-wrapper.field-target {
+            opacity: 1 !important;
+            filter: none !important;
+            pointer-events: auto !important;
+            transition: none;
+        }
+        /* === FIN FIELD TARGETING === */
+
         /* ── Turn state visuals ── */
 
         /* AI turn: player cards go dark and unclickable */

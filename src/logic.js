@@ -1029,6 +1029,9 @@ function renderStack(line, target) {
 
         const wrapper = document.createElement('div');
         wrapper.className = 'card-field-wrapper';
+        wrapper.dataset.line = line;
+        wrapper.dataset.target = target;
+        wrapper.dataset.idx = idx;
 
         if (isV2) {
             // Position with absolute offset for overlap
@@ -1655,8 +1658,7 @@ function highlightEffectTargets() {
             showHandSelectOverlay(ctx.type, ctx.count - ctx.selected.length, ctx);
         }
     } else if (ctx.type === 'eliminate' || ctx.type === 'flip' || ctx.type === 'return' || ctx.type === 'shift' || ctx.type === 'selectCardToCopy' || ctx.type === 'rearrange' || ctx.type === 'swap') {
-        // Click directo en mesa — el jugador necesita ver el contexto del tablero
-        // Las cartas del campo ya tienen onclick → handleFieldCardClick
+        markFieldTargets(); // === FIELD TARGETING ===
     } else if (ctx.type === 'reveal') {
         if (typeof showHandSelectOverlay === 'function') {
             showHandSelectOverlay('reveal', 1, ctx);
@@ -1760,7 +1762,59 @@ function clearEffectHighlights() {
     if (stopBtn) stopBtn.classList.add('hidden');
     // Close select overlay if open
     if (typeof closeHandSelectOverlay === 'function') closeHandSelectOverlay();
+    clearFieldTargets(); // === FIELD TARGETING ===
 }
+
+// === FIELD TARGETING — revertir: borrar markFieldTargets + clearFieldTargets + llamadas ===
+function markFieldTargets() {
+    const ctx = gameState.effectContext;
+    const gc = document.getElementById('game-container');
+    if (!gc || !ctx) return;
+
+    const fieldTypes = ['eliminate', 'flip', 'return', 'shift', 'revealField', 'selectCardToCopy', 'swap'];
+    if (!fieldTypes.includes(ctx.type)) return;
+
+    gc.classList.add('field-targeting');
+
+    document.querySelectorAll('.card-field-wrapper[data-line]').forEach(wrapper => {
+        const line   = wrapper.dataset.line;
+        const target = wrapper.dataset.target;
+        const idx    = parseInt(wrapper.dataset.idx);
+        const stack  = gameState.field[line]?.[target];
+        if (!stack) return;
+        const cardObj = stack[idx];
+        if (!cardObj) return;
+
+        const isUncovered = idx === stack.length - 1;
+
+        // Target side
+        if (ctx.target !== 'any' && ctx.target !== target) return;
+        // Coverage
+        if (!isUncovered && !ctx.targetAll && !ctx.coveredOnly) return;
+        if (ctx.coveredOnly && isUncovered) return;
+        // Line restrictions
+        if (ctx.forceLine && line !== ctx.forceLine) return;
+        if (ctx.allowedLines && !ctx.allowedLines.includes(line)) return;
+        if (ctx.excludeLine && line === ctx.excludeLine) return;
+        // Filter
+        if (ctx.filter && !cardMatchesFilter(cardObj, ctx)) return;
+        // Persistent modifiers (prevent*)
+        if (typeof getPersistentModifiers === 'function') {
+            const mods = getPersistentModifiers(cardObj);
+            if (ctx.type === 'eliminate' && mods.preventEliminate) return;
+            if (ctx.type === 'flip'      && mods.preventFlip)      return;
+            if (ctx.type === 'shift'     && mods.preventShift)     return;
+        }
+
+        wrapper.classList.add('field-target');
+    });
+}
+
+function clearFieldTargets() {
+    document.getElementById('game-container')?.classList.remove('field-targeting');
+    document.querySelectorAll('.card-field-wrapper.field-target').forEach(el => el.classList.remove('field-target'));
+}
+// === FIN FIELD TARGETING ===
 
 function handleDiscardChoice(handIndex) {
     const ctx = gameState.effectContext;
