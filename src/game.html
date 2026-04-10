@@ -261,7 +261,7 @@
             padding: 8px 20px;
             border-top: 2px solid var(--player-primary);
         }
-        /* Cartas asomando en reposo */
+        /* Cartas asomando en reposo — sin caja contenedora visible */
         #hand-overlay.peek-mode:not(.open) .hand-content {
             max-height: var(--peek-h);
             overflow: hidden;
@@ -269,13 +269,19 @@
             display: flex;
             justify-content: center;
             padding: 0;
+            background: transparent;
         }
+        /* Sombra en la tira inferior para fundir con el tablero */
         #hand-overlay.peek-mode:not(.open) .hand-content::after {
             content: '';
             position: absolute;
-            bottom: 0; left: 0; right: 0; height: 22px;
-            background: linear-gradient(to top, #0a0e27, transparent);
-            pointer-events: none; z-index: 1;
+            bottom: 0; left: 0; right: 0; height: 28px;
+            background: linear-gradient(to top, rgba(11,15,26,0.85), transparent);
+            pointer-events: none; z-index: 10;
+        }
+        /* Sombra elevada en cada carta para que floten visualmente */
+        #hand-overlay.peek-mode:not(.open) #player-hand .card {
+            box-shadow: 0 -6px 24px rgba(0,0,0,0.7), 0 -2px 8px rgba(0,212,255,0.08);
         }
         /* Paneles laterales solo en expanded */
         #hand-overlay.peek-mode:not(.open) #hand-side-player,
@@ -300,19 +306,8 @@
             align-items: center;
             padding-top: 0;
         }
-        /* Botón de toggle de modo */
-        #btn-hand-mode {
-            position: fixed;
-            bottom: 8px; right: 8px;
-            width: 28px; height: 28px;
-            background: rgba(10,14,39,0.9);
-            border: 1px solid rgba(255,217,61,0.2);
-            border-radius: 4px; cursor: pointer;
-            color: rgba(255,217,61,0.4);
-            font-size: 14px; line-height: 1;
-            display: flex; align-items: center; justify-content: center;
-            z-index: 960; transition: color 0.15s, border-color 0.15s;
-        }
+        /* Botón de toggle de modo — oculto (activar por localStorage si se necesita) */
+        #btn-hand-mode { display: none; }
         #btn-hand-mode:hover { color: var(--player-primary); border-color: var(--player-primary); }
 
         /* ── LOG TOGGLE ─────────────────────────────── */
