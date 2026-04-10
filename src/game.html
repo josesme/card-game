@@ -158,8 +158,8 @@
             max-height: 0;
             overflow: hidden;
             background: rgba(10,14,39,0.97);
-            /* Cierre: acelera (se recoge rápido y firme) */
-            transition: max-height 0.18s cubic-bezier(0.4, 0, 1, 1);
+            /* Cierre: suave y controlado */
+            transition: max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1);
             padding: 0 20px;
         }
         #hand-overlay.open .hand-content {
@@ -170,8 +170,8 @@
             display: flex;
             align-items: stretch;
             gap: 0;
-            /* Apertura: arranca rápido y decelera al llegar */
-            transition: max-height 0.26s cubic-bezier(0.2, 0, 0, 1);
+            /* Apertura: rápida y directa */
+            transition: max-height 0.2s cubic-bezier(0.2, 0, 0, 1);
         }
 
         /* ── Hand side panels ── */
@@ -304,7 +304,7 @@
         #hand-overlay.peek-mode.open .hand-content {
             max-height: 390px;
             overflow: visible;
-            transition: max-height 0.26s cubic-bezier(0.2, 0, 0, 1);
+            transition: max-height 0.2s cubic-bezier(0.2, 0, 0, 1);
         }
         #hand-overlay.peek-mode.open #player-hand {
             align-items: center;
