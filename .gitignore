@@ -35,6 +35,13 @@ my-changes/
 local-customizations/
 images-local/
 
+# Prototipos y scripts de debugging temporal
+prototype-*.html
+ss*.js
+ss*.png
+disable-npm.bat
+npm.cmd
+
 # Audio original sin comprimir (usar bgm.ogg comprimido)
 sounds/*.mp3
 sounds/*.wav
