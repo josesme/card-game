@@ -2754,17 +2754,20 @@ function playSelectedCard(isFaceDown) {
 }
 
 function highlightSelectableLines(excludeLine, allowedLines) {
+    const gc = document.getElementById('game-container');
+    if (gc) gc.classList.add('stack-targeting'); // === STACK TARGETING ===
     const lines = allowedLines || LINES;
     lines.forEach(line => {
         if (excludeLine && line === excludeLine) return;
         const lineEl = document.getElementById(`line-${line}`);
-        // line-* tiene display:contents, aplicar al padre (grid row visible)
-        const target = lineEl ? lineEl.parentElement : null;
-        if (target) target.classList.add('selectable-line');
+        const col = lineEl ? lineEl.closest('.battle-column') : null;
+        if (col) col.classList.add('stack-target'); // === STACK TARGETING ===
     });
 }
 
 function clearSelectionHighlights() {
+    document.getElementById('game-container')?.classList.remove('stack-targeting'); // === STACK TARGETING ===
+    document.querySelectorAll('.battle-column.stack-target').forEach(el => el.classList.remove('stack-target')); // === STACK TARGETING ===
     document.querySelectorAll('.selectable-line').forEach(el => el.classList.remove('selectable-line'));
 }
 

@@ -267,6 +267,21 @@
         }
         /* === FIN FIELD TARGETING === */
 
+        /* === STACK TARGETING — revertir: borrar este bloque === */
+        #game-container.stack-targeting .battle-column {
+            opacity: 0.18;
+            filter: saturate(0.05) brightness(0.5);
+            transition: opacity 0.25s ease, filter 0.25s ease;
+            pointer-events: none;
+        }
+        #game-container.stack-targeting .battle-column.stack-target {
+            opacity: 1 !important;
+            filter: none !important;
+            pointer-events: auto !important;
+            transition: none;
+        }
+        /* === FIN STACK TARGETING === */
+
         /* === FIELD CURSOR TOOLTIP — revertir: borrar este bloque === */
         #field-cursor-tooltip {
             position: fixed;
