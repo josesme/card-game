@@ -257,6 +257,7 @@ function initLineListeners() {
 }
 
 function handleShiftTargetLine(destinationLine) {
+    clearSelectionHighlights(); // === STACK TARGETING ===
     const ctx = gameState.effectContext;
     console.log(`🔀 handleShiftTargetLine: dest=${destinationLine}, selectedCard=${JSON.stringify(ctx?.selectedCard)}, currentEffectLine=${gameState.currentEffectLine}`);
 
