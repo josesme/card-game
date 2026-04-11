@@ -351,6 +351,14 @@
         }
         /* AI turn: side panel border stays cyan — no color shift */
 
+        /* AI turn / effect pending: ACTUALIZAR button non-interactive */
+        #hand-overlay.ai-turn #player-deck-btn,
+        #hand-overlay.effect-pending #player-deck-btn {
+            opacity: 0.3;
+            pointer-events: none;
+            cursor: default;
+        }
+
         /* Effect pending: hand-bar border pulses orange — jugador debe actuar */
         #hand-overlay.effect-pending .hand-bar {
             border-top-color: #e07b00;
