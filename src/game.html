@@ -158,12 +158,14 @@
             max-height: 0;
             overflow: hidden;
             background: rgba(10,14,39,0.97);
+            border-top: 1px solid transparent;
             /* Cierre: suave y controlado */
-            transition: max-height 0.42s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: max-height 0.42s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.42s ease;
             padding: 0 20px;
         }
         #hand-overlay.open .hand-content {
             max-height: 430px;
+            border-top-color: rgba(0, 212, 255, 0.3);
             overflow-x: auto;
             overflow-y: visible;
             padding: 12px 20px;
