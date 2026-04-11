@@ -1798,9 +1798,10 @@ function _fieldTooltipOnOver(e) {
         if (!label) return;
         tip.style.left = e.clientX + 'px';
         tip.style.top  = e.clientY + 'px';
+        tip.textContent = '';
         tip.classList.add('visible');
-        if (window.scrTxt) {
-            window.scrTxt(tip, label, { duration: 0.35, chars: 'upperCase', speed: 0.7 });
+        if (window.gsap && typeof ScrambleTextPlugin !== 'undefined') {
+            gsap.to(tip, { duration: 0.35, scrambleText: { text: label, chars: 'upperCase', speed: 0.7, revealDelay: 0 } });
         } else {
             tip.textContent = label;
         }
