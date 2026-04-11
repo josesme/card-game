@@ -892,6 +892,9 @@ function updateTurnVisuals() {
     overlay.classList.toggle('ai-turn', isAITurn);
     overlay.classList.toggle('effect-pending', needsPlayerInput);
 
+    const btnRefreshEl = document.getElementById('player-deck-btn');
+    if (btnRefreshEl) btnRefreshEl.disabled = !isPlayerTurn;
+
     if (!statusEl) return;
     if (needsPlayerInput) {
         statusEl.textContent = '← ACCIÓN REQUERIDA';
