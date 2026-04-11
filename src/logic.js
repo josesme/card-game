@@ -717,8 +717,9 @@ function updateUI() {
         ui.playerHand.innerHTML = gameState.player.hand
             .map(c => createCardHTML(c))
             .join('');
-        if (typeof updateSlider === 'function') updateSlider();
     }
+    // updateSlider siempre: no toca innerHTML, solo sincroniza estado de flechas/dots
+    if (typeof updateSlider === 'function') updateSlider();
     // AI hand: just show count
     const aiHandCountEl = document.getElementById('ai-hand-count');
     if (aiHandCountEl) {
