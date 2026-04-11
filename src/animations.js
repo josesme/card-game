@@ -45,6 +45,7 @@
 
     console.log('[ANIM] Flip available:', typeof Flip);
     if (typeof Flip !== 'undefined') gsap.registerPlugin(Flip);
+    if (typeof ScrambleTextPlugin !== 'undefined') gsap.registerPlugin(ScrambleTextPlugin);
 
     gsap.registerEffect({
         name: 'pulse',

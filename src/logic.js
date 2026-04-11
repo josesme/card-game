@@ -1801,7 +1801,7 @@ function _fieldTooltipOnOver(e) {
         tip.textContent = '';
         tip.classList.add('visible');
         if (window.gsap && typeof ScrambleTextPlugin !== 'undefined') {
-            gsap.to(tip, { duration: 0.35, scrambleText: { text: label, chars: 'upperCase', speed: 0.7, revealDelay: 0 } });
+            gsap.to(tip, { duration: 0.9, scrambleText: { text: label, chars: 'upperCase', speed: 0.4, revealDelay: 0 } });
         } else {
             tip.textContent = label;
         }
