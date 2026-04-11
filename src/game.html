@@ -186,11 +186,11 @@
         }
         .hand-side--player {
             padding-right: 12px;
-            border-right: 1px solid rgba(255,255,255,0.05);
+            border-right: 1px solid rgba(0,212,255,0.25);
         }
         .hand-side--ai {
             padding-left: 12px;
-            border-left: 1px solid rgba(255,255,255,0.05);
+            border-left: 1px solid rgba(0,212,255,0.25);
         }
         .hand-side--player .hs-fan { order: 1; }
         .hand-side--player .hs-log { order: 2; border-left: 1px solid rgba(0,212,255,0.25); padding-left: 10px; }
@@ -349,10 +349,7 @@
         #hand-overlay.ai-turn .hand-bar {
             border-top-color: rgba(155, 89, 182, 0.5);
         }
-        /* AI turn: subtle pink glow on AI side panel */
-        #hand-overlay.ai-turn #hand-side-ai {
-            border-left-color: rgba(255, 110, 199, 0.15);
-        }
+        /* AI turn: side panel border stays cyan — no color shift */
 
         /* Effect pending: hand-bar border pulses orange — jugador debe actuar */
         #hand-overlay.effect-pending .hand-bar {
