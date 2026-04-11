@@ -49,6 +49,12 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 
 ---
 
+## Animación de victoria
+
+- **Secuencia cinematográfica al compilar** — Reemplazar el modal de victoria por una animación de 2–4 segundos, saltable con click. Secuencia: fade a negro → texto glitch "¿Qué eres?" → 3 protocolos flotando en el centro → cada carta se activa (brillo → se descompone en partículas) → partículas se fusionan en el centro → flash suave → texto final "COMPILATION COMPLETE / REALITY REWRITTEN". Requiere definir motor de animación (actualmente el juego es web; si se migra a Unity: C#, Canvas UI, coroutines/tween). Parámetros a exponer: colores según jugador/mazo, duración, skip. Arquitectura: clase controladora de estados + timeline de pasos desacoplados de la lógica de juego.
+
+---
+
 ## Polish & Social
 
 - **Guardado local** — Persistir estado de partida en `localStorage`.
