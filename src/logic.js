@@ -874,6 +874,7 @@ function updateUI() {
     if (typeof window.flushAnimQueue === 'function') window.flushAnimQueue();
     updateHandSidePanels();
     updateTurnVisuals();
+    markFieldTargets(); // === FIELD TARGETING: reaplica clases tras reconstrucción del DOM ===
 }
 
 function updateTurnVisuals() {
@@ -1658,7 +1659,8 @@ function highlightEffectTargets() {
             showHandSelectOverlay(ctx.type, ctx.count - ctx.selected.length, ctx);
         }
     } else if (ctx.type === 'eliminate' || ctx.type === 'flip' || ctx.type === 'return' || ctx.type === 'shift' || ctx.type === 'selectCardToCopy' || ctx.type === 'rearrange' || ctx.type === 'swap') {
-        markFieldTargets(); // === FIELD TARGETING ===
+        markFieldTargets();    // === FIELD TARGETING ===
+        _fieldTooltipAttach(); // === FIELD TARGETING ===
     } else if (ctx.type === 'reveal') {
         if (typeof showHandSelectOverlay === 'function') {
             showHandSelectOverlay('reveal', 1, ctx);
@@ -1777,31 +1779,55 @@ const _FIELD_TOOLTIP_LABELS = {
     swap:             'Intercambiar',
 };
 
-function _fieldTooltipMove(e) {
+// Event delegation: un solo listener en #game-container, sobrevive reconstrucciones del DOM
+function _fieldTooltipOnMove(e) {
     const tip = document.getElementById('field-cursor-tooltip');
-    if (tip) { tip.style.left = e.clientX + 'px'; tip.style.top = e.clientY + 'px'; }
+    if (tip && tip.classList.contains('visible')) {
+        tip.style.left = e.clientX + 'px';
+        tip.style.top  = e.clientY + 'px';
+    }
 }
 
-function _fieldTooltipShow(label, e) {
+function _fieldTooltipOnOver(e) {
+    const wrapper = e.target.closest('.card-field-wrapper.field-target');
     const tip = document.getElementById('field-cursor-tooltip');
     if (!tip) return;
-    if (e) { tip.style.left = e.clientX + 'px'; tip.style.top = e.clientY + 'px'; }
-    tip.classList.add('visible');
-    if (window.scrTxt) {
-        window.scrTxt(tip, label, { duration: 0.4, chars: 'upperCase', speed: 0.6 });
+    if (wrapper) {
+        const ctx = gameState.effectContext;
+        const label = ctx ? (_FIELD_TOOLTIP_LABELS[ctx.type] || ctx.type) : '';
+        if (!label) return;
+        tip.style.left = e.clientX + 'px';
+        tip.style.top  = e.clientY + 'px';
+        tip.classList.add('visible');
+        if (window.scrTxt) {
+            window.scrTxt(tip, label, { duration: 0.35, chars: 'upperCase', speed: 0.7 });
+        } else {
+            tip.textContent = label;
+        }
     } else {
-        tip.textContent = label;
+        tip.classList.remove('visible');
+        tip.removeAttribute('data-scr-last');
     }
-    document.addEventListener('mousemove', _fieldTooltipMove);
 }
 
-function _fieldTooltipHide() {
+function _fieldTooltipAttach() {
+    const gc = document.getElementById('game-container');
+    if (!gc) return;
+    gc.addEventListener('mouseover', _fieldTooltipOnOver);
+    gc.addEventListener('mousemove', _fieldTooltipOnMove);
+}
+
+function _fieldTooltipDetach() {
+    const gc = document.getElementById('game-container');
+    if (gc) {
+        gc.removeEventListener('mouseover', _fieldTooltipOnOver);
+        gc.removeEventListener('mousemove', _fieldTooltipOnMove);
+    }
     const tip = document.getElementById('field-cursor-tooltip');
     if (tip) {
         tip.classList.remove('visible');
-        tip.removeAttribute('data-scr-last'); // reset para que rescramble en el siguiente show
+        tip.removeAttribute('data-scr-last');
     }
-    document.removeEventListener('mousemove', _fieldTooltipMove);
 }
 function markFieldTargets() {
     const ctx = gameState.effectContext;
@@ -1843,15 +1869,12 @@ function markFieldTargets() {
             if (ctx.type === 'shift'     && mods.preventShift)     return;
         }
 
-        const label = _FIELD_TOOLTIP_LABELS[ctx.type] || ctx.type;
         wrapper.classList.add('field-target');
-        wrapper.addEventListener('mouseenter', (e) => _fieldTooltipShow(label, e));
-        wrapper.addEventListener('mouseleave', _fieldTooltipHide);
     });
 }
 
 function clearFieldTargets() {
-    _fieldTooltipHide();
+    _fieldTooltipDetach();
     document.getElementById('game-container')?.classList.remove('field-targeting');
     document.querySelectorAll('.card-field-wrapper.field-target').forEach(el => el.classList.remove('field-target'));
 }
