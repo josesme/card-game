@@ -437,9 +437,14 @@
             padding-top: 6px !important;
             min-height: 0 !important;
         }
+        #hand-overlay.peek-mode:not(.open) .slider-wrap {
+            flex: 0 0 var(--hand-w);
+            width: var(--hand-w);
+        }
         #hand-overlay.peek-mode:not(.open) .slider-viewport {
             overflow: hidden;
             height: var(--peek-h);
+            width: var(--hand-w);
         }
         /* Drawer expandido: sin decoración de barra */
         #hand-overlay.peek-mode.open .hand-content {
