@@ -1765,7 +1765,36 @@ function clearEffectHighlights() {
     clearFieldTargets(); // === FIELD TARGETING ===
 }
 
-// === FIELD TARGETING — revertir: borrar markFieldTargets + clearFieldTargets + llamadas ===
+// === FIELD TARGETING — revertir: borrar markFieldTargets + clearFieldTargets + _fieldTooltip* + llamadas ===
+
+const _FIELD_TOOLTIP_LABELS = {
+    eliminate:        'Eliminar',
+    flip:             'Voltear',
+    return:           'Devolver',
+    shift:            'Mover',
+    revealField:      'Revelar',
+    selectCardToCopy: 'Copiar efecto',
+    swap:             'Intercambiar',
+};
+
+function _fieldTooltipMove(e) {
+    const tip = document.getElementById('field-cursor-tooltip');
+    if (tip) { tip.style.left = e.clientX + 'px'; tip.style.top = e.clientY + 'px'; }
+}
+
+function _fieldTooltipShow(label) {
+    const tip = document.getElementById('field-cursor-tooltip');
+    if (!tip) return;
+    tip.textContent = label;
+    tip.classList.add('visible');
+    document.addEventListener('mousemove', _fieldTooltipMove);
+}
+
+function _fieldTooltipHide() {
+    const tip = document.getElementById('field-cursor-tooltip');
+    if (tip) tip.classList.remove('visible');
+    document.removeEventListener('mousemove', _fieldTooltipMove);
+}
 function markFieldTargets() {
     const ctx = gameState.effectContext;
     const gc = document.getElementById('game-container');
@@ -1806,11 +1835,15 @@ function markFieldTargets() {
             if (ctx.type === 'shift'     && mods.preventShift)     return;
         }
 
+        const label = _FIELD_TOOLTIP_LABELS[ctx.type] || ctx.type;
         wrapper.classList.add('field-target');
+        wrapper.addEventListener('mouseenter', () => _fieldTooltipShow(label));
+        wrapper.addEventListener('mouseleave', _fieldTooltipHide);
     });
 }
 
 function clearFieldTargets() {
+    _fieldTooltipHide();
     document.getElementById('game-container')?.classList.remove('field-targeting');
     document.querySelectorAll('.card-field-wrapper.field-target').forEach(el => el.classList.remove('field-target'));
 }

@@ -267,6 +267,28 @@
         }
         /* === FIN FIELD TARGETING === */
 
+        /* === FIELD CURSOR TOOLTIP — revertir: borrar este bloque === */
+        #field-cursor-tooltip {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            display: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #fff;
+            background: rgba(10, 14, 39, 0.92);
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 3px;
+            padding: 4px 8px;
+            white-space: nowrap;
+            transform: translate(14px, -50%);
+        }
+        #field-cursor-tooltip.visible { display: block; }
+        /* === FIN FIELD CURSOR TOOLTIP === */
+
         /* ── Turn state visuals ── */
 
         /* AI turn: player cards go dark and unclickable */
@@ -1438,6 +1460,10 @@
 <div id="card-preview-panel">
     <div id="card-preview-inner"></div>
 </div>
+
+<!-- === FIELD CURSOR TOOLTIP — revertir: borrar este div === -->
+<div id="field-cursor-tooltip"></div>
+<!-- === FIN FIELD CURSOR TOOLTIP === -->
 
 <!-- ═══ MODE TOGGLE (peek / classic) ═══ -->
 <button id="btn-hand-mode" title="Cambiar modo mano" onclick="setHandMode(document.getElementById('hand-overlay').classList.contains('peek-mode') ? 'classic' : 'peek')">≡</button>
