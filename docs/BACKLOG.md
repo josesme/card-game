@@ -35,6 +35,9 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 
 ### Paneles laterales (log de jugadas jugador / IA)
 
+- **[DECISIÓN POSPUESTA] Unificar log en panel central** — Propuesta de Nil: un único log cronológico compartido ocuparía más ancho, facilitaría leer efectos cruzados y daría más espacio a las cartas en mano. Los paneles laterales quedarían solo con mazo + descarte, o se eliminarían. Coste de refactorización: medio-alto. Pospuesto hasta tener mensajes de log reales y poder validar si el problema es el contenido o la estructura. Revisar tras completar la revisión de mensajes.
+
+
 - **Datos de turno por jugador** — Añadir encabezado en cada panel con: turno actual, cartas en mano y cartas en mazo del jugador correspondiente. Permite ver el estado de recursos sin abrir otra vista.
 
 - **Separadores de turno en el log** — Las entradas del log no distinguen visualmente a qué turno pertenecen. Insertar un separador fino con el número de turno cada vez que `startTurn` registra un nuevo turno, para facilitar la lectura de la historia de jugadas.
@@ -59,7 +62,6 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 
 - **Guardado local** — Persistir estado de partida en `localStorage`.
 - **Historial de partidas** — Log de resultados anteriores.
-- **Log de eventos detallado** — Registro por turno de todas las jugadas.
 
 ---
 
@@ -70,4 +72,4 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 ### Compilación y Control
 - [ ] **Al compilar, el compilador borra TODAS las cartas de la línea** (propias y del oponente). Actualmente cada jugador borra las suyas. Afecta a Odio 3: solo dispara cuando su propietario es quien borra. `Coste: Alto` `Valor: Alto`
 - [ ] **Diversidad 0 y Unidad 1 no son compilaciones.** Unidad 1 borra cartas pero no es una compilación → no interactúa con Guerra 2, Velocidad 2, ni activa el Control Component. `Coste: Medio` `Valor: Medio`
-
+- [ ] **Caos 2 no debe permitir cambiarse a sí misma
