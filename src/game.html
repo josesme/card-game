@@ -281,13 +281,15 @@
             transition: none;
         }
         /* Side targeting: dimea solo el lado incorrecto; pointer-events:none pasa clicks al .battle-column */
-        #game-container.side-targeting-ai .ai-stack {
+        #game-container.side-targeting-ai .ai-stack,
+        #game-container.side-targeting-ai .proto-box.ai {
             opacity: 0.18;
             filter: saturate(0.05) brightness(0.5);
             transition: opacity 0.25s ease, filter 0.25s ease;
             pointer-events: none;
         }
-        #game-container.side-targeting-player .player-stack {
+        #game-container.side-targeting-player .player-stack,
+        #game-container.side-targeting-player .proto-box.player {
             opacity: 0.18;
             filter: saturate(0.05) brightness(0.5);
             transition: opacity 0.25s ease, filter 0.25s ease;
