@@ -2291,10 +2291,10 @@ function showRearrangeDoneButton() {
         btn.textContent = 'LISTO';
         btn.className = 'ui-btn ui-btn--sm';
         btn.style.cssText = 'background: var(--ui-cyan); color: #0a0e27; font-weight: 700;';
-        // Insertar en el header del panel IA (prioritario) o en el bar como fallback
-        const aiHeader = document.getElementById('hs-log-ai-header');
+        // Insertar en el header del log unificado o en el bar como fallback
+        const logHeader = document.getElementById('hs-log-header');
         const fallback = document.getElementById('game-status');
-        if (aiHeader) aiHeader.appendChild(btn);
+        if (logHeader) logHeader.appendChild(btn);
         else if (fallback) fallback.parentElement.insertBefore(btn, fallback.nextSibling);
     }
     btn.classList.remove('hidden');
@@ -3459,18 +3459,16 @@ function updateHandSidePanels() {
     if (!overlay || !overlay.classList.contains('open')) return;
     _updateHandSidePanel('player');
     _updateHandSidePanel('ai');
+    _updateUnifiedLog();
 }
 
 function _updateHandSidePanel(side) {
     const isAI = side === 'ai';
     const fanEl = document.getElementById(isAI ? 'hs-fan-ai' : 'hs-fan-player');
-    const logEl = document.getElementById(isAI ? 'hs-log-ai' : 'hs-log-player');
-    if (!fanEl || !logEl) return;
+    if (!fanEl) return;
 
     const trash = gameState[side].trash;
     const accentVar = isAI ? 'var(--ui-pink)' : 'var(--player-primary)';
-    const accentRgb = isAI ? '255,110,199' : '255,217,61';
-    const fanClass  = isAI ? 'hs-fan--ai' : 'hs-fan--player';
 
     // --- Pila de descarte: carta superior real + badge contador ---
     const discardBlock = trash.length === 0
@@ -3499,17 +3497,23 @@ function _updateHandSidePanel(side) {
     if (discardWrap && trash.length > 0) {
         discardWrap.onclick = () => showDiscardModal(side);
     }
+}
 
-    // --- Log (todas las entradas de este bando, scroll al final) ---
-    const entriesEl = document.getElementById(isAI ? 'hs-log-ai-entries' : 'hs-log-player-entries');
+function _updateUnifiedLog() {
+    const entriesEl = document.getElementById('hs-unified-entries');
     if (!entriesEl) return;
-    const sideLog = gameState.actionLog.filter(e => !!e.isAI === isAI);
-    entriesEl.innerHTML = sideLog.length === 0
-        ? `<div class="hs-log-entry" style="color:var(--ui-dim);">—</div>`
-        : sideLog.map((e, i) => `
-            <div class="hs-log-entry ${i === sideLog.length - 1 ? 'hs-log-latest' : ''}">
-                ${e.icon} ${e.msg}
-            </div>`).join('');
+    const log = gameState.actionLog;
+    if (log.length === 0) {
+        entriesEl.innerHTML = `<div class="hs-log-entry" style="color:var(--ui-dim);">—</div>`;
+        return;
+    }
+    entriesEl.innerHTML = log.map((e, i) => {
+        const color = e.isAI ? 'rgba(155,89,182,0.9)' : 'rgba(255,217,61,0.9)';
+        const latest = i === log.length - 1 ? 'hs-log-latest' : '';
+        return `<div class="hs-log-entry ${latest}" style="border-left-color:${color};color:${color};">
+            ${e.icon} ${e.msg}
+        </div>`;
+    }).join('');
     entriesEl.scrollTop = entriesEl.scrollHeight;
 }
 

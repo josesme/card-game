@@ -176,26 +176,30 @@
             transition: max-height 0.2s cubic-bezier(0.2, 0, 0, 1);
         }
 
-        /* ── Hand side panels ── */
-        .hand-side {
-            flex: 1;
+        /* ── Hand side fan columns (solo mazo/descarte) ── */
+        .hand-side-fan {
+            flex-shrink: 0;
             display: flex;
-            align-items: stretch;
-            min-width: 0;
+            align-items: center;
             min-height: 300px;
         }
-        .hand-side--player {
-            padding-right: 12px;
+        .hand-side-fan--player {
             border-right: 1px solid rgba(0,212,255,0.25);
         }
-        .hand-side--ai {
-            padding-left: 12px;
+        .hand-side-fan--ai {
             border-left: 1px solid rgba(0,212,255,0.25);
         }
-        .hand-side--player .hs-fan { order: 1; }
-        .hand-side--player .hs-log { order: 2; border-left: 1px solid rgba(0,212,255,0.25); padding-left: 10px; }
-        .hand-side--ai     .hs-log { order: 1; border-right: 1px solid rgba(0,212,255,0.25); padding-right: 10px; }
-        .hand-side--ai     .hs-fan { order: 2; }
+
+        /* ── Log unificado ── */
+        .hs-unified-log {
+            width: 240px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 300px;
+            border-right: 1px solid rgba(0,212,255,0.25);
+            padding: 0 10px;
+        }
         .hs-fan {
             width: 110px;
             flex-shrink: 0;
@@ -243,9 +247,7 @@
             pointer-events: none; z-index: 10;
         }
 
-        .hs-log-header  { flex-shrink: 0; padding-bottom: 6px; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.07); min-height: 26px; display: flex; align-items: center; justify-content: center; }
-        .hand-side--player .hs-log-header { border-bottom-color: rgba(0,212,255,0.25); }
-        .hand-side--ai     .hs-log-header { border-bottom-color: rgba(0,212,255,0.25); }
+        .hs-log-header  { flex-shrink: 0; padding-bottom: 6px; margin-bottom: 4px; border-bottom: 1px solid rgba(0,212,255,0.25); min-height: 26px; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .hs-log-entries { flex: 1; display: flex; flex-direction: column; justify-content: flex-start; gap: 1px; overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; }
         .hs-log-entry   { font-family: var(--ui-font); font-size: 11px; line-height: 1.5; color: var(--ui-dim); padding: 2px 6px; border-left: 2px solid transparent; border-radius: 0 3px 3px 0; flex-shrink: 0; }
         .hs-log-latest  { color: #d0e4f4; border-left-color: var(--ui-cyan); background: rgba(0,212,255,0.05); }
@@ -1536,14 +1538,15 @@
       </div>
     </div>
     <div class="hand-content">
-        <div id="hand-side-player" class="hand-side hand-side--player">
+        <div id="hand-side-player" class="hand-side-fan hand-side-fan--player">
             <div id="hs-fan-player" class="hs-fan"></div>
-            <div id="hs-log-player" class="hs-log">
-                <div class="hs-log-header">
-                    <button id="player-deck-btn" title="Recargar Mazo" class="ui-btn ui-btn--sm">ACTUALIZAR</button>
-                </div>
-                <div id="hs-log-player-entries" class="hs-log-entries"></div>
+        </div>
+        <div id="hs-unified-log" class="hs-unified-log">
+            <div class="hs-log-header" id="hs-log-header">
+                <button id="player-deck-btn" title="Recargar Mazo" class="ui-btn ui-btn--sm">ACTUALIZAR</button>
+                <!-- #btn-rearrange-done se inserta aquí durante el rearrange -->
             </div>
+            <div id="hs-unified-entries" class="hs-log-entries"></div>
         </div>
         <div class="slider-wrap">
             <div class="slider-viewport" id="hand-slider-vp">
@@ -1554,13 +1557,7 @@
             </div>
             <div class="slider-dots" id="hand-slider-dots"></div>
         </div>
-        <div id="hand-side-ai" class="hand-side hand-side--ai">
-            <div id="hs-log-ai" class="hs-log">
-                <div class="hs-log-header" id="hs-log-ai-header">
-                    <!-- #btn-rearrange-done se inserta aquí durante el rearrange -->
-                </div>
-                <div id="hs-log-ai-entries" class="hs-log-entries"></div>
-            </div>
+        <div id="hand-side-ai" class="hand-side-fan hand-side-fan--ai">
             <div id="hs-fan-ai" class="hs-fan"></div>
         </div>
     </div>
