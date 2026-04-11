@@ -1797,28 +1797,46 @@ function _fieldTooltipOnMove(e) {
     }
 }
 
+function _fieldTooltipShow(tip, e, label, trackKey) {
+    const { x, y } = _tooltipCoords(e);
+    tip.style.left = x + 'px';
+    tip.style.top  = y + 'px';
+    tip.classList.add('visible');
+    // Re-scramble solo si cambió el elemento sobre el que estamos (trackKey distingue cartas/columnas)
+    if (tip.dataset.tooltipKey === trackKey) return;
+    tip.dataset.tooltipKey = trackKey;
+    tip.textContent = '';
+    if (window.gsap && typeof ScrambleTextPlugin !== 'undefined') {
+        gsap.to(tip, { duration: 0.9, scrambleText: { text: label, chars: 'upperCase', speed: 0.4, revealDelay: 0 } });
+    } else {
+        tip.textContent = label;
+    }
+}
+
 function _fieldTooltipOnOver(e) {
-    const wrapper = e.target.closest('.card-field-wrapper.field-target');
     const tip = document.getElementById('field-cursor-tooltip');
     if (!tip) return;
+
+    const wrapper = e.target.closest('.card-field-wrapper.field-target');
     if (wrapper) {
         const ctx = gameState.effectContext;
         const label = ctx ? (_FIELD_TOOLTIP_LABELS[ctx.type] || ctx.type) : '';
         if (!label) return;
-        const { x, y } = _tooltipCoords(e);
-        tip.style.left = x + 'px';
-        tip.style.top  = y + 'px';
-        tip.textContent = '';
-        tip.classList.add('visible');
-        if (window.gsap && typeof ScrambleTextPlugin !== 'undefined') {
-            gsap.to(tip, { duration: 0.9, scrambleText: { text: label, chars: 'upperCase', speed: 0.4, revealDelay: 0 } });
-        } else {
-            tip.textContent = label;
-        }
-    } else {
-        tip.classList.remove('visible');
-        tip.removeAttribute('data-scr-last');
+        _fieldTooltipShow(tip, e, label, wrapper.dataset.line + wrapper.dataset.target + wrapper.dataset.idx);
+        return;
     }
+
+    const col = e.target.closest('.battle-column.rearrange-active');
+    if (col) {
+        // trackKey por columna: usar el id del line-* hijo (display:contents) como identificador
+        const lineEl = col.querySelector('[id^="line-"]');
+        const colKey = lineEl ? lineEl.id : 'rearrange-col';
+        _fieldTooltipShow(tip, e, 'Reorganizar', colKey);
+        return;
+    }
+
+    tip.classList.remove('visible');
+    delete tip.dataset.tooltipKey;
 }
 
 function _fieldTooltipAttach() {
@@ -2239,10 +2257,21 @@ function setRearrangeActiveColumns(active) {
             else col.classList.remove('rearrange-active', 'rearrange-selected');
         }
         if (!active) {
-            // Limpiar checks de proto-boxes
             document.querySelectorAll(`#proto-${l}-player .rearrange-check, #proto-${l}-ai .rearrange-check`).forEach(c => c.remove());
         }
     });
+    // === STACK TARGETING ===
+    if (active) {
+        // Dimear el lado que NO se reorganiza
+        const ctx = gameState.effectContext;
+        const owner = ctx ? ((ctx.target === 'opponent' || ctx.target === 'ai') ? 'ai' : 'player') : 'player';
+        const gc = document.getElementById('game-container');
+        if (gc) gc.classList.add(owner === 'player' ? 'side-targeting-ai' : 'side-targeting-player');
+        _fieldTooltipAttach();
+    } else {
+        clearSelectionHighlights();
+        _fieldTooltipDetach();
+    }
 }
 
 function showRearrangeDoneButton() {
