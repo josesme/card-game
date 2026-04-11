@@ -1771,7 +1771,7 @@ const _FIELD_TOOLTIP_LABELS = {
     eliminate:        'Eliminar',
     flip:             'Voltear',
     return:           'Devolver',
-    shift:            'Mover',
+    shift:            'Cambiar',
     revealField:      'Revelar',
     selectCardToCopy: 'Copiar efecto',
     swap:             'Intercambiar',
