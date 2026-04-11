@@ -1785,8 +1785,12 @@ function _fieldTooltipMove(e) {
 function _fieldTooltipShow(label) {
     const tip = document.getElementById('field-cursor-tooltip');
     if (!tip) return;
-    tip.textContent = label;
     tip.classList.add('visible');
+    if (window.scrTxt) {
+        window.scrTxt(tip, label, { duration: 0.4, chars: 'upperCase', speed: 0.6 });
+    } else {
+        tip.textContent = label;
+    }
     document.addEventListener('mousemove', _fieldTooltipMove);
 }
 
