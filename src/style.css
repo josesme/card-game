@@ -1295,6 +1295,7 @@ body::before {
     background: var(--ui-bg-inactive);
     color: var(--ui-text-muted);
     border: 1px solid var(--ui-border-inactive);
+    cursor: not-allowed;
     box-shadow: none;
 }
 

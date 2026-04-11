@@ -3403,7 +3403,7 @@ function updateStatus(msg) {
     // Ring buffer para paneles laterales (max 20 entradas)
     if (!msg.startsWith('---')) {
         gameState.actionLog.push({ isAI, icon, msg });
-        if (gameState.actionLog.length > 20) gameState.actionLog.shift();
+        if (gameState.actionLog.length > 50) gameState.actionLog.shift();
     }
 }
 
@@ -3453,16 +3453,17 @@ function _updateHandSidePanel(side) {
         discardWrap.onclick = () => showDiscardModal(side);
     }
 
-    // --- Log (últimas 5 entradas de este bando) — solo actualiza entries, no el header ---
+    // --- Log (todas las entradas de este bando, scroll al final) ---
     const entriesEl = document.getElementById(isAI ? 'hs-log-ai-entries' : 'hs-log-player-entries');
     if (!entriesEl) return;
-    const sideLog = gameState.actionLog.filter(e => !!e.isAI === isAI).slice(-5);
+    const sideLog = gameState.actionLog.filter(e => !!e.isAI === isAI);
     entriesEl.innerHTML = sideLog.length === 0
         ? `<div class="hs-log-entry" style="color:var(--ui-dim);">—</div>`
         : sideLog.map((e, i) => `
             <div class="hs-log-entry ${i === sideLog.length - 1 ? 'hs-log-latest' : ''}">
                 ${e.icon} ${e.msg}
             </div>`).join('');
+    entriesEl.scrollTop = entriesEl.scrollHeight;
 }
 
 function showDiscardModal(side) {

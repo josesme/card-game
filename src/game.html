@@ -246,7 +246,7 @@
         .hs-log-header  { flex-shrink: 0; padding-bottom: 6px; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.07); min-height: 26px; display: flex; align-items: center; justify-content: center; }
         .hand-side--player .hs-log-header { border-bottom-color: rgba(0,212,255,0.25); }
         .hand-side--ai     .hs-log-header { border-bottom-color: rgba(0,212,255,0.25); }
-        .hs-log-entries { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; gap: 1px; overflow: hidden; }
+        .hs-log-entries { flex: 1; display: flex; flex-direction: column; justify-content: flex-start; gap: 1px; overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; }
         .hs-log-entry   { font-family: var(--ui-font); font-size: 11px; line-height: 1.5; color: var(--ui-dim); padding: 2px 6px; border-left: 2px solid transparent; border-radius: 0 3px 3px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
         .hs-log-latest  { color: #d0e4f4; border-left-color: var(--ui-cyan); background: rgba(0,212,255,0.05); }
         .hand-side--ai .hs-log-latest { color: #f4d0ec; border-left-color: var(--ui-pink); background: rgba(255,110,199,0.04); }
