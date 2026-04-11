@@ -3422,25 +3422,20 @@ function _updateHandSidePanel(side) {
     const accentRgb = isAI ? '255,110,199' : '255,217,61';
     const fanClass  = isAI ? 'hs-fan--ai' : 'hs-fan--player';
 
-    // --- Fan (pila de descarte) ---
-    const last3 = trash.slice(-3);
-    if (last3.length === 0) {
+    // --- Pila de descarte: carta superior real + badge contador ---
+    if (trash.length === 0) {
         fanEl.innerHTML = `
             <div class="hs-fan-title" style="color:${accentVar};">DESCARTE</div>
             <div class="hs-fan-empty">vacío</div>`;
     } else {
-        const cards = last3.map(c => `
-            <div class="hs-fan-card" style="color:${accentVar};border-color:rgba(${accentRgb},0.4);">
-                <div class="hs-fan-val">${c.valor}</div>
-                <div class="hs-fan-name">${c.nombre || ''}</div>
-            </div>`).join('');
+        const topCard = trash[trash.length - 1];
         fanEl.innerHTML = `
             <div class="hs-fan-title" style="color:${accentVar};">DESCARTE</div>
-            <div class="hs-discard-fan ${fanClass}" title="Ver cementerio completo">
-                ${cards}
-            </div>
-            <div class="hs-fan-count" style="color:rgba(${accentRgb},0.5);">${trash.length} carta${trash.length !== 1 ? 's' : ''}</div>`;
-        fanEl.querySelector('.hs-discard-fan').onclick = () => showDiscardModal(side);
+            <div class="hs-discard-card-wrap" title="Ver cementerio completo">
+                ${createCardHTML(topCard)}
+                <div class="hs-discard-badge" style="border-color:${accentVar};color:${accentVar};">${trash.length}</div>
+            </div>`;
+        fanEl.querySelector('.hs-discard-card-wrap').onclick = () => showDiscardModal(side);
     }
 
     // --- Log (últimas 5 entradas de este bando) — solo actualiza entries, no el header ---
