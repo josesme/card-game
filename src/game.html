@@ -426,9 +426,10 @@
         #hand-overlay.peek-mode:not(.open) #player-hand .card {
             box-shadow: 0 -6px 24px rgba(0,0,0,0.7), 0 -2px 8px rgba(0,212,255,0.08);
         }
-        /* Paneles laterales solo en expanded */
+        /* Paneles laterales y log solo en expanded */
         #hand-overlay.peek-mode:not(.open) #hand-side-player,
-        #hand-overlay.peek-mode:not(.open) #hand-side-ai {
+        #hand-overlay.peek-mode:not(.open) #hand-side-ai,
+        #hand-overlay.peek-mode:not(.open) #hs-unified-log {
             display: none;
         }
         #hand-overlay.peek-mode:not(.open) #player-hand {
