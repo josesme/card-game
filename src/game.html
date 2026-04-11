@@ -820,8 +820,8 @@
             font-size: 1em;
         }
         /* ── Hand slider ── */
-        .slider-wrap { flex-shrink: 0; width: var(--hand-w); display: flex; flex-direction: column; align-items: center; gap: 6px; }
-        .slider-viewport { position: relative; width: var(--hand-w); height: 300px; overflow: hidden; }
+        .slider-wrap { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .slider-viewport { position: relative; width: 100%; height: 300px; overflow: hidden; }
         .slider-viewport::before, .slider-viewport::after {
             content: ''; position: absolute; top: 0; bottom: 0; width: 52px;
             z-index: 5; pointer-events: none; transition: opacity 0.2s; opacity: 0;
