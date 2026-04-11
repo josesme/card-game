@@ -1780,11 +1780,19 @@ const _FIELD_TOOLTIP_LABELS = {
 };
 
 // Event delegation: un solo listener en #game-container, sobrevive reconstrucciones del DOM
+function _tooltipCoords(e) {
+    // CSS zoom on <html> (used for responsive scaling) causes clientX/Y to be
+    // in pre-zoom space while position:fixed renders in zoomed space — divide to align.
+    const z = parseFloat(document.documentElement.style.zoom) || 1;
+    return { x: e.clientX / z, y: e.clientY / z };
+}
+
 function _fieldTooltipOnMove(e) {
     const tip = document.getElementById('field-cursor-tooltip');
     if (tip && tip.classList.contains('visible')) {
-        tip.style.left = e.clientX + 'px';
-        tip.style.top  = e.clientY + 'px';
+        const { x, y } = _tooltipCoords(e);
+        tip.style.left = x + 'px';
+        tip.style.top  = y + 'px';
     }
 }
 
@@ -1796,8 +1804,9 @@ function _fieldTooltipOnOver(e) {
         const ctx = gameState.effectContext;
         const label = ctx ? (_FIELD_TOOLTIP_LABELS[ctx.type] || ctx.type) : '';
         if (!label) return;
-        tip.style.left = e.clientX + 'px';
-        tip.style.top  = e.clientY + 'px';
+        const { x, y } = _tooltipCoords(e);
+        tip.style.left = x + 'px';
+        tip.style.top  = y + 'px';
         tip.textContent = '';
         tip.classList.add('visible');
         if (window.gsap && typeof ScrambleTextPlugin !== 'undefined') {
