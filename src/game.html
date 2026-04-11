@@ -280,6 +280,17 @@
             pointer-events: auto !important;
             transition: none;
         }
+        /* Side targeting: dimea solo el lado incorrecto (visual, sin bloquear clicks de columna) */
+        #game-container.side-targeting-ai .ai-stack {
+            opacity: 0.18;
+            filter: saturate(0.05) brightness(0.5);
+            transition: opacity 0.25s ease, filter 0.25s ease;
+        }
+        #game-container.side-targeting-player .player-stack {
+            opacity: 0.18;
+            filter: saturate(0.05) brightness(0.5);
+            transition: opacity 0.25s ease, filter 0.25s ease;
+        }
         /* === FIN STACK TARGETING === */
 
         /* === FIELD CURSOR TOOLTIP — revertir: borrar este bloque === */
@@ -2224,7 +2235,7 @@ function processFieldSelection(type, selectedSet, eligible, ctx) {
                 return;
             }
             updateStatus('Elige la línea de destino para mover la carta...');
-            if (typeof highlightSelectableLines === 'function') highlightSelectableLines();
+            if (typeof highlightSelectableLines === 'function') highlightSelectableLines(line, player);
             updateUI();
             return; // Don't call finishEffect yet — waiting for line click
         } else if (type === 'selectCardToCopy') {

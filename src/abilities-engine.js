@@ -1569,7 +1569,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
                 selectedCard: { line, target: resolvedTarget, cardIdx }, waitingForLine: true
               };
               updateStatus(`Elige línea destino para "${cardObj.card.nombre}"`);
-              highlightSelectableLines(line);
+              highlightSelectableLines(line, resolvedTarget);
             } else {
               processAbilityEffect();
             }
@@ -1620,7 +1620,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           () => {
             gameState.effectContext = { type: 'shiftSelf', sourceLine: selfLine, target: 'player', count: 1, selected: [], waitingForLine: true };
             updateStatus(`${triggerCardName}: elige línea destino`);
-            highlightSelectableLines(selfLine);
+            highlightSelectableLines(selfLine, 'player');
           },
           () => processAbilityEffect(),
           { name: triggerCardName }
@@ -1658,7 +1658,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
               count: 1, selected: [], waitingForLine: true, cardRef: flippedCard
             };
             updateStatus(`${triggerCardName}: elige línea destino para ${flippedCard.card.nombre}`);
-            if (typeof highlightSelectableLines === 'function') highlightSelectableLines(flippedLine);
+            if (typeof highlightSelectableLines === 'function') highlightSelectableLines(flippedLine, 'player');
           },
           () => processAbilityEffect(),
           { name: triggerCardName || '', flipped: flippedCard.card.nombre }
@@ -1945,7 +1945,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         gameState.effectContext = { type: 'playTopDeckFaceDownChooseLine', sourceLine, owner: 'player', selected: [], count: 1 };
         gameState.effectContext.waitingForLine = true;
         updateStatus('Vida 3: elige una línea donde colocar una carta bocabajo');
-        highlightSelectableLines(sourceLine);
+        highlightSelectableLines(sourceLine, 'player');
       } else {
         const others = LINES.filter(l => l !== sourceLine);
         const dest = aiPickDestLine([sourceLine]) || others[0];
@@ -2091,7 +2091,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         gameState.effectContext = { type: 'moveAllFaceDown', sourceLine, owner: 'player', selected: [], count: 1 };
         gameState.effectContext.waitingForLine = true;
         updateStatus('Elige línea destino para desplazar todas tus cartas bocabajo');
-        highlightSelectableLines();
+        highlightSelectableLines(null, 'player');
       } else {
         // IA mueve bocabajos a línea con mayor potencial de compilado
         const others = LINES.filter(l => l !== sourceLine);
@@ -2687,7 +2687,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
               gameState.effectContext = { type: 'pickHandFaceDown', excludeLine, allowedLines };
               const lineMsg = excludeLine ? ' en otra línea' : '';
               updateStatus(`${triggerCardName || 'Carta'}: elige una carta de tu mano para jugar bocabajo${lineMsg}`);
-              if (typeof highlightSelectableLines === 'function') highlightSelectableLines(excludeLine, allowedLines);
+              if (typeof highlightSelectableLines === 'function') highlightSelectableLines(excludeLine, 'player', allowedLines);
             },
             () => processAbilityEffect(),
             { name: triggerCardName || 'Carta' }
@@ -2697,7 +2697,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         gameState.effectContext = { type: 'pickHandFaceDown', excludeLine, allowedLines };
         const lineMsg = excludeLine ? ' en otra línea' : actionDef.requireFaceDownInLine ? ' en una línea con carta bocabajo' : '';
         updateStatus(`${triggerCardName || 'Carta'}: elige una carta de tu mano para jugar bocabajo${lineMsg}`);
-        if (typeof highlightSelectableLines === 'function') highlightSelectableLines(excludeLine, allowedLines);
+        if (typeof highlightSelectableLines === 'function') highlightSelectableLines(excludeLine, 'player', allowedLines);
       } else {
         // IA: si may=true, solo juega si tiene cartas de sobra
         if (actionDef.may && gameState.ai.hand.length <= 3) {
@@ -3333,7 +3333,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         // waitingForLine: true es necesario para que el click de línea dispare handleShiftTargetLine
         gameState.effectContext = { type: 'playTopDeckFaceDownOpponentChooseLine', owner: 'player', opponent: 'ai', waitingForLine: true };
         updateStatus('Asimilación 6: elige la línea donde colocar bocabajo en el lado del rival');
-        if (typeof highlightSelectableLines === 'function') highlightSelectableLines();
+        if (typeof highlightSelectableLines === 'function') highlightSelectableLines(null, 'ai');
       } else {
         // IA: coloca donde su ventaja sea mayor (el +2 al jugador duele menos en una línea ya ganada)
         const bestLine = LINES.reduce((best, l) => {
@@ -4149,7 +4149,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
               cardRef: cardObj
             };
             updateStatus(`${triggerCardName}: elige línea destino`);
-            if (typeof highlightSelectableLines === 'function') highlightSelectableLines(line);
+            if (typeof highlightSelectableLines === 'function') highlightSelectableLines(line, 'player');
           },
           () => processAbilityEffect(),
           { name: triggerCardName }
@@ -4353,7 +4353,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             const isOwn = gameState.player.protocols && gameState.player.protocols.includes(pickedCard.protocol);
             const isFaceDown = !isOwn;
             gameState.effectContext = { type: 'luckPlay_lineSelect', handIdx: pickedIdx, faceDown: isFaceDown };
-            if (typeof highlightSelectableLines === 'function') highlightSelectableLines();
+            if (typeof highlightSelectableLines === 'function') highlightSelectableLines(null, 'player');
             updateUI();
           } else {
             updateStatus(`${triggerCardName}: no coincide — dijiste ${declaredVal}, carta: ${pickedCard.nombre} (Valor ${pickedCard.valor})`);
@@ -4588,7 +4588,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             const realIdx = gameState.player.trash.findIndex(c => c === chosenCard);
             if (realIdx >= 0) gameState.player.trash.splice(realIdx, 1);
             gameState.effectContext = { type: 'pickFromDiscardFaceDown_lineSelect', chosenCard, excludeLine };
-            highlightSelectableLines(excludeLine);
+            highlightSelectableLines(excludeLine, 'player');
             updateStatus('Tiempo 3: elige la línea donde jugar bocabajo (no la línea actual)');
             updateUI();
           };

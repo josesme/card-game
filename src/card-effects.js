@@ -73,7 +73,7 @@ const AtomicEffects = {
             
             updateStatus(`Elige línea destino para mover la carta...`);
             if (typeof highlightSelectableLines === 'function') {
-                highlightSelectableLines();
+                highlightSelectableLines(line, target);
             }
             
             // Handler se ejecutará en handleShiftTargetLine

@@ -549,7 +549,7 @@ function luz2ShowPostRevealModal(cardObj, line, revSide) {
             luz2Complete: true // Marcar para llamar a processAbilityEffect después
         };
         updateTurnVisuals();
-        highlightSelectableLines(line);
+        highlightSelectableLines(line, 'player');
         updateStatus(`Elige línea destino para mover "${cardObj.card.nombre}" (bocabajo)`);
     };
 
@@ -1267,7 +1267,7 @@ function checkCompilePhase(who) {
             gameState.effectContext = { type: 'compileShift', cards, sourceLine, resumeFor: who, waitingForLine: true };
             updateTurnVisuals();
             updateStatus('Velocidad 2: elige línea donde cambiar la carta');
-            highlightSelectableLines(sourceLine);
+            highlightSelectableLines(sourceLine, 'player');
         } else {
             setTimeout(() => {
                 if (gameState.controlComponent === who) {
@@ -2062,7 +2062,7 @@ function handleFieldCardClick(line, target, cardIdx) {
         }
         // Si viene de la línea actual (o no hay restricción), elegir línea destino
         updateStatus("Elige la línea de destino para cambiar la carta...");
-        highlightSelectableLines();
+        highlightSelectableLines(ctx.selectedCard.line, ctx.selectedCard.target);
         return; 
     } else if (ctx.type === 'revealField') {
         // Revelar: mostrar la identidad de la carta bocabajo sin cambiar su estado
@@ -2693,7 +2693,7 @@ function playSelectedCard(isFaceDown) {
         gameState.selectionMode = true;
         updateStatus("Elige línea para colocar la carta bocabajo...");
         console.log('📍 Selection mode ON - choose line for face-down play');
-        highlightSelectableLines();
+        highlightSelectableLines(null, 'player');
         return;
     }
 
@@ -2707,7 +2707,7 @@ function playSelectedCard(isFaceDown) {
         gameState.selectionMode = true;
         gameState.selectionModeFaceUp = true;
         updateStatus("Espíritu 1: elige línea para colocar la carta bocarriba...");
-        highlightSelectableLines();
+        highlightSelectableLines(null, 'player');
     } else if (cardPlaysAnywhere) {
         const cardOnAnySide = typeof canPlayOnAnySide === 'function' && canPlayOnAnySide(card);
         if (cardOnAnySide) {
@@ -2726,7 +2726,7 @@ function playSelectedCard(isFaceDown) {
                     gameState.selectionModeFaceUp = true;
                     gameState.playOnSide = 'player';
                     updateStatus(`${card.nombre}: elige línea en tu lado...`);
-                    highlightSelectableLines();
+                    highlightSelectableLines(null, 'player');
                 };
                 btnNo.onclick = () => {
                     confirmArea.classList.add('hidden');
@@ -2734,7 +2734,7 @@ function playSelectedCard(isFaceDown) {
                     gameState.selectionModeFaceUp = true;
                     gameState.playOnSide = 'opponent';
                     updateStatus(`${card.nombre}: elige línea en el lado rival...`);
-                    highlightSelectableLines();
+                    highlightSelectableLines(null, 'ai');
                 };
             }
         } else {
@@ -2743,7 +2743,7 @@ function playSelectedCard(isFaceDown) {
             gameState.selectionMode = true;
             gameState.selectionModeFaceUp = true;
             updateStatus(`${card.nombre}: elige línea para colocar la carta bocarriba...`);
-            highlightSelectableLines();
+            highlightSelectableLines(null, 'player');
         }
     } else if (idx !== -1) {
         console.log(`✅ Playing face-up: ${card.nombre} on line ${LINES[idx]}`);
@@ -2762,20 +2762,31 @@ function playSelectedCard(isFaceDown) {
     }
 }
 
-function highlightSelectableLines(excludeLine, allowedLines) {
+// === STACK TARGETING — revertir: borrar highlightSelectableLines + clearSelectionHighlights + llamadas ===
+// side: 'player' | 'ai' | null — dimea el lado que NO es objetivo mediante side-targeting-*
+// excludeLine: línea a excluir (shift); si es null, solo se usa side-targeting (jugar carta)
+function highlightSelectableLines(excludeLine, side, allowedLines) {
     const gc = document.getElementById('game-container');
-    if (gc) gc.classList.add('stack-targeting'); // === STACK TARGETING ===
-    const lines = allowedLines || LINES;
-    lines.forEach(line => {
-        if (excludeLine && line === excludeLine) return;
-        const lineEl = document.getElementById(`line-${line}`);
-        const col = lineEl ? lineEl.closest('.battle-column') : null;
-        if (col) col.classList.add('stack-target'); // === STACK TARGETING ===
-    });
+    if (!gc) return;
+    if (excludeLine != null) {
+        // Shift: dimea columna excluida completa + el lado contrario en columnas válidas
+        gc.classList.add('stack-targeting');
+        const lines = allowedLines || LINES;
+        lines.forEach(line => {
+            if (line === excludeLine) return;
+            const lineEl = document.getElementById(`line-${line}`);
+            const col = lineEl ? lineEl.closest('.battle-column') : null;
+            if (col) col.classList.add('stack-target');
+        });
+    }
+    // Dimear el lado incorrecto (visual, no bloquea clicks de columna)
+    if (side === 'ai')     gc.classList.add('side-targeting-player');
+    if (side === 'player') gc.classList.add('side-targeting-ai');
 }
 
 function clearSelectionHighlights() {
-    document.getElementById('game-container')?.classList.remove('stack-targeting'); // === STACK TARGETING ===
+    const gc = document.getElementById('game-container');
+    gc?.classList.remove('stack-targeting', 'side-targeting-ai', 'side-targeting-player'); // === STACK TARGETING ===
     document.querySelectorAll('.battle-column.stack-target').forEach(el => el.classList.remove('stack-target')); // === STACK TARGETING ===
     document.querySelectorAll('.selectable-line').forEach(el => el.classList.remove('selectable-line'));
 }
