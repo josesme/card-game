@@ -280,16 +280,24 @@
             pointer-events: auto !important;
             transition: none;
         }
-        /* Side targeting: dimea solo el lado incorrecto (visual, sin bloquear clicks de columna) */
+        /* Side targeting: dimea solo el lado incorrecto; pointer-events:none pasa clicks al .battle-column */
         #game-container.side-targeting-ai .ai-stack {
             opacity: 0.18;
             filter: saturate(0.05) brightness(0.5);
             transition: opacity 0.25s ease, filter 0.25s ease;
+            pointer-events: none;
         }
         #game-container.side-targeting-player .player-stack {
             opacity: 0.18;
             filter: saturate(0.05) brightness(0.5);
             transition: opacity 0.25s ease, filter 0.25s ease;
+            pointer-events: none;
+        }
+        /* Cursor pointer en columnas válidas para indicar que son clicables */
+        #game-container.stack-targeting .battle-column.stack-target,
+        #game-container.side-targeting-ai .battle-column,
+        #game-container.side-targeting-player .battle-column {
+            cursor: pointer;
         }
         /* === FIN STACK TARGETING === */
 
