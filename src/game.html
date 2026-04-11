@@ -163,7 +163,7 @@
             padding: 0 20px;
         }
         #hand-overlay.open .hand-content {
-            max-height: 390px;
+            max-height: 430px;
             overflow-x: auto;
             overflow-y: visible;
             padding: 12px 20px;
@@ -200,8 +200,8 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            gap: 8px;
+            justify-content: flex-start;
+            gap: 12px;
             padding: 4px 8px;
         }
         .hs-log {
@@ -218,17 +218,22 @@
         .hs-fan-title { font-size: 8px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 700; text-align: center; white-space: nowrap; color: var(--ui-dim); }
         .hs-fan-empty { font-size: 9px; color: var(--ui-dim); letter-spacing: 1px; text-transform: uppercase; }
         .hs-discard-card-wrap {
-            position: relative; width: 76px; height: 100px; overflow: hidden;
-            cursor: pointer; flex-shrink: 0; border-radius: 5px;
+            position: relative; width: 76px; flex-shrink: 0;
+            cursor: pointer;
             transition: box-shadow 0.15s ease, transform 0.15s ease;
+            /* sin overflow:hidden — el badge puede sobresalir */
         }
         .hs-discard-card-wrap:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(0,0,0,0.5); }
+        .hs-discard-card-clip {
+            width: 76px; height: 100px; overflow: hidden;
+            border-radius: 5px; position: relative;
+        }
         .hs-discard-card-wrap .card {
             transform: scale(0.41); transform-origin: top left;
             pointer-events: none;
         }
         .hs-discard-badge {
-            position: absolute; top: -7px; right: -7px;
+            position: absolute; top: -8px; right: -8px;
             width: 22px; height: 22px; border-radius: 50%;
             background: rgba(15,18,40,0.95); border: 1.5px solid;
             font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700;

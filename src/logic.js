@@ -3423,19 +3423,31 @@ function _updateHandSidePanel(side) {
     const fanClass  = isAI ? 'hs-fan--ai' : 'hs-fan--player';
 
     // --- Pila de descarte: carta superior real + badge contador ---
-    if (trash.length === 0) {
-        fanEl.innerHTML = `
-            <div class="hs-fan-title" style="color:${accentVar};">DESCARTE</div>
-            <div class="hs-fan-empty">vacío</div>`;
-    } else {
-        const topCard = trash[trash.length - 1];
-        fanEl.innerHTML = `
-            <div class="hs-fan-title" style="color:${accentVar};">DESCARTE</div>
-            <div class="hs-discard-card-wrap" title="Ver cementerio completo">
-                ${createCardHTML(topCard)}
-                <div class="hs-discard-badge" style="border-color:${accentVar};color:${accentVar};">${trash.length}</div>
-            </div>`;
-        fanEl.querySelector('.hs-discard-card-wrap').onclick = () => showDiscardModal(side);
+    const discardBlock = trash.length === 0
+        ? `<div class="hs-fan-title" style="color:${accentVar};">DESCARTE</div>
+           <div class="hs-fan-empty">vacío</div>`
+        : `<div class="hs-fan-title" style="color:${accentVar};">DESCARTE</div>
+           <div class="hs-discard-card-wrap" title="Ver cementerio completo">
+               <div class="hs-discard-card-clip">${createCardHTML(trash[trash.length - 1])}</div>
+               <div class="hs-discard-badge" style="border-color:${accentVar};color:${accentVar};">${trash.length}</div>
+           </div>`;
+
+    // --- Mazo: dorso real + badge contador ---
+    const deck = gameState[side].deck;
+    const topDeckCard = deck.length > 0 ? deck[deck.length - 1] : null;
+    const deckBlock = deck.length === 0
+        ? `<div class="hs-fan-title" style="color:${accentVar};">MAZO</div>
+           <div class="hs-fan-empty">vacío</div>`
+        : `<div class="hs-fan-title" style="color:${accentVar};">MAZO</div>
+           <div class="hs-discard-card-wrap">
+               <div class="hs-discard-card-clip">${createCardHTML(topDeckCard, true)}</div>
+               <div class="hs-discard-badge" style="border-color:${accentVar};color:${accentVar};">${deck.length}</div>
+           </div>`;
+
+    fanEl.innerHTML = discardBlock + deckBlock;
+    const discardWrap = fanEl.querySelector('.hs-discard-card-wrap');
+    if (discardWrap && trash.length > 0) {
+        discardWrap.onclick = () => showDiscardModal(side);
     }
 
     // --- Log (últimas 5 entradas de este bando) — solo actualiza entries, no el header ---
