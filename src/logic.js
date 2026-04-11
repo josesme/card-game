@@ -1235,7 +1235,7 @@ function checkControlPhase(who) {
 function checkCompilePhase(who) {
     gameState.phase = 'check_compile';
     console.log(`📋 Checking compile phase for ${who}`);
-    updateStatus(`Comprobando compilaciones...`);
+    // "Comprobando compilaciones..." — instrucción interna, no va al log
     
     // Metal 1: si el compilado está bloqueado este turno, consumir 1 turno y saltar toda la fase
     if (gameState.preventCompile[who] > 0) {
@@ -1316,14 +1316,14 @@ function compileLine(line, who) {
         if (rivalState.deck.length > 0) {
             const stolenCard = rivalState.deck.pop();
             gameState[who].hand.push(stolenCard);
-            updateStatus(`¡${who === 'player' ? 'Re-compilaste' : 'IA re-compiló'} ${line} y robó una carta rival!`);
+            logEvent(`Re-compilación en ${line} — roba carta rival`, { isAI: who === 'ai' });
         } else {
-            updateStatus(`¡${who === 'player' ? 'Re-compilaste' : 'IA re-compiló'} ${line}! (mazo rival vacío)`);
+            logEvent(`Re-compilación en ${line} — mazo rival vacío`, { isAI: who === 'ai' });
         }
     } else {
         // Primera compilación o rival toma la línea: crédito normal, cambiar dueño
         gameState.field[line].compiledBy = who;
-        updateStatus(`¡${who === 'player' ? 'Has' : 'IA ha'} compilado ${line}!`);
+        logEvent(`${who === 'player' ? 'compilado' : 'IA compiló'} ${line}`, { isAI: who === 'ai' });
     }
 
     // Crédito de victoria: solo se cuenta una vez por línea por jugador
@@ -2638,7 +2638,8 @@ function draw(target, count) {
     }
     if (drawn > 0) {
         gameState[target].drawnSinceLastCheck = true;
-        updateStatus(`${target === 'player' ? 'Robas' : 'IA roba'} ${drawn} carta${drawn !== 1 ? 's' : ''}`);
+        const drawOrigin = gameState.currentTriggerCard ? `${gameState.currentTriggerCard}: ` : '';
+        logEvent(`${drawOrigin}${target === 'player' ? 'robas' : 'IA roba'} ${drawn} carta${drawn !== 1 ? 's' : ''}`, { isAI: target === 'ai' });
         if (typeof onOpponentDrawEffects === 'function') onOpponentDrawEffects(target);
     } else if (count > 0) {
         updateStatus(`${target === 'player' ? 'No puedes robar' : 'IA no puede robar'} — mazo y descarte vacíos`);
@@ -2658,8 +2659,8 @@ function discard(target, count) {
         }
     }
     if (discarded > 0) {
-        const discardTrigger = gameState.currentTriggerCard ? ` [${gameState.currentTriggerCard}]` : '';
-        updateStatus(`${target === 'player' ? 'Descartas' : 'IA descarta'} ${discarded} carta${discarded !== 1 ? 's' : ''}${discardTrigger}`);
+        const discardOrigin = gameState.currentTriggerCard ? `${gameState.currentTriggerCard}: ` : '';
+        logEvent(`${discardOrigin}${target === 'player' ? 'descartas' : 'IA descarta'} ${discarded} carta${discarded !== 1 ? 's' : ''}`, { isAI: target === 'ai' });
         updateUI();
         if (typeof onOpponentDiscardEffects === 'function') onOpponentDiscardEffects(target);
         // onOwnDiscard: Corrupción 2 reactiva cuando el dueño descarta
@@ -2904,6 +2905,7 @@ function finalizePlay(targetLine, isFaceDown) {
     // Delay para que la animación de entrada sea visible antes de que aparezca el modal
     setTimeout(() => {
         console.log(`✅ Card played: ${card.nombre} on ${targetLine} (${isFaceDown ? 'face-down' : 'face-up'})`);
+        logEvent(`${isFaceDown ? '[bocabajo]' : card.nombre} en ${targetLine}`, { isAI: false });
 
         if (!isFaceDown) {
             console.log(`🔧 Executing card effect...`);
@@ -3112,7 +3114,7 @@ function playAITurnRandom() {
         checkDeleteOnCover(targetLine, 'ai');
         window._animPendingField = { line: targetLine, target: 'ai' };
         updateUI();
-        updateStatus(`IA jugó 1 carta ${isFaceDown ? 'bocabajo' : movedCard.nombre + ' bocarriba'} en ${targetLine}`);
+        logEvent(`IA: ${isFaceDown ? '[bocabajo]' : movedCard.nombre + ' bocarriba'} en ${targetLine}`, { isAI: true });
         console.log('Estado final del juego tras fallback aleatorio:', JSON.stringify(gameState));
     } else {
         console.error('❌ Fallback aleatorio falló: No hay líneas disponibles');
@@ -3230,8 +3232,8 @@ function executeAIMove(move) {
 
     const sideText = landSide !== 'ai' ? ' (lado rival)' : '';
     const faceText = move.faceUp ? 'bocarriba' : 'bocabajo';
-    const cardNameText = move.faceUp ? movedCard.nombre : '1 carta';
-    updateStatus(`IA jugó ${cardNameText} ${faceText} en ${move.line}${sideText}`);
+    const cardNameText = move.faceUp ? movedCard.nombre : '[bocabajo]';
+    logEvent(`IA: ${cardNameText} ${faceText} en ${move.line}${sideText}`, { isAI: true });
     
     // Delay para que la animación de entrada sea visible antes de ejecutar efectos
     setTimeout(() => {
@@ -3406,6 +3408,51 @@ function updateStatus(msg) {
         if (gameState.actionLog.length > 50) gameState.actionLog.shift();
     }
 }
+
+/**
+ * Registra un evento permanente en el log del juego.
+ * A diferencia de updateStatus(), logEvent():
+ * - Solo escribe en el log (no llama a updateTurnVisuals)
+ * - Los mensajes siempre incluyen el nombre de carta cuando hay una involucrada
+ * - Usar gameState.currentTriggerCard como prefijo de origen cuando corresponda
+ *
+ * @param {string} msg       - Mensaje del evento
+ * @param {object} [opts]    - { icon?: string, isAI?: boolean }
+ */
+function logEvent(msg, { icon, isAI } = {}) {
+    const log = document.getElementById('game-log');
+    if (!log) return;
+
+    const _isAI = isAI !== undefined ? isAI : gameState.turn === 'ai';
+    let _icon = icon || (_isAI ? '▸' : '▹');
+    let color  = _isAI ? '#9b59b6' : '#FFD93D';
+
+    if (msg.includes('compiló') || msg.includes('compilaste') || msg.includes('compilado')) {
+        _icon = '⚡'; color = '#FFE150';
+    } else if (msg.includes('roba') || msg.includes('Robas')) {
+        _icon = '🎴';
+    } else if (msg.includes('descarta') || msg.includes('Descartas')) {
+        _icon = '🗑️';
+    } else if (msg.includes('elimina') || msg.includes('Elimina')) {
+        _icon = '💀'; color = '#ef4444';
+    } else if (msg.includes('voltea') || msg.includes('Voltea')) {
+        _icon = '🔄';
+    }
+
+    const entry = document.createElement('div');
+    entry.style.cssText = `color:${color};font-size:0.85em;line-height:1.4;padding:4px 8px;border-left:3px solid ${color};margin-bottom:2px;border-radius:0 4px 4px 0;display:flex;gap:8px;align-items:flex-start;animation:fadeInLog 0.3s ease-out;`;
+    entry.innerHTML = `<span style="opacity:0.7;flex-shrink:0;">${_icon}</span> <span style="flex:1;">${msg}</span>`;
+
+    const prev = log.querySelector('.log-latest');
+    if (prev) prev.classList.remove('log-latest');
+    entry.classList.add('log-latest');
+    log.appendChild(entry);
+    log.scrollTo({ top: log.scrollHeight, behavior: 'smooth' });
+
+    gameState.actionLog.push({ isAI: _isAI, icon: _icon, msg });
+    if (gameState.actionLog.length > 50) gameState.actionLog.shift();
+}
+window.logEvent = logEvent;
 
 function updateHandSidePanels() {
     const overlay = document.getElementById('hand-overlay');
