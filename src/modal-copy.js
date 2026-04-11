@@ -71,13 +71,13 @@ const MODAL_COPY = {
     yes: 'VOLTEAR', no: 'ROBAR'
   },
 
-  // ── Mover / Cambiar ──────────────────────────────────────────────────────
+  // ── Cambiar ──────────────────────────────────────────────────────
   mayShift: {
     msg: '¿Quieres cambiar de línea "{flipped}"?',
     yes: 'SÍ', no: 'NO'
   },
   mayShiftSelf: {
-    msg: '¿Quieres mover {name} a otra línea?',
+    msg: '¿Quieres cambiar {name} a otra línea?',
     yes: 'SÍ', no: 'NO'
   },
   mayShiftLastFlipped: {
