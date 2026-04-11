@@ -1782,9 +1782,10 @@ function _fieldTooltipMove(e) {
     if (tip) { tip.style.left = e.clientX + 'px'; tip.style.top = e.clientY + 'px'; }
 }
 
-function _fieldTooltipShow(label) {
+function _fieldTooltipShow(label, e) {
     const tip = document.getElementById('field-cursor-tooltip');
     if (!tip) return;
+    if (e) { tip.style.left = e.clientX + 'px'; tip.style.top = e.clientY + 'px'; }
     tip.classList.add('visible');
     if (window.scrTxt) {
         window.scrTxt(tip, label, { duration: 0.4, chars: 'upperCase', speed: 0.6 });
@@ -1796,7 +1797,10 @@ function _fieldTooltipShow(label) {
 
 function _fieldTooltipHide() {
     const tip = document.getElementById('field-cursor-tooltip');
-    if (tip) tip.classList.remove('visible');
+    if (tip) {
+        tip.classList.remove('visible');
+        tip.removeAttribute('data-scr-last'); // reset para que rescramble en el siguiente show
+    }
     document.removeEventListener('mousemove', _fieldTooltipMove);
 }
 function markFieldTargets() {
@@ -1841,7 +1845,7 @@ function markFieldTargets() {
 
         const label = _FIELD_TOOLTIP_LABELS[ctx.type] || ctx.type;
         wrapper.classList.add('field-target');
-        wrapper.addEventListener('mouseenter', () => _fieldTooltipShow(label));
+        wrapper.addEventListener('mouseenter', (e) => _fieldTooltipShow(label, e));
         wrapper.addEventListener('mouseleave', _fieldTooltipHide);
     });
 }
