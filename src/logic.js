@@ -1070,6 +1070,7 @@ function renderStack(line, target) {
 
 // Turn Cycle Functions
 function startTurn(who) {
+    if (gameState.phase === 'game_over') return;
     gameState.turn = who;
     gameState.phase = 'start';
     gameState.ignoreEffectsLines = {};
@@ -3246,8 +3247,9 @@ function executeAIMove(move) {
 }
 
 function endTurn(who) {
+    if (gameState.phase === 'game_over') return;
     console.log(`⏸️ Ending turn for ${who}`);
-    
+
     // ⚠️ BLOQUEO: Resetear isProcessing al terminar el turno
     gameState.isProcessing = false;
     
@@ -3539,9 +3541,12 @@ function showDiscardModal(side) {
 window.showDiscardModal = showDiscardModal;
 
 function checkWinCondition() {
+    if (gameState.phase === 'game_over') return;
     if (gameState.player.compiled.length >= 3) {
+        gameState.phase = 'game_over';
         showGameOver(true);
     } else if (gameState.ai.compiled.length >= 3) {
+        gameState.phase = 'game_over';
         showGameOver(false);
     }
 }
