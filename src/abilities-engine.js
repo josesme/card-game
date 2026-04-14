@@ -1313,6 +1313,8 @@ function resolveAbilityAction(actionDef, targetPlayer) {
   const triggerCardName = gameState.currentTriggerCard;
   const { action, target, count, ifThenAction, ifThenTarget, ifThenCount } = actionDef;
   const opponent = targetPlayer === 'player' ? 'ai' : 'player';
+  // logEvent viene de logic.js (window.logEvent). En tests puede no estar disponible.
+  const _log = (msg, opts) => typeof logEvent === 'function' && logEvent(msg, opts);
 
   // Mapear targets
   let resolvedTarget = target;
@@ -1381,7 +1383,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       }
       if (flipped) {
         updateUI();
-        if (typeof updateStatus === 'function') updateStatus(`${triggerCardName} se voltea`);
+        _log(`${triggerCardName} voltea bocabajo`);
       }
       processAbilityEffect();
       break;
@@ -2166,7 +2168,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         if (best) {
           // Revelar: solo muestra la identidad, no cambia estado
           gameState.lastRevealedCard = { cardObj: best, line: bestLine, target: bestSide };
-          updateStatus(`IA revela ${best.card.nombre} (bocabajo)`);
+          _log(`IA revela ${best.card.nombre} (bocabajo)`, { isAI: true });
           // Decidir acción: cambiar de línea (bocabajo) o voltear bocarriba
           const canShift = bestSide === 'ai' && LINES.filter(l => gameState.field[l].ai.length > 0).length >= 2;
           if (canShift) {
@@ -2176,14 +2178,14 @@ function resolveAbilityAction(actionDef, targetPlayer) {
               const cardObj = gameState.field[bestLine].ai.pop();
               gameState.field[destLine].ai.push(cardObj); // sigue bocabajo
               triggerUncovered(bestLine, 'ai');
-              updateStatus(`IA cambió de línea ${best.card.nombre} (bocabajo)`);
+              _log(`IA mueve ${best.card.nombre} (bocabajo)`, { isAI: true });
             }
           } else {
             // Voltear bocarriba (cambia estado ahora)
             best.faceDown = false;
             best._animateFlip = true;
             if (typeof triggerFlipFaceUp === 'function') triggerFlipFaceUp(best, bestLine, bestSide);
-            updateStatus(`IA voltea ${best.card.nombre} bocarriba`);
+            _log(`IA voltea ${best.card.nombre} bocarriba`, { isAI: true });
           }
         }
         processAbilityEffect();
@@ -2232,7 +2234,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         for (let i = stack.length - 2; i >= 0; i--) {
           if (stack[i].card.nombre === 'Vida 0' && !stack[i].faceDown) {
             stack[i].coveredWarning = true;
-            updateStatus('Vida 0 cubierta — si sigue cubierta al final del turno, se elimina');
+            _log('Vida 0: aviso — se elimina si sigue cubierta al final del turno');
           }
         }
       }
@@ -2250,7 +2252,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             if (stack[i].coveredWarning) {
               const [removed] = stack.splice(i, 1);
               gameState[targetPlayer].trash.push(removed.card);
-              updateStatus('Vida 0 eliminada por seguir cubierta');
+              _log('Vida 0 eliminada por seguir cubierta');
             } else {
               // Cubierta pero sin aviso previo: no se elimina este turno
               stack[i].coveredWarning = false;
@@ -2371,7 +2373,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           gameState.field[chosen.line][phasePlayer].splice(chosen.idx, 1);
           gameState[phasePlayer].trash.push(chosen.card.card);
           gameState[gameState.turn].eliminatedSinceLastCheck = true;
-          updateStatus(`${triggerCardName} elimina a ${chosen.card.card.nombre} (${label})`);
+          _log(`${triggerCardName}: elimina ${chosen.card.card.nombre}`);
           if (typeof triggerUncovered === 'function') triggerUncovered(chosen.line, phasePlayer);
           if (!isOppOnly) {
             const isSelf = chosen.card.card.nombre === triggerCardName;
@@ -3016,7 +3018,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       if (gameState[opponent].deck.length > 0) {
         const top = gameState[opponent].deck.pop();
         gameState[targetPlayer].hand.push(top);
-        updateStatus(`${targetPlayer === 'player' ? 'Robas' : 'IA roba'} la carta top del mazo rival`);
+        _log(`${targetPlayer === 'player' ? 'robas' : 'IA roba'} la top del mazo rival`);
         updateUI();
       }
       processAbilityEffect();
@@ -3044,7 +3046,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           const idx = aiLowestValueCardIdx('ai');
           const [given] = gameState.ai.hand.splice(idx, 1);
           gameState.player.hand.push(given);
-          updateStatus(`IA da ${given.nombre} al jugador y roba ${count || 2} cartas`);
+          _log(`IA da ${given.nombre} al jugador y roba ${count || 2}`, { isAI: true });
           draw('ai', count || 2);
         }
         processAbilityEffect();
@@ -3065,7 +3067,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         const idx = Math.floor(Math.random() * gameState[opponent].hand.length);
         const [taken] = gameState[opponent].hand.splice(idx, 1);
         gameState[targetPlayer].hand.push(taken);
-        updateStatus(`${targetPlayer === 'player' ? 'Tomas' : 'IA toma'} una carta de la mano rival`);
+        _log(`${targetPlayer === 'player' ? 'tomas' : 'IA toma'} 1 carta de la mano rival`);
       }
       processAbilityEffect();
       break;
@@ -3082,7 +3084,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           const idx = aiLowestValueCardIdx('ai');
           const [given] = gameState.ai.hand.splice(idx, 1);
           gameState.player.hand.push(given);
-          updateStatus(`IA da ${given.nombre} al jugador`);
+          _log(`IA da ${given.nombre} al jugador`, { isAI: true });
         }
         processAbilityEffect();
       }
@@ -3099,7 +3101,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         if (gameState.ai.hand.length > 0) {
           const idx = aiLowestValueCardIdx('ai');
           const card = gameState.ai.hand[idx >= 0 ? idx : 0];
-          updateStatus(`IA revela: ${card.nombre}`);
+          _log(`IA revela: ${card.nombre}`, { isAI: true });
           // Mostrar modal de revelación para el jugador
           gameState.effectQueue.unshift({ effect: { action: '_showRevealedCards', cards: [card] }, targetPlayer: 'ai' });
         }
@@ -3153,7 +3155,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       const handSize = gameState[targetPlayer].hand.length;
       if (handSize > 0) {
         gameState[targetPlayer].trash.push(...gameState[targetPlayer].hand.splice(0));
-        updateStatus(`${targetPlayer === 'player' ? 'Descartas' : 'IA descarta'} toda la mano (${handSize} cartas)`);
+        _log(`${targetPlayer === 'player' ? 'descartas' : 'IA descarta'} toda la mano (${handSize})`);
         updateUI();
       }
       processAbilityEffect();
@@ -3228,7 +3230,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       });
       if (gameState.ai.deck.length > 0) gameState.player.hand.push(gameState.ai.deck.pop());
       if (gameState.player.deck.length > 0) gameState.ai.hand.push(gameState.player.deck.pop());
-      updateStatus('Intercambio: cada jugador roba la top del mazo rival');
+      _log('Caos 0: cada jugador roba la top del mazo rival', { isAI: false });
       updateUI();
       processAbilityEffect();
       break;
@@ -3240,7 +3242,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       if (n > 0) {
         gameState[targetPlayer].trash.push(...gameState[targetPlayer].hand.splice(0));
         draw(targetPlayer, n);
-        updateStatus(`${targetPlayer === 'player' ? 'Descartas y robas' : 'IA descarta y roba'} ${n} carta${n !== 1 ? 's' : ''}`);
+        _log(`${targetPlayer === 'player' ? 'descartas y robas' : 'IA descarta y roba'} ${n} carta${n !== 1 ? 's' : ''}`);
         updateUI();
       }
       processAbilityEffect();

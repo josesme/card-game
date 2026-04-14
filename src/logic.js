@@ -3404,11 +3404,6 @@ function updateStatus(msg) {
         behavior: 'smooth'
     });
 
-    // Ring buffer para paneles laterales (max 20 entradas)
-    if (!msg.startsWith('---')) {
-        gameState.actionLog.push({ isAI, icon, msg });
-        if (gameState.actionLog.length > 50) gameState.actionLog.shift();
-    }
 }
 
 /**
