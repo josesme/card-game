@@ -218,7 +218,14 @@ function initLineListeners() {
                 gameState.effectContext = null;
                 gameState.field[line].player.push({ card: chosen, faceDown: false });
                 clearSelectionHighlights();
+                gameState.currentEffectLine = line;
                 updateUI();
+                logEvent(`${chosen.nombre} en ${line} (desde descarte)`, { isAI: false });
+                executeEffect(chosen, 'player');
+                if (typeof onOpponentPlayInLineEffects === 'function') onOpponentPlayInLineEffects('player', line);
+                // Catch-all: si la carta jugada no tiene efectos, triggerCardEffect no llama a
+                // processAbilityEffect — esta llamada lo recoge y dispara pendingTurnEnd → endTurn.
+                // Si sí hay efectos, effectContext estará activo y processAbilityEffect retorna de inmediato.
                 if (typeof processAbilityEffect === 'function') processAbilityEffect();
             } else if (gameState.effectContext && gameState.effectContext.type === 'pickFromDiscardFaceDown_lineSelect') {
                 // Tiempo 3: jugar carta del descarte bocabajo en otra línea (carta ya elegida en modal)
