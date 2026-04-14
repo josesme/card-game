@@ -384,11 +384,13 @@
         }
         /* Auto-revela la barra si hay acción que requiere atención del jugador */
         #hand-overlay.peek-mode:has(#btn-stop-discard:not(.hidden)),
-        #hand-overlay.peek-mode:has(#discard-banner.visible) {
+        #hand-overlay.peek-mode:has(#discard-banner.visible),
+        #hand-overlay.peek-mode.effect-pending {
             /* hand-bar vuelve a mostrarse */
         }
         #hand-overlay.peek-mode:has(#btn-stop-discard:not(.hidden)) .hand-bar,
-        #hand-overlay.peek-mode:has(#discard-banner.visible) .hand-bar {
+        #hand-overlay.peek-mode:has(#discard-banner.visible) .hand-bar,
+        #hand-overlay.peek-mode.effect-pending .hand-bar {
             height: auto;
             overflow: visible;
             padding: 8px 20px;
@@ -1520,6 +1522,7 @@
         </div>
         <div id="discard-banner"></div>
         <button id="btn-stop-discard" class="hidden ui-btn ui-btn--sm ui-btn--danger">DETENER DESCARTE</button>
+        <div id="action-instruction" style="display:none; font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:600; letter-spacing:1px; color:#e07b00; text-align:center; flex:1;"></div>
 <span id="control-indicator" title="Control Component" style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--ui-dim); flex-shrink: 0;">△</span>
 <div style="display: flex; align-items: center; gap: 8px; width: 220px; flex-shrink: 0; justify-content: flex-end;">
             <span style="color: var(--ui-pink); font-family: var(--ui-font); font-size: 9px; font-weight: 600; letter-spacing: 1px;">IA</span>

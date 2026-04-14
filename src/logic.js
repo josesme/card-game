@@ -900,6 +900,11 @@ function updateTurnVisuals() {
 
     const btnRefreshEl = document.getElementById('player-deck-btn');
     if (btnRefreshEl) btnRefreshEl.disabled = !isPlayerTurn;
+
+    if (!needsPlayerInput) {
+        const instrEl = document.getElementById('action-instruction');
+        if (instrEl) { instrEl.textContent = ''; instrEl.style.display = 'none'; }
+    }
 }
 
 function calculateScore(state, line, target) {
@@ -3381,9 +3386,14 @@ function continueAfterEndEffects(who) {
     setTimeout(() => startTurn(who === 'player' ? 'ai' : 'player'), 1000);
 }
 
-// updateStatus es un no-op: el elemento #game-status fue eliminado del modelo de UI actual.
-// Mantenida como función vacía porque es llamada desde muchos sitios y tests la mockean.
-function updateStatus(msg) {} // eslint-disable-line no-unused-vars
+// updateStatus: muestra instrucción en #action-instruction dentro de la hand-bar.
+// La barra se revela automáticamente cuando hand-overlay tiene .effect-pending.
+function updateStatus(msg) {
+    const el = document.getElementById('action-instruction');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = msg ? '' : 'none';
+}
 
 /**
  * Registra un evento permanente en el log del juego.
