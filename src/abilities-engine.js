@@ -4353,7 +4353,6 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             const isOwn = gameState.player.protocols && gameState.player.protocols.includes(pickedCard.protocol);
             const isFaceDown = !isOwn;
             gameState.effectContext = { type: 'luckPlay_lineSelect', handIdx: pickedIdx, faceDown: isFaceDown };
-            setInstruction('Elige una línea para jugar la carta');
             if (typeof highlightSelectableLines === 'function') highlightSelectableLines(null, 'player');
             updateUI();
           } else {

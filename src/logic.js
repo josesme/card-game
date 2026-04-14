@@ -889,10 +889,8 @@ function updateUI() {
 
 function updateTurnVisuals() {
     const overlay = document.getElementById('hand-overlay');
-    const statusEl = document.getElementById('game-status');
     if (!overlay) return;
 
-    // effectContext siempre requiere input del jugador (la IA resuelve sin pasar por effectContext)
     const needsPlayerInput = !!gameState.effectContext;
     const isAITurn = gameState.turn === 'ai' && !needsPlayerInput;
     const isPlayerTurn = gameState.turn === 'player' && gameState.phase === 'action' && !needsPlayerInput;
@@ -902,21 +900,6 @@ function updateTurnVisuals() {
 
     const btnRefreshEl = document.getElementById('player-deck-btn');
     if (btnRefreshEl) btnRefreshEl.disabled = !isPlayerTurn;
-
-    if (!statusEl) return;
-    if (needsPlayerInput) {
-        statusEl.textContent = '← ACCIÓN REQUERIDA';
-        statusEl.className = 'gs-effect';
-    } else if (isAITurn) {
-        statusEl.textContent = 'IA →';
-        statusEl.className = 'gs-ai';
-    } else if (isPlayerTurn) {
-        statusEl.textContent = 'TU TURNO';
-        statusEl.className = 'gs-player';
-    } else {
-        statusEl.textContent = '—';
-        statusEl.className = '';
-    }
 }
 
 function calculateScore(state, line, target) {
@@ -2300,11 +2283,8 @@ function showRearrangeDoneButton() {
         btn.textContent = 'LISTO';
         btn.className = 'ui-btn ui-btn--sm';
         btn.style.cssText = 'background: var(--ui-cyan); color: #0a0e27; font-weight: 700;';
-        // Insertar en el header del log unificado o en el bar como fallback
         const logHeader = document.getElementById('hs-log-header');
-        const fallback = document.getElementById('game-status');
         if (logHeader) logHeader.appendChild(btn);
-        else if (fallback) fallback.parentElement.insertBefore(btn, fallback.nextSibling);
     }
     btn.classList.remove('hidden');
     btn.onclick = () => {
@@ -3401,48 +3381,9 @@ function continueAfterEndEffects(who) {
     setTimeout(() => startTurn(who === 'player' ? 'ai' : 'player'), 1000);
 }
 
-/**
- * Muestra un mensaje en el status bar.
- * Las instrucciones interactivas usan setInstruction() — alias de esta función.
- * No escribe en #game-log: el log solo recibe eventos permanentes (logEvent).
- */
-function updateStatus(msg) {
-    updateTurnVisuals(); // actualiza overlay classes + texto genérico del bar
-    const bar = document.getElementById('game-status');
-    if (!bar) return;
-    // Sobreescribir el texto genérico con el mensaje específico
-    if (typeof window.scrTxt === 'function') window.scrTxt(bar, msg, { duration: 0.8, chars: 'upperCase' });
-    else bar.textContent = msg;
-}
-
-/**
- * Fase "pending" del status bar: muestra instrucción interactiva con estilo de espera.
- * Alias de updateStatus — el pulsing lo activa automáticamente gs-effect (vía updateTurnVisuals)
- * cuando hay un effectContext activo.
- */
-function setInstruction(msg) {
-    updateStatus(msg);
-}
-window.setInstruction = setInstruction;
-
-/**
- * Fase "resolved" del status bar: muestra confirmación breve del resultado de una acción.
- * Se borra automáticamente tras 1.5s restaurando el estado normal del turno.
- *
- * @param {string} msg - Mensaje de confirmación (ej. "Fuego 3 → izquierda")
- */
-function confirmAction(msg) {
-    const bar = document.getElementById('game-status');
-    if (!bar) return;
-    if (typeof window.scrTxt === 'function') window.scrTxt(bar, msg, { duration: 0.6, chars: 'upperCase' });
-    else bar.textContent = msg;
-    bar.className = 'gs-confirm';
-    if (window._gsConfirmTimer) clearTimeout(window._gsConfirmTimer);
-    window._gsConfirmTimer = setTimeout(() => {
-        updateTurnVisuals(); // restaura estado de turno apropiado
-    }, 1500);
-}
-window.confirmAction = confirmAction;
+// updateStatus es un no-op: el elemento #game-status fue eliminado del modelo de UI actual.
+// Mantenida como función vacía porque es llamada desde muchos sitios y tests la mockean.
+function updateStatus(msg) {} // eslint-disable-line no-unused-vars
 
 /**
  * Registra un evento permanente en el log del juego.
@@ -3486,18 +3427,6 @@ function logEvent(msg, { icon, isAI } = {}) {
 
     gameState.actionLog.push({ isAI: _isAI, icon: _icon, msg });
     if (gameState.actionLog.length > 50) gameState.actionLog.shift();
-
-    // Actualiza el status bar directamente, pero solo si no hay instrucción interactiva pendiente.
-    // Cuando hay effectContext activo el jugador está eligiendo — no pisar la instrucción.
-    if (!gameState.effectContext) {
-        const bar = document.getElementById('game-status');
-        if (bar) {
-            if (typeof window.scrTxt === 'function') window.scrTxt(bar, msg, { duration: 1.0, chars: 'upperCase' });
-            else bar.textContent = msg;
-            bar.className = _isAI ? 'gs-ai' : 'gs-player';
-            if (window._gsConfirmTimer) { clearTimeout(window._gsConfirmTimer); window._gsConfirmTimer = null; }
-        }
-    }
 }
 window.logEvent = logEvent;
 

@@ -369,24 +369,6 @@
             transition: opacity 0.2s;
         }
 
-        /* #game-status states */
-        #game-status.gs-ai     { color: rgba(155,89,182,0.7); letter-spacing: 2px; }
-        #game-status.gs-player { color: var(--ui-cyan); letter-spacing: 2px; }
-        #game-status.gs-effect {
-            color: #e07b00;
-            letter-spacing: 2px;
-            animation: pulse-text-effect 1.1s ease-in-out infinite;
-        }
-        /* gs-confirm: confirmación breve, desaparece en 1.5s */
-        #game-status.gs-confirm {
-            color: var(--ui-cyan);
-            letter-spacing: 2px;
-            opacity: 0.9;
-        }
-        @keyframes pulse-text-effect {
-            0%, 100% { opacity: 1; }
-            50%       { opacity: 0.45; }
-        }
 
         /* Transiciones suaves del hand-bar entre estados */
         #hand-overlay .hand-bar {
@@ -1538,8 +1520,7 @@
         </div>
         <div id="discard-banner"></div>
         <button id="btn-stop-discard" class="hidden ui-btn ui-btn--sm ui-btn--danger">DETENER DESCARTE</button>
-        <div id="game-status" style="flex: 1; text-align: center; color: var(--ui-cyan); font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 10px; letter-spacing: 1px;">—</div>
-        <span id="control-indicator" title="Control Component" style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--ui-dim); flex-shrink: 0;">△</span>
+<span id="control-indicator" title="Control Component" style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--ui-dim); flex-shrink: 0;">△</span>
 <div style="display: flex; align-items: center; gap: 8px; width: 220px; flex-shrink: 0; justify-content: flex-end;">
             <span style="color: var(--ui-pink); font-family: var(--ui-font); font-size: 9px; font-weight: 600; letter-spacing: 1px;">IA</span>
             <span class="stat-label">Mano</span>
@@ -2130,8 +2111,8 @@ function showReturnByValueLineOverlay(ctx) {
 
     if (eligibleLines.length === 0) {
         closeHandSelectOverlay();
-        if (typeof updateStatus === 'function') {
-            updateStatus(`Agua 3: No hay cartas con valor ${ctx.value} boca arriba en el lado del oponente`);
+        if (typeof logEvent === 'function') {
+            logEvent(`Agua 3: No hay cartas con valor ${ctx.value} boca arriba en el lado del oponente`);
         }
         if (typeof finishEffect === 'function') finishEffect();
         return;
@@ -2260,7 +2241,6 @@ function processFieldSelection(type, selectedSet, eligible, ctx) {
                 if (typeof handleShiftTargetLine === 'function') handleShiftTargetLine(ctx.effectLine);
                 return;
             }
-            updateStatus('Elige la línea de destino para mover la carta...');
             if (typeof highlightSelectableLines === 'function') highlightSelectableLines(line, player);
             updateUI();
             return; // Don't call finishEffect yet — waiting for line click
@@ -2294,7 +2274,7 @@ function processHandSelection(type, selectedSet, ctx) {
         if (card && !gameState.revealedPlayerCards.some(c => c.nombre === card.nombre)) {
             gameState.revealedPlayerCards.push(card);
         }
-        updateStatus(`Revelas: ${card.nombre}`);
+        if (typeof logEvent === 'function') logEvent(`Revelas: ${card.nombre}`);
         finishEffect();
         if (typeof processAbilityEffect === 'function') processAbilityEffect();
         return;
@@ -2307,7 +2287,7 @@ function processHandSelection(type, selectedSet, ctx) {
         const effectLine = ctx.line || gameState.currentEffectLine || 'izquierda';
         gameState.field[effectLine].player.push({ card, faceDown: false });
         gameState.effectContext = null;
-        updateStatus(`Juegas ${card.nombre} bocarriba en ${effectLine} (Diversidad 0)`);
+        if (typeof logEvent === 'function') logEvent(`Juegas ${card.nombre} bocarriba en ${effectLine} (Diversidad 0)`);
         updateUI();
         if (typeof triggerCardEffect === 'function') {
             gameState.currentEffectLine = effectLine;
@@ -2347,7 +2327,6 @@ function processHandSelection(type, selectedSet, ctx) {
         finishEffect(); // Si _aiFollowUp, esto procesará _discardForOpponentMoreAIPhase de la cola
         if (!isAIInitiated) {
             discard('ai', n + 1);
-            updateStatus(`Plaga 2: descartaste ${n}, la IA descarta ${n + 1}`);
         }
     } else {
         finishEffect();
