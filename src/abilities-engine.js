@@ -2002,9 +2002,9 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         // Draw it
         gameState[targetPlayer].deck.pop();
         gameState[targetPlayer].hand.push(topCard);
-        updateStatus(`Carta del mazo revelada: ${topCard.nombre} — añadida a mano`);
+        logEvent(`Carta del mazo revelada: ${topCard.nombre} — añadida a mano`, { isAI: targetPlayer === 'ai' });
       } else {
-        updateStatus(`Carta del mazo revelada: ${topCard.nombre} — devuelta al mazo`);
+        logEvent(`Carta del mazo revelada: ${topCard.nombre} — devuelta al mazo`, { isAI: targetPlayer === 'ai' });
       }
       processAbilityEffect();
       break;
@@ -2757,7 +2757,6 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       const n = gameState._plaga2PlayerDiscarded || 0;
       gameState._plaga2PlayerDiscarded = undefined;
       discard('ai', n + 1);
-      updateStatus(`Plaga 2: la IA descarta ${n + 1} carta${n + 1 !== 1 ? 's' : ''}`);
       processAbilityEffect();
       break;
     }
@@ -3460,7 +3459,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         // IA o sólo 1 carta: robar directamente
         const drawn = deckRef.splice(matchIdx[0], 1)[0];
         gameState[targetPlayer].hand.push(drawn);
-        updateStatus(`${targetPlayer === 'player' ? `Robas ${drawn.nombre} (Valor ${targetValue}) del mazo` : `IA roba 1 carta (Valor ${targetValue}) del mazo`}`);
+        logEvent(`${targetPlayer === 'player' ? `Robas ${drawn.nombre} (Valor ${targetValue}) del mazo` : `IA roba 1 carta (Valor ${targetValue}) del mazo`}`, { isAI: targetPlayer === 'ai' });
         shuffleDeck();
         updateUI();
         processAbilityEffect();
@@ -3532,7 +3531,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           modal.classList.add('hidden');
           container.innerHTML = '';
           gameState.effectContext = null;
-          updateStatus(`Robas ${chosenCard.nombre} (Valor ${targetValue}) del mazo`);
+          logEvent(`Robas ${chosenCard.nombre} (Valor ${targetValue}) del mazo`);
           updateUI();
           processAbilityEffect();
         };
@@ -3542,7 +3541,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         matchCards.slice(1).forEach(c => gameState.player.deck.push(c));
         gameState.player.hand.push(drawn);
         shuffleDeck();
-        updateStatus(`Robas ${drawn.nombre} (Valor ${targetValue}) del mazo`);
+        logEvent(`Robas ${drawn.nombre} (Valor ${targetValue}) del mazo`);
         updateUI();
         processAbilityEffect();
       }
@@ -3595,7 +3594,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         // Una sola opción o IA: auto-robar la primera
         const [drawn] = deckRef.splice(v1Indices[0], 1);
         gameState[targetPlayer].hand.push(drawn);
-        updateStatus(`${targetPlayer === 'player' ? `Robas ${drawn.nombre} (Valor 1) del mazo` : 'IA roba 1 carta (Valor 1) del mazo'}`);
+        logEvent(`${targetPlayer === 'player' ? `Robas ${drawn.nombre} (Valor 1) del mazo` : 'IA roba 1 carta (Valor 1) del mazo'}`, { isAI: targetPlayer === 'ai' });
         shuffleThenPlayStep();
         break;
       }
@@ -3652,7 +3651,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             const j = Math.floor(Math.random() * (i + 1));
             [deckRef[i], deckRef[j]] = [deckRef[j], deckRef[i]];
           }
-          updateStatus(`Robas ${chosen.nombre} (Valor 1) del mazo`);
+          logEvent(`Robas ${chosen.nombre} (Valor 1) del mazo`);
           shuffleThenPlayStep();
         };
       } else {
@@ -3719,7 +3718,6 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       const line = gameState.currentEffectLine;
       if (line && calculateScore(gameState, line, opponent) > calculateScore(gameState, line, targetPlayer)) {
         draw(targetPlayer, 1);
-        updateStatus(`${triggerCardName}: oponente gana esta línea — ${targetPlayer === 'player' ? 'robas' : 'IA roba'} 1 carta`);
       }
       processAbilityEffect();
       break;
@@ -3823,8 +3821,8 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       if (handSize > 0) {
         gameState[opponent].trash.push(...gameState[opponent].hand.splice(0));
         const toDraw = Math.max(0, handSize - minusN);
+        logEvent(`${opponent === 'player' ? 'Descartas' : 'IA descarta'} ${handSize} carta${handSize !== 1 ? 's' : ''} — roba ${toDraw}`, { isAI: opponent === 'ai' });
         if (toDraw > 0) draw(opponent, toDraw);
-        updateStatus(`${opponent === 'player' ? 'Descartas' : 'IA descarta'} mano y roba ${toDraw} carta${toDraw !== 1 ? 's' : ''}`);
         updateUI();
       }
       processAbilityEffect();
@@ -3845,7 +3843,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           const minIdx = hand.reduce((best, c, i) => c.valor < hand[best].valor ? i : best, 0);
           const card = hand.splice(minIdx, 1)[0];
           gameState[opponent].trash.push(card);
-          updateStatus(`IA descarta ${card.nombre} al descarte del jugador`);
+          logEvent(`IA descarta ${card.nombre} al descarte del jugador`, { isAI: true });
           updateUI();
         }
         processAbilityEffect();
@@ -4084,7 +4082,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           const j = Math.floor(Math.random() * (i + 1));
           [deckRef[i], deckRef[j]] = [deckRef[j], deckRef[i]];
         }
-        updateStatus(`${targetPlayer === 'player' ? 'Robas' : 'IA roba'} ${unitCards.length} carta${unitCards.length !== 1 ? 's' : ''} Unidad del mazo`);
+        logEvent(`${targetPlayer === 'player' ? 'Robas' : 'IA roba'} ${unitCards.length} carta${unitCards.length !== 1 ? 's' : ''} Unidad del mazo`, { isAI: targetPlayer === 'ai' });
         updateUI();
       }
       processAbilityEffect();
@@ -4102,9 +4100,9 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         if (line && typeof compileLine === 'function') {
           if (gameState.field[line].compiledBy === targetPlayer) {
             // Línea ya compilada por este jugador — efecto no aplica (no recompile)
-            updateStatus(`${triggerCardName}: línea ya compilada por este jugador`);
+            logEvent(`${triggerCardName}: línea ya compilada por este jugador`, { isAI: targetPlayer === 'ai' });
           } else {
-            updateStatus(`${triggerCardName}: 5+ Unidad en campo — compilando ${line} automáticamente`);
+            logEvent(`${triggerCardName}: 5+ Unidad en campo — compilando ${line} automáticamente`, { isAI: targetPlayer === 'ai' });
             compileLine(line, targetPlayer);
             updateUI();
           }
@@ -4128,7 +4126,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           gameState.field[line][targetPlayer].push({ card: c, faceDown: false });
         }
       });
-      updateStatus(`${triggerCardName}: ${unidadCards.length} carta(s) Unidad jugada(s) bocarriba en ${line}`);
+      logEvent(`${triggerCardName}: ${unidadCards.length} carta(s) Unidad jugada(s) bocarriba en ${line}`, { isAI: targetPlayer === 'ai' });
       updateUI();
       processAbilityEffect();
       break;
@@ -4175,7 +4173,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       const topCard = gameState[targetPlayer].deck.pop();
       gameState[targetPlayer].trash.push(topCard);
       const drawN = topCard.valor;
-      updateStatus(`Suerte 2: ${topCard.nombre} (Valor ${drawN}) → roba ${drawN}`);
+      logEvent(`Suerte 2: ${topCard.nombre} (Valor ${drawN}) → roba ${drawN}`, { isAI: targetPlayer === 'ai' });
       if (drawN > 0) draw(targetPlayer, drawN);
       updateUI();
       processAbilityEffect();
@@ -4232,10 +4230,10 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           const topCard = gameState[opponent].deck.pop();
           gameState[opponent].trash.push(topCard);
           if (topCard.protocol === declared) {
-            updateStatus(`${triggerCardName}: ¡Coincide! ${topCard.nombre} es ${declared} → elimina 1 carta`);
+            logEvent(`${triggerCardName}: ¡Coincide! ${topCard.nombre} es ${declared} → elimina 1 carta`);
             startEffect('eliminate', 'any', 1);
           } else {
-            updateStatus(`${triggerCardName}: Fallo — carta era ${topCard.nombre} (${topCard.protocol})`);
+            logEvent(`${triggerCardName}: Fallo — carta era ${topCard.nombre} (${topCard.protocol})`);
             updateUI();
             processAbilityEffect();
           }
@@ -4256,10 +4254,10 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         const topCard = gameState[opponent].deck.pop();
         gameState[opponent].trash.push(topCard);
         if (topCard.protocol === bestProto) {
-          updateStatus(`IA — ${triggerCardName}: acierta con ${bestProto}! Elimina 1 carta del jugador`);
+          logEvent(`IA — ${triggerCardName}: acierta con ${bestProto}! Elimina 1 carta del jugador`, { isAI: true });
           startEffect('eliminate', 'player', 1);
         } else {
-          updateStatus(`IA — ${triggerCardName}: fallo (declaró ${bestProto}, carta: ${topCard.nombre})`);
+          logEvent(`IA — ${triggerCardName}: fallo (declaró ${bestProto}, carta: ${topCard.nombre})`, { isAI: true });
           updateUI();
           processAbilityEffect();
         }
@@ -4273,7 +4271,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       const topCard = gameState[targetPlayer].deck.pop();
       gameState[targetPlayer].trash.push(topCard);
       const targetVal = topCard.valor;
-      updateStatus(`Suerte 4: ${topCard.nombre} (Valor ${targetVal}) → elimina carta con Valor ${targetVal}`);
+      logEvent(`Suerte 4: ${topCard.nombre} (Valor ${targetVal}) → elimina carta con Valor ${targetVal}`, { isAI: targetPlayer === 'ai' });
       const hasMatch = LINES.some(l => ['player', 'ai'].some(p => gameState.field[l][p].some(c => c.card.valor === targetVal)));
       if (hasMatch) {
         if (targetPlayer === 'player') {
@@ -4351,14 +4349,15 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           const pickedIdx = handBefore + randomOffset;
           const pickedCard = gameState.player.hand[pickedIdx];
           if (pickedCard.valor === declaredVal) {
-            updateStatus(`${triggerCardName}: ¡coincide! ${pickedCard.nombre} (Valor ${declaredVal}) — elige una línea`);
+            logEvent(`${triggerCardName}: ¡coincide! ${pickedCard.nombre} (Valor ${declaredVal})`);
             const isOwn = gameState.player.protocols && gameState.player.protocols.includes(pickedCard.protocol);
             const isFaceDown = !isOwn;
             gameState.effectContext = { type: 'luckPlay_lineSelect', handIdx: pickedIdx, faceDown: isFaceDown };
+            setInstruction('Elige una línea para jugar la carta');
             if (typeof highlightSelectableLines === 'function') highlightSelectableLines(null, 'player');
             updateUI();
           } else {
-            updateStatus(`${triggerCardName}: no coincide — dijiste ${declaredVal}, carta: ${pickedCard.nombre} (Valor ${pickedCard.valor})`);
+            logEvent(`${triggerCardName}: no coincide — dijiste ${declaredVal}, carta: ${pickedCard.nombre} (Valor ${pickedCard.valor})`);
             updateUI();
             processAbilityEffect();
           }
@@ -4386,11 +4385,11 @@ function resolveAbilityAction(actionDef, targetPlayer) {
               calculateScore(gameState, l, 'ai') >= calculateScore(gameState, best, 'ai') ? l : best, LINES[0]);
             gameState.field[bestLine].ai.push({ card: pickedCard, faceDown: !isOwn });
             gameState.currentEffectLine = bestLine;
-            updateStatus(`IA — ${triggerCardName}: acierta con valor ${aiDeclaredVal}! Juega ${isOwn ? pickedCard.nombre : '1 carta'}`);
+            logEvent(`IA — ${triggerCardName}: acierta con valor ${aiDeclaredVal}! Juega ${isOwn ? pickedCard.nombre : '1 carta'}`, { isAI: true });
             if (isOwn) triggerCardEffect(pickedCard, 'onPlay', 'ai');
             updateUI();
           } else {
-            updateStatus(`IA — ${triggerCardName}: no coincide (declaró ${aiDeclaredVal})`);
+            logEvent(`IA — ${triggerCardName}: no coincide (declaró ${aiDeclaredVal})`, { isAI: true });
           }
         }
         processAbilityEffect();
@@ -4408,7 +4407,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       updateUI();
       setTimeout(() => {
         cardObj.faceDown = false;
-        updateStatus(`Suerte 1: ${topCard.nombre} revelada (sin comandos centrales)`);
+        logEvent(`Suerte 1: ${topCard.nombre} revelada (sin comandos centrales)`, { isAI: targetPlayer === 'ai' });
         updateUI();
         processAbilityEffect();
       }, 400);
@@ -4420,7 +4419,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       const deckSize = gameState[targetPlayer].deck.length;
       if (deckSize > 0) {
         gameState[targetPlayer].trash.push(...gameState[targetPlayer].deck.splice(0));
-        updateStatus(`${targetPlayer === 'player' ? 'Descartas' : 'IA descarta'} el mazo (${deckSize} cartas)`);
+        logEvent(`${targetPlayer === 'player' ? 'Descartas' : 'IA descarta'} el mazo (${deckSize} cartas)`, { isAI: targetPlayer === 'ai' });
         updateUI();
       }
       processAbilityEffect();
@@ -4687,7 +4686,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           if (!gameState[targetPlayer].compiled.includes('Diversidad')) {
             gameState[targetPlayer].compiled.push('Diversidad');
           }
-          updateStatus(`${triggerCardName}: 6 protocolos distintos en el campo — ¡Diversidad compilada!`);
+          logEvent(`${triggerCardName}: 6 protocolos distintos en el campo — ¡Diversidad compilada!`, { isAI: targetPlayer === 'ai' });
           updateUI();
           if (typeof checkWinCondition === 'function') checkWinCondition();
         } else if (diversityLine && gameState.field[diversityLine].compiledBy === targetPlayer) {
@@ -4699,7 +4698,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           if (gameState[opponent].deck.length > 0) {
             gameState[targetPlayer].hand.push(gameState[opponent].deck.pop());
           }
-          updateStatus(`${triggerCardName}: Diversidad recompilada — robas del mazo rival`);
+          logEvent(`${triggerCardName}: Diversidad recompilada — robas del mazo rival`, { isAI: targetPlayer === 'ai' });
           updateUI();
         }
       }
@@ -4732,7 +4731,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         const [card] = gameState.ai.hand.splice(idx, 1);
         const cardObj = { card, faceDown: false };
         gameState.field[effectLine].ai.push(cardObj);
-        updateStatus(`IA juega ${card.nombre} bocarriba en ${effectLine} (Diversidad 0)`);
+        logEvent(`IA juega ${card.nombre} bocarriba en ${effectLine} (Diversidad 0)`, { isAI: true });
         updateUI();
         // Disparar onPlay de la carta jugada
         if (typeof triggerCardEffect === 'function') {
@@ -4758,7 +4757,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           () => {
             if (availCards.length === 1) {
               const chosen = availCards[0];
-              updateStatus(`Espejo 1: copiando efecto de ${chosen.card.nombre}`);
+              logEvent(`Espejo 1: copiando efecto de ${chosen.card.nombre}`);
               // "como si estuviera en esta carta" → mantener línea de Espejo 1
               triggerCardEffect(chosen.card, 'onPlay', 'player');
               processAbilityEffect();
@@ -4775,7 +4774,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       } else {
         // IA: elige la carta rival con mayor valor
         const best = availCards.reduce((b, x) => x.card.valor > b.card.valor ? x : b);
-        updateStatus(`Espejo 1: copiando efecto de ${best.card.nombre}`);
+        logEvent(`Espejo 1: copiando efecto de ${best.card.nombre}`, { isAI: true });
         // "como si estuviera en esta carta" → mantener línea de Espejo 1
         triggerCardEffect(best.card, 'onPlay', targetPlayer);
         processAbilityEffect();
@@ -5286,7 +5285,7 @@ function shuffleDiscardIntoDeck(who) {
   state.deck.push(...state.trash);
   state.deck.sort(() => Math.random() - 0.5);
   state.trash = [];
-  updateStatus(`${who === 'player' ? 'Barajas' : 'IA baraja'} el descarte en el mazo`);
+  logEvent(`${who === 'player' ? 'Barajas' : 'IA baraja'} el descarte en el mazo`, { isAI: who === 'ai' });
   updateUI();
   onDeckShuffleEffects(who);
 }
@@ -5492,7 +5491,7 @@ function applyReturnToHand(dest, card) {
   });
   if (redirected) {
     gameState[dest].deck.push(card); // tope del mazo = último elemento (pop/push)
-    updateStatus(`Corrupción 1: carta devuelta al tope del mazo bocarriba en lugar de a la mano`);
+    logEvent(`Corrupción 1: carta devuelta al tope del mazo bocarriba en lugar de a la mano`, { isAI: dest === 'ai' });
   } else {
     gameState[dest].hand.push(card);
   }

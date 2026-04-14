@@ -797,7 +797,7 @@ function updateUI() {
                 const cardObj = { card: played, faceDown: false };
                 gameState.field[ctx.line].player.push(cardObj);
                 gameState.effectContext = null;
-                updateStatus(`Juegas ${played.nombre} bocarriba en ${ctx.line} (Diversidad 0)`);
+                logEvent(`Juegas ${played.nombre} bocarriba en ${ctx.line} (Diversidad 0)`);
                 window._animPendingField = { line: ctx.line, target: 'player' };
                 updateUI();
                 if (typeof triggerCardEffect === 'function') {
@@ -1179,7 +1179,7 @@ function offerControlRearrange(who, resumeAction) {
     if (who === 'ai') {
         const target = aiShouldRearrangeControl();
         if (target) {
-            updateStatus(`IA usa el Control Component para reorganizar protocolos ${target === 'ai' ? 'propios' : 'rivales'}`);
+            logEvent(`IA usa el Control Component para reorganizar protocolos ${target === 'ai' ? 'propios' : 'rivales'}`, { isAI: true });
             resolveEffectAI('rearrange', target, 1, {});
         }
         resumeControlAction(resumeAction, who);
@@ -1232,7 +1232,7 @@ function checkControlPhase(who) {
         const gained = gameState.controlComponent !== who;
         gameState.controlComponent = who;
         if (gained) {
-            updateStatus(`${who === 'player' ? 'Obtienes' : 'IA obtiene'} el Control Component`);
+            logEvent(`${who === 'player' ? 'Obtienes' : 'IA obtiene'} el Control Component`, { isAI: who === 'ai' });
             updateUI();
         }
     }
@@ -1250,7 +1250,7 @@ function checkCompilePhase(who) {
     if (gameState.preventCompile[who] > 0) {
         console.log(`  🚫 Compile blocked for ${who} (${gameState.preventCompile[who]} turns left)`);
         gameState.preventCompile[who]--;
-        updateStatus(`Compilado bloqueado por Metal 1`);
+        logEvent(`Compilado bloqueado por Metal 1`, { isAI: who === 'ai' });
         // Saltar la fase de compilado completamente — ir directo a fase de acción
         setTimeout(() => actionPhase(who), 800);
         return;
@@ -2707,7 +2707,7 @@ function draw(target, count) {
         logEvent(`${drawOrigin}${target === 'player' ? 'robas' : 'IA roba'} ${drawn} carta${drawn !== 1 ? 's' : ''}`, { isAI: target === 'ai' });
         if (typeof onOpponentDrawEffects === 'function') onOpponentDrawEffects(target);
     } else if (count > 0) {
-        updateStatus(`${target === 'player' ? 'No puedes robar' : 'IA no puede robar'} — mazo y descarte vacíos`);
+        logEvent(`${target === 'player' ? 'No puedes robar' : 'IA no puede robar'} — mazo y descarte vacíos`, { isAI: target === 'ai' });
     }
     return drawn;
 }
@@ -3266,7 +3266,7 @@ function executeAIMove(move) {
             drawCard('ai');
         }
         gameState.refreshedThisTurn = 'ai';
-        updateStatus('IA recarga su mazo');
+        logEvent('IA recarga su mazo', { isAI: true });
         return; // endTurn se llama en el caller (playAITurn)
     }
 

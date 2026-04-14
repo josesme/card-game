@@ -94,6 +94,7 @@ function getEngine() {
   global.clearEffectHighlights = jest.fn();
   global.highlightEffectTargets = jest.fn();
   global.finishEffect = jest.fn();
+  global.logEvent = jest.fn();
   global.document = { getElementById: jest.fn(() => null) };
   global.window = {};
   global.setTimeout = jest.fn((fn) => fn()); // ejecutar síncronamente en tests
@@ -103,12 +104,12 @@ function getEngine() {
   );
   // eslint-disable-next-line no-new-func
   new Function(
-    'LINES', 'gameState', 'updateUI', 'updateStatus', 'drawCard', 'draw', 'discard',
+    'LINES', 'gameState', 'updateUI', 'updateStatus', 'logEvent', 'drawCard', 'draw', 'discard',
     'startEffect', 'highlightSelectableLines', 'aiLowestValueCardIdx',
     'aiPickDestLine', 'executeNewEffect', 'document', 'window',
     engineCode
   )(
-    global.LINES, global.gameState, global.updateUI, global.updateStatus,
+    global.LINES, global.gameState, global.updateUI, global.updateStatus, global.logEvent,
     global.drawCard, global.draw, global.discard, global.startEffect,
     global.highlightSelectableLines, global.aiLowestValueCardIdx, global.aiPickDestLine,
     global.executeNewEffect, global.document, global.window

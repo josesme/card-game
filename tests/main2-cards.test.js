@@ -73,6 +73,7 @@ function getEngine() {
   global.shuffleDiscardIntoDeck = jest.fn(target => {
     GS[target].deck.push(...GS[target].trash.splice(0));
   });
+  global.logEvent = jest.fn();
   global.document = { getElementById: jest.fn(() => null) };
   global.window = {};
 
@@ -81,13 +82,13 @@ function getEngine() {
   );
   // eslint-disable-next-line no-new-func
   const fn = new Function(
-    'LINES', 'gameState', 'updateUI', 'updateStatus', 'drawCard', 'draw', 'discard',
+    'LINES', 'gameState', 'updateUI', 'updateStatus', 'logEvent', 'drawCard', 'draw', 'discard',
     'startEffect', 'highlightSelectableLines', 'highlightEffectTargets', 'aiLowestValueCardIdx',
     'aiPickDestLine', 'executeNewEffect', 'shuffleDiscardIntoDeck', 'document', 'window', 'calculateScore',
     engineCode
   );
   fn(
-    global.LINES, global.gameState, global.updateUI, global.updateStatus,
+    global.LINES, global.gameState, global.updateUI, global.updateStatus, global.logEvent,
     global.drawCard, global.draw, global.discard, global.startEffect,
     global.highlightSelectableLines, global.highlightEffectTargets, global.aiLowestValueCardIdx,
     global.aiPickDestLine, global.executeNewEffect, global.shuffleDiscardIntoDeck,

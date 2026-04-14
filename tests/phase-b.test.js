@@ -71,6 +71,7 @@ function getEngine() {
   global.aiLowestValueCardIdx = jest.fn(() => 0);
   global.aiPickDestLine = jest.fn(() => LINES_MOCK[1]);
   global.executeNewEffect = jest.fn();
+  global.logEvent = jest.fn();
   global.document = { getElementById: jest.fn(() => null) };
   global.window = {};
 
@@ -79,13 +80,13 @@ function getEngine() {
   );
   // eslint-disable-next-line no-new-func
   const fn = new Function(
-    'LINES', 'gameState', 'updateUI', 'updateStatus', 'drawCard', 'draw', 'discard',
+    'LINES', 'gameState', 'updateUI', 'updateStatus', 'logEvent', 'drawCard', 'draw', 'discard',
     'startEffect', 'highlightSelectableLines', 'aiLowestValueCardIdx',
     'aiPickDestLine', 'executeNewEffect', 'document', 'window',
     engineCode
   );
   fn(
-    global.LINES, global.gameState, global.updateUI, global.updateStatus,
+    global.LINES, global.gameState, global.updateUI, global.updateStatus, global.logEvent,
     global.drawCard, global.draw, global.discard, global.startEffect,
     global.highlightSelectableLines, global.aiLowestValueCardIdx, global.aiPickDestLine,
     global.executeNewEffect, global.document, global.window
