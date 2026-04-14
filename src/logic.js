@@ -903,7 +903,12 @@ function updateTurnVisuals() {
 
     if (!needsPlayerInput) {
         const instrEl = document.getElementById('action-instruction');
-        if (instrEl) { instrEl.textContent = ''; instrEl.style.display = 'none'; }
+        if (instrEl && instrEl.dataset.type === 'instruction') {
+            instrEl.textContent = isAITurn ? 'IA →' : (isPlayerTurn ? 'TU TURNO' : '—');
+            instrEl.style.color = isAITurn ? 'rgba(155,89,182,0.8)' : 'var(--ui-cyan)';
+            instrEl.style.display = '';
+            instrEl.dataset.type = 'idle';
+        }
     }
 }
 
@@ -3386,13 +3391,14 @@ function continueAfterEndEffects(who) {
     setTimeout(() => startTurn(who === 'player' ? 'ai' : 'player'), 1000);
 }
 
-// updateStatus: muestra instrucción en #action-instruction dentro de la hand-bar.
-// La barra se revela automáticamente cuando hand-overlay tiene .effect-pending.
+// updateStatus: muestra instrucción interactiva en #action-instruction (hand-bar).
 function updateStatus(msg) {
     const el = document.getElementById('action-instruction');
     if (!el) return;
     el.textContent = msg;
-    el.style.display = msg ? '' : 'none';
+    el.style.color = '#e07b00';
+    el.style.display = '';
+    el.dataset.type = 'instruction';
 }
 
 /**
@@ -3437,6 +3443,17 @@ function logEvent(msg, { icon, isAI } = {}) {
 
     gameState.actionLog.push({ isAI: _isAI, icon: _icon, msg });
     if (gameState.actionLog.length > 50) gameState.actionLog.shift();
+
+    // Refleja el evento en la hand-bar, sin pisar instrucciones interactivas activas.
+    if (!gameState.effectContext) {
+        const bar = document.getElementById('action-instruction');
+        if (bar && bar.dataset.type !== 'instruction') {
+            bar.textContent = `${_icon} ${msg}`;
+            bar.style.color = color;
+            bar.style.display = '';
+            bar.dataset.type = 'event';
+        }
+    }
 }
 window.logEvent = logEvent;
 

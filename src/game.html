@@ -376,27 +376,7 @@
         }
 
         /* ── Peek mode ── */
-        #hand-overlay.peek-mode .hand-bar {
-            height: 0;
-            overflow: hidden;
-            padding: 0;
-            border-top: none;
-        }
-        /* Auto-revela la barra si hay acción que requiere atención del jugador */
-        #hand-overlay.peek-mode:has(#btn-stop-discard:not(.hidden)),
-        #hand-overlay.peek-mode:has(#discard-banner.visible),
-        #hand-overlay.peek-mode.effect-pending {
-            /* hand-bar vuelve a mostrarse */
-        }
-        #hand-overlay.peek-mode:has(#btn-stop-discard:not(.hidden)) .hand-bar,
-        #hand-overlay.peek-mode:has(#discard-banner.visible) .hand-bar,
-        #hand-overlay.peek-mode.effect-pending .hand-bar {
-            height: auto;
-            overflow: visible;
-            padding: 8px 20px;
-            border-top: 2px solid var(--player-primary);
-        }
-        /* Cartas asomando en reposo — sin caja contenedora visible */
+        /* Cartas asomando en reposo */
         #hand-overlay.peek-mode:not(.open) .hand-content {
             max-height: var(--peek-h);
             overflow: hidden;
@@ -404,7 +384,7 @@
             display: flex;
             justify-content: center;
             padding: 0;
-            background: transparent;
+            background: rgba(10,14,39,0.97);
         }
         /* Sombra en la tira inferior para fundir con el tablero */
         #hand-overlay.peek-mode:not(.open) .hand-content::after {
