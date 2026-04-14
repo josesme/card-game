@@ -2,21 +2,24 @@
  * Tests de integración — Vida 1 (doble flip IA)
  *
  * Bug histórico: IA juega Vida 1 (dos flip target:'any') contra una única carta
- * bocarriba del jugador. El primer flip la voltea bocabajo; el segundo flip no
- * encuentra un objetivo válido (aiPickFlipLine filtra !faceDown) y se salta
- * silenciosamente. El log decía "IA volteó tu carta" DOS veces aunque solo
- * ocurrió un flip real.
+ * bocarriba del jugador. El flip de la IA solo contemplaba bocarriba→bocabajo
+ * para el jugador (unidireccional). No evaluaba voltear sus propias cartas
+ * (ej. bocarriba valor 1 → bocabajo valor 2 = ganancia de 1 punto).
  *
  * Fix aplicado en resolveEffectAI:
- *  1. `flippedCount` trackea cuántos flips ocurrieron realmente.
- *  2. Solo se emite el log si flippedCount > 0.
- *  3. Fallback para target:'any': si no hay bocarriba del rival, voltear bocabajo
- *     propia (si existe) en lugar de saltar silenciosamente.
- *  4. El bloque flip hace `return` temprano para no caer al logEvent genérico del
- *     final de resolveEffectAI.
+ *   Para target:'any' (sin filtro), evaluar TODAS las cartas descubiertas con
+ *   función de beneficio real (bidireccional, ambos lados):
+ *     player bocarriba (V) → bocabajo (2):  +(V−2)
+ *     player bocabajo  (2) → bocarriba (V): +(2−V)
+ *     AI    bocarriba (V) → bocabajo  (2):  +(2−V)  [gana si V<2]
+ *     AI    bocabajo  (2) → bocarriba (V):  +(V−2)  [gana si V>2]
+ *   La IA elige siempre el flip de mayor beneficio.
  *
- * Estos tests verifican el comportamiento observable sin necesidad de cargar
- * logic.js completo (que tiene referencias DOM al nivel de módulo).
+ * Escenario concreto (el que reportó el bug):
+ *   Mesa: Vida 1 IA (bocarriba, valor 1) + Unidad 5 jugador (bocarriba, valor 5)
+ *   1er flip → Unidad 5 jugador (bocarriba→bocabajo): beneficio +3
+ *   2do flip → Vida 1 IA    (bocarriba→bocabajo): beneficio +1
+ *   Resultado: player queda en valor 2, IA queda en valor 2
  */
 
 const LINES_MOCK = ['alpha', 'beta', 'gamma'];
@@ -35,116 +38,144 @@ function makeEmptyField() {
   return f;
 }
 
-// ─── Replica mínima de aiPickFlipLine (lógica idéntica a logic.js) ────────────
-// Permite testear el filtro sin cargar logic.js completo.
-function aiPickFlipLine(target, gameState, calculateScore) {
+// ─── Replica mínima de aiPickFlipLine (idéntica a logic.js) ──────────────────
+function aiPickFlipLine(target, gameState) {
   if (target === 'player') {
     return LINES_MOCK
       .filter(l => {
         const s = gameState.field[l].player;
         return s.length > 0 && !s[s.length - 1].faceDown;
       })
-      .sort((a, b) => calculateScore(gameState, b, 'player') - calculateScore(gameState, a, 'player'))[0] || null;
+      .sort((a, b) => {
+        const scoreA = gameState.field[a].player.reduce((s, c) => s + (c.faceDown ? 2 : c.card.valor), 0);
+        const scoreB = gameState.field[b].player.reduce((s, c) => s + (c.faceDown ? 2 : c.card.valor), 0);
+        return scoreB - scoreA;
+      })[0] || null;
   } else {
     return LINES_MOCK
       .filter(l => gameState.field[l].ai.some(c => c.faceDown))
-      .sort((a, b) => calculateScore(gameState, b, 'ai') - calculateScore(gameState, a, 'ai'))[0] || null;
+      .sort((a, b) => {
+        const scoreA = gameState.field[a].ai.reduce((s, c) => s + (c.faceDown ? 2 : c.card.valor), 0);
+        const scoreB = gameState.field[b].ai.reduce((s, c) => s + (c.faceDown ? 2 : c.card.valor), 0);
+        return scoreB - scoreA;
+      })[0] || null;
   }
 }
 
-// ─── Simula la lógica del bloque flip de resolveEffectAI (post-fix) ───────────
-function simulateAIFlip(target, gsTarget, gameState) {
-  const calcScore = (gs, line, player) =>
-    gs.field[line][player].reduce((s, c) => s + (c.faceDown ? 2 : c.card.valor), 0);
+// ─── Replica del bloque flip target:'any' de resolveEffectAI (post-fix) ───────
+function simulateAIFlipAny(gameState, excludeCardName = null) {
+  let bestCardObj = null, bestLine = null, bestSide = null, bestBenefit = -Infinity;
 
-  let flippedCount = 0;
-  const line = aiPickFlipLine(gsTarget, gameState, calcScore);
-  if (line !== null) {
-    const stack = gameState.field[line][gsTarget];
-    if (gsTarget === 'player') {
+  ['player', 'ai'].forEach(side => {
+    LINES_MOCK.forEach(line => {
+      const stack = gameState.field[line][side];
+      if (stack.length === 0) return;
       const topCard = stack[stack.length - 1];
-      topCard.faceDown = !topCard.faceDown;
-      flippedCount++;
-    }
-  } else if (target === 'any') {
-    // Fallback: flip AI bocabajo card bocarriba
-    const aiFallbackLine = LINES_MOCK
-      .filter(l => gameState.field[l].ai.some(c => c.faceDown))
-      .sort((a, b) => calcScore(gameState, b, 'ai') - calcScore(gameState, a, 'ai'))[0] || null;
-    if (aiFallbackLine !== null) {
-      const stack = gameState.field[aiFallbackLine].ai;
-      const fdIdx = [...stack].reverse().findIndex(c => c.faceDown);
-      if (fdIdx >= 0) {
-        stack[stack.length - 1 - fdIdx].faceDown = false;
-        flippedCount++;
+      if (excludeCardName && topCard.card.nombre === excludeCardName) return;
+
+      const benefit = !topCard.faceDown
+        ? (side === 'player' ? topCard.card.valor - 2 : 2 - topCard.card.valor)
+        : (side === 'ai'    ? topCard.card.valor - 2 : 2 - topCard.card.valor);
+
+      if (benefit > bestBenefit) {
+        bestBenefit = benefit;
+        bestCardObj = topCard; bestLine = line; bestSide = side;
       }
-    }
+    });
+  });
+
+  if (bestCardObj !== null) {
+    bestCardObj.faceDown = !bestCardObj.faceDown;
+    return { side: bestSide, line: bestLine, cardObj: bestCardObj, benefit: bestBenefit };
   }
-  return flippedCount;
+  return null;
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
-describe('Vida 1 — doble flip IA (resolveEffectAI)', () => {
-  test('aiPickFlipLine devuelve null si la única carta del jugador está bocabajo', () => {
+describe('Vida 1 — función de beneficio para target:any (post-fix)', () => {
+
+  test('aiPickFlipLine(player) devuelve null si la única carta del jugador está bocabajo', () => {
     const gs = { field: makeEmptyField() };
     gs.field.alpha.player.push(makeCard('Unidad 5', 5, { faceDown: true }));
-    const calcScore = () => 0;
-    const result = aiPickFlipLine('player', gs, calcScore);
-    expect(result).toBeNull();
+    expect(aiPickFlipLine('player', gs)).toBeNull();
   });
 
-  test('aiPickFlipLine devuelve la línea si la carta del jugador está bocarriba', () => {
+  test('aiPickFlipLine(player) devuelve la línea si la carta del jugador está bocarriba', () => {
     const gs = { field: makeEmptyField() };
     gs.field.alpha.player.push(makeCard('Unidad 5', 5, { faceDown: false }));
-    const calcScore = () => 0;
-    const result = aiPickFlipLine('player', gs, calcScore);
-    expect(result).toBe('alpha');
+    expect(aiPickFlipLine('player', gs)).toBe('alpha');
   });
 
-  test('Vida 1: primer flip cubre la carta bocarriba del jugador', () => {
+  test('1er flip — Unidad 5 jugador (bocarriba V=5): beneficio +3, carta pasa a bocabajo', () => {
     const gs = { field: makeEmptyField() };
     gs.field.alpha.player.push(makeCard('Unidad 5', 5, { faceDown: false }));
+    gs.field.alpha.ai.push(makeCard('Vida 1', 1, { faceDown: false }));
 
-    const flipped1 = simulateAIFlip('any', 'player', gs);
-    expect(flipped1).toBe(1);
-    expect(gs.field.alpha.player[0].faceDown).toBe(true); // ahora bocabajo
+    const result = simulateAIFlipAny(gs);
+    expect(result).not.toBeNull();
+    expect(result.side).toBe('player');       // target: carta del jugador
+    expect(result.benefit).toBe(3);           // 5 - 2 = 3
+    expect(gs.field.alpha.player[0].faceDown).toBe(true);  // ahora bocabajo
+    expect(gs.field.alpha.ai[0].faceDown).toBe(false);     // Vida 1 sin tocar
   });
 
-  test('Vida 1: segundo flip no encuentra objetivo rival bocarriba → flippedCount=0 (no logar)', () => {
+  test('2do flip — Vida 1 IA (bocarriba V=1): beneficio +1, carta pasa a bocabajo', () => {
     const gs = { field: makeEmptyField() };
-    // El primer flip ya puso la carta bocabajo
+    // Estado tras el 1er flip: Unidad 5 ya está bocabajo
     gs.field.alpha.player.push(makeCard('Unidad 5', 5, { faceDown: true }));
-    // IA no tiene cartas bocabajo
+    gs.field.alpha.ai.push(makeCard('Vida 1', 1, { faceDown: false }));
 
-    const flipped2 = simulateAIFlip('any', 'player', gs);
-    expect(flipped2).toBe(0); // nada ocurrió — no se debe logar
-    expect(gs.field.alpha.player[0].faceDown).toBe(true); // sigue bocabajo
+    const result = simulateAIFlipAny(gs);
+    expect(result).not.toBeNull();
+    expect(result.side).toBe('ai');           // target: propia carta de la IA
+    expect(result.benefit).toBe(1);           // 2 - 1 = 1
+    expect(gs.field.alpha.ai[0].faceDown).toBe(true);      // Vida 1 ahora bocabajo (valor 2)
+    expect(gs.field.alpha.player[0].faceDown).toBe(true);  // Unidad 5 sin tocar
   });
 
-  test('Fallback target:any — si no hay rival bocarriba, voltear bocabajo propia', () => {
-    const gs = { field: makeEmptyField() };
-    // El rival no tiene cartas bocarriba
-    gs.field.alpha.player.push(makeCard('Unidad 5', 5, { faceDown: true }));
-    // IA SÍ tiene una carta bocabajo (segundo flip debería aprovecharla)
-    gs.field.beta.ai.push(makeCard('Vida 1', 1, { faceDown: true }));
-
-    const flipped = simulateAIFlip('any', 'player', gs);
-    expect(flipped).toBe(1); // usó el fallback
-    expect(gs.field.beta.ai[0].faceDown).toBe(false); // ahora bocarriba
-  });
-
-  test('Vida 1 completo: dos flips sobre una sola carta rival → resultado bocabajo + log 1 vez', () => {
+  test('Vida 1 completo — ambos flips ocurren, resultado final correcto', () => {
     const gs = { field: makeEmptyField() };
     gs.field.alpha.player.push(makeCard('Unidad 5', 5, { faceDown: false }));
-    // IA: Vida 1 bocarriba (no bocabajo → fallback no aplica)
+    gs.field.alpha.ai.push(makeCard('Vida 1', 1, { faceDown: false }));
 
-    const flip1 = simulateAIFlip('any', 'player', gs);
-    const flip2 = simulateAIFlip('any', 'player', gs);
+    const flip1 = simulateAIFlipAny(gs);
+    const flip2 = simulateAIFlipAny(gs);
 
-    expect(flip1).toBe(1);  // primer flip ocurre
-    expect(flip2).toBe(0);  // segundo flip se salta (no hay objetivo válido)
-    expect(gs.field.alpha.player[0].faceDown).toBe(true); // la carta quedó bocabajo
-    // flip2 === 0 garantiza que el log no emite "IA volteó tu carta" por segunda vez
+    // Ambos flips ocurrieron (no se saltó ninguno)
+    expect(flip1).not.toBeNull();
+    expect(flip2).not.toBeNull();
+
+    // El 1er flip cubrió Unidad 5 (player), el 2do cubrió Vida 1 (AI)
+    expect(flip1.side).toBe('player');
+    expect(flip2.side).toBe('ai');
+
+    // Estado final: ambas cartas bocabajo (valor 2 cada una)
+    expect(gs.field.alpha.player[0].faceDown).toBe(true);
+    expect(gs.field.alpha.ai[0].faceDown).toBe(true);
+  });
+
+  test('Beneficio correcto — AI bocabajo V=4 → bocarriba: beneficio +2', () => {
+    const gs = { field: makeEmptyField() };
+    gs.field.alpha.ai.push(makeCard('Agua 4', 4, { faceDown: true }));
+
+    const result = simulateAIFlipAny(gs);
+    expect(result).not.toBeNull();
+    expect(result.side).toBe('ai');
+    expect(result.benefit).toBe(2);    // 4 - 2 = 2
+    expect(gs.field.alpha.ai[0].faceDown).toBe(false); // revelada
+  });
+
+  test('Tie-break — si hay dos candidatos con el mismo beneficio, el orden es estable', () => {
+    const gs = { field: makeEmptyField() };
+    // Dos cartas con el mismo beneficio: player V=4 (benefit=2) vs AI V=0 (benefit=2)
+    gs.field.alpha.player.push(makeCard('Plaga 4', 4, { faceDown: false }));
+    gs.field.beta.ai.push(makeCard('Apatía 0', 0, { faceDown: false }));
+
+    const result = simulateAIFlipAny(gs);
+    expect(result).not.toBeNull();
+    expect(result.benefit).toBe(2); // ambos tienen beneficio 2
+    // El que encuentre primero (player primero en el forEach) gana el tie
+    expect(result.side).toBe('player');
   });
 });

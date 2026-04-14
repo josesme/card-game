@@ -2470,10 +2470,11 @@ function resolveEffectAI(type, target, count, opts = {}) {
         }
     } else if (type === 'flip') {
         let flippedCount = 0;
+        let lastFlippedSide = actualTarget; // para el log: qué lado se volteó realmente
         for (let i = 0; i < count; i++) {
             if (opts.filter === 'faceDown') {
-                // Solo puede voltear cartas bocabajo (face-down → face-up).
-                // Preferir propias (activa valor/efecto); solo si no hay, voltear las del rival.
+                // Solo puede voltear cartas bocabajo → bocarriba.
+                // Preferir propias (activa valor/efecto); fallback al rival si target:'any'.
                 const ownLine = LINES
                     .filter(l => gameState.field[l].ai.some(c => c.faceDown))
                     .sort((a, b) => calculateScore(gameState, b, 'ai') - calculateScore(gameState, a, 'ai'))[0] || null;
@@ -2484,11 +2485,11 @@ function resolveEffectAI(type, target, count, opts = {}) {
                         const flipped = stack[stack.length - 1 - fdIdx];
                         flipped.faceDown = false;
                         flippedCount++;
+                        lastFlippedSide = 'ai';
                         if (fdIdx === 0) flipped._animateFlip = true;
                         triggerFlipFaceUp(flipped, ownLine, 'ai');
                     }
                 } else if (target === 'any') {
-                    // Fallback: voltear carta bocabajo del jugador (si existe)
                     const pLine = LINES
                         .filter(l => gameState.field[l].player.some(c => c.faceDown))
                         .sort((a, b) => calculateScore(gameState, b, 'player') - calculateScore(gameState, a, 'player'))[0] || null;
@@ -2499,13 +2500,53 @@ function resolveEffectAI(type, target, count, opts = {}) {
                             const flipped = stack[stack.length - 1 - fdIdx];
                             flipped.faceDown = false;
                             flippedCount++;
+                            lastFlippedSide = 'player';
                             if (fdIdx === 0) flipped._animateFlip = true;
                             triggerFlipFaceUp(flipped, pLine, 'player');
                         }
                     }
                 }
+            } else if (target === 'any') {
+                // Sin filtro + target:'any': evaluar TODAS las cartas descubiertas con función
+                // de beneficio para la IA (bidireccional, ambos lados).
+                //
+                // Beneficio por tipo de flip:
+                //   player bocarriba (V) → bocabajo (2):  +(V−2)  [cubre carta de alto valor]
+                //   player bocabajo  (2) → bocarriba (V): +(2−V)  [descubre rival, malo si V>2]
+                //   AI    bocarriba (V) → bocabajo  (2):  +(2−V)  [gana si V<2, ej. valor 0 o 1]
+                //   AI    bocabajo  (2) → bocarriba (V):  +(V−2)  [gana si V>2]
+                let bestCardObj = null, bestLine = null, bestSide = null, bestBenefit = -Infinity;
+
+                ['player', 'ai'].forEach(side => {
+                    LINES.forEach(line => {
+                        const stack = gameState.field[line][side];
+                        if (stack.length === 0) return;
+                        const topCard = stack[stack.length - 1];
+                        if (opts.excludeCardName && topCard.card.nombre === opts.excludeCardName) return;
+                        if (typeof getPersistentModifiers === 'function' && getPersistentModifiers(topCard).preventFlip) return;
+
+                        const benefit = !topCard.faceDown
+                            ? (side === 'player' ? topCard.card.valor - 2 : 2 - topCard.card.valor)
+                            : (side === 'ai'     ? topCard.card.valor - 2 : 2 - topCard.card.valor);
+
+                        if (benefit > bestBenefit) {
+                            bestBenefit = benefit;
+                            bestCardObj = topCard; bestLine = line; bestSide = side;
+                        }
+                    });
+                });
+
+                if (bestCardObj !== null) {
+                    bestCardObj.faceDown = !bestCardObj.faceDown;
+                    flippedCount++;
+                    lastFlippedSide = bestSide;
+                    if (!bestCardObj.faceDown) {
+                        bestCardObj._animateFlip = true;
+                        triggerFlipFaceUp(bestCardObj, bestLine, bestSide);
+                    }
+                }
             } else {
-                // Sin filtro: voltear carta bocarriba del rival a bocabajo (le perjudica).
+                // Sin filtro + target específico: usar lógica existente (aiPickFlipLine).
                 const line = aiPickFlipLine(actualTarget);
                 if (line !== null) {
                     const stack = gameState.field[line][actualTarget];
@@ -2529,23 +2570,6 @@ function resolveEffectAI(type, target, count, opts = {}) {
                             triggerFlipFaceUp(flipped, line, actualTarget);
                         }
                     }
-                } else if (target === 'any') {
-                    // Fallback para target 'any': no hay cartas bocarriba del rival.
-                    // La IA puede usar el flip para descubrir una propia bocabajo.
-                    const aiFallbackLine = LINES
-                        .filter(l => gameState.field[l].ai.some(c => c.faceDown))
-                        .sort((a, b) => calculateScore(gameState, b, 'ai') - calculateScore(gameState, a, 'ai'))[0] || null;
-                    if (aiFallbackLine !== null) {
-                        const stack = gameState.field[aiFallbackLine].ai;
-                        const fdIdx = [...stack].reverse().findIndex(c => c.faceDown);
-                        if (fdIdx >= 0) {
-                            const flipped = stack[stack.length - 1 - fdIdx];
-                            flipped.faceDown = false;
-                            flippedCount++;
-                            if (fdIdx === 0) flipped._animateFlip = true;
-                            triggerFlipFaceUp(flipped, aiFallbackLine, 'ai');
-                        }
-                    }
                 }
             }
         }
@@ -2554,7 +2578,8 @@ function resolveEffectAI(type, target, count, opts = {}) {
         updateUI();
         if (flippedCount > 0) {
             const triggerLabel = gameState.currentTriggerCard ? ` [${gameState.currentTriggerCard}]` : '';
-            logEvent(`IA volteó ${flippedCount > 1 ? `${flippedCount} cartas` : (actualTarget === 'player' ? 'tu carta' : 'su carta')}${triggerLabel}`, { isAI: true });
+            const whoLabel = lastFlippedSide === 'player' ? 'tu carta' : 'su carta';
+            logEvent(`IA volteó ${flippedCount > 1 ? `${flippedCount} cartas` : whoLabel}${triggerLabel}`, { isAI: true });
         }
         if (typeof processAbilityEffect === 'function') processAbilityEffect();
         return;
