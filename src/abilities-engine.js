@@ -3600,6 +3600,8 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       }
 
       // Múltiples valor-1 en mazo: jugador elige en modal
+      // Bloquear processAbilityEffect mientras el modal está abierto
+      gameState.effectContext = { type: 'searchDeckValue1_reveal' };
       const revealedCards = [];
       for (let i = v1Indices.length - 1; i >= 0; i--) {
         revealedCards.unshift(deckRef.splice(v1Indices[i], 1)[0]);
@@ -3652,12 +3654,14 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             [deckRef[i], deckRef[j]] = [deckRef[j], deckRef[i]];
           }
           logEvent(`Robas ${chosen.nombre} (Valor 1) del mazo`);
+          gameState.effectContext = null; // liberar bloqueo antes de que shuffleThenPlayStep lo reestablezca
           shuffleThenPlayStep();
         };
       } else {
         // Fallback sin modal: auto-robar la primera
         const [drawn] = deckRef.splice(v1Indices[0], 1);
         gameState[targetPlayer].hand.push(drawn);
+        gameState.effectContext = null;
         shuffleThenPlayStep();
       }
       break;
