@@ -781,9 +781,9 @@ function updateUI() {
                     updateStatus('Claridad 2: solo puedes jugar cartas con Valor 1');
                     return;
                 }
-                // Limpiar contexto antes de abrir el modal para que fluya como jugada normal
                 gameState.effectContext = null;
                 gameState.pendingTurnEnd = null;
+                gameState.isProcessing = false; // finalizePlay lo bloqueaba — limpiar para que el modal pueda abrirse
                 showActionModal(index);
             } else if (gameState.effectContext && gameState.effectContext.type === 'playNonDiversity') {
                 // Diversidad 0: jugador elige carta no-Diversidad para jugar bocarriba
