@@ -240,6 +240,7 @@ function initLineListeners() {
                 clearSelectionHighlights();
                 clearEffectHighlights();
                 updateUI();
+                logEvent(`[bocabajo] en ${line} (desde descarte)`, { isAI: false });
                 if (typeof processAbilityEffect === 'function') processAbilityEffect();
             } else if (gameState.effectContext && gameState.effectContext.type === 'luckPlay_lineSelect') {
                 // Suerte 0: jugar carta aleatoria de la mano si el valor coincide
