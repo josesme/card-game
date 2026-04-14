@@ -1086,7 +1086,7 @@ function startTurn(who) {
     gameState.revealedPlayerCards = gameState.revealedPlayerCards.filter(
         rc => gameState.player.hand.some(h => h.nombre === rc.nombre)
     );
-    updateStatus(`--- Turno de ${who === 'player' ? 'Jugador' : 'IA'} ---`);
+    logEvent(`--- Turno de ${who === 'player' ? 'Jugador' : 'IA'} ---`, { isAI: who === 'ai' });
 
     // Disparar efectos de inicio de turno; la fase de compilación esperará a que terminen
     gameState.pendingCheckCompile = who;
@@ -1349,7 +1349,7 @@ function compileLine(line, who) {
     v2AI.forEach(c => {
         const dest = aiPickDestLine([line]) || otherLines[0];
         gameState.field[dest].ai.push(c);
-        updateStatus(`IA desplaza Velocidad 2 a ${dest}`);
+        logEvent(`IA desplaza Velocidad 2 a ${dest}`, { isAI: true });
     });
 
     // Jugador: marcar pendiente para selección interactiva
@@ -1974,7 +1974,7 @@ function handleRevealChoice(handIndex) {
     if (!gameState.revealedPlayerCards.some(c => c.nombre === card.nombre)) {
         gameState.revealedPlayerCards.push(card);
     }
-    updateStatus(`Revelas: ${card.nombre}`);
+    logEvent(`Revelas: ${card.nombre}`, { isAI: false });
     finishEffect();
     processAbilityEffect();
 }
@@ -1988,7 +1988,7 @@ function finalizeDiscardVariable() {
     finishEffect();
     if (!isAIInitiated) {
         discard('ai', n + 1);
-        updateStatus(`Plaga 2: descartaste ${n}, la IA descarta ${n + 1}`);
+        logEvent(`Plaga 2: descartaste ${n}, la IA descarta ${n + 1}`, { isAI: false });
     }
 }
 
@@ -2592,7 +2592,7 @@ function resolveEffectAI(type, target, count, opts = {}) {
                 if (bestProtoIdx !== bestLineIdx) {
                     [protos[bestProtoIdx], protos[bestLineIdx]] = [protos[bestLineIdx], protos[bestProtoIdx]];
                     swapCompiledState(LINES[bestProtoIdx], LINES[bestLineIdx], owner);
-                    updateStatus('IA reorganizó sus Protocolos estratégicamente');
+                    logEvent('IA reorganizó sus Protocolos estratégicamente', { isAI: true });
                     updateUI();
                 }
             }
@@ -2619,7 +2619,7 @@ function resolveEffectAI(type, target, count, opts = {}) {
         }
         if (best) {
             gameState.lastRevealedCard = { cardObj: best, line: bestLine, target: bestSide };
-            updateStatus(`IA revela ${best.card.nombre} (bocabajo) [${gameState.currentTriggerCard || ''}]`);
+            logEvent(`IA revela ${best.card.nombre} (bocabajo) [${gameState.currentTriggerCard || ''}]`, { isAI: true });
         }
         if (typeof processAbilityEffect === 'function') processAbilityEffect();
         return;
@@ -2628,7 +2628,7 @@ function resolveEffectAI(type, target, count, opts = {}) {
     const typeLabels = { discard: 'descartó', eliminate: 'eliminó', flip: 'volteó', shift: 'cambió de línea', return: 'devolvió a mano' };
     const whoLabel = actualTarget === 'player' ? 'tu carta' : 'su carta';
     const triggerLabel = gameState.currentTriggerCard ? ` [${gameState.currentTriggerCard}]` : '';
-    updateStatus(`IA ${typeLabels[type] || type} ${whoLabel}${triggerLabel}`);
+    logEvent(`IA ${typeLabels[type] || type} ${whoLabel}${triggerLabel}`, { isAI: true });
     if (typeof processAbilityEffect === 'function') processAbilityEffect();
 }
 
@@ -2988,7 +2988,7 @@ function playAITurn() {
     if (gameState.ai.hand.length === 0) {
         while(gameState.ai.hand.length < 5) drawCard('ai');
         console.log('🤖 IA: Recarga (mano vacía)');
-        updateStatus("IA recarga su mazo");
+        logEvent("IA recarga su mazo", { isAI: true });
         endTurn('ai');
         return;
     }
@@ -3024,7 +3024,7 @@ function playAITurn() {
         if (possibleMoves.length === 0) {
             // Sin movimientos disponibles, recargar
             while(gameState.ai.hand.length < 5) drawCard('ai');
-            updateStatus("IA recarga su mazo (sin jugadas posibles)");
+            logEvent("IA recarga su mazo (sin jugadas posibles)", { isAI: true });
             endTurn('ai');
             return;
         }
@@ -3337,74 +3337,48 @@ function continueAfterEndEffects(who) {
     setTimeout(() => startTurn(who === 'player' ? 'ai' : 'player'), 1000);
 }
 
+/**
+ * Muestra un mensaje en el status bar.
+ * Las instrucciones interactivas usan setInstruction() — alias de esta función.
+ * No escribe en #game-log: el log solo recibe eventos permanentes (logEvent).
+ */
 function updateStatus(msg) {
-    const log = document.getElementById('game-log');
-    if (!log) return;
-    updateTurnVisuals();
-
-    // Detectar tipo de mensaje para icono y color
-    let icon = '•';
-    let color = '#FFD93D'; // Default player yellow
-    let bgColor = 'transparent';
-    const isAI = gameState.turn === 'ai';
-
-    if (msg.includes('--- Turno')) {
-        icon = '➔';
-        color = isAI ? '#722E9A' : '#FFD93D';
-        bgColor = isAI ? 'rgba(114, 46, 154, 0.1)' : 'rgba(255, 217, 61, 0.1)';
-    } else if (msg.includes('¡Has compilado') || msg.includes('¡IA ha compilado')) {
-        icon = '⚡';
-        color = '#FFE150';
-        bgColor = 'rgba(255, 225, 80, 0.15)';
-    } else if (msg.includes('Robas') || msg.includes('IA roba')) {
-        icon = '🎴';
-    } else if (msg.includes('eliminó') || msg.includes('Eliminar')) {
-        icon = '💀';
-        color = '#ef4444';
-    } else if (msg.includes('volteó') || msg.includes('Voltea')) {
-        icon = '🔄';
-    } else if (msg.includes('Descartas') || msg.includes('IA descarta')) {
-        icon = '🗑️';
-    } else if (msg.includes('Agua 4')) {
-        icon = '💧';
-    } else if (msg.includes('Plaga')) {
-        icon = '☣️';
-    } else if (isAI) {
-        color = '#9b59b6'; // AI soft purple
-    }
-
-    const entry = document.createElement('div');
-    entry.style.cssText = `
-        color: ${color}; 
-        background: ${bgColor};
-        font-size: 0.85em; 
-        line-height: 1.4; 
-        padding: 4px 8px; 
-        border-left: 3px solid ${color}; 
-        margin-bottom: 2px;
-        border-radius: 0 4px 4px 0;
-        display: flex;
-        gap: 8px;
-        align-items: flex-start;
-        animation: fadeInLog 0.3s ease-out;
-    `;
-
-    entry.innerHTML = `<span style="opacity:0.7; flex-shrink:0;">${icon}</span> <span style="flex:1;">${msg}</span>`;
-    
-    // Quitar clase 'latest' del anterior
-    const prev = log.querySelector('.log-latest');
-    if (prev) prev.classList.remove('log-latest');
-    entry.classList.add('log-latest');
-
-    log.appendChild(entry);
-
-    // Auto-scroll al final
-    log.scrollTo({
-        top: log.scrollHeight,
-        behavior: 'smooth'
-    });
-
+    updateTurnVisuals(); // actualiza overlay classes + texto genérico del bar
+    const bar = document.getElementById('game-status');
+    if (!bar) return;
+    // Sobreescribir el texto genérico con el mensaje específico
+    if (typeof window.scrTxt === 'function') window.scrTxt(bar, msg, { duration: 0.8, chars: 'upperCase' });
+    else bar.textContent = msg;
 }
+
+/**
+ * Fase "pending" del status bar: muestra instrucción interactiva con estilo de espera.
+ * Alias de updateStatus — el pulsing lo activa automáticamente gs-effect (vía updateTurnVisuals)
+ * cuando hay un effectContext activo.
+ */
+function setInstruction(msg) {
+    updateStatus(msg);
+}
+window.setInstruction = setInstruction;
+
+/**
+ * Fase "resolved" del status bar: muestra confirmación breve del resultado de una acción.
+ * Se borra automáticamente tras 1.5s restaurando el estado normal del turno.
+ *
+ * @param {string} msg - Mensaje de confirmación (ej. "Fuego 3 → izquierda")
+ */
+function confirmAction(msg) {
+    const bar = document.getElementById('game-status');
+    if (!bar) return;
+    if (typeof window.scrTxt === 'function') window.scrTxt(bar, msg, { duration: 0.6, chars: 'upperCase' });
+    else bar.textContent = msg;
+    bar.className = 'gs-confirm';
+    if (window._gsConfirmTimer) clearTimeout(window._gsConfirmTimer);
+    window._gsConfirmTimer = setTimeout(() => {
+        updateTurnVisuals(); // restaura estado de turno apropiado
+    }, 1500);
+}
+window.confirmAction = confirmAction;
 
 /**
  * Registra un evento permanente en el log del juego.
@@ -3448,6 +3422,18 @@ function logEvent(msg, { icon, isAI } = {}) {
 
     gameState.actionLog.push({ isAI: _isAI, icon: _icon, msg });
     if (gameState.actionLog.length > 50) gameState.actionLog.shift();
+
+    // Actualiza el status bar directamente, pero solo si no hay instrucción interactiva pendiente.
+    // Cuando hay effectContext activo el jugador está eligiendo — no pisar la instrucción.
+    if (!gameState.effectContext) {
+        const bar = document.getElementById('game-status');
+        if (bar) {
+            if (typeof window.scrTxt === 'function') window.scrTxt(bar, msg, { duration: 1.0, chars: 'upperCase' });
+            else bar.textContent = msg;
+            bar.className = _isAI ? 'gs-ai' : 'gs-player';
+            if (window._gsConfirmTimer) { clearTimeout(window._gsConfirmTimer); window._gsConfirmTimer = null; }
+        }
+    }
 }
 window.logEvent = logEvent;
 

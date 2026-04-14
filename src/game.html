@@ -377,6 +377,12 @@
             letter-spacing: 2px;
             animation: pulse-text-effect 1.1s ease-in-out infinite;
         }
+        /* gs-confirm: confirmación breve, desaparece en 1.5s */
+        #game-status.gs-confirm {
+            color: var(--ui-cyan);
+            letter-spacing: 2px;
+            opacity: 0.9;
+        }
         @keyframes pulse-text-effect {
             0%, 100% { opacity: 1; }
             50%       { opacity: 0.45; }
@@ -2369,22 +2375,6 @@ window.addEventListener('load', function() {
         window._initModalScramble();
     }
 });
-</script>
-<script>
-    // Mirror last log entry into the status bar
-    (function() {
-        const log = document.getElementById('game-log');
-        const bar = document.getElementById('game-status');
-        if (!log || !bar) return;
-        new MutationObserver(() => {
-            const last = log.querySelector('.log-latest');
-            if (last) {
-                const txt = last.textContent.trim().replace(/^[•➔⚡🎴💀🔄🗑️💧☣️]\s*/, '');
-                window.scrTxt ? window.scrTxt(bar, txt, { duration: 1.0, chars: 'upperCase' }) : (bar.textContent = txt);
-                bar.style.color = 'var(--ui-cyan)';
-            }
-        }).observe(log, { childList: true });
-    })();
 </script>
 <script>
     const DESIGN_WIDTH = 1500;
