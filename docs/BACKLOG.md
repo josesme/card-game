@@ -14,33 +14,16 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 
 ## UI/UX
 
+- Cambiar mazo por mano en informacion visible de la IA
+
 ### Animaciones
 
-- **Animaciones de descarte y robo** — Sin animación al mover cartas entre zonas.
-    (gsap.com/docs/v3/Eases - codepen.io/GreenSock)
-    - Flip para reordenacion de draft tras seleccion
-    - Drag para cartas
-    - MorphSVG para eliminar carta papelera
-    - Card stack para mazo
-    - Infinite card slider para mano
-
-- **Sonidos básicos de interfaz** — Sin feedback sonoro.
-
-### Zona mano
-
-- **Mazo con dorso carta real y contador** — Replicar el mismo diseño que la pila de descartes: dorso de carta real escalado al 41% en contenedor 76×100, badge contador arriba a la derecha. Actualmente el mazo muestra un placeholder genérico.
-
-- **Carrusel de mano** — Sustituir el slider básico por un carrusel con física real.
-    Referencia: https://demos.gsap.com/demo/flip-carousel/
-
-### Paneles laterales (log de jugadas jugador / IA)
-
-- **[DECISIÓN POSPUESTA] Unificar log en panel central** — Propuesta de Nil: un único log cronológico compartido ocuparía más ancho, facilitaría leer efectos cruzados y daría más espacio a las cartas en mano. Los paneles laterales quedarían solo con mazo + descarte, o se eliminarían. Coste de refactorización: medio-alto. Pospuesto hasta tener mensajes de log reales y poder validar si el problema es el contenido o la estructura. Revisar tras completar la revisión de mensajes.
+- **Animaciones laser para selección protocolo draft (misma eliminar en juego)
+- **Efecto deshabilitado en draft, cuando no hay zonas clickables (mismo en mano con cartas no clickables)
+- **Animaciones actualizar en mano con bug (primero se cargan y despues se pintan con laser) 
 
 
-- **Datos de turno por jugador** — Añadir encabezado en cada panel con: turno actual, cartas en mano y cartas en mazo del jugador correspondiente. Permite ver el estado de recursos sin abrir otra vista.
-
-- **Separadores de turno en el log** — Las entradas del log no distinguen visualmente a qué turno pertenecen. Insertar un separador fino con el número de turno cada vez que `startTurn` registra un nuevo turno, para facilitar la lectura de la historia de jugadas.
+### Paneles texto (log de jugadas jugador / IA)
 
 - **Tipo de acción diferenciado visualmente** — Todas las entradas del log tienen el mismo peso visual. Diferenciar categorías con color/icono consistente: robo (azul/🎴), compilación (amarillo/⚡), descarte (rojo/🗑️), efecto de carta (gris/✦), turno de IA (púrpura). Actualmente los iconos se asignan por detección de cadena de texto en `updateStatus`, frágil y difícil de mantener.
 
@@ -73,3 +56,9 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 - [ ] **Al compilar, el compilador borra TODAS las cartas de la línea** (propias y del oponente). Actualmente cada jugador borra las suyas. Afecta a Odio 3: solo dispara cuando su propietario es quien borra. `Coste: Alto` `Valor: Alto`
 - [ ] **Diversidad 0 y Unidad 1 no son compilaciones.** Unidad 1 borra cartas pero no es una compilación → no interactúa con Guerra 2, Velocidad 2, ni activa el Control Component. `Coste: Medio` `Valor: Medio`
 - [ ] **Caos 2 no debe permitir cambiarse a sí misma
+- [ ] **Oscrudidad 3 no permite elegir qué carta jugar bocabajo. Solo debería hacerlo automaticamente si hay una carta en mano
+- **Tiempo 0 juega una carta del descarte pero no la juega en la fila correspondiente y no ofrece oportunidad de jugarla bocarriba/bocabajo
+- **Al jugar humo 3, no hay salta un model, ni el globo de texto junto al mouse que me indique "elegir", ni el effecto apagado para resaltar solo la mano... Este efecto escapa de todas las estrategias de informacion visual actual
+- **Âl jugar paz 1, la IA no ha descartado su mano
+- **Paz 3 tiene una condicion para el volteo que no se tiene en cuenta
+- **Corrupción 0 no dispara su accion inicial

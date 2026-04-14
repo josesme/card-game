@@ -252,6 +252,11 @@ function initLineListeners() {
                 updateUI();
                 if (!ctx.faceDown) triggerCardEffect(card, 'onPlay', 'player');
                 if (typeof processAbilityEffect === 'function') processAbilityEffect();
+            } else if (gameState.effectContext && gameState.effectContext.type === 'playHandCard_valor1_lineSelect') {
+                // Claridad 2: jugador elige línea para jugar carta bocabajo
+                const ctx = gameState.effectContext;
+                gameState.effectContext = null;
+                _claridad2PlaySecond(ctx.selectedCardIndex, line, true);
             } else if (gameState.effectContext && gameState.effectContext.type === 'rearrange') {
                 handleFieldCardClick(line, 'player', 0); // rearrange solo usa line, target/idx irrelevantes
             } else if (gameState.effectContext && gameState.effectContext.waitingForLine) {
@@ -775,16 +780,31 @@ function updateUI() {
                 updateStatus(`Tiempo 0: elige la línea donde jugar "${cardT0.nombre}"`);
                 updateUI();
             } else if (gameState.effectContext && gameState.effectContext.type === 'playHandCard_valor1') {
-                // Claridad 2 paso 2: jugar carta de Valor 1 con el modal normal (bocarriba/bocabajo)
+                // Claridad 2 paso 2: jugador elige carta de Valor 1 para jugar
                 const card = gameState.player.hand[index];
                 if (!card || card.valor !== 1) {
                     updateStatus('Claridad 2: solo puedes jugar cartas con Valor 1');
                     return;
                 }
-                gameState.effectContext = null;
-                gameState.pendingTurnEnd = null;
-                gameState.isProcessing = false; // finalizePlay lo bloqueaba — limpiar para que el modal pueda abrirse
-                showActionModal(index);
+                const lineIdx = gameState.player.protocols.indexOf(card.protocol);
+                const targetLine = lineIdx !== -1 ? LINES[lineIdx] : null;
+                if (targetLine) {
+                    // Puede jugar bocarriba: preguntar
+                    _confirmDialog(
+                        `Claridad 2: ¿Jugar ${card.nombre} bocarriba en ${targetLine}?`,
+                        () => _claridad2PlaySecond(index, targetLine, false),
+                        () => {
+                            gameState.effectContext = { type: 'playHandCard_valor1_lineSelect', selectedCardIndex: index };
+                            updateStatus(`Claridad 2: elige línea para ${card.nombre} (bocabajo)`);
+                            highlightSelectableLines(null, 'player');
+                        }
+                    );
+                } else {
+                    // Sin protocolo coincidente: solo bocabajo
+                    gameState.effectContext = { type: 'playHandCard_valor1_lineSelect', selectedCardIndex: index };
+                    updateStatus(`Claridad 2: elige línea para ${card.nombre} (bocabajo)`);
+                    highlightSelectableLines(null, 'player');
+                }
             } else if (gameState.effectContext && gameState.effectContext.type === 'playNonDiversity') {
                 // Diversidad 0: jugador elige carta no-Diversidad para jugar bocarriba
                 const card = gameState.player.hand[index];
@@ -2879,6 +2899,30 @@ function clearSelectionHighlights() {
     gc?.classList.remove('stack-targeting', 'side-targeting-ai', 'side-targeting-player'); // === STACK TARGETING ===
     document.querySelectorAll('.battle-column.stack-target').forEach(el => el.classList.remove('stack-target')); // === STACK TARGETING ===
     document.querySelectorAll('.selectable-line').forEach(el => el.classList.remove('selectable-line'));
+}
+
+/**
+ * Claridad 2 paso 3: jugar la carta de Valor 1 elegida en la línea seleccionada.
+ * Sigue el patrón Tiempo 0 — no usa showActionModal ni finalizePlay.
+ * El fin de turno se dispara vía processAbilityEffect → pendingTurnEnd.
+ */
+function _claridad2PlaySecond(handIndex, targetLine, isFaceDown) {
+    const card = gameState.player.hand.splice(handIndex, 1)[0];
+    if (!card) return;
+    insertCardIntoStack(gameState.field[targetLine].player, { card, faceDown: isFaceDown });
+    clearSelectionHighlights();
+    clearEffectHighlights();
+    gameState.currentEffectLine = targetLine;
+    window._animPendingField = { line: targetLine, target: 'player' };
+    updateUI();
+    logEvent(`${isFaceDown ? '[bocabajo]' : card.nombre} en ${targetLine} (Claridad 2)`, { isAI: false });
+    if (!isFaceDown) {
+        executeEffect(card, 'player');
+    }
+    if (typeof onOpponentPlayInLineEffects === 'function') onOpponentPlayInLineEffects('player', targetLine);
+    // Catch-all: si la carta no tiene efectos, triggerCardEffect no llama processAbilityEffect.
+    // Esta llamada lo recoge y dispara pendingTurnEnd → endTurn (igual que Tiempo 0).
+    if (typeof processAbilityEffect === 'function') processAbilityEffect();
 }
 
 function finalizePlay(targetLine, isFaceDown) {
