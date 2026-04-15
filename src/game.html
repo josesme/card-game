@@ -975,6 +975,26 @@
             from { top: 0%; }
             to   { top: 100%; }
         }
+        /* Carta seleccionada en mano para jugar en campo (pickHandFaceDown, playHandCard_valor1) */
+        #player-hand .card.hand-card-selected {
+            position: relative;
+            outline: 2px solid var(--ui-cyan);
+            outline-offset: 3px;
+            box-shadow: 0 0 14px var(--ui-cyan);
+        }
+        #player-hand .card.hand-card-selected::before {
+            content: '✓';
+            position: absolute;
+            top: 4px;
+            right: 6px;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--ui-cyan);
+            text-shadow: 0 0 8px var(--ui-cyan);
+            z-index: 20;
+            line-height: 1;
+            pointer-events: none;
+        }
         .card-entering {
             animation: cardEnter 0.7s linear both;
             position: relative;

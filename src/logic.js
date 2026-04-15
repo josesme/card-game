@@ -731,6 +731,13 @@ function updateUI() {
             .map(c => createCardHTML(c))
             .join('');
 
+        // Indicador visual de carta seleccionada en mano (pickHandFaceDown, playHandCard_valor1)
+        const _selCtx = gameState.effectContext;
+        if (_selCtx && (_selCtx.type === 'pickHandFaceDown_lineSelect' || _selCtx.type === 'playHandCard_valor1_lineSelect') && _selCtx.selectedCardIndex != null) {
+            const _hCards = ui.playerHand.querySelectorAll('.card');
+            if (_hCards[_selCtx.selectedCardIndex]) _hCards[_selCtx.selectedCardIndex].classList.add('hand-card-selected');
+        }
+
         // Animar cartas nuevas: aplicar card-entering ANTES del primer pintado (igual que campo)
         const pendingHandCount = window._animPendingHand;
         if (pendingHandCount) {
@@ -788,13 +795,25 @@ function updateUI() {
                 handleDiscardChoice(index);
             } else if (gameState.effectContext && gameState.effectContext.type === 'reveal') {
                 handleRevealChoice(index);
-            } else if (gameState.effectContext && gameState.effectContext.type === 'pickHandFaceDown') {
-                gameState.selectedCardIndex = index;
-                gameState.effectContext.type = 'pickHandFaceDown_lineSelect';
-                const card = gameState.player.hand[index];
+            } else if (gameState.effectContext && (gameState.effectContext.type === 'pickHandFaceDown' || gameState.effectContext.type === 'pickHandFaceDown_lineSelect')) {
                 const ctx = gameState.effectContext;
+                // Deseleccionar si se hace click en la carta ya elegida
+                if (ctx.type === 'pickHandFaceDown_lineSelect' && gameState.selectedCardIndex === index) {
+                    gameState.selectedCardIndex = null;
+                    ctx.type = 'pickHandFaceDown';
+                    updateStatus(`Elige una carta de tu mano para jugar bocabajo`);
+                    updateUI();
+                    return;
+                }
+                gameState.selectedCardIndex = index;
+                ctx.type = 'pickHandFaceDown_lineSelect';
+                const card = gameState.player.hand[index];
                 const lineHint = ctx.allowedLines ? ' (solo líneas con carta bocabajo)' : ctx.excludeLine ? ' (no la línea actual)' : '';
                 updateStatus(`Elige línea destino para "${card.nombre}"${lineHint}`);
+                // Re-aplicar highlights de línea para la nueva carta seleccionada
+                clearEffectHighlights();
+                if (typeof highlightSelectableLines === 'function') highlightSelectableLines(ctx.excludeLine, 'player', ctx.allowedLines);
+                updateUI();
             } else if (gameState.effectContext && gameState.effectContext.type === 'pickFromDiscardToPlay') {
                 // Tiempo 0: elegir carta del descarte para jugar bocarriba
                 const ctx = gameState.effectContext;
@@ -807,8 +826,16 @@ function updateUI() {
                 const cardT0 = gameState.player.hand[index];
                 updateStatus(`Tiempo 0: elige la línea donde jugar "${cardT0.nombre}"`);
                 updateUI();
-            } else if (gameState.effectContext && gameState.effectContext.type === 'playHandCard_valor1') {
+            } else if (gameState.effectContext && (gameState.effectContext.type === 'playHandCard_valor1' || gameState.effectContext.type === 'playHandCard_valor1_lineSelect')) {
                 // Claridad 2 paso 2: jugador elige carta de Valor 1 para jugar
+                // Deseleccionar si se hace click en la carta ya elegida
+                if (gameState.effectContext.type === 'playHandCard_valor1_lineSelect' && gameState.effectContext.selectedCardIndex === index) {
+                    gameState.effectContext = { type: 'playHandCard_valor1' };
+                    clearEffectHighlights();
+                    updateStatus('Claridad 2: elige una carta con Valor 1 de tu mano');
+                    updateUI();
+                    return;
+                }
                 const card = gameState.player.hand[index];
                 if (!card || card.valor !== 1) {
                     updateStatus('Claridad 2: solo puedes jugar cartas con Valor 1');
@@ -824,14 +851,18 @@ function updateUI() {
                         () => {
                             gameState.effectContext = { type: 'playHandCard_valor1_lineSelect', selectedCardIndex: index };
                             updateStatus(`Claridad 2: elige línea para ${card.nombre} (bocabajo)`);
+                            clearEffectHighlights();
                             highlightSelectableLines(null, 'player');
+                            updateUI();
                         }
                     );
                 } else {
                     // Sin protocolo coincidente: solo bocabajo
                     gameState.effectContext = { type: 'playHandCard_valor1_lineSelect', selectedCardIndex: index };
                     updateStatus(`Claridad 2: elige línea para ${card.nombre} (bocabajo)`);
+                    clearEffectHighlights();
                     highlightSelectableLines(null, 'player');
+                    updateUI();
                 }
             } else if (gameState.effectContext && gameState.effectContext.type === 'playNonDiversity') {
                 // Diversidad 0: jugador elige carta no-Diversidad para jugar bocarriba
