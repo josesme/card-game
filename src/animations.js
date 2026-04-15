@@ -140,29 +140,7 @@
                 animCompileLine(anim.line);
             }
 
-            if (anim.type === 'handCard') {
-                var handEl = document.getElementById('player-hand');
-                if (!handEl) return;
-                var hCards = handEl.querySelectorAll('.card');
-                var count = anim.count || 1;
-                var start = Math.max(0, hCards.length - count);
-                var newCards = Array.from(hCards).slice(start);
-                window._handAnimating = true;
-                var stagger = 120; // ms entre cartas
-                var animDuration = 700; // ms — igual que card-entering en campo
-                newCards.forEach(function (el, i) {
-                    setTimeout(function () {
-                        el.classList.add('card-entering');
-                        el.addEventListener('animationend', function () {
-                            el.classList.remove('card-entering');
-                        }, { once: true });
-                    }, i * stagger);
-                });
-                setTimeout(function () {
-                    window._handAnimating = false;
-                    if (typeof updateUI === 'function') updateUI();
-                }, animDuration + (newCards.length - 1) * stagger + 50);
-            }
+            // handCard: animación migrada a updateUI() via _animPendingHand (mismo patrón que campo)
         });
     };
 

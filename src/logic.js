@@ -730,6 +730,34 @@ function updateUI() {
         ui.playerHand.innerHTML = gameState.player.hand
             .map(c => createCardHTML(c))
             .join('');
+
+        // Animar cartas nuevas: aplicar card-entering ANTES del primer pintado (igual que campo)
+        const pendingHandCount = window._animPendingHand;
+        if (pendingHandCount) {
+            window._animPendingHand = 0;
+            window._handAnimating = true;
+            const allCards = Array.from(ui.playerHand.querySelectorAll('.card'));
+            const newCards = allCards.slice(Math.max(0, allCards.length - pendingHandCount));
+            const stagger = 120;
+            newCards.forEach((el, i) => {
+                if (i === 0) {
+                    el.classList.add('card-entering');
+                    el.addEventListener('animationend', () => el.classList.remove('card-entering'), { once: true });
+                } else {
+                    // Ocultar hasta que llegue su turno de stagger
+                    el.style.clipPath = 'inset(0 0 100% 0)';
+                    setTimeout(() => {
+                        el.style.clipPath = '';
+                        el.classList.add('card-entering');
+                        el.addEventListener('animationend', () => el.classList.remove('card-entering'), { once: true });
+                    }, i * stagger);
+                }
+            });
+            setTimeout(() => {
+                window._handAnimating = false;
+                if (typeof updateUI === 'function') updateUI();
+            }, 700 + (newCards.length - 1) * stagger + 50);
+        }
     }
     // updateSlider siempre: no toca innerHTML, solo sincroniza estado de flechas/dots
     if (typeof updateSlider === 'function') updateSlider();
@@ -2715,6 +2743,7 @@ function draw(target, count) {
         gameState[target].drawnSinceLastCheck = true;
         const drawOrigin = gameState.currentTriggerCard ? `${gameState.currentTriggerCard}: ` : '';
         logEvent(`${drawOrigin}${target === 'player' ? 'robas' : 'IA roba'} ${drawn} carta${drawn !== 1 ? 's' : ''}`, { isAI: target === 'ai' });
+        if (target === 'player') window._animPendingHand = (window._animPendingHand || 0) + drawn;
         if (typeof onOpponentDrawEffects === 'function') onOpponentDrawEffects(target);
     } else if (count > 0) {
         logEvent(`${target === 'player' ? 'No puedes robar' : 'IA no puede robar'} — mazo y descarte vacíos`, { isAI: target === 'ai' });
@@ -3074,7 +3103,7 @@ ui.btnRefresh.onclick = () => {
         if(!drawCard('player')) break;
     }
     const drawn = gameState.player.hand.length - handBefore;
-    if (drawn > 0) window.queueAnim?.({ type: 'handCard', count: drawn });
+    if (drawn > 0) window._animPendingHand = (window._animPendingHand || 0) + drawn;
     gameState.refreshedThisTurn = 'player';
     console.log('🔄 Hand refreshed, ending turn');
     endTurn('player');
