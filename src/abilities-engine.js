@@ -2685,7 +2685,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           // Opcional: preguntar antes de jugar bocabajo
           _confirmDialog('playHandFaceDown_may',
             () => {
-              gameState.effectContext = { type: 'pickHandFaceDown', excludeLine, allowedLines };
+              gameState.effectContext = { type: 'pickHandFaceDown', excludeLine, allowedLines, requireFaceDownInLine: !!actionDef.requireFaceDownInLine };
               const lineMsg = excludeLine ? ' en otra línea' : '';
               updateStatus(`${triggerCardName || 'Carta'}: elige una carta de tu mano para jugar bocabajo${lineMsg}`);
               if (typeof highlightSelectableLines === 'function') highlightSelectableLines(excludeLine, 'player', allowedLines);
@@ -2695,7 +2695,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           );
           break;
         }
-        gameState.effectContext = { type: 'pickHandFaceDown', excludeLine, allowedLines };
+        gameState.effectContext = { type: 'pickHandFaceDown', excludeLine, allowedLines, requireFaceDownInLine: !!actionDef.requireFaceDownInLine };
         const lineMsg = excludeLine ? ' en otra línea' : actionDef.requireFaceDownInLine ? ' en una línea con carta bocabajo' : '';
         updateStatus(`${triggerCardName || 'Carta'}: elige una carta de tu mano para jugar bocabajo${lineMsg}`);
         if (typeof highlightSelectableLines === 'function') highlightSelectableLines(excludeLine, 'player', allowedLines);

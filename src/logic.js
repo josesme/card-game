@@ -808,7 +808,7 @@ function updateUI() {
                 gameState.selectedCardIndex = index;
                 ctx.type = 'pickHandFaceDown_lineSelect';
                 const card = gameState.player.hand[index];
-                const lineHint = ctx.allowedLines ? ' (solo líneas con carta bocabajo)' : ctx.excludeLine ? ' (no la línea actual)' : '';
+                const lineHint = ctx.requireFaceDownInLine ? ' (solo líneas con carta bocabajo)' : ctx.excludeLine ? ' (no la línea actual)' : '';
                 updateStatus(`Elige línea destino para "${card.nombre}"${lineHint}`);
                 // Re-aplicar highlights de línea para la nueva carta seleccionada
                 clearEffectHighlights();

@@ -978,9 +978,9 @@
         /* Carta seleccionada en mano para jugar en campo (pickHandFaceDown, playHandCard_valor1) */
         #player-hand .card.hand-card-selected {
             position: relative;
-            outline: 2px solid var(--ui-cyan);
-            outline-offset: 3px;
-            box-shadow: 0 0 14px var(--ui-cyan);
+            /* inset shadow stays within element bounds — avoids clip by .slider-viewport overflow:hidden */
+            /* !important overrides .card-img { box-shadow: none !important } */
+            box-shadow: inset 0 0 0 2px var(--ui-cyan), 0 0 14px var(--ui-cyan) !important;
         }
         #player-hand .card.hand-card-selected::before {
             content: '✓';
@@ -991,7 +991,7 @@
             font-weight: 700;
             color: var(--ui-cyan);
             text-shadow: 0 0 8px var(--ui-cyan);
-            z-index: 20;
+            z-index: 50;
             line-height: 1;
             pointer-events: none;
         }
