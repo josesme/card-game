@@ -2330,20 +2330,8 @@ function setRearrangeActiveColumns(active) {
 
 function showRearrangeDoneButton() {
     setRearrangeActiveColumns(true);
-    // Asegurar que el drawer está abierto para que el jugador vea el botón
-    const overlay = document.getElementById('hand-overlay');
-    if (overlay) overlay.classList.add('open');
-
-    let btn = document.getElementById('btn-rearrange-done');
-    if (!btn) {
-        btn = document.createElement('button');
-        btn.id = 'btn-rearrange-done';
-        btn.textContent = 'LISTO';
-        btn.className = 'ui-btn ui-btn--sm';
-        btn.style.cssText = 'background: var(--ui-cyan); color: #0a0e27; font-weight: 700;';
-        const logHeader = document.getElementById('hs-log-header');
-        if (logHeader) logHeader.appendChild(btn);
-    }
+    const btn = document.getElementById('btn-rearrange-done');
+    if (!btn) return;
     btn.classList.remove('hidden');
     btn.onclick = () => {
         btn.classList.add('hidden');
