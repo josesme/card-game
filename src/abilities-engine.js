@@ -1274,10 +1274,9 @@ function _confirmDialog(keyOrMsg, onYes, onNo, vars) {
     yesText = copy.yes || 'SÍ';
     noText  = copy.no  || 'NO';
   }
-  // Sustituir {placeholders} con vars
-  if (vars) {
-    Object.entries(vars).forEach(([k, v]) => { msg = msg.replace(`{${k}}`, v ?? ''); });
-  }
+  // Sustituir {placeholders}: name usa currentTriggerCard como fallback; vars sobreescribe
+  const resolvedVars = { name: gameState.currentTriggerCard || '', ...(vars || {}) };
+  Object.entries(resolvedVars).forEach(([k, v]) => { msg = msg.replace(`{${k}}`, v ?? ''); });
 
   gameState.effectContext = { type: 'confirm' };
   if (typeof showConfirmDialog === 'function') {
