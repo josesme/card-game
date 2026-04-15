@@ -310,25 +310,29 @@ describe('Acciones Fase B (resolución directa)', () => {
     expect(GS.ai.deck).toHaveLength(0);
   });
 
-  test('discardHand: vacía la mano del targetPlayer', () => {
+  test('discardHand: vacía la mano del resolvedTarget', () => {
+    // target:'opponent' con targetPlayer:'player' → resuelve a 'ai' → descarta mano de IA
     GS.ai.hand = [makeCard('A'), makeCard('B'), makeCard('C')];
-    runAction({ action: 'discardHand', target: 'opponent' }, 'player'); // target:opponent → ai
-    // Nota: discardHand usa targetPlayer, no target. El test invoca con targetPlayer='player'
-    // y target='opponent' → resolvedTarget='ai'. Pero discardHand usa targetPlayer directamente.
-    // Realmente en el juego: onOpponentCompile dispara para War 2 owner (ai) con target:opponent→player
-    GS.ai.hand = [];
+    GS.player.hand = [makeCard('PX'), makeCard('PY')];
+    runAction({ action: 'discardHand', target: 'opponent' }, 'player');
+    expect(GS.ai.hand).toHaveLength(0);
+    expect(GS.ai.trash).toHaveLength(3); // A, B, C descartadas
+    expect(GS.player.hand).toHaveLength(2); // mano del jugador intacta
+
+    // target:'opponent' con targetPlayer:'ai' → resuelve a 'player' → descarta mano del jugador
     GS.player.hand = [makeCard('X'), makeCard('Y')];
     GS.effectQueue = [{ effect: { action: 'discardHand', target: 'opponent' }, targetPlayer: 'ai', cardName: 'Guerra 2' }];
     ENGINE.processAbilityEffect();
-    // discardHand descarta la mano de targetPlayer (ai), no del resolved opponent
-    // Revisamos: en la implementación actual discardHand usa `targetPlayer` directamente
-    expect(GS.ai.hand).toHaveLength(0); // ai tenía mano vacía ya
-    // Reset y probar con ai teniendo mano
+    expect(GS.player.hand).toHaveLength(0); // mano del jugador descartada
+    expect(GS.ai.hand).toHaveLength(0); // ai sigue vacía
+
+    // target:'self' con targetPlayer:'ai' → resuelve a 'ai' → descarta mano de IA
+    GS.ai.trash = [];
     GS.ai.hand = [makeCard('M1'), makeCard('M2')];
     GS.effectQueue = [{ effect: { action: 'discardHand', target: 'self' }, targetPlayer: 'ai', cardName: 'Guerra 2' }];
     ENGINE.processAbilityEffect();
     expect(GS.ai.hand).toHaveLength(0);
-    expect(GS.ai.trash).toHaveLength(2);
+    expect(GS.ai.trash).toHaveLength(2); // M1, M2
   });
 
   test('discardHandDraw: descarta mano y roba el mismo número', () => {

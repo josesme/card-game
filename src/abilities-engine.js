@@ -3151,10 +3151,10 @@ function resolveAbilityAction(actionDef, targetPlayer) {
 
     case 'discardHand': {
       // War 2 reactive: descarta toda la mano del jugador objetivo
-      const handSize = gameState[targetPlayer].hand.length;
+      const handSize = gameState[resolvedTarget].hand.length;
       if (handSize > 0) {
-        gameState[targetPlayer].trash.push(...gameState[targetPlayer].hand.splice(0));
-        _log(`${targetPlayer === 'player' ? 'descartas' : 'IA descarta'} toda la mano (${handSize})`);
+        gameState[resolvedTarget].trash.push(...gameState[resolvedTarget].hand.splice(0));
+        _log(`${resolvedTarget === 'player' ? 'descartas' : 'IA descarta'} toda la mano (${handSize})`);
         updateUI();
       }
       processAbilityEffect();

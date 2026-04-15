@@ -59,6 +59,4 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 - [ ] **Oscrudidad 3 no permite elegir qué carta jugar bocabajo. Solo debería hacerlo automaticamente si hay una carta en mano
 - **Tiempo 0 juega una carta del descarte pero no la juega en la fila correspondiente y no ofrece oportunidad de jugarla bocarriba/bocabajo
 - **Al jugar humo 3, no hay salta un model, ni el globo de texto junto al mouse que me indique "elegir", ni el effecto apagado para resaltar solo la mano... Este efecto escapa de todas las estrategias de informacion visual actual
-- **Âl jugar paz 1, la IA no ha descartado su mano
 - **Paz 3 tiene una condicion para el volteo que no se tiene en cuenta
-- **Corrupción 0 no dispara su accion inicial
