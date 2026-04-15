@@ -139,11 +139,6 @@ const MODAL_COPY = {
     yes: 'SÍ', no: 'NO'
   },
 
-  // ── Instrucciones de selección de campo (statusMsg en startEffect) ───────
-  flipCoveredInOwnStack: {
-    msg: 'Corrupción 0: elige 1 carta bocarriba para voltear bocabajo'
-  },
-
   // ── Cartas con dropdown (el msg va en confirmMsg.innerHTML, los botones los lee el código) ──
   luckCallProtocolDiscard: {
     msg: '{name}: Elige un Protocolo',

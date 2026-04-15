@@ -3760,8 +3760,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         processAbilityEffect();
       } else {
         // Jugador elige cuál voltear (2+ opciones)
-        const _c0msg = (typeof MODAL_COPY !== 'undefined' && MODAL_COPY.flipCoveredInOwnStack?.msg) || undefined;
-        startEffect('flip', 'player', 1, { forceLine: line, filter: 'faceUp', excludeCardName: 'Corrupción 0', targetAll: true, statusMsg: _c0msg });
+        startEffect('flip', 'player', 1, { forceLine: line, filter: 'faceUp', excludeCardName: 'Corrupción 0', targetAll: true });
       }
       break;
     }
