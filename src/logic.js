@@ -2828,8 +2828,12 @@ function playSelectedCard(isFaceDown) {
             const btnYes = document.getElementById('btn-confirm-yes');
             const btnNo = document.getElementById('btn-confirm-no');
             if (confirmArea && btnYes && btnNo) {
+                const _copy = (typeof MODAL_COPY !== 'undefined' && MODAL_COPY.playOnAnySide) || {};
+                const _msg = (_copy.msg || '{name}: ¿Jugar en tu lado o en el lado rival?').replace('{name}', card.nombre);
+                btnYes.textContent = _copy.yes || 'MI LADO';
+                btnNo.textContent  = _copy.no  || 'LADO RIVAL';
                 confirmArea.classList.remove('hidden');
-                window.scrTxt ? window.scrTxt(confirmMsg, `${card.nombre}: ¿Jugar en tu lado (SÍ) o en el lado rival (NO)?`, { duration: 1.0 }) : (confirmMsg.textContent = `${card.nombre}: ¿Jugar en tu lado (SÍ) o en el lado rival (NO)?`);
+                window.scrTxt ? window.scrTxt(confirmMsg, _msg, { duration: 1.0 }) : (confirmMsg.textContent = _msg);
                 btnYes.onclick = () => {
                     confirmArea.classList.add('hidden');
                     gameState.selectionMode = true;

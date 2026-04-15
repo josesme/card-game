@@ -124,6 +124,10 @@ const MODAL_COPY = {
   },
 
   // ── Jugar carta ──────────────────────────────────────────────────────────
+  playOnAnySide: {
+    msg: '{name}: ¿Jugar en tu lado o en el lado rival?',
+    yes: 'MI LADO', no: 'LADO RIVAL'
+  },
   playHandFaceDown_may: {
     msg: '{name}: ¿Quieres jugar 1 carta bocabajo?',
     yes: 'SÍ', no: 'NO'
