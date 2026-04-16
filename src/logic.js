@@ -3528,16 +3528,16 @@ function logEvent(msg, { icon, isAI } = {}) {
     let _icon = icon || (_isAI ? '▸' : '▹');
     let color  = _isAI ? '#9b59b6' : '#FFD93D';
 
-    if (msg.includes('compiló') || msg.includes('compilaste') || msg.includes('compilado')) {
-        _icon = '⚡'; color = '#FFE150';
-    } else if (msg.includes('roba') || msg.includes('Robas')) {
-        _icon = '🎴';
-    } else if (msg.includes('descarta') || msg.includes('Descartas')) {
-        _icon = '🗑️';
-    } else if (msg.includes('elimina') || msg.includes('Elimina')) {
-        _icon = '💀'; color = '#ef4444';
-    } else if (msg.includes('voltea') || msg.includes('Voltea')) {
-        _icon = '🔄';
+    if (/compil/i.test(msg)) {
+        _icon = '◈'; color = '#FFE150';
+    } else if (/rob[ao]|Robas/i.test(msg)) {
+        _icon = '↑';
+    } else if (/descart/i.test(msg)) {
+        _icon = '↓';
+    } else if (/elimin/i.test(msg)) {
+        _icon = '×'; color = '#ef4444';
+    } else if (/voltea/i.test(msg)) {
+        _icon = '~';
     }
 
     const entry = document.createElement('div');
@@ -3611,6 +3611,25 @@ function _updateHandSidePanel(side) {
     }
 }
 
+function _scrambleText(el, finalText, duration = 400) {
+    const glyphs = '!<>-_\\/[]{}=+*^?#|▓░0123456789ABCDEF';
+    const totalFrames = Math.ceil(duration / 40);
+    let frame = 0;
+    const tick = () => {
+        frame++;
+        const resolved = Math.floor((frame / totalFrames) * finalText.length);
+        let out = '';
+        for (let i = 0; i < finalText.length; i++) {
+            if (finalText[i] === ' ' || i < resolved) out += finalText[i];
+            else out += glyphs[Math.floor(Math.random() * glyphs.length)];
+        }
+        el.textContent = out;
+        if (frame < totalFrames) setTimeout(tick, 40);
+        else el.textContent = finalText;
+    };
+    tick();
+}
+
 function _updateUnifiedLog() {
     const entriesEl = document.getElementById('hs-unified-entries');
     if (!entriesEl) return;
@@ -3619,15 +3638,24 @@ function _updateUnifiedLog() {
         entriesEl.innerHTML = `<div class="hs-log-entry" style="color:var(--ui-dim);">—</div>`;
         return;
     }
+    const prevLength = entriesEl._lastLogLength || 0;
+    const isNewEntry = log.length > prevLength;
+    entriesEl._lastLogLength = log.length;
+
     entriesEl.innerHTML = log.map((e, i) => {
         const color = e.isAI ? 'rgba(155,89,182,0.9)' : 'rgba(255,217,61,0.9)';
         const latest = i === log.length - 1 ? 'hs-log-latest' : '';
         const turnLabel = e.turn ? `<span class="hs-log-turn">T${e.turn}</span>` : '';
         return `<div class="hs-log-entry ${latest}" style="border-left-color:${color};color:${color};">
-            ${turnLabel}${e.icon} ${e.msg}
+            ${turnLabel}<span class="hs-log-glyph">${e.icon}</span><span class="hs-log-msg">${e.msg}</span>
         </div>`;
     }).join('');
     entriesEl.scrollTop = entriesEl.scrollHeight;
+
+    if (isNewEntry) {
+        const latestEl = entriesEl.querySelector('.hs-log-latest .hs-log-msg');
+        if (latestEl) _scrambleText(latestEl, latestEl.textContent);
+    }
 
     // Fade-out gradient: reveal/hide when scrolled up
     const wrap = document.getElementById('hs-log-scroll-wrap');
