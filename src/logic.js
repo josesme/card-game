@@ -733,9 +733,9 @@ function updateUI() {
 
         // Indicador visual de carta seleccionada en mano (pickHandFaceDown, playHandCard_valor1)
         const _selCtx = gameState.effectContext;
-        if (_selCtx && (_selCtx.type === 'pickHandFaceDown_lineSelect' || _selCtx.type === 'playHandCard_valor1_lineSelect') && _selCtx.selectedCardIndex != null) {
+        if (_selCtx && (_selCtx.type === 'pickHandFaceDown_lineSelect' || _selCtx.type === 'playHandCard_valor1_lineSelect') && gameState.selectedCardIndex != null) {
             const _hCards = ui.playerHand.querySelectorAll('.card');
-            const _selCard = _hCards[_selCtx.selectedCardIndex];
+            const _selCard = _hCards[gameState.selectedCardIndex];
             if (_selCard) {
                 _selCard.classList.add('hand-card-selected');
                 // Inyectar span real en lugar de ::before — más fiable en cards con overflow:hidden y hijos absolute
