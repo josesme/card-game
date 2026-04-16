@@ -3622,7 +3622,13 @@ function _updateUnifiedLog() {
     }
     const prevLength = entriesEl._lastLogLength || 0;
     const isNewEntry = log.length > prevLength;
+    const isCleared  = log.length < prevLength;
     entriesEl._lastLogLength = log.length;
+
+    // No reemplazar innerHTML si el log no cambió — evita matar animaciones GSAP en curso
+    // cuando updateUI() se llama varias veces sin que haya logEvent nuevo entre medias.
+    if (!isNewEntry && !isCleared && entriesEl.children.length > 0) return;
+
     const currentTurn = log[log.length - 1].turn;
 
     // Agrupar entradas por turno
