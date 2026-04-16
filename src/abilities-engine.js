@@ -4093,22 +4093,33 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'compileSelfIfFiveOrMoreUnity': {
-      // Unidad 1 onPlay: si hay 5+ Unidad en campo (cualquier lado, cualquier estado), compila esta línea
-      // Solo actúa si la línea no está ya compilada por este jugador (no genera recompile draw)
+      // Unidad 1 onPlay: si hay 5+ Unidad en campo, voltea el protocolo y borra cartas.
+      // NO es una acción de compilar: no activa Guerra 2, Velocidad 2 ni Control Component.
+      // Siempre borra cartas aunque la línea ya esté compilada por este jugador.
+      // Nunca genera el robo de recompilación.
       const totalUnity = LINES.reduce((acc, l) =>
         acc + ['player', 'ai'].reduce((a2, p) =>
           a2 + gameState.field[l][p].filter(c => c.card.nombre.startsWith('Unidad')).length, 0), 0);
       if (totalUnity >= 5) {
         const line = gameState.currentEffectLine;
-        if (line && typeof compileLine === 'function') {
-          if (gameState.field[line].compiledBy === targetPlayer) {
-            // Línea ya compilada por este jugador — efecto no aplica (no recompile)
-            logEvent(`${triggerCardName}: línea ya compilada por este jugador`, { isAI: targetPlayer === 'ai' });
+        if (line) {
+          // Siempre borrar todas las cartas de la línea (ambos lados) → descarte
+          ['player', 'ai'].forEach(p => {
+            gameState.field[line][p].forEach(c => gameState[p].trash.push(c.card));
+            gameState.field[line][p] = [];
+          });
+          if (gameState.field[line].compiledBy !== targetPlayer) {
+            // Voltear protocolo a compilado — sin triggers de acción de compilar
+            gameState.field[line].compiledBy = targetPlayer;
+            if (!gameState[targetPlayer].compiled.includes(line)) {
+              gameState[targetPlayer].compiled.push(line);
+            }
+            logEvent(`${triggerCardName}: 5+ Unidad — borra cartas y voltea protocolo ${line}`, { isAI: targetPlayer === 'ai' });
+            if (typeof checkWinCondition === 'function') checkWinCondition();
           } else {
-            logEvent(`${triggerCardName}: 5+ Unidad en campo — compilando ${line} automáticamente`, { isAI: targetPlayer === 'ai' });
-            compileLine(line, targetPlayer);
-            updateUI();
+            logEvent(`${triggerCardName}: 5+ Unidad — borra cartas de ${line} (protocolo ya compilado)`, { isAI: targetPlayer === 'ai' });
           }
+          updateUI();
         }
       }
       processAbilityEffect();
@@ -4690,34 +4701,20 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         )
       );
       if (allFieldProtos.size >= 6) {
-        // Compilar la línea donde está Diversidad como protocolo del jugador
+        // Voltear protocolo Diversidad a compilado.
+        // NO es una acción de compilar: no borra cartas, no activa Guerra 2, Velocidad 2,
+        // Control Component, ni genera robo de recompilación.
         const diversityLine = LINES.find((l, i) => gameState[targetPlayer].protocols[i] === 'Diversidad');
-        if (diversityLine && !gameState.field[diversityLine].compiledBy) {
-          // Eliminar todas las cartas de esa línea → descarte
-          ['player', 'ai'].forEach(p => {
-            const stack = gameState.field[diversityLine][p];
-            stack.forEach(c => gameState[p].trash.push(c.card));
-            gameState.field[diversityLine][p] = [];
-          });
+        if (diversityLine && gameState.field[diversityLine].compiledBy !== targetPlayer) {
           gameState.field[diversityLine].compiledBy = targetPlayer;
           if (!gameState[targetPlayer].compiled.includes('Diversidad')) {
             gameState[targetPlayer].compiled.push('Diversidad');
           }
-          logEvent(`${triggerCardName}: 6 protocolos distintos en el campo — ¡Diversidad compilada!`, { isAI: targetPlayer === 'ai' });
+          logEvent(`${triggerCardName}: 6 protocolos distintos — ¡protocolo Diversidad compilado!`, { isAI: targetPlayer === 'ai' });
           updateUI();
           if (typeof checkWinCondition === 'function') checkWinCondition();
-        } else if (diversityLine && gameState.field[diversityLine].compiledBy === targetPlayer) {
-          // Recompilar: roba top del mazo rival (C-03 + I-02: barajar descarte rival si mazo vacío)
-          const opponent = targetPlayer === 'player' ? 'ai' : 'player';
-          if (gameState[opponent].deck.length === 0 && gameState[opponent].trash.length > 0) {
-            shuffleDiscardIntoDeck(opponent);
-          }
-          if (gameState[opponent].deck.length > 0) {
-            gameState[targetPlayer].hand.push(gameState[opponent].deck.pop());
-          }
-          logEvent(`${triggerCardName}: Diversidad recompilada — robas del mazo rival`, { isAI: targetPlayer === 'ai' });
-          updateUI();
         }
+        // Si ya está compilada por este jugador: no hace nada (no recompilación)
       }
       processAbilityEffect();
       break;

@@ -82,7 +82,9 @@ Durante la fase "Verificar Compilación": si tienes **valor ≥ 10** en una lín
 
 > Durante la compilación, **todas las cartas se eliminan simultáneamente** sin activar efectos.
 
-> ⚠️ `Diversidad 0` y `Unidad 1` **no son compilaciones** — no activan ventanas "After compile", no interactúan con `Guerra 2` o `Velocidad 2`, y no activan el Control Component.
+> ⚠️ `Diversidad 0` y `Unidad 1` **no son compilaciones** — no activan ventanas "After compile", no interactúan con `Guerra 2` o `Velocidad 2`, y no activan el Control Component. Tampoco generan el robo de recompilación.
+> - `Diversidad 0`: voltea el protocolo a compilado **sin borrar cartas**. Si ya está compilado por el mismo jugador, no hace nada.
+> - `Unidad 1`: **siempre borra** todas las cartas de la línea al disparar, incluso si la línea ya estaba compilada por el mismo jugador. En ese caso solo borra (no cambia el protocolo ni genera recompilación).
 
 ---
 
