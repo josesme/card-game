@@ -85,6 +85,8 @@ Durante la fase "Verificar Compilación": si tienes **valor ≥ 10** en una lín
 > ⚠️ `Diversidad 0` y `Unidad 1` **no son compilaciones** — no activan ventanas "After compile", no interactúan con `Guerra 2` o `Velocidad 2`, y no activan el Control Component. Tampoco generan el robo de recompilación.
 > - `Diversidad 0`: voltea el protocolo a compilado **sin borrar cartas**. Si ya está compilado por el mismo jugador, no hace nada.
 > - `Unidad 1`: **siempre borra** todas las cartas de la línea al disparar, incluso si la línea ya estaba compilada por el mismo jugador. En ese caso solo borra (no cambia el protocolo ni genera recompilación).
+>
+> **Cartas bocabajo no cuentan** para ningún recuento de protocolos o cartas Unidad en campo (Diversidad 0, Diversidad 1, Diversidad 4, Diversidad 6, Unidad 0, Unidad 1, Unidad 2, Unidad 3). Solo las cartas **bocarriba** se consideran — las cubiertas (con otra carta encima) sí cuentan. Fuente: canal oficial rules-questions (bobjoejuan, T̶R̶A̶C̶K̶R̶I̶S̶E̶).
 
 ---
 

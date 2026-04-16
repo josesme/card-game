@@ -4006,10 +4006,10 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'mayFlipOrDrawIfUnityOnField': {
-      // Unidad 0: si hay otra carta Unidad en el campo, voltea 1 o roba 1
+      // Unidad 0: si hay otra carta Unidad bocarriba en el campo, voltea 1 o roba 1
       const hasOtherUnity = LINES.some(l =>
         ['player', 'ai'].some(p =>
-          gameState.field[l][p].some(c => c.card.nombre !== triggerCardName && c.card.nombre.startsWith('Unidad'))
+          gameState.field[l][p].some(c => !c.faceDown && c.card.nombre !== triggerCardName && c.card.nombre.startsWith('Unidad'))
         )
       );
       if (!hasOtherUnity) { processAbilityEffect(); break; }
@@ -4034,19 +4034,19 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'drawPerUnityCards': {
-      // Unidad 2: roba cartas = número de cartas Unidad en el campo
+      // Unidad 2: roba cartas = número de cartas Unidad bocarriba en el campo
       const unityCount = LINES.reduce((acc, l) =>
-        acc + ['player', 'ai'].reduce((a2, p) => a2 + gameState.field[l][p].filter(c => c.card.nombre.startsWith('Unidad')).length, 0), 0);
+        acc + ['player', 'ai'].reduce((a2, p) => a2 + gameState.field[l][p].filter(c => !c.faceDown && c.card.nombre.startsWith('Unidad')).length, 0), 0);
       if (unityCount > 0) draw(targetPlayer, unityCount);
       processAbilityEffect();
       break;
     }
 
     case 'mayFlipIfUnityOnField': {
-      // Unidad 3: si hay otra Unidad en el campo, voltea 1 carta bocabajo
+      // Unidad 3: si hay otra Unidad bocarriba en el campo, voltea 1 carta bocabajo
       const hasOtherUnity = LINES.some(l =>
         ['player', 'ai'].some(p =>
-          gameState.field[l][p].some(c => c.card.nombre !== triggerCardName && c.card.nombre.startsWith('Unidad'))
+          gameState.field[l][p].some(c => !c.faceDown && c.card.nombre !== triggerCardName && c.card.nombre.startsWith('Unidad'))
         )
       );
       if (!hasOtherUnity) { processAbilityEffect(); break; }
@@ -4099,7 +4099,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       // Nunca genera el robo de recompilación.
       const totalUnity = LINES.reduce((acc, l) =>
         acc + ['player', 'ai'].reduce((a2, p) =>
-          a2 + gameState.field[l][p].filter(c => c.card.nombre.startsWith('Unidad')).length, 0), 0);
+          a2 + gameState.field[l][p].filter(c => !c.faceDown && c.card.nombre.startsWith('Unidad')).length, 0), 0);
       if (totalUnity >= 5) {
         const line = gameState.currentEffectLine;
         if (line) {
@@ -4642,12 +4642,12 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'drawPerDistinctProtocolsInLine': {
-      // Diversidad 1: roba cartas = protocolos distintos en esta línea
+      // Diversidad 1: roba cartas = protocolos distintos en esta línea (solo bocarriba)
       const line = gameState.currentEffectLine;
       if (!line) { processAbilityEffect(); break; }
       const protocols = new Set();
       ['player', 'ai'].forEach(p =>
-        gameState.field[line][p].forEach(c => protocols.add(c.card.nombre.replace(/ \d+$/, '')))
+        gameState.field[line][p].forEach(c => { if (!c.faceDown) protocols.add(c.card.nombre.replace(/ \d+$/, '')); })
       );
       if (protocols.size > 0) draw(targetPlayer, protocols.size);
       processAbilityEffect();
@@ -4655,10 +4655,10 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'flipCardBelowDistinctProtocolCount': {
-      // Diversidad 4: voltea 1 carta con Valor menor que el número de Protocolos distintos en el campo
+      // Diversidad 4: voltea 1 carta con Valor menor que el número de Protocolos distintos en el campo (solo bocarriba)
       const allProtos = new Set();
       LINES.forEach(l => ['player', 'ai'].forEach(p =>
-        gameState.field[l][p].forEach(c => allProtos.add(c.card.nombre.replace(/ \d+$/, '')))
+        gameState.field[l][p].forEach(c => { if (!c.faceDown) allProtos.add(c.card.nombre.replace(/ \d+$/, '')); })
       ));
       const protoCount = allProtos.size;
       if (targetPlayer === 'player') {
@@ -4683,7 +4683,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       const minProtos = actionDef.minProtocols || 4;
       const allProtos = new Set();
       LINES.forEach(l => ['player', 'ai'].forEach(p =>
-        gameState.field[l][p].forEach(c => allProtos.add(c.card.nombre.replace(/ \d+$/, '')))
+        gameState.field[l][p].forEach(c => { if (!c.faceDown) allProtos.add(c.card.nombre.replace(/ \d+$/, '')); })
       ));
       if (allProtos.size < minProtos) {
         gameState.effectQueue.unshift({ effect: { action: '_deleteSelf' }, targetPlayer, cardName: triggerCardName });
@@ -4697,7 +4697,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       const allFieldProtos = new Set();
       LINES.forEach(l =>
         ['player', 'ai'].forEach(p =>
-          gameState.field[l][p].forEach(c => allFieldProtos.add(c.card.nombre.replace(/ \d+$/, '')))
+          gameState.field[l][p].forEach(c => { if (!c.faceDown) allFieldProtos.add(c.card.nombre.replace(/ \d+$/, '')); })
         )
       );
       if (allFieldProtos.size >= 6) {
