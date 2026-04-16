@@ -3611,50 +3611,57 @@ function _updateHandSidePanel(side) {
     }
 }
 
-function _scrambleText(el, finalText, duration = 400) {
-    const glyphs = '!<>-_\\/[]{}=+*^?#|▓░0123456789ABCDEF';
-    const totalFrames = Math.ceil(duration / 40);
-    let frame = 0;
-    const tick = () => {
-        frame++;
-        const resolved = Math.floor((frame / totalFrames) * finalText.length);
-        let out = '';
-        for (let i = 0; i < finalText.length; i++) {
-            if (finalText[i] === ' ' || i < resolved) out += finalText[i];
-            else out += glyphs[Math.floor(Math.random() * glyphs.length)];
-        }
-        el.textContent = out;
-        if (frame < totalFrames) setTimeout(tick, 40);
-        else el.textContent = finalText;
-    };
-    tick();
-}
-
 function _updateUnifiedLog() {
     const entriesEl = document.getElementById('hs-unified-entries');
     if (!entriesEl) return;
     const log = gameState.actionLog;
     if (log.length === 0) {
         entriesEl.innerHTML = `<div class="hs-log-entry" style="color:var(--ui-dim);">—</div>`;
+        entriesEl._lastLogLength = 0;
         return;
     }
     const prevLength = entriesEl._lastLogLength || 0;
     const isNewEntry = log.length > prevLength;
     entriesEl._lastLogLength = log.length;
+    const currentTurn = log[log.length - 1].turn;
 
-    entriesEl.innerHTML = log.map((e, i) => {
-        const color = e.isAI ? 'rgba(155,89,182,0.9)' : 'rgba(255,217,61,0.9)';
-        const latest = i === log.length - 1 ? 'hs-log-latest' : '';
-        const turnLabel = e.turn ? `<span class="hs-log-turn">T${e.turn}</span>` : '';
-        return `<div class="hs-log-entry ${latest}" style="border-left-color:${color};color:${color};">
-            ${turnLabel}<span class="hs-log-glyph">${e.icon}</span><span class="hs-log-msg">${e.msg}</span>
-        </div>`;
+    // Agrupar entradas por turno
+    const groups = [];
+    let lastTurn = null;
+    for (const e of log) {
+        if (e.turn !== lastTurn) {
+            groups.push({ turn: e.turn, isAI: e.isAI, entries: [] });
+            lastTurn = e.turn;
+        }
+        groups[groups.length - 1].entries.push(e);
+    }
+
+    entriesEl.innerHTML = groups.map(g => {
+        const color    = g.isAI ? 'rgba(155,89,182,0.9)' : 'rgba(255,217,61,0.9)';
+        const dimColor = g.isAI ? 'rgba(155,89,182,0.45)' : 'rgba(255,217,61,0.45)';
+        const who      = g.isAI ? 'IA' : 'JUGADOR';
+        const isCurrent = g.turn === currentTurn;
+        const header = `<div class="hs-log-turn-header" data-turn="${g.turn}" style="color:${dimColor};">■ T${g.turn} ${who}</div>`;
+        const entries = g.entries.map((e, i) => {
+            const isLatest = isCurrent && i === g.entries.length - 1;
+            return `<div class="hs-log-entry${isLatest ? ' hs-log-latest' : ''}" data-turn="${g.turn}" style="border-left-color:${color};color:${color};">
+                <span class="hs-log-glyph">${e.icon}</span><span class="hs-log-msg">${e.msg}</span>
+            </div>`;
+        }).join('');
+        return header + entries;
     }).join('');
     entriesEl.scrollTop = entriesEl.scrollHeight;
 
-    if (isNewEntry) {
-        const latestEl = entriesEl.querySelector('.hs-log-latest .hs-log-msg');
-        if (latestEl) _scrambleText(latestEl, latestEl.textContent);
+    // Scramble todas las líneas del turno actual al llegar entrada nueva
+    if (isNewEntry && typeof scrTxt === 'function') {
+        entriesEl.querySelectorAll(`[data-turn="${currentTurn}"]`).forEach(el => {
+            if (el.classList.contains('hs-log-turn-header')) {
+                scrTxt(el, el.textContent, { duration: 1.0, speed: 0.5 });
+            } else {
+                const msgEl = el.querySelector('.hs-log-msg');
+                if (msgEl) scrTxt(msgEl, msgEl.textContent, { duration: 1.0, speed: 0.5 });
+            }
+        });
     }
 
     // Fade-out gradient: reveal/hide when scrolled up
