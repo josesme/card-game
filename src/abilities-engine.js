@@ -4492,25 +4492,40 @@ function resolveAbilityAction(actionDef, targetPlayer) {
               return;
             }
             const chosenCard = gameState.player.trash[selectedIdx];
-            // Eliminar carta elegida del descarte
-            gameState.player.trash.splice(selectedIdx, 1);
-            // Jugar la carta en la línea actual
-            const line = gameState.currentEffectLine || LINES[0];
-            gameState.field[line].player.push({ card: chosenCard, faceDown: false });
-            // Barajar el resto del descarte en el mazo
-            if (gameState.player.trash.length > 0) {
-              shuffleDiscardIntoDeck('player');
-            } else {
-              processAbilityEffect();
-            }
             modal.classList.add('hidden');
             container.innerHTML = '';
             gameState.effectContext = null;
-            updateUI();
-            // Ejecutar efectos de la carta jugada
-            if (typeof executeNewEffect === 'function') {
-              executeNewEffect(chosenCard, 'player');
-            }
+
+            // Preguntar bocarriba / bocabajo
+            _confirmDialog('playFromDiscard',
+              () => {
+                // BOCARRIBA: jugar en la línea del protocolo de la carta
+                gameState.player.trash.splice(selectedIdx, 1);
+                const protoIdx = (gameState.player.protocols || []).indexOf(chosenCard.protocol);
+                const targetLine = protoIdx >= 0 ? LINES[protoIdx] : (gameState.currentEffectLine || LINES[0]);
+                gameState.field[targetLine].player.push({ card: chosenCard, faceDown: false });
+                if (gameState.player.trash.length > 0) shuffleDiscardIntoDeck('player');
+                updateUI();
+                logEvent(`${chosenCard.nombre} en ${targetLine} (desde descarte)`, { isAI: false });
+                executeEffect(chosenCard, 'player');
+                if (typeof processAbilityEffect === 'function') processAbilityEffect();
+              },
+              () => {
+                // BOCABAJO: jugador elige línea
+                gameState.player.trash.splice(selectedIdx, 1);
+                // shuffleDiscard ocurrirá tras elegir línea (ctx.pendingShuffleDiscard)
+                gameState.effectContext = {
+                  type: 'pickFromDiscardFaceDown_lineSelect',
+                  chosenCard,
+                  excludeLine: null,
+                  pendingShuffleDiscard: gameState.player.trash.length > 0
+                };
+                updateStatus(`Elige línea donde jugar "${chosenCard.nombre}" bocabajo`);
+                if (typeof highlightSelectableLines === 'function') highlightSelectableLines(null, 'player', LINES);
+                updateUI();
+              },
+              { name: chosenCard.nombre }
+            );
           };
         } else {
           processAbilityEffect();

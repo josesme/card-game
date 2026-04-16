@@ -128,6 +128,10 @@ const MODAL_COPY = {
     msg: '{name}: ¿Jugar en tu lado o en el lado rival?',
     yes: 'MI LADO', no: 'LADO RIVAL'
   },
+  playFromDiscard: {
+    msg: '¿Cómo quieres jugar "{name}"?',
+    yes: 'BOCARRIBA', no: 'BOCABAJO'
+  },
   playHandFaceDown_may: {
     msg: '{name}: ¿Quieres jugar 1 carta bocabajo?',
     yes: 'SÍ', no: 'NO'

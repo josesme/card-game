@@ -57,6 +57,3 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 - [ ] **Diversidad 0 y Unidad 1 no son compilaciones.** Unidad 1 borra cartas pero no es una compilación → no interactúa con Guerra 2, Velocidad 2, ni activa el Control Component. `Coste: Medio` `Valor: Medio`
 - [ ] **Caos 2 no debe permitir cambiarse a sí misma
 - [ ] **Oscrudidad 3 no permite elegir qué carta jugar bocabajo. Solo debería hacerlo automaticamente si hay una carta en mano
-- **Tiempo 0 juega una carta del descarte pero no la juega en la fila correspondiente y no ofrece oportunidad de jugarla bocarriba/bocabajo
-- **Al jugar humo 3, no hay salta un model, ni el globo de texto junto al mouse que me indique "elegir", ni el effecto apagado para resaltar solo la mano... Este efecto escapa de todas las estrategias de informacion visual actual
-- **Paz 3 tiene una condicion para el volteo que no se tiene en cuenta

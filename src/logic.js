@@ -228,17 +228,19 @@ function initLineListeners() {
                 // Si sí hay efectos, effectContext estará activo y processAbilityEffect retorna de inmediato.
                 if (typeof processAbilityEffect === 'function') processAbilityEffect();
             } else if (gameState.effectContext && gameState.effectContext.type === 'pickFromDiscardFaceDown_lineSelect') {
-                // Tiempo 3: jugar carta del descarte bocabajo en otra línea (carta ya elegida en modal)
+                // Tiempo 0 (bocabajo) / Tiempo 3: jugar carta del descarte bocabajo en línea elegida
                 const ctx = gameState.effectContext;
                 if (ctx.excludeLine && line === ctx.excludeLine) {
                     updateStatus('Tiempo 3: elige una línea diferente a la actual');
                     return;
                 }
                 const chosen = ctx.chosenCard;
+                const pendingShuffleDiscard = ctx.pendingShuffleDiscard;
                 gameState.effectContext = null;
                 gameState.field[line].player.push({ card: chosen, faceDown: true });
                 clearSelectionHighlights();
                 clearEffectHighlights();
+                if (pendingShuffleDiscard && typeof shuffleDiscardIntoDeck === 'function') shuffleDiscardIntoDeck('player');
                 updateUI();
                 logEvent(`[bocabajo] en ${line} (desde descarte)`, { isAI: false });
                 if (typeof processAbilityEffect === 'function') processAbilityEffect();
