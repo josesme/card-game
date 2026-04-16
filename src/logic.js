@@ -3277,7 +3277,7 @@ function playAITurnRandom() {
         checkDeleteOnCover(targetLine, 'ai');
         window._animPendingField = { line: targetLine, target: 'ai' };
         updateUI();
-        logEvent(`IA: ${isFaceDown ? '[bocabajo]' : movedCard.nombre + ' bocarriba'} en ${targetLine}`, { isAI: true });
+        logEvent(isFaceDown ? `bocabajo en ${targetLine}` : `${movedCard.nombre} en ${targetLine}`, { isAI: true });
         console.log('Estado final del juego tras fallback aleatorio:', JSON.stringify(gameState));
     } else {
         console.error('❌ Fallback aleatorio falló: No hay líneas disponibles');
@@ -3394,9 +3394,10 @@ function executeAIMove(move) {
     updateUI();
 
     const sideText = landSide !== 'ai' ? ' (lado rival)' : '';
-    const faceText = move.faceUp ? 'bocarriba' : 'bocabajo';
-    const cardNameText = move.faceUp ? movedCard.nombre : '[bocabajo]';
-    logEvent(`IA: ${cardNameText} ${faceText} en ${move.line}${sideText}`, { isAI: true });
+    const logMsg = move.faceUp
+        ? `${movedCard.nombre} en ${move.line}${sideText}`
+        : `bocabajo en ${move.line}${sideText}`;
+    logEvent(logMsg, { isAI: true });
     
     // Delay para que la animación de entrada sea visible antes de ejecutar efectos
     setTimeout(() => {
