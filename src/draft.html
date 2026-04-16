@@ -425,6 +425,30 @@
             z-index: 100;
         }
         .nav-btn:hover { background: rgba(255,217,61,0.25); }
+
+        @keyframes cardEnter {
+            from { clip-path: inset(0 0 100% 0); }
+            to   { clip-path: inset(0 0 0% 0); }
+        }
+        @keyframes scanLineV {
+            from { top: 0%; }
+            to   { top: 100%; }
+        }
+        .card-entering {
+            animation: cardEnter 0.7s linear both;
+            position: relative;
+        }
+        .card-entering::after {
+            content: '';
+            position: absolute;
+            left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(to right, transparent 0%, var(--ui-cyan, #00d4ff) 30%, #fff 50%, var(--ui-cyan, #00d4ff) 70%, transparent 100%);
+            box-shadow: 0 0 8px 2px var(--ui-cyan, #00d4ff);
+            animation: scanLineV 0.7s linear both;
+            pointer-events: none;
+            z-index: 10;
+        }
     </style>
 </head>
 <body>
@@ -806,18 +830,23 @@ function updateProtocolsGrid() {
             card.style.cursor = 'default';
         }
 
+        // Ocultar antes de append en primera carga — evita flash de render previo a la animación
+        if (_draftGridFirstRender) card.style.clipPath = 'inset(0 0 100% 0)';
         grid.appendChild(card);
     });
-    
-    // Animación de entrada en cascada — solo en la primera carga del grid
-    if (typeof gsap !== 'undefined' && _draftGridFirstRender) {
+
+    // Animación de entrada laser — solo en la primera carga del grid
+    if (_draftGridFirstRender) {
         _draftGridFirstRender = false;
-        const cards = grid.querySelectorAll('.protocol-card');
-        gsap.fromTo(cards,
-            { scale: 0.6, opacity: 0, y: 24 },
-            { scale: 1, opacity: 1, y: 0, duration: 0.32, ease: 'back.out(1.7)',
-              stagger: 0.05, clearProps: 'transform,opacity' }
-        );
+        const cards = Array.from(grid.querySelectorAll('.protocol-card'));
+        const stagger = 100;
+        cards.forEach((el, i) => {
+            setTimeout(() => {
+                el.style.clipPath = '';
+                el.classList.add('card-entering');
+                el.addEventListener('animationend', () => el.classList.remove('card-entering'), { once: true });
+            }, i * stagger);
+        });
     }
 
     // Apply scramble to protocol card texts — cooldown de 2s para evitar re-animar
