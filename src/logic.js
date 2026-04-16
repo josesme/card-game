@@ -94,7 +94,8 @@ let gameState = {
     pendingControlResume: null,                             // { who, action } — resume tras rearrange de Control Component
     isProcessing: false,                                    // ⚠️ BLOQUEO: true mientras se resuelve una acción del jugador
     _lastScrambleTime: 0,                                   // ⏱️ COOLDOWN GLOBAL: timestamp último scramble
-    actionLog: [],                                          // ring buffer para paneles laterales de la mano: [{isAI, icon, msg}], max 20
+    actionLog: [],                                          // ring buffer para paneles laterales de la mano: [{isAI, icon, msg, turn}], max 50
+    turnCount: 0,                                           // contador de turnos, incrementado en startTurn
 };
 
 function createDeckForPlayer(target) {
@@ -1161,6 +1162,7 @@ function renderStack(line, target) {
 // Turn Cycle Functions
 function startTurn(who) {
     if (gameState.phase === 'game_over') return;
+    gameState.turnCount++;
     gameState.turn = who;
     gameState.phase = 'start';
     gameState.ignoreEffectsLines = {};
@@ -3547,7 +3549,7 @@ function logEvent(msg, { icon, isAI } = {}) {
     log.appendChild(entry);
     log.scrollTo({ top: log.scrollHeight, behavior: 'smooth' });
 
-    gameState.actionLog.push({ isAI: _isAI, icon: _icon, msg });
+    gameState.actionLog.push({ isAI: _isAI, icon: _icon, msg, turn: gameState.turnCount });
     if (gameState.actionLog.length > 50) gameState.actionLog.shift();
 
     // Refleja el evento en la hand-bar, sin pisar instrucciones interactivas activas.
@@ -3619,11 +3621,25 @@ function _updateUnifiedLog() {
     entriesEl.innerHTML = log.map((e, i) => {
         const color = e.isAI ? 'rgba(155,89,182,0.9)' : 'rgba(255,217,61,0.9)';
         const latest = i === log.length - 1 ? 'hs-log-latest' : '';
+        const turnLabel = e.turn ? `<span class="hs-log-turn">T${e.turn}</span>` : '';
         return `<div class="hs-log-entry ${latest}" style="border-left-color:${color};color:${color};">
-            ${e.icon} ${e.msg}
+            ${turnLabel}${e.icon} ${e.msg}
         </div>`;
     }).join('');
     entriesEl.scrollTop = entriesEl.scrollHeight;
+
+    // Fade-out gradient: reveal/hide when scrolled up
+    const wrap = document.getElementById('hs-log-scroll-wrap');
+    if (wrap) {
+        const updateFade = () => {
+            wrap.classList.toggle('has-scroll-up', entriesEl.scrollTop > 10);
+        };
+        updateFade();
+        if (!entriesEl._fadeListenerAttached) {
+            entriesEl.addEventListener('scroll', updateFade, { passive: true });
+            entriesEl._fadeListenerAttached = true;
+        }
+    }
 }
 
 function showDiscardModal(side) {
