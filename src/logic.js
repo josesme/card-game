@@ -243,7 +243,7 @@ function initLineListeners() {
                 clearEffectHighlights();
                 if (pendingShuffleDiscard && typeof shuffleDiscardIntoDeck === 'function') shuffleDiscardIntoDeck('player');
                 updateUI();
-                logEvent(`[bocabajo] en ${line} (desde descarte)`, { isAI: false });
+                logEvent(`Bocabajo en ${line} (desde descarte)`, { isAI: false });
                 if (typeof processAbilityEffect === 'function') processAbilityEffect();
             } else if (gameState.effectContext && gameState.effectContext.type === 'luckPlay_lineSelect') {
                 // Suerte 0: jugar carta aleatoria de la mano si el valor coincide
@@ -2979,7 +2979,7 @@ function _claridad2PlaySecond(handIndex, targetLine, isFaceDown) {
     gameState.currentEffectLine = targetLine;
     window._animPendingField = { line: targetLine, target: 'player' };
     updateUI();
-    logEvent(`${isFaceDown ? '[bocabajo]' : card.nombre} en ${targetLine} (Claridad 2)`, { isAI: false });
+    logEvent(`${isFaceDown ? 'Bocabajo' : card.nombre} en ${targetLine} (Claridad 2)`, { isAI: false });
     if (!isFaceDown) {
         executeEffect(card, 'player');
     }
@@ -3068,7 +3068,7 @@ function finalizePlay(targetLine, isFaceDown) {
     // Delay para que la animación de entrada sea visible antes de que aparezca el modal
     setTimeout(() => {
         console.log(`✅ Card played: ${card.nombre} on ${targetLine} (${isFaceDown ? 'face-down' : 'face-up'})`);
-        logEvent(`${isFaceDown ? '[bocabajo]' : card.nombre} en ${targetLine}`, { isAI: false });
+        logEvent(`${isFaceDown ? 'Bocabajo' : card.nombre} en ${targetLine}`, { isAI: false });
 
         if (!isFaceDown) {
             console.log(`🔧 Executing card effect...`);
@@ -3277,7 +3277,7 @@ function playAITurnRandom() {
         checkDeleteOnCover(targetLine, 'ai');
         window._animPendingField = { line: targetLine, target: 'ai' };
         updateUI();
-        logEvent(isFaceDown ? `bocabajo en ${targetLine}` : `${movedCard.nombre} en ${targetLine}`, { isAI: true });
+        logEvent(isFaceDown ? `Bocabajo en ${targetLine}` : `${movedCard.nombre} en ${targetLine}`, { isAI: true });
         console.log('Estado final del juego tras fallback aleatorio:', JSON.stringify(gameState));
     } else {
         console.error('❌ Fallback aleatorio falló: No hay líneas disponibles');
@@ -3396,7 +3396,7 @@ function executeAIMove(move) {
     const sideText = landSide !== 'ai' ? ' (lado rival)' : '';
     const logMsg = move.faceUp
         ? `${movedCard.nombre} en ${move.line}${sideText}`
-        : `bocabajo en ${move.line}${sideText}`;
+        : `Bocabajo en ${move.line}${sideText}`;
     logEvent(logMsg, { isAI: true });
     
     // Delay para que la animación de entrada sea visible antes de ejecutar efectos
