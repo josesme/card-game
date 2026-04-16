@@ -449,6 +449,31 @@
             pointer-events: none;
             z-index: 10;
         }
+
+        @keyframes cardLeave {
+            from { opacity: 1; filter: grayscale(0); }
+            to   { opacity: 0.2; filter: grayscale(0.8); }
+        }
+        @keyframes scanLineUp {
+            from { top: 100%; }
+            to   { top: 0%; }
+        }
+        .card-leaving {
+            animation: cardLeave 0.8s linear forwards;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .card-leaving::after {
+            content: '';
+            position: absolute;
+            left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(to right, transparent 0%, var(--ui-cyan, #00d4ff) 30%, #fff 50%, var(--ui-cyan, #00d4ff) 70%, transparent 100%);
+            box-shadow: 0 0 8px 2px var(--ui-cyan, #00d4ff);
+            animation: scanLineUp 0.8s linear forwards;
+            pointer-events: none;
+            z-index: 10;
+        }
     </style>
 </head>
 <body>
@@ -539,8 +564,9 @@ function getCardImageUrl(protocol, valor) {
 let ALL_PROTOCOLS = [];
 let PROTOCOL_DEFS = {};
 
-let _gridScrambleLastT = 0; // cooldown: evita re-scramble del grid en llamadas rápidas sucesivas
-let _draftGridFirstRender = true; // animación de entrada solo en la carga inicial
+let _gridScrambleLastT = 0;     // cooldown: evita re-scramble del grid en llamadas rápidas sucesivas
+let _draftGridFirstRender = true;  // animación de entrada solo en la carga inicial
+let _draftInitialScrambleDone = false; // scramble de textos solo en la carga inicial
 
 let draftState = {
     available: [...ALL_PROTOCOLS],
@@ -598,25 +624,12 @@ function startRound() {
     }
 }
 
-// Laser wipe → fade-in en estado disabled → onDone
+// Laser scan de abajo a arriba con fade a disabled, luego onDone
 function _animPickProtocol(cardEl, onDone) {
-    if (!cardEl || typeof gsap === 'undefined') { onDone(); return; }
+    if (!cardEl) { onDone(); return; }
     cardEl.onclick = null;
-    gsap.fromTo(cardEl,
-        { clipPath: 'inset(0 0 0% 0)' },
-        { clipPath: 'inset(0 0 100% 0)', duration: 0.5, ease: 'power2.in',
-          onComplete: () => {
-              cardEl.style.clipPath = '';
-              cardEl.style.filter = 'grayscale(0.8)';
-              cardEl.style.cursor = 'not-allowed';
-              gsap.fromTo(cardEl,
-                  { opacity: 0 },
-                  { opacity: 0.2, duration: 0.35, ease: 'power1.out',
-                    onComplete: () => setTimeout(onDone, 50) }
-              );
-          }
-        }
-    );
+    cardEl.classList.add('card-leaving');
+    setTimeout(onDone, 850); // ligeramente mayor que duración de cardLeave (0.8s)
 }
 
 function playerSelectProtocol(protocol) {
@@ -850,23 +863,19 @@ function updateProtocolsGrid() {
         });
     }
 
-    // Apply scramble to protocol card texts — cooldown de 2s para evitar re-animar
-    // en las múltiples llamadas a updateProtocolsGrid() durante la init del draft
-    if (window.scrTxt && typeof gsap !== 'undefined') {
-        const _now = Date.now();
-        if (_now - _gridScrambleLastT > 2000) {
-            _gridScrambleLastT = _now;
-            setTimeout(function() {
-                grid.querySelectorAll('.slot-title-text').forEach(function(el) {
-                    var txt = el.textContent.trim();
-                    if (txt) window.scrTxt(el, txt, { duration: 1.0, chars: 'upperAndLowerCase' });
-                });
-                grid.querySelectorAll('.protocol-card-abilities').forEach(function(el) {
-                    var txt = el.textContent.trim();
-                    if (txt) window.scrTxt(el, txt, { duration: 1.0, chars: 'upperAndLowerCase' });
-                });
-            }, 500);
-        }
+    // Scramble de textos solo en la carga inicial del grid
+    if (window.scrTxt && typeof gsap !== 'undefined' && !_draftInitialScrambleDone) {
+        _draftInitialScrambleDone = true;
+        setTimeout(function() {
+            grid.querySelectorAll('.slot-title-text').forEach(function(el) {
+                var txt = el.textContent.trim();
+                if (txt) window.scrTxt(el, txt, { duration: 1.0, chars: 'upperAndLowerCase' });
+            });
+            grid.querySelectorAll('.protocol-card-abilities').forEach(function(el) {
+                var txt = el.textContent.trim();
+                if (txt) window.scrTxt(el, txt, { duration: 1.0, chars: 'upperAndLowerCase' });
+            });
+        }, 500);
     }
 }
 
