@@ -516,6 +516,7 @@ let ALL_PROTOCOLS = [];
 let PROTOCOL_DEFS = {};
 
 let _gridScrambleLastT = 0; // cooldown: evita re-scramble del grid en llamadas rápidas sucesivas
+let _draftGridFirstRender = true; // animación de entrada solo en la carga inicial
 
 let draftState = {
     available: [...ALL_PROTOCOLS],
@@ -578,16 +579,28 @@ function playerSelectProtocol(protocol) {
     if (draftState.selectionsNeeded <= 0) return;
     if (!draftState.available.includes(protocol)) return;
 
-    draftState.playerSelected.push(protocol);
-    draftState.available.splice(draftState.available.indexOf(protocol), 1);
-    draftState.selectionsNeeded--;
+    const cardEl = document.querySelector(`.protocol-card[data-proto="${protocol}"]`);
+    if (cardEl) cardEl.onclick = null; // bloquear re-click inmediato
 
-    updateDraftDisplay();
+    const doSelect = () => {
+        draftState.playerSelected.push(protocol);
+        draftState.available.splice(draftState.available.indexOf(protocol), 1);
+        draftState.selectionsNeeded--;
+        updateDraftDisplay();
+        if (draftState.selectionsNeeded === 0) {
+            draftState.isPlayerTurn = false;
+            draftState.round++;
+            setTimeout(() => startRound(), 500);
+        }
+    };
 
-    if (draftState.selectionsNeeded === 0) {
-        draftState.isPlayerTurn = false;
-        draftState.round++;
-        setTimeout(() => startRound(), 500);
+    if (cardEl && typeof gsap !== 'undefined') {
+        gsap.fromTo(cardEl,
+            { clipPath: 'inset(0 0 0% 0)' },
+            { clipPath: 'inset(0 0 100% 0)', duration: 0.5, ease: 'power2.in', onComplete: doSelect }
+        );
+    } else {
+        doSelect();
     }
 }
 
@@ -685,18 +698,39 @@ function aiSelectProtocols(count) {
         ? aiBestPair(draftState.available, draftState.aiSelected, draftState.playerSelected)
         : [aiBestPick(draftState.available, draftState.aiSelected, draftState.playerSelected)];
 
-    picks.forEach(protocol => {
-        draftState.aiSelected.push(protocol);
-        draftState.available.splice(draftState.available.indexOf(protocol), 1);
-    });
+    const doSelect = () => {
+        picks.forEach(protocol => {
+            draftState.aiSelected.push(protocol);
+            draftState.available.splice(draftState.available.indexOf(protocol), 1);
+        });
+        draftState.round++;
+        updateDraftDisplay();
+        if (draftState.round < DRAFT_ROUNDS.length) {
+            setTimeout(() => startRound(), 800);
+        } else {
+            completeDraft();
+        }
+    };
 
-    draftState.round++;
-    updateDraftDisplay();
-
-    if (draftState.round < DRAFT_ROUNDS.length) {
-        setTimeout(() => startRound(), 800);
+    if (typeof gsap !== 'undefined') {
+        let done = 0;
+        picks.forEach((protocol, i) => {
+            const cardEl = document.querySelector(`.protocol-card[data-proto="${protocol}"]`);
+            if (cardEl) {
+                cardEl.onclick = null;
+                gsap.fromTo(cardEl,
+                    { clipPath: 'inset(0 0 0% 0)' },
+                    { clipPath: 'inset(0 0 100% 0)', duration: 0.5, ease: 'power2.in',
+                      delay: i * 0.2,
+                      onComplete: () => { if (++done === picks.length) doSelect(); }
+                    }
+                );
+            } else {
+                if (++done === picks.length) doSelect();
+            }
+        });
     } else {
-        completeDraft();
+        doSelect();
     }
 }
 
@@ -744,6 +778,7 @@ function updateProtocolsGrid() {
 
         const card = document.createElement('div');
         card.className = 'protocol-card';
+        card.dataset.proto = protocol;
         if (!isAvailable)      card.classList.add('unavailable');
         if (isPlayerSelected)  card.classList.add('selected-player');
         if (isAiSelected)      card.classList.add('selected-ai');
@@ -774,6 +809,17 @@ function updateProtocolsGrid() {
         grid.appendChild(card);
     });
     
+    // Animación de entrada en cascada — solo en la primera carga del grid
+    if (typeof gsap !== 'undefined' && _draftGridFirstRender) {
+        _draftGridFirstRender = false;
+        const cards = grid.querySelectorAll('.protocol-card');
+        gsap.fromTo(cards,
+            { scale: 0.6, opacity: 0, y: 24 },
+            { scale: 1, opacity: 1, y: 0, duration: 0.32, ease: 'back.out(1.7)',
+              stagger: 0.05, clearProps: 'transform,opacity' }
+        );
+    }
+
     // Apply scramble to protocol card texts — cooldown de 2s para evitar re-animar
     // en las múltiples llamadas a updateProtocolsGrid() durante la init del draft
     if (window.scrTxt && typeof gsap !== 'undefined') {
