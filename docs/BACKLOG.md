@@ -20,18 +20,11 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 
 - **Animaciones laser para selección protocolo draft (misma eliminar en juego)
 - **Efecto deshabilitado en draft, cuando no hay zonas clickables (mismo en mano con cartas no clickables)
-- **Animaciones actualizar en mano con bug (primero se cargan y despues se pintan con laser) 
 
 
 ### Paneles texto (log de jugadas jugador / IA)
 
 - **Tipo de acción diferenciado visualmente** — Todas las entradas del log tienen el mismo peso visual. Diferenciar categorías con color/icono consistente: robo (azul/🎴), compilación (amarillo/⚡), descarte (rojo/🗑️), efecto de carta (gris/✦), turno de IA (púrpura). Actualmente los iconos se asignan por detección de cadena de texto en `updateStatus`, frágil y difícil de mantener.
-
-- **Número de entradas visible ampliado** — El panel muestra solo las últimas 5 entradas del bando filtradas. Con un log más compacto (solo texto + icono, sin fondo de color por entrada) se podrían mostrar 8-10 sin aumentar el espacio del panel.
-
-- **Scroll interno del log** — Si el panel muestra más entradas, necesita scroll interno suave (actualmente `overflow: hidden` corta sin scroll). Añadir scroll con fade-out en el borde superior para indicar que hay más contenido.
-
-- **Timestamp relativo por entrada** — Añadir al objeto `actionLog` el número de turno en que se registró la acción (`{ isAI, icon, msg, turn }`). Mostrarlo como etiqueta discreta (ej. "T3") al inicio de cada entrada en el panel lateral.
 
 ---
 
