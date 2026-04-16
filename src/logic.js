@@ -3772,7 +3772,8 @@ function initDraft() {
     const grid = document.getElementById('protocol-grid');
     grid.innerHTML = '';
 
-    Object.entries(PROTOCOL_DEFS).forEach(([name, def]) => {
+    const entries = Object.entries(PROTOCOL_DEFS);
+    entries.forEach(([name, def]) => {
         const card = document.createElement('div');
         card.className = 'draft-proto-card';
         card.dataset.proto = name;
@@ -3786,6 +3787,16 @@ function initDraft() {
         card.onclick = () => onPlayerPick(name);
         grid.appendChild(card);
     });
+
+    // Animación de entrada en cascada
+    if (typeof gsap !== 'undefined') {
+        const cards = grid.querySelectorAll('.draft-proto-card');
+        gsap.fromTo(cards,
+            { scale: 0.6, opacity: 0, y: 24 },
+            { scale: 1, opacity: 1, y: 0, duration: 0.32, ease: 'back.out(1.7)',
+              stagger: 0.05, clearProps: 'transform,opacity' }
+        );
+    }
 
     updateDraftUI();
 }
@@ -3808,14 +3819,34 @@ function applyPick(who, proto) {
     }
     // Visual update on the card
     const card = document.querySelector(`.draft-proto-card[data-proto="${proto}"]`);
-    if (card) {
-        card.classList.add(who === 'p' ? 'picked-player' : 'picked-ai');
+    card.onclick = null;
+    if (card && typeof gsap !== 'undefined') {
+        // Laser wipe de abajo a arriba, igual que animCardEliminate en campo
+        gsap.fromTo(card,
+            { clipPath: 'inset(0 0 0% 0)' },
+            { clipPath: 'inset(0 0 100% 0)', duration: 0.5, ease: 'power2.in',
+              onComplete: () => {
+                  card.style.clipPath = '';
+                  card.style.opacity = '0.2';
+                  card.style.filter = 'grayscale(0.8)';
+                  card.style.cursor = 'not-allowed';
+                  card.style.transform = 'none';
+                  const badge = card.querySelector('.draft-proto-badge');
+                  if (badge) {
+                      badge.textContent = who === 'p' ? '✓ Tú' : '✗ IA';
+                      badge.style.color = who === 'p' ? 'var(--accent-glow)' : 'var(--accent-red)';
+                  }
+              }
+            }
+        );
+    } else if (card) {
+        card.style.opacity = '0.2';
+        card.style.filter = 'grayscale(0.8)';
         const badge = card.querySelector('.draft-proto-badge');
         if (badge) {
             badge.textContent = who === 'p' ? '✓ Tú' : '✗ IA';
             badge.style.color = who === 'p' ? 'var(--accent-glow)' : 'var(--accent-red)';
         }
-        card.onclick = null;
     }
     // Fill pick slot
     fillPickSlot(who, proto);
