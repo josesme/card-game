@@ -435,7 +435,7 @@
             to   { top: 100%; }
         }
         .card-entering {
-            animation: cardEnter 0.7s linear both;
+            animation: cardEnter 0.8s linear both;
             position: relative;
         }
         .card-entering::after {
@@ -445,7 +445,7 @@
             height: 3px;
             background: linear-gradient(to right, transparent 0%, var(--ui-cyan, #00d4ff) 30%, #fff 50%, var(--ui-cyan, #00d4ff) 70%, transparent 100%);
             box-shadow: 0 0 8px 2px var(--ui-cyan, #00d4ff);
-            animation: scanLineV 0.7s linear both;
+            animation: scanLineV 0.8s linear both;
             pointer-events: none;
             z-index: 10;
         }
@@ -564,9 +564,10 @@ function getCardImageUrl(protocol, valor) {
 let ALL_PROTOCOLS = [];
 let PROTOCOL_DEFS = {};
 
-let _gridScrambleLastT = 0;     // cooldown: evita re-scramble del grid en llamadas rápidas sucesivas
+let _gridScrambleLastT = 0;        // cooldown: evita re-scramble del grid en llamadas rápidas sucesivas
 let _draftGridFirstRender = true;  // animación de entrada solo en la carga inicial
 let _draftInitialScrambleDone = false; // scramble de textos solo en la carga inicial
+let _draftEnterReadyAt = 0;        // timestamp cuando termina la animación de entrada
 
 let draftState = {
     available: [...ALL_PROTOCOLS],
@@ -745,6 +746,13 @@ function aiBestPair(available, aiAlready, playerPicked) {
 }
 
 function aiSelectProtocols(count) {
+    // Esperar a que termine la animación de entrada si aún está en curso
+    const waitMs = Math.max(0, _draftEnterReadyAt - Date.now());
+    if (waitMs > 0) {
+        setTimeout(() => aiSelectProtocols(count), waitMs);
+        return;
+    }
+
     const picks = count === 2
         ? aiBestPair(draftState.available, draftState.aiSelected, draftState.playerSelected)
         : [aiBestPick(draftState.available, draftState.aiSelected, draftState.playerSelected)];
@@ -768,7 +776,7 @@ function aiSelectProtocols(count) {
         const cardEl = document.querySelector(`.protocol-card[data-proto="${protocol}"]`);
         setTimeout(() => {
             _animPickProtocol(cardEl, () => { if (++done === picks.length) doSelect(); });
-        }, i * 400); // escalonar picks de IA
+        }, i * 400);
     });
 }
 
@@ -854,6 +862,8 @@ function updateProtocolsGrid() {
         _draftGridFirstRender = false;
         const cards = Array.from(grid.querySelectorAll('.protocol-card'));
         const stagger = 100;
+        const totalDuration = (cards.length - 1) * stagger + 800 + 100; // +100ms buffer
+        _draftEnterReadyAt = Date.now() + totalDuration;
         cards.forEach((el, i) => {
             setTimeout(() => {
                 el.style.clipPath = '';
