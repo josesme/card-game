@@ -735,7 +735,15 @@ function updateUI() {
         const _selCtx = gameState.effectContext;
         if (_selCtx && (_selCtx.type === 'pickHandFaceDown_lineSelect' || _selCtx.type === 'playHandCard_valor1_lineSelect') && _selCtx.selectedCardIndex != null) {
             const _hCards = ui.playerHand.querySelectorAll('.card');
-            if (_hCards[_selCtx.selectedCardIndex]) _hCards[_selCtx.selectedCardIndex].classList.add('hand-card-selected');
+            const _selCard = _hCards[_selCtx.selectedCardIndex];
+            if (_selCard) {
+                _selCard.classList.add('hand-card-selected');
+                // Inyectar span real en lugar de ::before — más fiable en cards con overflow:hidden y hijos absolute
+                const _chk = document.createElement('span');
+                _chk.className = 'hand-check-mark';
+                _chk.textContent = '✓';
+                _selCard.appendChild(_chk);
+            }
         }
 
         // Animar cartas nuevas: aplicar card-entering ANTES del primer pintado (igual que campo)
