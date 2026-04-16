@@ -598,13 +598,34 @@ function startRound() {
     }
 }
 
+// Laser wipe → fade-in en estado disabled → onDone
+function _animPickProtocol(cardEl, onDone) {
+    if (!cardEl || typeof gsap === 'undefined') { onDone(); return; }
+    cardEl.onclick = null;
+    gsap.fromTo(cardEl,
+        { clipPath: 'inset(0 0 0% 0)' },
+        { clipPath: 'inset(0 0 100% 0)', duration: 0.5, ease: 'power2.in',
+          onComplete: () => {
+              cardEl.style.clipPath = '';
+              cardEl.style.filter = 'grayscale(0.8)';
+              cardEl.style.cursor = 'not-allowed';
+              gsap.fromTo(cardEl,
+                  { opacity: 0 },
+                  { opacity: 0.2, duration: 0.35, ease: 'power1.out',
+                    onComplete: () => setTimeout(onDone, 50) }
+              );
+          }
+        }
+    );
+}
+
 function playerSelectProtocol(protocol) {
     if (!draftState.isPlayerTurn || draftState.isComplete) return;
     if (draftState.selectionsNeeded <= 0) return;
     if (!draftState.available.includes(protocol)) return;
 
     const cardEl = document.querySelector(`.protocol-card[data-proto="${protocol}"]`);
-    if (cardEl) cardEl.onclick = null; // bloquear re-click inmediato
+    if (cardEl) cardEl.onclick = null;
 
     const doSelect = () => {
         draftState.playerSelected.push(protocol);
@@ -618,14 +639,7 @@ function playerSelectProtocol(protocol) {
         }
     };
 
-    if (cardEl && typeof gsap !== 'undefined') {
-        gsap.fromTo(cardEl,
-            { clipPath: 'inset(0 0 0% 0)' },
-            { clipPath: 'inset(0 0 100% 0)', duration: 0.5, ease: 'power2.in', onComplete: doSelect }
-        );
-    } else {
-        doSelect();
-    }
+    _animPickProtocol(cardEl, doSelect);
 }
 
 // ── Tablas de evaluación estratégica del draft ─────────────────────
@@ -736,26 +750,13 @@ function aiSelectProtocols(count) {
         }
     };
 
-    if (typeof gsap !== 'undefined') {
-        let done = 0;
-        picks.forEach((protocol, i) => {
-            const cardEl = document.querySelector(`.protocol-card[data-proto="${protocol}"]`);
-            if (cardEl) {
-                cardEl.onclick = null;
-                gsap.fromTo(cardEl,
-                    { clipPath: 'inset(0 0 0% 0)' },
-                    { clipPath: 'inset(0 0 100% 0)', duration: 0.5, ease: 'power2.in',
-                      delay: i * 0.2,
-                      onComplete: () => { if (++done === picks.length) doSelect(); }
-                    }
-                );
-            } else {
-                if (++done === picks.length) doSelect();
-            }
-        });
-    } else {
-        doSelect();
-    }
+    let done = 0;
+    picks.forEach((protocol, i) => {
+        const cardEl = document.querySelector(`.protocol-card[data-proto="${protocol}"]`);
+        setTimeout(() => {
+            _animPickProtocol(cardEl, () => { if (++done === picks.length) doSelect(); });
+        }, i * 400); // escalonar picks de IA
+    });
 }
 
 function completeDraft() {
@@ -864,7 +865,7 @@ function updateProtocolsGrid() {
                     var txt = el.textContent.trim();
                     if (txt) window.scrTxt(el, txt, { duration: 1.0, chars: 'upperAndLowerCase' });
                 });
-            }, 100);
+            }, 500);
         }
     }
 }
