@@ -3738,7 +3738,7 @@ function showGameOver(playerWon) {
     const vsActions  = document.getElementById('vs-actions');
     const vsSkip     = document.getElementById('vs-skip');
 
-    // Build protocol cards — draft landscape style
+    // Build protocol cards — portrait with real card image
     const winner = playerWon ? 'player' : 'ai';
     const protocols = gameState[winner].protocols || [];
     if (vsCards) {
@@ -3747,11 +3747,11 @@ function showGameOver(playerWon) {
             const imgUrl = getCardImageUrl(protocol, 1);
             const color = (PROTOCOL_DEFS[protocol] && PROTOCOL_DEFS[protocol].color) || 'rgba(255,255,255,0.2)';
             const card = document.createElement('div');
-            card.className = 'vs-draft-card';
+            card.className = 'vs-proto-card';
             card.style.borderColor = color;
             card.innerHTML = `
-                <img class="vsd-img" src="${imgUrl}" alt="${protocol}">
-                <div class="vsd-title"><span>${protocol}</span></div>
+                <img class="vs-proto-img" src="${imgUrl}" alt="${protocol}">
+                <div class="vs-proto-title"><span>${protocol}</span></div>
             `;
             vsCards.appendChild(card);
         });
@@ -3765,7 +3765,7 @@ function showGameOver(playerWon) {
     // Reveal immediately (skip path used by click/ESC)
     function revealFinal() {
         if (vsGlitch) { vsGlitch.classList.remove('glitch-active'); vsGlitch.style.opacity = '0'; }
-        if (vsCards) vsCards.querySelectorAll('.vs-draft-card').forEach(c => c.classList.add('vs-card-in'));
+        if (vsCards) vsCards.querySelectorAll('.vs-proto-card').forEach(c => c.classList.add('vs-card-in'));
         if (vsTitle) { vsTitle.style.opacity = '1'; vsTitle.textContent = titleText; }
         if (vsEyebrow) { vsEyebrow.style.opacity = '1'; vsEyebrow.textContent = eyebrowText; }
         if (vsDivider) { vsDivider.style.width = '240px'; }
@@ -3811,7 +3811,7 @@ function showGameOver(playerWon) {
     // Cards float in staggered
     delay(() => {
         if (vsCards) {
-            vsCards.querySelectorAll('.vs-draft-card').forEach((card, i) => {
+            vsCards.querySelectorAll('.vs-proto-card').forEach((card, i) => {
                 setTimeout(() => card.classList.add('vs-card-in'), i * 220);
             });
         }

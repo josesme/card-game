@@ -1346,70 +1346,64 @@
         }
         #vs-skip.vs-visible { opacity: 1; }
 
-        /* Protocol cards — landscape draft style */
+        /* Protocol cards — portrait */
         #vs-cards {
             display: flex;
-            gap: 20px;
-            width: min(780px, 88vw);
+            gap: 24px;
+            align-items: center;
+            justify-content: center;
             margin-bottom: 44px;
         }
-        .vs-draft-card {
-            flex: 1;
+        .vs-proto-card {
             position: relative;
+            width: 110px;
+            height: 154px;
             border-radius: 8px;
             overflow: hidden;
-            height: 0;
-            padding-bottom: 30%;
-            container-type: inline-size;
             border: 2px solid transparent;
-            box-shadow: 0 8px 36px rgba(0,0,0,0.75);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.7);
             transform: translateY(28px);
             opacity: 0;
             transition: transform 0.65s cubic-bezier(0.22,1,0.36,1), opacity 0.65s ease;
         }
-        .vs-draft-card.vs-card-in {
+        .vs-proto-card.vs-card-in {
             transform: translateY(0);
             opacity: 1;
         }
-        .vs-draft-card .vsd-img {
-            position: absolute;
-            top: 0; left: 0;
+        .vs-proto-img {
             width: 100%;
-            height: auto;
+            height: 100%;
+            object-fit: cover;
+            object-position: center top;
             display: block;
-            border-radius: 6px;
         }
-        .vs-draft-card .vsd-title {
+        .vs-proto-title {
             position: absolute;
-            top: 5.5cqw;
-            left: calc(2.5% + 3px);
-            width: calc(34% + 3px);
-            height: 12cqw;
+            top: 5%;
+            left: 3%;
+            width: 60%;
             background:
                 repeating-linear-gradient(180deg,
                     rgba(0,0,0,0.30) 0px, rgba(0,0,0,0.30) 1px,
                     transparent 1px, transparent 3px),
                 #202225;
             border: 1px solid rgba(255,255,255,0.25);
-            box-sizing: border-box;
-            overflow: hidden;
-            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%);
-            z-index: 2;
+            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%);
+            padding: 3px 5px;
             display: flex;
             align-items: center;
-            padding-left: 4px;
+            overflow: hidden;
         }
-        .vs-draft-card .vsd-title span {
-            transform: scaleX(0.82);
-            transform-origin: left center;
+        .vs-proto-title span {
             font-family: 'DoctorGlitch', sans-serif;
-            font-size: 4.8cqw;
+            font-size: 11px;
             font-weight: normal;
             color: #fff;
             -webkit-text-stroke: 0.4px #202225;
             text-transform: uppercase;
             white-space: nowrap;
-            line-height: 1;
+            transform: scaleX(0.82);
+            transform-origin: left center;
             display: block;
         }
 
