@@ -3732,10 +3732,23 @@ function showGameOver(playerWon) {
     const vsTitle    = document.getElementById('vs-title');
     const vsEyebrow  = document.getElementById('vs-eyebrow');
     const vsGlitch   = document.getElementById('vs-glitch');
+    const vsCards    = document.getElementById('vs-cards');
     const vsDivider  = document.getElementById('vs-divider');
     const vsSubtitle = document.getElementById('vs-subtitle');
     const vsActions  = document.getElementById('vs-actions');
     const vsSkip     = document.getElementById('vs-skip');
+
+    // Build protocol card elements from compiled lines
+    const compiledLines = playerWon ? gameState.player.compiled : gameState.ai.compiled;
+    if (vsCards) {
+        vsCards.innerHTML = '';
+        compiledLines.forEach(line => {
+            const card = document.createElement('div');
+            card.className = 'vs-card';
+            card.innerHTML = `<div class="vs-card-line">${line}</div><div class="vs-card-label">COMPILADO</div>`;
+            vsCards.appendChild(card);
+        });
+    }
 
     // Set colors
     if (vsTitle) vsTitle.style.color = accentColor;
@@ -3745,6 +3758,7 @@ function showGameOver(playerWon) {
     // Reveal immediately (skip path used by click/ESC)
     function revealFinal() {
         if (vsGlitch) { vsGlitch.classList.remove('glitch-active'); vsGlitch.style.opacity = '0'; }
+        if (vsCards) vsCards.querySelectorAll('.vs-card').forEach(c => c.classList.add('vs-card-in'));
         if (vsTitle) { vsTitle.style.opacity = '1'; vsTitle.textContent = titleText; }
         if (vsEyebrow) { vsEyebrow.style.opacity = '1'; vsEyebrow.textContent = eyebrowText; }
         if (vsDivider) { vsDivider.style.width = '240px'; }
@@ -3787,6 +3801,14 @@ function showGameOver(playerWon) {
     delay(() => {
         if (vsGlitch) { vsGlitch.classList.remove('glitch-active'); vsGlitch.style.opacity = '0'; }
     }, 2300);
+    // Cards float in staggered
+    delay(() => {
+        if (vsCards) {
+            vsCards.querySelectorAll('.vs-card').forEach((card, i) => {
+                setTimeout(() => card.classList.add('vs-card-in'), i * 220);
+            });
+        }
+    }, 2600);
     // Main title scrambles in
     delay(() => {
         if (vsTitle) {
@@ -3797,16 +3819,16 @@ function showGameOver(playerWon) {
                 vsTitle.textContent = titleText;
             }
         }
-    }, 2500);
+    }, 3700);
     delay(() => {
         if (vsDivider) vsDivider.style.width = '240px';
-    }, 3200);
+    }, 4400);
     delay(() => {
         if (vsSubtitle) { vsSubtitle.textContent = subtitleText; vsSubtitle.style.opacity = '1'; }
-    }, 3600);
+    }, 4800);
     delay(() => {
         if (vsActions) vsActions.style.opacity = '1';
-    }, 4300);
+    }, 5500);
 
     screen.addEventListener('click', onSkip);
     document.addEventListener('keydown', onKeySkip);

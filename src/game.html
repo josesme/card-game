@@ -1346,6 +1346,57 @@
         }
         #vs-skip.vs-visible { opacity: 1; }
 
+        /* Protocol cards */
+        #vs-cards {
+            display: flex;
+            gap: 28px;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 44px;
+        }
+        .vs-card {
+            width: 88px;
+            height: 124px;
+            border: 1px solid rgba(0, 212, 255, 0.25);
+            background: #04090d;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transform: translateY(24px);
+            opacity: 0;
+            transition: transform 0.65s cubic-bezier(0.22,1,0.36,1), opacity 0.65s ease;
+            position: relative;
+        }
+        .vs-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border: 1px solid rgba(0,212,255,0.08);
+            pointer-events: none;
+        }
+        .vs-card.vs-card-in {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .vs-card-line {
+            font-family: var(--ui-font);
+            font-size: 8px;
+            letter-spacing: 3px;
+            color: #00d4ff;
+            text-transform: uppercase;
+            text-align: center;
+            padding: 0 6px;
+        }
+        .vs-card-label {
+            font-family: var(--ui-font);
+            font-size: 7px;
+            letter-spacing: 1px;
+            color: #2a4050;
+            text-align: center;
+        }
+
         /* Glitch text */
         #vs-glitch {
             position: relative;
@@ -1852,6 +1903,7 @@ function showConfirmDialog(message, onYes, onNo, yesText, noText) {
 <div id="victory-screen" class="hidden">
     <div id="vs-eyebrow">PROTOCOLO COMPILADO</div>
     <div id="vs-glitch" data-text="¿QUÉ ERES?">¿QUÉ ERES?</div>
+    <div id="vs-cards"></div>
     <div id="vs-title">COMPILATION COMPLETE</div>
     <div id="vs-divider"></div>
     <div id="vs-subtitle">—</div>
