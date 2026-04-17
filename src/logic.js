@@ -3759,9 +3759,9 @@ function showGameOver(playerWon) {
     }
 
     // Set colors
-    if (vsTitle) vsTitle.style.color = accentColor;
-    if (vsDivider) vsDivider.style.color = accentColor;
-    if (vsSubtitle) vsSubtitle.style.color = playerWon ? '#8a7420' : '#5a2a7a';
+    if (vsTitle) vsTitle.style.color = '#00d4ff';
+    if (vsDivider) vsDivider.style.color = '#00d4ff';
+    if (vsSubtitle) vsSubtitle.style.color = '#3a8a9a';
 
     // Activate a card: pulse glow + particle burst
     function activateCard(card) {
