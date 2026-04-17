@@ -1346,6 +1346,64 @@
         }
         #vs-skip.vs-visible { opacity: 1; }
 
+        /* Glitch text */
+        #vs-glitch {
+            position: relative;
+            font-family: var(--ui-font);
+            font-size: clamp(1.4em, 4vw, 2.4em);
+            font-weight: 700;
+            letter-spacing: 10px;
+            color: #fff;
+            opacity: 0;
+            margin-bottom: 40px;
+            transition: opacity 0.3s ease;
+            animation: none;
+        }
+        #vs-glitch.glitch-active {
+            animation: glitch-body 0.18s steps(1) infinite;
+        }
+        #vs-glitch::before,
+        #vs-glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            left: 0; top: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+        }
+        #vs-glitch.glitch-active::before {
+            color: #0ff;
+            opacity: 0.7;
+            animation: glitch-layer-a 0.18s steps(1) infinite;
+        }
+        #vs-glitch.glitch-active::after {
+            color: #f0f;
+            opacity: 0.7;
+            animation: glitch-layer-b 0.18s steps(1) infinite;
+        }
+        @keyframes glitch-body {
+            0%  { transform: translate(0, 0); }
+            20% { transform: translate(-2px, 1px); }
+            40% { transform: translate(2px, -1px); }
+            60% { transform: translate(-1px, 2px); }
+            80% { transform: translate(1px, -1px); }
+            100%{ transform: translate(0, 0); }
+        }
+        @keyframes glitch-layer-a {
+            0%  { clip-path: inset(15% 0 70% 0); transform: translate(-3px, 0); }
+            25% { clip-path: inset(55% 0 25% 0); transform: translate(3px, 0); }
+            50% { clip-path: inset(75% 0 5%  0); transform: translate(-2px, 0); }
+            75% { clip-path: inset(5%  0 80% 0); transform: translate(2px, 0); }
+            100%{ clip-path: inset(15% 0 70% 0); transform: translate(-3px, 0); }
+        }
+        @keyframes glitch-layer-b {
+            0%  { clip-path: inset(60% 0 10% 0); transform: translate(3px, 0); }
+            25% { clip-path: inset(10% 0 60% 0); transform: translate(-3px, 0); }
+            50% { clip-path: inset(30% 0 45% 0); transform: translate(2px, 0); }
+            75% { clip-path: inset(80% 0 5%  0); transform: translate(-2px, 0); }
+            100%{ clip-path: inset(60% 0 10% 0); transform: translate(3px, 0); }
+        }
+
         /* Card in overlay */
         .effect-card {
             width: 180px;
@@ -1793,6 +1851,7 @@ function showConfirmDialog(message, onYes, onNo, yesText, noText) {
 <!-- VICTORY SCREEN — cinematic end-game -->
 <div id="victory-screen" class="hidden">
     <div id="vs-eyebrow">PROTOCOLO COMPILADO</div>
+    <div id="vs-glitch" data-text="¿QUÉ ERES?">¿QUÉ ERES?</div>
     <div id="vs-title">COMPILATION COMPLETE</div>
     <div id="vs-divider"></div>
     <div id="vs-subtitle">—</div>

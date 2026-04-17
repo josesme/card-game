@@ -3731,6 +3731,7 @@ function showGameOver(playerWon) {
 
     const vsTitle    = document.getElementById('vs-title');
     const vsEyebrow  = document.getElementById('vs-eyebrow');
+    const vsGlitch   = document.getElementById('vs-glitch');
     const vsDivider  = document.getElementById('vs-divider');
     const vsSubtitle = document.getElementById('vs-subtitle');
     const vsActions  = document.getElementById('vs-actions');
@@ -3743,6 +3744,7 @@ function showGameOver(playerWon) {
 
     // Reveal immediately (skip path used by click/ESC)
     function revealFinal() {
+        if (vsGlitch) { vsGlitch.classList.remove('glitch-active'); vsGlitch.style.opacity = '0'; }
         if (vsTitle) { vsTitle.style.opacity = '1'; vsTitle.textContent = titleText; }
         if (vsEyebrow) { vsEyebrow.style.opacity = '1'; vsEyebrow.textContent = eyebrowText; }
         if (vsDivider) { vsDivider.style.width = '240px'; }
@@ -3775,11 +3777,17 @@ function showGameOver(playerWon) {
     // Sequence
     delay(() => { if (vsSkip) vsSkip.classList.add('vs-visible'); }, 400);
     delay(() => {
-        if (vsEyebrow) {
-            vsEyebrow.textContent = eyebrowText;
-            vsEyebrow.style.opacity = '1';
-        }
+        if (vsEyebrow) { vsEyebrow.textContent = eyebrowText; vsEyebrow.style.opacity = '1'; }
     }, 700);
+    // Glitch text appears and animates
+    delay(() => {
+        if (vsGlitch) { vsGlitch.style.opacity = '1'; vsGlitch.classList.add('glitch-active'); }
+    }, 1000);
+    // Glitch fades out
+    delay(() => {
+        if (vsGlitch) { vsGlitch.classList.remove('glitch-active'); vsGlitch.style.opacity = '0'; }
+    }, 2300);
+    // Main title scrambles in
     delay(() => {
         if (vsTitle) {
             vsTitle.style.opacity = '1';
@@ -3789,19 +3797,16 @@ function showGameOver(playerWon) {
                 vsTitle.textContent = titleText;
             }
         }
-    }, 1100);
+    }, 2500);
     delay(() => {
         if (vsDivider) vsDivider.style.width = '240px';
-    }, 1800);
+    }, 3200);
     delay(() => {
-        if (vsSubtitle) {
-            vsSubtitle.textContent = subtitleText;
-            vsSubtitle.style.opacity = '1';
-        }
-    }, 2200);
+        if (vsSubtitle) { vsSubtitle.textContent = subtitleText; vsSubtitle.style.opacity = '1'; }
+    }, 3600);
     delay(() => {
         if (vsActions) vsActions.style.opacity = '1';
-    }, 2900);
+    }, 4300);
 
     screen.addEventListener('click', onSkip);
     document.addEventListener('keydown', onKeySkip);
