@@ -28,7 +28,7 @@ const ui = {
     btnConfirmYes: document.getElementById('btn-confirm-yes'),
     btnConfirmNo: document.getElementById('btn-confirm-no'),
     btnRefresh: document.getElementById('player-deck-btn'),
-    gameOverModal: document.getElementById('game-over-modal'),
+    victoryScreen: document.getElementById('victory-screen'),
     winnerText: document.getElementById('winner-text'),
     btnRestart: document.getElementById('btn-restart'),
 };
@@ -3125,7 +3125,7 @@ ui.btnRefresh.onclick = () => {
     }
     if (gameState.player.hand.length >= 5) {
         console.warn('❌ Cannot refresh - hand too full');
-        alert("No puedes recargar si tienes 5 o más cartas.");
+        alert("No puedes actualizar si tienes 5 o más cartas.");
         return;
     }
     console.log('✅ Refreshing hand...');
@@ -3719,27 +3719,92 @@ function checkWinCondition() {
 }
 
 function showGameOver(playerWon) {
-    const modal = document.getElementById('game-over-modal');
-    const titleEl = document.getElementById('game-over-title');
-    const reasonEl = document.getElementById('win-reason');
-    const statsEl = document.getElementById('win-stats');
+    const screen = document.getElementById('victory-screen');
+    if (!screen) return;
 
-    if (titleEl) { window.scrTxt ? window.scrTxt(titleEl, playerWon ? '¡VICTORIA!' : 'DERROTA', { duration: 1.0, chars: 'upperCase' }) : (titleEl.textContent = playerWon ? '¡VICTORIA!' : 'DERROTA'); }
-    if (titleEl) titleEl.style.color = playerWon ? '#00ff41' : '#ef4444';
+    const accentColor = playerWon ? '#00d4ff' : '#ef4444';
+    const titleText   = playerWon ? 'COMPILATION COMPLETE' : 'PROCESS TERMINATED';
+    const eyebrowText = playerWon ? 'PROTOCOLO COMPILADO' : 'SECUENCIA INTERRUMPIDA';
+    const subtitleText = playerWon
+        ? 'Compilaste los 3 protocolos. La realidad ha sido reescrita.'
+        : 'La IA compiló sus 3 protocolos primero. Inténtalo de nuevo.';
 
-    const _reasonText = playerWon ? 'Compilaste los 3 protocolos. ¡Bien jugado!' : 'La IA compiló sus 3 protocolos primero.';
-    if (reasonEl) { window.scrTxt ? window.scrTxt(reasonEl, _reasonText, { duration: 1.0, chars: 'upperCase' }) : (reasonEl.textContent = _reasonText); }
+    const vsTitle    = document.getElementById('vs-title');
+    const vsEyebrow  = document.getElementById('vs-eyebrow');
+    const vsDivider  = document.getElementById('vs-divider');
+    const vsSubtitle = document.getElementById('vs-subtitle');
+    const vsActions  = document.getElementById('vs-actions');
+    const vsSkip     = document.getElementById('vs-skip');
 
-    if (statsEl) {
-        const pLines = gameState.player.compiled.join(', ') || '—';
-        const aLines = gameState.ai.compiled.join(', ') || '—';
-        statsEl.innerHTML = `
-            <div>Tus compilados: <strong style="color:#00d4ff">${pLines}</strong></div>
-            <div>Compilados IA: <strong style="color:#ef4444">${aLines}</strong></div>
-        `;
+    // Set colors
+    if (vsTitle) vsTitle.style.color = accentColor;
+    if (vsDivider) vsDivider.style.color = accentColor;
+    if (vsSubtitle) vsSubtitle.style.color = playerWon ? '#3a8a9a' : '#7a3a3a';
+
+    // Reveal immediately (skip path used by click/ESC)
+    function revealFinal() {
+        if (vsTitle) { vsTitle.style.opacity = '1'; vsTitle.textContent = titleText; }
+        if (vsEyebrow) { vsEyebrow.style.opacity = '1'; vsEyebrow.textContent = eyebrowText; }
+        if (vsDivider) { vsDivider.style.width = '240px'; }
+        if (vsSubtitle) { vsSubtitle.style.opacity = '1'; vsSubtitle.textContent = subtitleText; }
+        if (vsActions) vsActions.style.opacity = '1';
+        if (vsSkip) vsSkip.classList.remove('vs-visible');
+        screen.removeEventListener('click', onSkip);
+        document.removeEventListener('keydown', onKeySkip);
     }
 
-    if (modal) modal.classList.remove('hidden');
+    let skipped = false;
+    function onSkip() {
+        if (skipped) return;
+        skipped = true;
+        clearAllTimers();
+        revealFinal();
+    }
+    function onKeySkip(e) { if (e.key === 'Escape' || e.key === ' ') onSkip(); }
+
+    const timers = [];
+    function delay(fn, ms) { timers.push(setTimeout(fn, ms)); }
+    function clearAllTimers() { timers.forEach(clearTimeout); }
+
+    // Show screen (fade in black bg)
+    screen.classList.remove('hidden');
+    requestAnimationFrame(() => {
+        screen.classList.add('vs-active');
+    });
+
+    // Sequence
+    delay(() => { if (vsSkip) vsSkip.classList.add('vs-visible'); }, 400);
+    delay(() => {
+        if (vsEyebrow) {
+            vsEyebrow.textContent = eyebrowText;
+            vsEyebrow.style.opacity = '1';
+        }
+    }, 700);
+    delay(() => {
+        if (vsTitle) {
+            vsTitle.style.opacity = '1';
+            if (window.scrTxt) {
+                window.scrTxt(vsTitle, titleText, { duration: 1.2, chars: 'upperCase' });
+            } else {
+                vsTitle.textContent = titleText;
+            }
+        }
+    }, 1100);
+    delay(() => {
+        if (vsDivider) vsDivider.style.width = '240px';
+    }, 1800);
+    delay(() => {
+        if (vsSubtitle) {
+            vsSubtitle.textContent = subtitleText;
+            vsSubtitle.style.opacity = '1';
+        }
+    }, 2200);
+    delay(() => {
+        if (vsActions) vsActions.style.opacity = '1';
+    }, 2900);
+
+    screen.addEventListener('click', onSkip);
+    document.addEventListener('keydown', onKeySkip);
 }
 
 // Set restart button only if it exists (game mode)

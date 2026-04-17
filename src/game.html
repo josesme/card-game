@@ -1267,6 +1267,85 @@
             object-position: top center;
         }
 
+        /* ============================================================
+           VICTORY SCREEN — cinematic end-game overlay
+           ============================================================ */
+        #victory-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 9000;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+            pointer-events: none;
+        }
+        #victory-screen.vs-active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        #victory-screen.hidden { display: none; }
+        #vs-eyebrow {
+            font-family: var(--ui-font);
+            font-size: 10px;
+            letter-spacing: 6px;
+            color: #4a6070;
+            margin-bottom: 24px;
+            opacity: 0;
+            transition: opacity 0.6s ease;
+        }
+        #vs-title {
+            font-family: var(--ui-font);
+            font-size: clamp(1.8em, 5vw, 3.2em);
+            font-weight: 700;
+            letter-spacing: 8px;
+            text-align: center;
+            color: #00d4ff;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        #vs-divider {
+            width: 0;
+            height: 1px;
+            background: currentColor;
+            margin: 28px auto;
+            transition: width 0.6s ease;
+        }
+        #vs-subtitle {
+            font-family: var(--ui-font);
+            font-size: 11px;
+            color: #4a7a90;
+            letter-spacing: 2px;
+            text-align: center;
+            max-width: 420px;
+            opacity: 0;
+            transition: opacity 0.6s ease;
+        }
+        #vs-actions {
+            margin-top: 52px;
+            display: flex;
+            gap: 16px;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        #vs-skip {
+            position: fixed;
+            bottom: 28px;
+            right: 32px;
+            font-family: var(--ui-font);
+            font-size: 9px;
+            letter-spacing: 2px;
+            color: #2a3a44;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        #vs-skip.vs-visible { opacity: 1; }
+
         /* Card in overlay */
         .effect-card {
             width: 180px;
@@ -1711,23 +1790,17 @@ function showConfirmDialog(message, onYes, onNo, yesText, noText) {
 <!-- NOTIFY TOAST (feedback IA) -->
 <div id="notify-toast" class="effect-notify"></div>
 
-<!-- GAME OVER OVERLAY -->
-<div id="game-over-modal" class="effect-overlay hidden">
-    <div class="effect-panel" style="max-width: 480px; text-align: center;">
-        <div class="effect-header" style="justify-content: center; border-bottom: none; padding-bottom: 0;">
-            <div class="effect-header-text" style="text-align: center;">
-                <div id="game-over-title" style="font-family: var(--ui-font); font-size: 2em; font-weight: 700; letter-spacing: 3px;">VICTORIA!</div>
-            </div>
-        </div>
-        <div style="padding: 16px 22px; font-family: var(--ui-font);">
-            <p id="win-reason" style="color: var(--ui-cyan); font-family: var(--ui-font); font-size: 11px; margin-bottom: 20px; line-height: 1.6;">—</p>
-            <div id="win-stats" style="background: var(--ui-bg-inactive); border: 1px solid var(--ui-border-inactive); padding: 14px; margin-bottom: 24px; font-family: var(--ui-font); font-size: 10px; color: #c0cfe0; line-height: 2;"></div>
-        </div>
-        <div class="effect-actions" style="gap: 16px;">
-            <button class="ui-btn" onclick="location.href='/src/draft.html'">NUEVO DRAFT</button>
-            <button class="ui-btn ui-btn--purple" onclick="location.href='/src/index.html'">PANTALLA PRINCIPAL</button>
-        </div>
+<!-- VICTORY SCREEN — cinematic end-game -->
+<div id="victory-screen" class="hidden">
+    <div id="vs-eyebrow">PROTOCOLO COMPILADO</div>
+    <div id="vs-title">COMPILATION COMPLETE</div>
+    <div id="vs-divider"></div>
+    <div id="vs-subtitle">—</div>
+    <div id="vs-actions">
+        <button class="ui-btn" onclick="location.href='/src/draft.html'">NUEVO DRAFT</button>
+        <button class="ui-btn ui-btn--purple" onclick="location.href='/src/index.html'">PANTALLA PRINCIPAL</button>
     </div>
+    <div id="vs-skip">CLICK PARA CONTINUAR</div>
 </div>
 
 <!-- LOG OVERLAY (slide-in panel) -->
