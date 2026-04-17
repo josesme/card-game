@@ -3824,7 +3824,14 @@ function showGameOver(playerWon) {
         if (vsDivider) vsDivider.style.width = '240px';
     }, 4400);
     delay(() => {
-        if (vsSubtitle) { vsSubtitle.textContent = subtitleText; vsSubtitle.style.opacity = '1'; }
+        if (vsSubtitle) {
+            vsSubtitle.style.opacity = '1';
+            if (window.scrTxt) {
+                window.scrTxt(vsSubtitle, subtitleText, { duration: 1.5, chars: 'lowerCase' });
+            } else {
+                vsSubtitle.textContent = subtitleText;
+            }
+        }
     }, 4800);
     delay(() => {
         if (vsActions) vsActions.style.opacity = '1';
