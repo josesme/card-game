@@ -3552,6 +3552,7 @@ function logEvent(msg, { icon, isAI } = {}) {
 
     gameState.actionLog.push({ isAI: _isAI, icon: _icon, msg, turn: gameState.turnCount });
     if (gameState.actionLog.length > 50) gameState.actionLog.shift();
+    _updateUnifiedLog();
 
     // Refleja el evento en la hand-bar, sin pisar instrucciones interactivas activas.
     if (!gameState.effectContext) {
