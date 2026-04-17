@@ -3762,6 +3762,30 @@ function showGameOver(playerWon) {
     if (vsDivider) vsDivider.style.color = accentColor;
     if (vsSubtitle) vsSubtitle.style.color = playerWon ? '#3a8a9a' : '#7a3a3a';
 
+    // Activate a card: glow animation + particle burst
+    function activateCard(card, color) {
+        card.style.setProperty('--vs-glow', color);
+        card.classList.add('vs-glow');
+        setTimeout(() => {
+            const rect = card.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            for (let i = 0; i < 11; i++) {
+                const p = document.createElement('div');
+                p.className = 'vs-particle';
+                p.style.cssText = `background:${color};left:${cx}px;top:${cy}px;margin:-2px 0 0 -2px;`;
+                screen.appendChild(p);
+                const angle = (i / 11) * Math.PI * 2;
+                const dist = 55 + Math.random() * 55;
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    p.style.transform = `translate(${Math.cos(angle) * dist}px, ${Math.sin(angle) * dist}px)`;
+                    p.style.opacity = '0';
+                }));
+                setTimeout(() => p.remove(), 900);
+            }
+        }, 250);
+    }
+
     // Reveal immediately (skip path used by click/ESC)
     function revealFinal() {
         if (vsGlitch) { vsGlitch.classList.remove('glitch-active'); vsGlitch.style.opacity = '0'; }
@@ -3791,20 +3815,16 @@ function showGameOver(playerWon) {
 
     // Show screen (fade in black bg)
     screen.classList.remove('hidden');
-    requestAnimationFrame(() => {
-        screen.classList.add('vs-active');
-    });
+    requestAnimationFrame(() => { screen.classList.add('vs-active'); });
 
     // Sequence
     delay(() => { if (vsSkip) vsSkip.classList.add('vs-visible'); }, 400);
     delay(() => {
         if (vsEyebrow) { vsEyebrow.textContent = eyebrowText; vsEyebrow.style.opacity = '1'; }
     }, 700);
-    // Glitch text appears and animates
     delay(() => {
         if (vsGlitch) { vsGlitch.style.opacity = '1'; vsGlitch.classList.add('glitch-active'); }
     }, 1000);
-    // Glitch fades out
     delay(() => {
         if (vsGlitch) { vsGlitch.classList.remove('glitch-active'); vsGlitch.style.opacity = '0'; }
     }, 2300);
@@ -3816,7 +3836,16 @@ function showGameOver(playerWon) {
             });
         }
     }, 2600);
-    // Main title scrambles in
+    // Cards activate one by one (glow + particles) after landing
+    delay(() => {
+        if (!vsCards) return;
+        const cards = vsCards.querySelectorAll('.vs-proto-card');
+        cards.forEach((card, i) => {
+            const color = card.style.borderColor || accentColor;
+            setTimeout(() => activateCard(card, color), i * 380);
+        });
+    }, 3400);
+    // Title scrambles in after last activation settles
     delay(() => {
         if (vsTitle) {
             vsTitle.style.opacity = '1';
@@ -3826,10 +3855,8 @@ function showGameOver(playerWon) {
                 vsTitle.textContent = titleText;
             }
         }
-    }, 3700);
-    delay(() => {
-        if (vsDivider) vsDivider.style.width = '240px';
-    }, 4400);
+    }, 4800);
+    delay(() => { if (vsDivider) vsDivider.style.width = '240px'; }, 5500);
     delay(() => {
         if (vsSubtitle) {
             vsSubtitle.style.opacity = '1';
@@ -3839,10 +3866,8 @@ function showGameOver(playerWon) {
                 vsSubtitle.textContent = subtitleText;
             }
         }
-    }, 4800);
-    delay(() => {
-        if (vsActions) vsActions.style.opacity = '1';
-    }, 5500);
+    }, 5900);
+    delay(() => { if (vsActions) vsActions.style.opacity = '1'; }, 6600);
 
     screen.addEventListener('click', onSkip);
     document.addEventListener('keydown', onKeySkip);

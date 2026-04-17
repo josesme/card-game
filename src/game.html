@@ -1406,6 +1406,25 @@
             transform-origin: left center;
             display: block;
         }
+        .vs-proto-card.vs-glow {
+            animation: vs-card-glow 0.9s ease-out forwards;
+        }
+        @keyframes vs-card-glow {
+            0%   { filter: brightness(1); }
+            30%  { filter: brightness(2); box-shadow: 0 0 55px 18px var(--vs-glow, #00d4ff), 0 10px 40px rgba(0,0,0,0.7); }
+            100% { filter: brightness(1.25); box-shadow: 0 0 22px 5px var(--vs-glow, #00d4ff), 0 10px 40px rgba(0,0,0,0.7); }
+        }
+        .vs-particle {
+            position: fixed;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 1;
+            transform: translate(0, 0);
+            transition: transform 0.75s cubic-bezier(0.2, 0, 0.6, 1), opacity 0.75s ease-out;
+            z-index: 9001;
+        }
 
         /* Glitch text */
         #vs-glitch {
