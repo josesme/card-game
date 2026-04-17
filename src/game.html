@@ -1422,16 +1422,16 @@
             0%,100% { box-shadow: 0 0 8px #722E9A, 0 0 22px #722E9A88; filter: brightness(1.1); }
             50%      { box-shadow: 0 0 24px #722E9A, 0 0 60px #722E9Aaa; filter: brightness(1.7); }
         }
-        .vs-particle {
+        .vs-ring {
             position: fixed;
-            width: 5px;
-            height: 5px;
-            border-radius: 50%;
+            border-radius: 8px;
+            border: 1.5px solid;
             pointer-events: none;
-            opacity: 1;
-            transform: translate(0, 0);
-            transition: transform 0.75s cubic-bezier(0.2, 0, 0.6, 1), opacity 0.75s ease-out;
+            opacity: 0.75;
+            transform: scale(1);
+            transition: transform 1s cubic-bezier(0.15, 0, 0.5, 1), opacity 1s ease-out;
             z-index: 9001;
+            box-sizing: border-box;
         }
 
         /* Glitch text */

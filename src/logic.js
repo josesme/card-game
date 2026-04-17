@@ -3763,27 +3763,29 @@ function showGameOver(playerWon) {
     if (vsDivider) vsDivider.style.color = '#00d4ff';
     if (vsSubtitle) vsSubtitle.style.color = '#3a8a9a';
 
-    // Activate a card: pulse glow + particle burst
+    // Activate a card: pulse glow + expanding ring pings
     function activateCard(card) {
         card.classList.add(glowClass);
-        setTimeout(() => {
-            const rect = card.getBoundingClientRect();
-            const cx = rect.left + rect.width / 2;
-            const cy = rect.top + rect.height / 2;
-            for (let i = 0; i < 11; i++) {
-                const p = document.createElement('div');
-                p.className = 'vs-particle';
-                p.style.cssText = `background:${accentColor};left:${cx}px;top:${cy}px;margin:-2px 0 0 -2px;`;
-                screen.appendChild(p);
-                const angle = (i / 11) * Math.PI * 2;
-                const dist = 55 + Math.random() * 55;
+        const rect = card.getBoundingClientRect();
+        [0, 320, 640].forEach(offset => {
+            setTimeout(() => {
+                const ring = document.createElement('div');
+                ring.className = 'vs-ring';
+                ring.style.cssText = `
+                    left:${rect.left}px;
+                    top:${rect.top}px;
+                    width:${rect.width}px;
+                    height:${rect.height}px;
+                    border-color:${accentColor};
+                `;
+                screen.appendChild(ring);
                 requestAnimationFrame(() => requestAnimationFrame(() => {
-                    p.style.transform = `translate(${Math.cos(angle) * dist}px, ${Math.sin(angle) * dist}px)`;
-                    p.style.opacity = '0';
+                    ring.style.transform = 'scale(2.6)';
+                    ring.style.opacity = '0';
                 }));
-                setTimeout(() => p.remove(), 900);
-            }
-        }, 250);
+                setTimeout(() => ring.remove(), 1100);
+            }, offset);
+        });
     }
 
     // Reveal immediately (skip path used by click/ESC)
