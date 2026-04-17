@@ -1406,13 +1406,21 @@
             transform-origin: left center;
             display: block;
         }
-        .vs-proto-card.vs-glow {
-            animation: vs-card-glow 0.9s ease-out forwards;
+        .vs-proto-card.vs-glow-player {
+            animation: vs-glow-player 1.6s ease-in-out infinite;
+            border-color: #FFD93D !important;
         }
-        @keyframes vs-card-glow {
-            0%   { filter: brightness(1); }
-            30%  { filter: brightness(2); box-shadow: 0 0 55px 18px var(--vs-glow, #00d4ff), 0 10px 40px rgba(0,0,0,0.7); }
-            100% { filter: brightness(1.25); box-shadow: 0 0 22px 5px var(--vs-glow, #00d4ff), 0 10px 40px rgba(0,0,0,0.7); }
+        .vs-proto-card.vs-glow-ai {
+            animation: vs-glow-ai 1.6s ease-in-out infinite;
+            border-color: #722E9A !important;
+        }
+        @keyframes vs-glow-player {
+            0%,100% { box-shadow: 0 0 8px #FFD93D, 0 0 22px #FFD93D88; filter: brightness(1.1); }
+            50%      { box-shadow: 0 0 24px #FFD93D, 0 0 60px #FFD93Daa; filter: brightness(1.7); }
+        }
+        @keyframes vs-glow-ai {
+            0%,100% { box-shadow: 0 0 8px #722E9A, 0 0 22px #722E9A88; filter: brightness(1.1); }
+            50%      { box-shadow: 0 0 24px #722E9A, 0 0 60px #722E9Aaa; filter: brightness(1.7); }
         }
         .vs-particle {
             position: fixed;
@@ -1933,7 +1941,7 @@ function showConfirmDialog(message, onYes, onNo, yesText, noText) {
     <div id="vs-eyebrow">PROTOCOLO COMPILADO</div>
     <div id="vs-glitch" data-text="¿QUÉ ERES?">¿QUÉ ERES?</div>
     <div id="vs-cards"></div>
-    <div id="vs-title">COMPILATION COMPLETE</div>
+    <div id="vs-title">Compilación completada</div>
     <div id="vs-divider"></div>
     <div id="vs-subtitle">—</div>
     <div id="vs-actions">

@@ -3722,9 +3722,10 @@ function showGameOver(playerWon) {
     const screen = document.getElementById('victory-screen');
     if (!screen) return;
 
-    const accentColor = playerWon ? '#00d4ff' : '#ef4444';
-    const titleText   = playerWon ? 'COMPILATION COMPLETE' : 'PROCESS TERMINATED';
-    const eyebrowText = playerWon ? 'PROTOCOLO COMPILADO' : 'SECUENCIA INTERRUMPIDA';
+    const accentColor  = playerWon ? '#FFD93D' : '#722E9A';
+    const glowClass    = playerWon ? 'vs-glow-player' : 'vs-glow-ai';
+    const titleText    = playerWon ? 'Compilación completada' : 'Proceso terminado';
+    const eyebrowText  = playerWon ? 'PROTOCOLO COMPILADO' : 'SECUENCIA INTERRUMPIDA';
     const subtitleText = playerWon
         ? 'Compilaste los 3 protocolos. La realidad ha sido reescrita.'
         : 'La IA compiló sus 3 protocolos primero. Inténtalo de nuevo.';
@@ -3760,12 +3761,11 @@ function showGameOver(playerWon) {
     // Set colors
     if (vsTitle) vsTitle.style.color = accentColor;
     if (vsDivider) vsDivider.style.color = accentColor;
-    if (vsSubtitle) vsSubtitle.style.color = playerWon ? '#3a8a9a' : '#7a3a3a';
+    if (vsSubtitle) vsSubtitle.style.color = playerWon ? '#8a7420' : '#5a2a7a';
 
-    // Activate a card: glow animation + particle burst
-    function activateCard(card, color) {
-        card.style.setProperty('--vs-glow', color);
-        card.classList.add('vs-glow');
+    // Activate a card: pulse glow + particle burst
+    function activateCard(card) {
+        card.classList.add(glowClass);
         setTimeout(() => {
             const rect = card.getBoundingClientRect();
             const cx = rect.left + rect.width / 2;
@@ -3773,7 +3773,7 @@ function showGameOver(playerWon) {
             for (let i = 0; i < 11; i++) {
                 const p = document.createElement('div');
                 p.className = 'vs-particle';
-                p.style.cssText = `background:${color};left:${cx}px;top:${cy}px;margin:-2px 0 0 -2px;`;
+                p.style.cssText = `background:${accentColor};left:${cx}px;top:${cy}px;margin:-2px 0 0 -2px;`;
                 screen.appendChild(p);
                 const angle = (i / 11) * Math.PI * 2;
                 const dist = 55 + Math.random() * 55;
@@ -3841,8 +3841,7 @@ function showGameOver(playerWon) {
         if (!vsCards) return;
         const cards = vsCards.querySelectorAll('.vs-proto-card');
         cards.forEach((card, i) => {
-            const color = card.style.borderColor || accentColor;
-            setTimeout(() => activateCard(card, color), i * 380);
+            setTimeout(() => activateCard(card), i * 380);
         });
     }, 3400);
     // Title scrambles in after last activation settles
