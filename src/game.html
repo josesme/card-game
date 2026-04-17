@@ -1349,52 +1349,62 @@
         /* Protocol cards */
         #vs-cards {
             display: flex;
-            gap: 28px;
+            gap: 24px;
             align-items: center;
             justify-content: center;
             margin-bottom: 44px;
         }
-        .vs-card {
-            width: 88px;
-            height: 124px;
-            border: 1px solid rgba(0, 212, 255, 0.25);
-            background: #04090d;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transform: translateY(24px);
+        .vs-proto-card {
+            position: relative;
+            width: 110px;
+            height: 154px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.18);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+            transform: translateY(28px);
             opacity: 0;
             transition: transform 0.65s cubic-bezier(0.22,1,0.36,1), opacity 0.65s ease;
-            position: relative;
         }
-        .vs-card::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border: 1px solid rgba(0,212,255,0.08);
-            pointer-events: none;
-        }
-        .vs-card.vs-card-in {
+        .vs-proto-card.vs-card-in {
             transform: translateY(0);
             opacity: 1;
         }
-        .vs-card-line {
-            font-family: var(--ui-font);
-            font-size: 8px;
-            letter-spacing: 3px;
-            color: #00d4ff;
-            text-transform: uppercase;
-            text-align: center;
-            padding: 0 6px;
+        .vs-proto-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center top;
+            display: block;
         }
-        .vs-card-label {
-            font-family: var(--ui-font);
-            font-size: 7px;
-            letter-spacing: 1px;
-            color: #2a4050;
-            text-align: center;
+        .vs-proto-title {
+            position: absolute;
+            top: 5%;
+            left: 3%;
+            width: 58%;
+            background:
+                repeating-linear-gradient(180deg,
+                    rgba(0,0,0,0.30) 0px, rgba(0,0,0,0.30) 1px,
+                    transparent 1px, transparent 3px),
+                #202225;
+            border: 1px solid rgba(255,255,255,0.25);
+            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%);
+            padding: 3px 5px;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+        }
+        .vs-proto-title span {
+            font-family: 'DoctorGlitch', sans-serif;
+            font-size: 11px;
+            font-weight: normal;
+            color: #fff;
+            -webkit-text-stroke: 0.4px #202225;
+            text-transform: uppercase;
+            white-space: nowrap;
+            transform: scaleX(0.82);
+            transform-origin: left center;
+            display: block;
         }
 
         /* Glitch text */
