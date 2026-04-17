@@ -1384,7 +1384,7 @@ function checkCompilePhase(who) {
 function actionPhase(who) {
     gameState.phase = 'action';
     console.log(`🎮 ACTION PHASE for ${who} - game is now playable`);
-    updateStatus(who === 'player' ? 'Juega una carta o Recarga' : 'IA eligiendo acción...');
+    updateStatus(who === 'player' ? 'Juega una carta o Actualiza' : 'IA eligiendo acción...');
     updateTurnVisuals();
 
     if (who === 'ai') {
@@ -3137,6 +3137,7 @@ ui.btnRefresh.onclick = () => {
     if (drawn > 0) window._animPendingHand = (window._animPendingHand || 0) + drawn;
     gameState.refreshedThisTurn = 'player';
     console.log('🔄 Hand refreshed, ending turn');
+    logEvent(`Actualiza mazo (roba ${drawn})`, { isAI: false });
     endTurn('player');
 }
 
@@ -3150,7 +3151,7 @@ function playAITurn() {
     if (gameState.ai.hand.length === 0) {
         while(gameState.ai.hand.length < 5) drawCard('ai');
         console.log('🤖 IA: Recarga (mano vacía)');
-        logEvent("IA recarga su mazo", { isAI: true });
+        logEvent("IA actualiza su mazo", { isAI: true });
         endTurn('ai');
         return;
     }
@@ -3186,7 +3187,7 @@ function playAITurn() {
         if (possibleMoves.length === 0) {
             // Sin movimientos disponibles, recargar
             while(gameState.ai.hand.length < 5) drawCard('ai');
-            logEvent("IA recarga su mazo (sin jugadas posibles)", { isAI: true });
+            logEvent("IA actualiza su mazo (sin jugadas)", { isAI: true });
             endTurn('ai');
             return;
         }
@@ -3364,7 +3365,7 @@ function executeAIMove(move) {
             drawCard('ai');
         }
         gameState.refreshedThisTurn = 'ai';
-        logEvent('IA recarga su mazo', { isAI: true });
+        logEvent('IA actualiza su mazo', { isAI: true });
         return; // endTurn se llama en el caller (playAITurn)
     }
 
