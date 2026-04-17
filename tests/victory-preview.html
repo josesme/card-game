@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Victory Preview — COMPILE</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#000; overflow:hidden; font-family:'Courier New',monospace; }
+
+/* ── Selector ── */
+#selector {
+  position:fixed; top:0; left:0; right:0; z-index:9999;
+  display:flex; align-items:center; gap:8px;
+  padding:10px 16px;
+  background:rgba(0,0,0,0.95);
+  border-bottom:1px solid #1a1a1a;
+}
+#selector span { color:#333; font-size:10px; letter-spacing:3px; margin-right:4px; }
+#selector button {
+  padding:5px 16px; background:transparent;
+  border:1px solid #2a2a2a; color:#555;
+  font-family:'Courier New',monospace; font-size:10px;
+  letter-spacing:2px; cursor:pointer; transition:all 0.2s;
+}
+#selector button:hover { border-color:#00d4ff; color:#00d4ff; }
+#selector button.active { border-color:#FFD93D; color:#FFD93D; }
+#selector .reset { margin-left:auto; }
+
+/* ── Stage ── */
+#stage {
+  position:fixed; inset:40px 0 0 0;
+  background:#000;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  overflow:hidden;
+}
+
+/* ── Shared elements ── */
+#vs-eyebrow {
+  font-size:9px; letter-spacing:6px; color:#1e3040;
+  margin-bottom:20px; opacity:0; position:relative; z-index:10;
+  text-transform:uppercase;
+}
+#vs-cards {
+  display:flex; gap:24px; margin-bottom:44px;
+  position:relative; z-index:10;
+}
+.vs-card {
+  width:110px; height:154px; border-radius:8px;
+  overflow:hidden; border:2px solid rgba(255,255,255,0.15);
+  box-shadow:0 10px 40px rgba(0,0,0,0.8);
+  position:relative; opacity:0;
+}
+.vs-card img { width:100%; height:100%; object-fit:cover; object-position:center top; display:block; }
+.vs-card-label {
+  position:absolute; top:5%; left:3%; width:62%;
+  background:rgba(20,24,32,0.88);
+  border:1px solid rgba(255,255,255,0.22);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%);
+  padding:3px 5px; font-size:9px; color:#fff; letter-spacing:1px; text-transform:uppercase;
+}
+#vs-title {
+  font-size:clamp(1.4em,3.5vw,2.6em); font-weight:700;
+  letter-spacing:8px; color:#00d4ff;
+  opacity:0; position:relative; z-index:10; text-align:center;
+}
+#vs-divider {
+  width:0; height:1px; background:#00d4ff;
+  margin:20px auto; transition:width 0.6s ease;
+  position:relative; z-index:10;
+}
+#vs-subtitle {
+  font-size:11px; color:#3a8a9a; letter-spacing:2px;
+  margin-top:8px; opacity:0; position:relative; z-index:10; text-align:center;
+}
+
+/* ── Glow classes ── */
+.glow-player { animation:glow-p 3s ease-in-out infinite; border-color:#FFD93D!important; }
+@keyframes glow-p {
+  0%,100%{ box-shadow:0 0 8px #FFD93D,0 0 22px rgba(255,217,61,0.4); }
+  50%    { box-shadow:0 0 24px #FFD93D,0 0 60px rgba(255,217,61,0.6); }
+}
+
+/* ── Option B: pulse orb ── */
+#vs-pulse {
+  position:fixed; left:50%; top:50%;
+  width:50vw; height:50vw;
+  margin:-25vw 0 0 -25vw;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(255,217,61,0.55) 0%, rgba(255,217,61,0.1) 50%, transparent 70%);
+  opacity:0; transform:scale(0);
+  pointer-events:none; z-index:5;
+}
+
+/* ── Option C: grid ── */
+#vs-grid {
+  position:fixed; inset:0;
+  pointer-events:none; z-index:3; opacity:0;
+  overflow:hidden;
+}
+#vs-grid-floor {
+  position:absolute; left:-50%; right:-50%; bottom:0;
+  height:70%; transform-origin:50% 100%;
+  transform:perspective(500px) rotateX(55deg);
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(0,212,255,0.1) 40px),
+    repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(0,212,255,0.1) 40px);
+}
+#vs-grid-fade {
+  position:absolute; bottom:0; left:0; right:0; height:35%;
+  background:linear-gradient(to top, #000, transparent);
+}
+
+/* ── Option D: terminal ── */
+#vs-terminal {
+  font-size:12px; color:#00d4ff; letter-spacing:1px; line-height:2;
+  text-align:left; width:min(460px, 85vw);
+  position:relative; z-index:10; opacity:0; margin-bottom:28px;
+}
+.t-line { min-height:1.5em; }
+.cursor {
+  display:inline-block; width:7px; height:13px;
+  background:currentColor; vertical-align:middle;
+  animation:blink 0.65s step-end infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+/* ── Option A: beams ── */
+.vs-beam {
+  position:fixed; pointer-events:none; z-index:5;
+  width:2px; margin-left:-1px;
+  transform-origin:top center;
+}
+</style>
+</head>
+<body>
+
+<div id="selector">
+  <span>VICTORY /</span>
+  <button onclick="run('A')">A — CONVERGENCIA</button>
+  <button onclick="run('B')">B — EL PULSO</button>
+  <button onclick="run('C')">C — GRID AWAKENING</button>
+  <button onclick="run('D')">D — ESCRITURA INEVITABLE</button>
+  <button onclick="reset()" class="reset">↺ RESET</button>
+</div>
+
+<div id="stage">
+  <div id="vs-grid"><div id="vs-grid-floor"></div><div id="vs-grid-fade"></div></div>
+  <div id="vs-pulse"></div>
+  <div id="vs-eyebrow">PROTOCOLO COMPILADO</div>
+  <div id="vs-terminal"></div>
+  <div id="vs-cards">
+    <div class="vs-card"><img src="../images/cards/Main_1/fire_1.jpg" alt="Fuego"><div class="vs-card-label">Fuego</div></div>
+    <div class="vs-card"><img src="../images/cards/Main_1/water_1.jpg" alt="Agua"><div class="vs-card-label">Agua</div></div>
+    <div class="vs-card"><img src="../images/cards/Main_1/death_1.jpg" alt="Muerte"><div class="vs-card-label">Muerte</div></div>
+  </div>
+  <div id="vs-title">Compilación completada</div>
+  <div id="vs-divider"></div>
+  <div id="vs-subtitle">Compilaste los 3 protocolos. La realidad ha sido reescrita.</div>
+</div>
+
+<script src="../src/gsap.min.js"></script>
+<script src="../src/ScrambleText.min.js"></script>
+<script>
+if (typeof ScrambleTextPlugin !== 'undefined') gsap.registerPlugin(ScrambleTextPlugin);
+
+const stage    = document.getElementById('stage');
+const cards    = document.querySelectorAll('.vs-card');
+const titleEl  = document.getElementById('vs-title');
+const dividerEl= document.getElementById('vs-divider');
+const subEl    = document.getElementById('vs-subtitle');
+const eyeEl    = document.getElementById('vs-eyebrow');
+const termEl   = document.getElementById('vs-terminal');
+const pulseEl  = document.getElementById('vs-pulse');
+const gridEl   = document.getElementById('vs-grid');
+
+let activeTL = null;
+let intervals = [];
+let dynEls = [];
+
+function scrTxt(el, text) {
+  if (typeof ScrambleTextPlugin !== 'undefined') {
+    gsap.to(el, { duration:1.2, scrambleText:{ text, chars:'upperCase' } });
+  } else { el.textContent = text; }
+}
+
+function reset() {
+  if (activeTL) { activeTL.kill(); activeTL = null; }
+  intervals.forEach(clearInterval); intervals = [];
+  dynEls.forEach(el => el.remove()); dynEls = [];
+  document.querySelectorAll('#selector button').forEach(b => b.classList.remove('active'));
+  gsap.killTweensOf([...cards, titleEl, subEl, eyeEl, termEl, pulseEl, gridEl, dividerEl]);
+  gsap.set([...cards, titleEl, subEl, eyeEl, termEl], { opacity:0, clearProps:'transform,filter,clipPath' });
+  gsap.set(pulseEl, { scale:0, opacity:0 });
+  gsap.set(gridEl, { opacity:0, scale:1 });
+  gsap.set(dividerEl, { width:0 });
+  cards.forEach(c => { c.classList.remove('glow-player'); c.style.cssText='opacity:0'; });
+  titleEl.textContent = 'Compilación completada';
+  termEl.innerHTML = '';
+}
+
+function run(opt) {
+  reset();
+  document.querySelector(`[onclick="run('${opt}')"]`).classList.add('active');
+  setTimeout({ A:runA, B:runB, C:runC, D:runD }[opt], 120);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   A — CONVERGENCIA
+   Las cartas emiten destellos que viajan hacia un punto central y producen
+   un flash que revela el título.
+───────────────────────────────────────────────────────────────────────────── */
+function runA() {
+  const tl = gsap.timeline(); activeTL = tl;
+
+  // Eyebrow + cards entran
+  tl.to(eyeEl, { opacity:1, duration:0.6, ease:'power2.out' })
+    .to(cards, { opacity:1, y:0, stagger:0.2, duration:0.55, ease:'power2.out' }, '-=0.3')
+    .add(() => cards.forEach(c => c.classList.add('glow-player')), '+=0.4');
+
+  // Partículas de luz suben desde cada carta hacia el centro
+  tl.add(() => {
+    const stageR = stage.getBoundingClientRect();
+    const destX  = stageR.left + stageR.width  / 2;
+    const destY  = stageR.top  + stageR.height * 0.28;
+
+    cards.forEach((card, i) => {
+      const r  = card.getBoundingClientRect();
+      const sx = r.left + r.width  / 2;
+      const sy = r.top;
+
+      setTimeout(() => {
+        // 5 orbes por carta, con ruido
+        for (let k = 0; k < 5; k++) {
+          const orb = document.createElement('div');
+          const jitter = (Math.random() - 0.5) * 24;
+          orb.style.cssText = `
+            position:fixed; width:6px; height:6px; border-radius:50%;
+            background:#FFD93D; box-shadow:0 0 8px #FFD93D, 0 0 16px #FFD93Daa;
+            left:${sx - 3}px; top:${sy - 3}px;
+            pointer-events:none; z-index:20; opacity:0.9;
+          `;
+          stage.appendChild(orb); dynEls.push(orb);
+          const delay = k * 60;
+          setTimeout(() => {
+            gsap.to(orb, {
+              left: destX - 3 + jitter, top: destY - 3,
+              duration: 0.55, ease:'power2.in',
+              onComplete: () => { orb.style.opacity='0'; setTimeout(()=>orb.remove(),200); }
+            });
+          }, delay);
+        }
+      }, i * 140);
+    });
+  }, '+=0.3');
+
+  // Flash + título
+  tl.add(() => {
+    const flash = document.createElement('div');
+    flash.style.cssText = 'position:fixed;inset:0;background:#FFD93D;opacity:0;pointer-events:none;z-index:30;';
+    stage.appendChild(flash); dynEls.push(flash);
+    gsap.timeline()
+      .to(flash, { opacity:0.65, duration:0.12, ease:'power2.out' })
+      .to(flash, { opacity:0,   duration:0.4,  ease:'power2.in' });
+
+    // Anillo de onda desde el centro
+    const ring = document.createElement('div');
+    ring.style.cssText = `
+      position:fixed; border-radius:50%;
+      border:2px solid #FFD93D; opacity:0.9;
+      width:20px; height:20px;
+      left:${stage.getBoundingClientRect().left + stage.getBoundingClientRect().width/2 - 10}px;
+      top:${stage.getBoundingClientRect().top + stage.getBoundingClientRect().height*0.28 - 10}px;
+      pointer-events:none; z-index:25;
+    `;
+    stage.appendChild(ring); dynEls.push(ring);
+    gsap.to(ring, { width:400, height:400, marginLeft:-190, marginTop:-190,
+      opacity:0, duration:1.0, ease:'power2.out' });
+  }, '+=0.85');
+
+  // Título y resto
+  tl.to(titleEl, { opacity:1, duration:0.1 }, '+=0.2')
+    .add(() => scrTxt(titleEl, 'Compilación completada'))
+    .to(dividerEl, { width:240, duration:0.6 }, '+=0.9')
+    .to(subEl,     { opacity:1, duration:0.6 }, '+=0.1');
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   B — EL PULSO
+   Una sola onda de choque radial se expande desde el centro. Las cartas y el
+   texto emergen en el silencio que deja a su paso.
+───────────────────────────────────────────────────────────────────────────── */
+function runB() {
+  const tl = gsap.timeline(); activeTL = tl;
+
+  gsap.set(pulseEl, { scale:0, opacity:0 });
+
+  // La onda se expande y se disuelve
+  tl.to(pulseEl, { scale:0.15, opacity:1, duration:0.18, ease:'power3.out' })
+    .to(pulseEl, { scale:5,    opacity:0, duration:1.8,  ease:'power2.out' });
+
+  // Dos anillos concéntricos desfasados
+  tl.add(() => {
+    [0, 300].forEach(offset => {
+      const r = document.createElement('div');
+      r.style.cssText = `
+        position:fixed; border-radius:50%;
+        border:1.5px solid rgba(255,217,61,0.6);
+        left:50%; top:50%; transform:translate(-50%,-50%) scale(0);
+        width:50vw; height:50vw;
+        pointer-events:none; z-index:6;
+      `;
+      stage.appendChild(r); dynEls.push(r);
+      setTimeout(() => {
+        gsap.to(r, { scale:6, opacity:0, duration:2.2, ease:'power2.out' });
+      }, offset);
+    });
+  }, 0);
+
+  // Eyebrow
+  tl.to(eyeEl, { opacity:1, duration:0.5 }, 0.5);
+
+  // Cartas emergen desde abajo durante la onda
+  tl.fromTo(cards,
+    { opacity:0, y:50, filter:'blur(4px)' },
+    { opacity:1, y:0,  filter:'blur(0px)', stagger:0.18, duration:0.7, ease:'power2.out' }, 0.8)
+    .add(() => cards.forEach(c => c.classList.add('glow-player')), 1.4);
+
+  // Título sube con peso
+  tl.fromTo(titleEl,
+    { opacity:0, y:32 },
+    { opacity:1, y:0, duration:0.7, ease:'power3.out' }, 2.0)
+    .add(() => scrTxt(titleEl, 'Compilación completada'), 2.0)
+    .to(dividerEl, { width:240, duration:0.6, ease:'power2.out' }, 3.1)
+    .to(subEl,     { opacity:1, duration:0.6 }, 3.3);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   C — GRID AWAKENING
+   Una cuadrícula de perspectiva se forma bajo las cartas. Las cartas se
+   revelan con un scan de luz. La cuadrícula se desintegra. El título emerge.
+───────────────────────────────────────────────────────────────────────────── */
+function runC() {
+  const tl = gsap.timeline(); activeTL = tl;
+
+  // Grid aparece
+  tl.to(gridEl, { opacity:1, duration:1.0, ease:'power2.out' });
+
+  // Eyebrow
+  tl.to(eyeEl, { opacity:1, duration:0.4 }, 0.4);
+
+  // Cartas: scan top → bottom con línea de luz
+  tl.add(() => {
+    cards.forEach((card, i) => {
+      setTimeout(() => {
+        gsap.set(card, { opacity:1, clipPath:'inset(0 0 100% 0)' });
+        gsap.to(card, { clipPath:'inset(0 0 0% 0)', duration:0.65, ease:'power2.inOut' });
+
+        const scan = document.createElement('div');
+        scan.style.cssText = `
+          position:absolute; left:0; right:0; top:0; height:2px;
+          background:linear-gradient(to right,transparent,#00d4ff,transparent);
+          box-shadow:0 0 12px #00d4ff, 0 0 24px rgba(0,212,255,0.4);
+          pointer-events:none; z-index:30;
+        `;
+        card.style.position = 'relative';
+        card.appendChild(scan); dynEls.push(scan);
+        gsap.to(scan, { top:'100%', duration:0.65, ease:'power2.inOut',
+          onComplete:() => { scan.remove(); card.classList.add('glow-player'); }
+        });
+      }, i * 280);
+    });
+  }, 0.8);
+
+  // Grid se desintegra
+  tl.to(gridEl, {
+    opacity:0, scaleY:0.4, transformOrigin:'50% 100%',
+    duration:0.9, ease:'power3.in'
+  }, 2.4);
+
+  // Título
+  tl.to(titleEl, { opacity:1, duration:0.1 }, 2.8)
+    .add(() => scrTxt(titleEl, 'Compilación completada'), 2.8)
+    .to(dividerEl, { width:240, duration:0.6 }, 3.8)
+    .to(subEl,     { opacity:1, duration:0.6 }, 4.0);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   D — ESCRITURA INEVITABLE
+   El sistema registra lo que acaba de ocurrir. Sin efectos. Solo texto.
+   Frío, preciso, perturbador.
+───────────────────────────────────────────────────────────────────────────── */
+function runD() {
+  gsap.set(termEl, { opacity:1 });
+
+  const lines = [
+    { t:'> verificando integridad de protocolos...', color:'#2a5a3a', ms:0 },
+    { t:'> fuego_1.prt    [COMPILADO]',              color:'#3a7a4a', ms:900 },
+    { t:'> agua_1.prt     [COMPILADO]',              color:'#3a7a4a', ms:1600 },
+    { t:'> muerte_1.prt   [COMPILADO]',              color:'#3a7a4a', ms:2300 },
+    { t:'> singularidad_index: 72.4%  ↑',            color:'#FFD93D', ms:3200, bold:true },
+    { t:'> compilación completada',                  color:'#00d4ff', ms:4100, bold:true },
+  ];
+
+  lines.forEach(({ t, color, ms, bold }) => {
+    const iv = setTimeout(() => {
+      const line = document.createElement('div');
+      line.className = 't-line';
+      line.style.cssText = `color:${color};${bold?'font-weight:700;font-size:13px;':''}`;
+      const cursor = document.createElement('span');
+      cursor.className = 'cursor';
+      cursor.style.color = color;
+      line.appendChild(cursor);
+      termEl.appendChild(line);
+
+      let idx = 0;
+      const iv2 = setInterval(() => {
+        if (idx >= t.length) { clearInterval(iv2); cursor.remove(); return; }
+        line.textContent = t.slice(0, ++idx);
+        line.appendChild(cursor);
+      }, 22);
+      intervals.push(iv2);
+    }, ms);
+    intervals.push(iv);
+  });
+
+  // Cartas aparecen cuando el terminal termina
+  setTimeout(() => {
+    gsap.to(eyeEl, { opacity:1, duration:0.5 });
+    gsap.fromTo(cards,
+      { opacity:0, y:20 },
+      { opacity:1, y:0, stagger:0.18, duration:0.55, ease:'power2.out',
+        onComplete:() => cards.forEach(c => c.classList.add('glow-player')) });
+  }, 5000);
+
+  // Título — el sistema lo escribe último
+  setTimeout(() => {
+    gsap.to(titleEl, { opacity:1, duration:0.1 });
+    scrTxt(titleEl, 'Compilación completada');
+    gsap.to(dividerEl, { width:240, duration:0.6, delay:1.0 });
+    gsap.to(subEl,     { opacity:1, duration:0.6, delay:1.4 });
+  }, 6200);
+}
+</script>
+</body>
+</html>
