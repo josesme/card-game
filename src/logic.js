@@ -3723,7 +3723,6 @@ function showGameOver(playerWon) {
     if (!screen) return;
 
     const accentColor = playerWon ? '#FFD93D' : '#722E9A';
-    const glowClass   = playerWon ? 'vs-glow-player' : 'vs-glow-ai';
     const titleFirst  = playerWon ? 'Compilación completa' : 'Proceso terminado';
     const titleFinal  = playerWon ? 'La realidad ha sido reescrita' : 'Proceso terminado';
 
@@ -3732,7 +3731,6 @@ function showGameOver(playerWon) {
     const vsTitle    = document.getElementById('vs-title');
     const vsDivider  = document.getElementById('vs-divider');
     const vsActions  = document.getElementById('vs-actions');
-    const vsSkip     = document.getElementById('vs-skip');
 
     // Build protocol cards
     const winner    = playerWon ? 'player' : 'ai';
@@ -3778,10 +3776,9 @@ function showGameOver(playerWon) {
     const TERM_DONE = cumMs;
 
     // ── Helpers ───────────────────────────────────────────────────────────────
-    const timers  = [];
-    const dynEls  = [];
-    function delay(fn, ms)    { timers.push(setTimeout(fn, ms)); }
-    function clearAllTimers() { timers.forEach(clearTimeout); }
+    const timers = [];
+    const dynEls = [];
+    function delay(fn, ms) { timers.push(setTimeout(fn, ms)); }
 
     function launchProgress(lineEl, color) {
         const valSpan = document.createElement('span');
@@ -3824,38 +3821,9 @@ function showGameOver(playerWon) {
         }
     }
 
-    // ── Skip / reveal final ───────────────────────────────────────────────────
-    function revealFinal() {
-        dynEls.forEach(el => el.remove());
-        if (vsTerminal) vsTerminal.style.opacity = '0';
-        if (vsCards) vsCards.querySelectorAll('.vs-proto-card').forEach(c => {
-            c.classList.add('vs-card-in');
-            c.classList.add(glowClass);
-        });
-        if (vsTitle) {
-            vsTitle.style.transition = 'none';
-            vsTitle.style.transform  = 'translateY(0)';
-            vsTitle.style.opacity    = '1';
-            vsTitle.textContent      = titleFinal;
-        }
-        if (vsDivider) vsDivider.style.width  = '240px';
-        if (vsActions) vsActions.style.opacity = '1';
-        if (vsSkip)    vsSkip.classList.remove('vs-visible');
-        screen.removeEventListener('click', onSkip);
-        document.removeEventListener('keydown', onKeySkip);
-    }
-
-    let skipped = false;
-    function onSkip() {
-        if (skipped) return; skipped = true;
-        clearAllTimers(); revealFinal();
-    }
-    function onKeySkip(e) { if (e.key === 'Escape' || e.key === ' ') onSkip(); }
-
     // ── Show screen ───────────────────────────────────────────────────────────
     screen.classList.remove('hidden');
     requestAnimationFrame(() => screen.classList.add('vs-active'));
-    delay(() => { if (vsSkip) vsSkip.classList.add('vs-visible'); }, 400);
 
     // ── Phase 1: terminal typing ──────────────────────────────────────────────
     const T_TERM = 700;
@@ -3996,9 +3964,6 @@ function showGameOver(playerWon) {
             }
         });
     }, T_FLOAT);
-
-    screen.addEventListener('click', onSkip);
-    document.addEventListener('keydown', onKeySkip);
 }
 
 // Set restart button only if it exists (game mode)

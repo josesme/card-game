@@ -1348,20 +1348,6 @@
             opacity: 0;
             transition: opacity 0.5s ease;
         }
-        #vs-skip {
-            position: fixed;
-            bottom: 28px;
-            right: 32px;
-            font-family: var(--ui-font);
-            font-size: 9px;
-            letter-spacing: 2px;
-            color: #2a3a44;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.4s ease;
-        }
-        #vs-skip.vs-visible { opacity: 1; }
-
         /* Protocol cards — portrait */
         #vs-cards {
             display: flex;
@@ -1424,23 +1410,6 @@
             transform-origin: left center;
             display: block;
         }
-        .vs-proto-card.vs-glow-player {
-            animation: vs-glow-player 3s ease-in-out infinite;
-            border-color: #FFD93D !important;
-        }
-        .vs-proto-card.vs-glow-ai {
-            animation: vs-glow-ai 3s ease-in-out infinite;
-            border-color: #722E9A !important;
-        }
-        @keyframes vs-glow-player {
-            0%,100% { box-shadow: 0 0 8px #FFD93D, 0 0 22px #FFD93D88; filter: brightness(1.1); }
-            50%      { box-shadow: 0 0 24px #FFD93D, 0 0 60px #FFD93Daa; filter: brightness(1.7); }
-        }
-        @keyframes vs-glow-ai {
-            0%,100% { box-shadow: 0 0 8px #722E9A, 0 0 22px #722E9A88; filter: brightness(1.1); }
-            50%      { box-shadow: 0 0 24px #722E9A, 0 0 60px #722E9Aaa; filter: brightness(1.7); }
-        }
-
         /* Card in overlay */
         .effect-card {
             width: 180px;
@@ -1896,7 +1865,6 @@ function showConfirmDialog(message, onYes, onNo, yesText, noText) {
         <button class="ui-btn" onclick="location.href='/src/draft.html'">NUEVO DRAFT</button>
         <button class="ui-btn ui-btn--purple" onclick="location.href='/src/index.html'">PANTALLA PRINCIPAL</button>
     </div>
-    <div id="vs-skip">CLICK PARA CONTINUAR</div>
 </div>
 
 <!-- LOG OVERLAY (slide-in panel) -->
