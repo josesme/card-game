@@ -37,16 +37,16 @@ body { background:#000; overflow:hidden; font-family:'Courier New',monospace; }
 
 /* ── Shared elements ── */
 #vs-eyebrow {
-  font-size:9px; letter-spacing:6px; color:#1e3040;
+  font-size:10px; letter-spacing:6px; color:#1e3040;
   margin-bottom:20px; opacity:0; position:relative; z-index:10;
   text-transform:uppercase;
 }
 #vs-cards {
-  display:flex; gap:24px; margin-bottom:44px;
+  display:flex; gap:26px; margin-bottom:44px;
   position:relative; z-index:10;
 }
 .vs-card {
-  width:110px; height:154px; border-radius:8px;
+  width:121px; height:169px; border-radius:8px;
   overflow:hidden; border:2px solid rgba(255,255,255,0.15);
   box-shadow:0 10px 40px rgba(0,0,0,0.8);
   position:relative; opacity:0;
@@ -57,10 +57,10 @@ body { background:#000; overflow:hidden; font-family:'Courier New',monospace; }
   background:rgba(20,24,32,0.88);
   border:1px solid rgba(255,255,255,0.22);
   clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%);
-  padding:3px 5px; font-size:9px; color:#fff; letter-spacing:1px; text-transform:uppercase;
+  padding:3px 5px; font-size:10px; color:#fff; letter-spacing:1px; text-transform:uppercase;
 }
 #vs-title {
-  font-size:clamp(1.4em,3.5vw,2.6em); font-weight:700;
+  font-size:clamp(1.54em,3.85vw,2.86em); font-weight:700;
   letter-spacing:8px; color:#00d4ff;
   opacity:0; position:relative; z-index:10; text-align:center;
 }
@@ -70,7 +70,7 @@ body { background:#000; overflow:hidden; font-family:'Courier New',monospace; }
   position:relative; z-index:10;
 }
 #vs-subtitle {
-  font-size:11px; color:#3a8a9a; letter-spacing:2px;
+  font-size:12px; color:#3a8a9a; letter-spacing:2px;
   margin-top:8px; opacity:0; position:relative; z-index:10; text-align:center;
 }
 
@@ -113,7 +113,7 @@ body { background:#000; overflow:hidden; font-family:'Courier New',monospace; }
 
 /* ── Option D: terminal ── */
 #vs-terminal {
-  font-size:12px; color:#00d4ff; letter-spacing:1px; line-height:2;
+  font-size:13px; color:#00d4ff; letter-spacing:1px; line-height:2;
   text-align:left; width:min(460px, 85vw);
   position:relative; z-index:10; opacity:0; margin-bottom:28px;
 }
@@ -475,21 +475,25 @@ function runD() {
    F — DEFINITIVA (Escritura Inevitable + Convergencia)
 ───────────────────────────────────────────────────────────────────────────── */
 function runFinal() {
-  const accentColor = '#FFD93D';
-  const glowClass   = 'glow-final-p';
-  const titleFirst  = 'Compilación completa';
-  const titleFinal  = 'La realidad ha sido reescrita';
-  const protos      = ['Fuego', 'Agua', 'Muerte'];
+  const accentColor  = '#FFD93D';
+  const glowClass    = 'glow-final-p';
+  const titleFirst   = 'Compilación completa';
+  const titleFinal   = 'La realidad ha sido reescrita';
+  const protos       = ['Fuego', 'Agua', 'Muerte'];
 
-  const CHAR_MS  = 16;
-  const LINE_GAP = 600;  // más espacio entre líneas de terminal
+  const CHAR_MS      = 16;
+  const LINE_GAP     = 600;
+  const PROGRESS_MS  = 2600;  // duración de la barra de progreso
+  const PROGRESS_VAL = 72.4;
+  const singPrefix   = '> singularidad_index: ';
+
   const termLines = [
     { t:'> verificando_protocolos...',         color:'#2a5a3a' },
     ...protos.map(p => ({
       t:`> ${p.toLowerCase().replace(/\s/g,'_')}.prt    [compilado]`,
       color:'#3a7a4a'
     })),
-    { t:'> singularidad_index: 72.4%  ↑',      color: accentColor, bold:true },
+    { t: singPrefix, color: accentColor, bold:true, progress:true },
   ];
 
   let cumMs = 0;
@@ -498,52 +502,92 @@ function runFinal() {
     cumMs += line.t.length * CHAR_MS + (i < termLines.length - 1 ? LINE_GAP : 0);
     return { ...line, startAt };
   });
-  const TERM_DONE = cumMs;
+  const TERM_DONE = cumMs;  // tiempo hasta terminar de tipear (sin contar barra)
 
-  const timers  = [];
-  const typeIvs = [];
+  const timers = [];
   function delay(fn, ms) { timers.push(setTimeout(fn, ms)); }
+
+  // Barra de progreso + contador animado (bloquea las siguientes fases)
+  function launchProgress(lineEl, color) {
+    const valSpan = document.createElement('span');
+    valSpan.textContent = '0.0%';
+    valSpan.style.color = color;
+    lineEl.appendChild(valSpan);
+
+    const barLine  = document.createElement('div');
+    barLine.className = 'vs-t-line';
+    const barTrack = document.createElement('span');
+    barTrack.style.cssText = `display:inline-block;width:160px;height:2px;
+      background:rgba(255,217,61,0.18);vertical-align:middle;margin-right:8px;position:relative;`;
+    const barFill  = document.createElement('span');
+    barFill.style.cssText  = `display:block;height:100%;width:0px;
+      background:${color};box-shadow:0 0 6px ${color};`;
+    barTrack.appendChild(barFill);
+    barLine.appendChild(barTrack);
+    termEl.appendChild(barLine);
+
+    const obj = { val:0, w:0 };
+    gsap.to(obj, {
+      val: PROGRESS_VAL, w: 160,
+      duration: PROGRESS_MS / 1000,
+      ease: 'power1.inOut',
+      onUpdate: () => {
+        valSpan.textContent  = obj.val.toFixed(1) + '%';
+        barFill.style.width  = obj.w + 'px';
+      },
+      onComplete: () => {
+        const arrow = document.createElement('span');
+        arrow.textContent = '  ↑';
+        arrow.style.color = color;
+        lineEl.appendChild(arrow);
+      }
+    });
+  }
 
   // — Terminal —
   const T_TERM = 600;
   delay(() => {
     termEl.style.opacity = '1';
-    lineSchedule.forEach(({ t, color, bold, startAt }) => {
-      const lt = setTimeout(() => {
-        const line   = document.createElement('div');
-        line.className = 'vs-t-line';
-        line.style.cssText = `color:${color};${bold?'font-weight:700;':''}`;
+    lineSchedule.forEach(({ t, color, bold, progress, startAt }) => {
+      timers.push(setTimeout(() => {
+        const lineDOM = document.createElement('div');
+        lineDOM.className = 'vs-t-line';
+        lineDOM.style.cssText = `color:${color};${bold?'font-weight:700;':''}`;
         const cursor = document.createElement('span');
         cursor.className = 'vs-cursor';
         cursor.style.color = color;
-        line.appendChild(cursor);
-        termEl.appendChild(line);
+        lineDOM.appendChild(cursor);
+        termEl.appendChild(lineDOM);
         let idx = 0;
         const iv = setInterval(() => {
-          if (idx >= t.length) { clearInterval(iv); cursor.remove(); return; }
-          line.textContent = t.slice(0, ++idx);
-          line.appendChild(cursor);
+          if (idx >= t.length) {
+            clearInterval(iv); cursor.remove();
+            if (progress) launchProgress(lineDOM, color);
+            return;
+          }
+          lineDOM.textContent = t.slice(0, ++idx);
+          lineDOM.appendChild(cursor);
         }, CHAR_MS);
-        typeIvs.push(iv);
-      }, startAt);
-      timers.push(lt);
+      }, startAt));
     });
   }, T_TERM);
 
-  // — Cards float in (más pausa tras terminal) —
-  const T_CARDS = T_TERM + TERM_DONE + 900;
+  // — Cards float in — (espera a que termine la barra de progreso)
+  const T_CARDS = T_TERM + TERM_DONE + PROGRESS_MS + 1000;
   delay(() => {
     [...cards].forEach((card, i) => {
-      setTimeout(() => { gsap.to(card, { opacity:1, y:0, duration:0.65, ease:'power2.out' }); }, i * 260);
+      setTimeout(() => {
+        gsap.to(card, { opacity:1, y:0, duration:0.7, ease:'power2.out' });
+      }, i * 420);  // stagger lento entre cartas
     });
   }, T_CARDS);
 
-  // — Glow (más pausa para disfrutar las cartas) —
-  const T_GLOW = T_CARDS + 1100;
+  // — Glow — (espera a que las 3 cartas hayan aparecido)
+  const T_GLOW = T_CARDS + 2 * 420 + 1200;
   delay(() => { [...cards].forEach(c => c.classList.add(glowClass)); }, T_GLOW);
 
   // — Orbs converge —
-  const T_ORBS = T_GLOW + 800;
+  const T_ORBS = T_GLOW + 900;
   delay(() => {
     const stageR = stage.getBoundingClientRect();
     const destX  = stageR.left + stageR.width  / 2;
@@ -561,27 +605,28 @@ function runFinal() {
             left:${sx-3}px;top:${sy-3}px;pointer-events:none;z-index:9010;opacity:0.9;`;
           stage.appendChild(orb); dynEls.push(orb);
           setTimeout(() => {
-            gsap.to(orb, { left: destX-3+jitter, top: destY-3, duration:0.55, ease:'power2.in',
+            gsap.to(orb, { left:destX-3+jitter, top:destY-3,
+              duration:0.75, ease:'power2.in',
               onComplete: () => { orb.style.opacity='0'; setTimeout(()=>orb.remove(),200); }
             });
-          }, k * 55);
+          }, k * 75);
         }
-      }, ci * 130);
+      }, ci * 180);
     });
   }, T_ORBS);
 
-  // — Flash + ring + title rise —
-  const T_FLASH = T_ORBS + 2 * 130 + 4 * 55 + 800;
+  // — Flash + ring + title rise — (orbs tardan: 2*180 + 4*75 = 660ms en volar)
+  const T_FLASH = T_ORBS + 2 * 180 + 4 * 75 + 900;
   delay(() => {
-    // Flash
+    // Flash más lento
     const flash = document.createElement('div');
     flash.style.cssText = `position:fixed;inset:0;background:${accentColor};opacity:0;pointer-events:none;z-index:9005;`;
     stage.appendChild(flash); dynEls.push(flash);
     gsap.timeline()
-      .to(flash, { opacity:0.5, duration:0.12, ease:'power2.out' })
-      .to(flash, { opacity:0,   duration:0.5,  ease:'power2.in', onComplete:()=>flash.remove() });
+      .to(flash, { opacity:0.45, duration:0.22, ease:'power2.out' })
+      .to(flash, { opacity:0,   duration:1.1,  ease:'power2.in', onComplete:()=>flash.remove() });
 
-    // Ring
+    // Ring — expansión más lenta y suave
     const stageR = stage.getBoundingClientRect();
     const cx = stageR.left + stageR.width  / 2;
     const cy = stageR.top  + stageR.height * 0.62;
@@ -590,24 +635,23 @@ function runFinal() {
       opacity:0.85;width:24px;height:24px;left:${cx-12}px;top:${cy-12}px;
       pointer-events:none;z-index:9008;`;
     stage.appendChild(ring); dynEls.push(ring);
-    gsap.to(ring, { width:520, height:520, left:cx-260, top:cy-260,
-      opacity:0, duration:1.1, ease:'power2.out', onComplete:()=>ring.remove() });
+    gsap.to(ring, { width:540, height:540, left:cx-270, top:cy-270,
+      opacity:0, duration:2.2, ease:'power1.out', onComplete:()=>ring.remove() });
 
     // Terminal fade out
-    termEl.style.transition = 'opacity 0.4s';
+    termEl.style.transition = 'opacity 0.5s';
     termEl.style.opacity    = '0';
 
-    // Title rise — primera frase
+    // Título: sube con peso → scramble primera frase → pausa → scramble segunda frase
     setTimeout(() => {
       titleEl.style.transition = 'opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1)';
       titleEl.style.opacity    = '1';
       titleEl.style.transform  = 'translateY(0)';
       if (typeof ScrambleTextPlugin !== 'undefined') {
-        gsap.to(titleEl, { duration:1.2, scrambleText:{ text:titleFirst, chars:'upperCase' },
+        gsap.to(titleEl, { duration:1.3, scrambleText:{ text:titleFirst, chars:'upperCase' },
           onComplete: () => {
-            // Segunda frase tras 2s de pausa
             setTimeout(() => {
-              gsap.to(titleEl, { duration:1.4, scrambleText:{ text:titleFinal, chars:'upperCase' } });
+              gsap.to(titleEl, { duration:1.5, scrambleText:{ text:titleFinal, chars:'upperCase' } });
             }, 2000);
           }
         });
@@ -615,11 +659,11 @@ function runFinal() {
         titleEl.textContent = titleFirst;
         setTimeout(() => { titleEl.textContent = titleFinal; }, 2000);
       }
-    }, 220);
+    }, 300);
   }, T_FLASH);
 
-  // Divider aparece cuando termina el segundo scramble (~220 + 1200 + 2000 + 1400 = ~4820ms)
-  delay(() => { gsap.to(dividerEl, { width:240, duration:0.6 }); }, T_FLASH + 4000);
+  // Divider aparece al acabar el segundo scramble (300 + 1300 + 2000 + 1500 ≈ 5100ms)
+  delay(() => { gsap.to(dividerEl, { width:240, duration:0.7 }); }, T_FLASH + 5200);
 }
 </script>
 </body>
