@@ -58,13 +58,21 @@ const CARD_SIM_EFFECTS = {
   // ── Conditional (discard to activate) ────────────────
   'Fuego 1':    { selfDiscard: 1, eliminate: { strategy: 'highest' } },
   'Fuego 2':    { selfDiscard: 1, returnOpponent: 1 },
+  // Fuego 3: onTurnEnd — optionally discard to flip 1 opponent card; modeled without cost (optional trigger)
+  'Fuego 3':    { flipOpponent: 1 },
 
   // ── Opponent discard ─────────────────────────────────
   'Plaga 0':    { opponentDiscard: 1 },
   'Plaga 1':    { opponentDiscard: 1 },
   'Plaga 2':    { selfDiscard: 1, opponentDiscard: 2 },
+  // Plaga 4: onTurnEnd — forces opponent to eliminate 1 of their own facedown cards
+  'Plaga 4':    { eliminate: { strategy: 'faceDown' } },
   'Psique 2':   { opponentDiscard: 2 },
   'Psique 3':   { opponentDiscard: 1 },
+  // Psique 1: persistent — while face-up, forces opponent to play only facedown (≈ preventCompile)
+  'Psique 1':   { preventCompile: true },
+  // Psique 4: onTurnEnd — may return 1 opponent card to hand (and flip self facedown)
+  'Psique 4':   { returnOpponent: 1 },
 
   // ── Eliminate ────────────────────────────────────────
   'Muerte 0':   { eliminate: { strategy: 'eachOtherLine' } },
@@ -96,6 +104,10 @@ const CARD_SIM_EFFECTS = {
   'Agua 3':     { returnOpponentByValue: 2 },
   'Velocidad 0':{ extraPlay: 1 },
   'Oscuridad 3':{ extraPlay: 1 },
+  // Oscuridad 2: onPlay — may flip 1 covered card in this line; modeled as opponent flip
+  'Oscuridad 2':{ flipOpponent: 1 },
+  // Oscuridad 4: onPlay — shifts 1 facedown card (any); modeled as opponent field disruption
+  'Oscuridad 4':{ returnOpponent: 1 },
 
   // ── Opponent gains (bad for AI) ───────────────────────
   'Amor 6':     { opponentDraw: 2 },
