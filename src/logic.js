@@ -3057,9 +3057,10 @@ function finalizePlay(targetLine, isFaceDown) {
         gameState.currentEffectLine = targetLine;
         gameState.coveringCard = card; // carta que va a cubrir
         triggerCardEffect(topCardBeforePush.card, 'onCover', targetSide);
-        // Si onCover fue no-interactivo y ya se resolvió, finishEffect lo aterrizará
-        // Si hay efectos pendientes, pendingLanding espera en finishEffect
-        if (gameState.effectContext || gameState.effectQueue.length > 0) {
+        // onCover no-interactivo: landPendingCard ya se ejecutó sincrónicamente y fijó pendingTurnEnd.
+        // onCover interactivo: pendingLanding sigue activo; finishEffect → landPendingCard lo resolverá.
+        // Solo limpiar pendingTurnEnd si pendingLanding AÚN está activo (landPendingCard no corrió).
+        if (gameState.pendingLanding && (gameState.effectContext || gameState.effectQueue.length > 0)) {
             gameState.pendingTurnEnd = null; // landPendingCard gestiona el fin de turno
         }
         return;
