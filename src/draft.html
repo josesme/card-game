@@ -207,7 +207,23 @@
             line-height: 1.3;
         }
 
-        .protocol-card:hover:not(.unavailable) {
+        /* Non-interactive: dim + deshabilita hover (turno IA, carga, draft completado) */
+        .protocols-grid:not(.player-turn):not(.loading) .protocol-card:not(.unavailable) {
+            opacity: 0.5;
+            filter: brightness(0.62);
+            transition: opacity 0.5s ease, filter 0.5s ease, transform 0.25s, box-shadow 0.25s;
+        }
+
+        /* Interactive: brillo completo + ambient glow cyan */
+        .protocols-grid.player-turn .protocol-card:not(.unavailable) {
+            opacity: 1;
+            filter: brightness(1);
+            box-shadow: 0 0 12px rgba(0, 212, 255, 0.18);
+            transition: opacity 0.35s ease, filter 0.35s ease, transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+        }
+
+        /* Hover: solo cuando el grid está en modo player-turn */
+        .protocols-grid.player-turn .protocol-card:not(.unavailable):hover {
             transform: translateY(-6px);
             box-shadow: 0 8px 24px rgba(255, 217, 61, 0.35);
         }
@@ -568,6 +584,7 @@ let _gridScrambleLastT = 0;        // cooldown: evita re-scramble del grid en ll
 let _draftGridFirstRender = true;  // animación de entrada solo en la carga inicial
 let _draftInitialScrambleDone = false; // scramble de textos solo en la carga inicial
 let _draftEnterReadyAt = 0;        // timestamp cuando termina la animación de entrada
+let _draftLoadingDone = false;     // false mientras dura la animación de entrada inicial
 
 let draftState = {
     available: [...ALL_PROTOCOLS],
@@ -786,7 +803,9 @@ function completeDraft() {
     draftState.playerSelected = draftState.playerSelected.slice(0, 3);
     draftState.aiSelected = draftState.aiSelected.slice(0, 3);
     updateDraftDisplay();
-    document.getElementById('start-game-btn').disabled = false;
+    const _startBtn = document.getElementById('start-game-btn');
+    _startBtn.disabled = false;
+    _startBtn.classList.add('ui-btn--pulse');
 }
 
 // ── Actualización de UI ────────────────────────────────────────────
@@ -815,6 +834,8 @@ function updateDraftDisplay() {
 
 function updateProtocolsGrid() {
     const grid = document.getElementById('protocols-grid');
+    grid.classList.toggle('player-turn', draftState.isPlayerTurn && !draftState.isComplete);
+    grid.classList.toggle('loading', !_draftLoadingDone);
     grid.innerHTML = '';
 
     ALL_PROTOCOLS.forEach(protocol => {
@@ -857,20 +878,26 @@ function updateProtocolsGrid() {
         grid.appendChild(card);
     });
 
-    // Animación de entrada laser — solo en la primera carga del grid
+    // Animación de entrada laser — solo en la primera carga del grid, columna a columna
     if (_draftGridFirstRender) {
         _draftGridFirstRender = false;
         const cards = Array.from(grid.querySelectorAll('.protocol-card'));
-        const stagger = 100;
-        const totalDuration = (cards.length - 1) * stagger + 800 + 100; // +100ms buffer
-        _draftEnterReadyAt = Date.now() + totalDuration;
+        const COLS = 5;
+        const colDelay = 350; // ms entre columnas
+        const totalDuration = (COLS - 1) * colDelay + 800 + 150; // última columna + duración animación + buffer
+        _draftEnterReadyAt = Date.now() + totalDuration + 1400; // pausa extra antes de que la IA empiece
         cards.forEach((el, i) => {
+            const col = i % COLS;
             setTimeout(() => {
                 el.style.clipPath = '';
                 el.classList.add('card-entering');
                 el.addEventListener('animationend', () => el.classList.remove('card-entering'), { once: true });
-            }, i * stagger);
+            }, col * colDelay);
         });
+        setTimeout(() => {
+            _draftLoadingDone = true;
+            grid.classList.remove('loading');
+        }, totalDuration);
     }
 
     // Scramble de textos solo en la carga inicial del grid

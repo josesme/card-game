@@ -493,7 +493,9 @@ function updateProtocolSelection() {
     if (selectedProtocols === 2) document.getElementById('proto-2').classList.add('active');
     if (selectedProtocols === 'all') document.getElementById('proto-all').classList.add('active');
 
-    document.getElementById('btn-play').disabled = selectedProtocols === null;
+    const _btnPlay = document.getElementById('btn-play');
+    _btnPlay.disabled = selectedProtocols === null;
+    _btnPlay.classList.toggle('ui-btn--pulse', selectedProtocols !== null);
     
     // Apply scramble to protocol names when selection changes
     setTimeout(function() {
