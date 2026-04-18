@@ -2709,27 +2709,38 @@ function resolveEffectAI(type, target, count, opts = {}) {
     }
 
     if (type === 'rearrange') {
-        // Swap protocols to maximise face-up playability:
-        // align the protocol of AI's highest-value hand card with its best line
+        // El efecto es obligatorio: siempre hay que swappear al menos un par.
+        // Evalúa todos los pares posibles y ejecuta el de mayor beneficio.
         const owner = actualTarget;
+        const opp   = owner === 'ai' ? 'player' : 'ai';
         const protos = gameState[owner].protocols;
-        const hand = gameState[owner].hand;
-        if (protos.length >= 2 && hand.length > 0) {
-            // Find hand card with highest valor and its protocol
-            const bestCard = hand.reduce((best, c) => c.valor > best.valor ? c : best, hand[0]);
-            const bestProtoIdx = protos.indexOf(bestCard.protocol);
-            if (bestProtoIdx >= 0) {
-                // Find the best line (highest current score advantage) to assign it to
-                const bestLineIdx = LINES
-                    .map((l, idx) => ({ idx, score: calculateScore(gameState, l, owner) - calculateScore(gameState, l, owner === 'ai' ? 'player' : 'ai') }))
-                    .sort((a, b) => b.score - a.score)[0].idx;
-                if (bestProtoIdx !== bestLineIdx) {
-                    [protos[bestProtoIdx], protos[bestLineIdx]] = [protos[bestLineIdx], protos[bestProtoIdx]];
-                    swapCompiledState(LINES[bestProtoIdx], LINES[bestLineIdx], owner);
-                    logEvent('IA reorganizó sus Protocolos estratégicamente', { isAI: true });
-                    updateUI();
+        const hand   = gameState[owner].hand;
+
+        if (protos.length >= 2) {
+            // Puntuación de un arreglo de protocolos:
+            // por cada línea, cuenta cuántas cartas de mano coinciden con ese protocolo,
+            // ponderadas por la ventaja de score actual en esa línea.
+            const scoreArr = (arr) => arr.reduce((sum, proto, idx) => {
+                const lineAdvantage = calculateScore(gameState, LINES[idx], owner)
+                                    - calculateScore(gameState, LINES[idx], opp) + 1;
+                const handMatches   = hand.filter(c => c.protocol === proto).length;
+                return sum + handMatches * lineAdvantage;
+            }, 0);
+
+            let bestScore = -Infinity, bestI = 0, bestJ = 1;
+            for (let i = 0; i < protos.length; i++) {
+                for (let j = i + 1; j < protos.length; j++) {
+                    const candidate = [...protos];
+                    [candidate[i], candidate[j]] = [candidate[j], candidate[i]];
+                    const s = scoreArr(candidate);
+                    if (s > bestScore) { bestScore = s; bestI = i; bestJ = j; }
                 }
             }
+
+            [protos[bestI], protos[bestJ]] = [protos[bestJ], protos[bestI]];
+            swapCompiledState(LINES[bestI], LINES[bestJ], owner);
+            logEvent('IA reorganizó sus Protocolos estratégicamente', { isAI: true });
+            updateUI();
         }
         if (typeof processAbilityEffect === 'function') processAbilityEffect();
         return;
