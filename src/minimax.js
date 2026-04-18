@@ -427,24 +427,34 @@ class MiniMax {
    */
   sortMoves(gameState, moves, player) {
     const score = (move) => {
+      const handCount = (gameState[player].hand || []).length;
+
       if (move.action === 'refresh') {
-        // Refresh is good if hand is low
-        const handCount = (gameState[player].hand || []).length;
-        return player === 'ai' ? (5 - handCount) * 10 : (handCount - 5) * 10;
+        if (player !== 'ai') return (handCount - 5) * 10;
+        // Refresh: bueno solo con mano muy baja (strategy chat: con 3+ cartas es peor que bocabajo mediocre)
+        if (handCount <= 1) return 40;
+        if (handCount === 2) return 15;
+        return -20; // 3+ cartas en mano → no recargar
       }
       if (!move.line) return 0;
 
-      const myScore  = this._lineScore(gameState, move.line, player);
-      const oppScore = this._lineScore(gameState, move.line, player === 'ai' ? 'player' : 'ai');
-      const cardVal  = (move.card && move.card.valor) || 0;
+      const opponent  = player === 'ai' ? 'player' : 'ai';
+      const myScore   = this._lineScore(gameState, move.line, player);
+      const oppScore  = this._lineScore(gameState, move.line, opponent);
+      const cardVal   = (move.card && move.card.valor) || 0;
+      const playerCompiled = (gameState.player.compiled || []).length;
       let s = 0;
 
       // 1. Compile Priority
       if (myScore + cardVal >= 10 && myScore + cardVal > oppScore) s += 150;
-      
-      // 2. Block Opponent Compile (nivel 5 bloquea antes: threshold 6 en vez de 7)
+
+      // 2. Block Opponent Compile
+      // Bloquear el tercer compile del rival es la jugada más urgente del juego
       const blockThreshold = this.maxDepth >= 5 ? 6 : 7;
-      if (oppScore >= blockThreshold && player === 'ai') s += 50;
+      if (player === 'ai') {
+        if (playerCompiled >= 2 && oppScore >= 6) s += 180; // match point rival: máxima urgencia
+        else if (oppScore >= blockThreshold)       s += 50;
+      }
 
       // 3. Face-up vs Face-down: táctica deliberada, no solo penalización
       if (move.faceUp) {
@@ -452,36 +462,35 @@ class MiniMax {
       } else {
         const protocols = gameState[player].protocols || [];
         const LINES = ['izquierda', 'centro', 'derecha'];
-        const opponent = player === 'ai' ? 'player' : 'ai';
 
         // Penalización base: jugar bocabajo una carta que podría ir bocarriba
-        if (protocols.includes(move.card.protocol)) s -= 15;
+        // Se reduce cuando la mano es pequeña (bocabajo es tempo válido)
+        if (protocols.includes(move.card.protocol)) {
+          s -= handCount <= 2 ? 5 : 15; // con mano pequeña, penalizar menos
+        }
 
-        // Bonus táctico 1: acumulación silenciosa en línea secundaria.
-        // Si ambos lados tienen score bajo en esta línea, el rival probablemente
-        // no la está defendiendo — bocabajo no revela la amenaza.
+        // Bonus táctico 1: acumulación silenciosa en línea secundaria
         if (myScore <= 3 && oppScore <= 3) s += 18;
 
-        // Bonus táctico 2: el rival amenaza compilar otra línea.
-        // Jugar bocabajo aquí sube score sin forzar al rival a bloquear esta línea.
+        // Bonus táctico 2: el rival amenaza compilar otra línea
         const rivalThreatenElsewhere = LINES.some(l => {
           if (l === move.line) return false;
           if (gameState.field[l].compiledBy) return false;
-          const rScore = this._lineScore(gameState, l, opponent);
-          return rScore >= (this.maxDepth >= 5 ? 6 : 7);
+          return this._lineScore(gameState, l, opponent) >= (this.maxDepth >= 5 ? 6 : 7);
         });
         if (rivalThreatenElsewhere) s += 12;
 
-        // Bonus táctico 3: combo bocabajo + voltear posterior.
-        // Si la IA tiene en mano una carta con efecto flip-propio en una línea distinta,
-        // jugar una carta de valor alto bocabajo aquí es un setup deliberado.
+        // Bonus táctico 3: bocabajo con mano pequeña = preservar tempo
+        // (strategy chat: con 1-2 cartas, jugar bocabajo > pasar)
+        if (player === 'ai' && handCount <= 2) s += 10;
+
+        // Bonus táctico 4: combo bocabajo + voltear posterior
         if (player === 'ai' && cardVal >= 4) {
           const hand = gameState.ai.hand || [];
           const hasFlipSetup = hand.some(c => {
             if (!c.h_accion || c === move.card) return false;
             const txt = c.h_accion.toLowerCase();
             if (!txt.includes('voltea')) return false;
-            // Comprobar que la línea de protocolo de esa carta es distinta a move.line
             const flipProtoIdx = protocols.indexOf(c.protocol);
             return flipProtoIdx !== -1 && LINES[flipProtoIdx] !== move.line;
           });

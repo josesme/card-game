@@ -78,7 +78,7 @@ class AIEvaluator {
 
     // Match point bonuses (one compile away from victory)
     if (aiCompiled === 2)     score += 0.55;   // AI is at match point — exploit
-    if (playerCompiled === 2) score -= 0.65;   // Player at match point — urgent defence
+    if (playerCompiled === 2) score -= 0.80;   // Player at match point — bloquear es prioridad absoluta
 
     // General compile count advantage
     score += (aiCompiled - playerCompiled) * 0.12;
@@ -253,6 +253,11 @@ class AIEvaluator {
     const highVals = hand.filter(c => c.valor >= 4).length;
     const lowVals  = hand.filter(c => c.valor <= 1).length;
     if (highVals > 0 && lowVals > 0) score += 0.15; // Balanced hand
+
+    // 4b. Acumular múltiples 4s es problemático: sus efectos son pasivos y situacionales.
+    // (strategy chat: los 4s se descartan más que cualquier otro número)
+    const fours = hand.filter(c => c.valor === 4).length;
+    if (fours >= 2) score -= 0.12 * (fours - 1);
 
     // 5. Penalización por agotamiento de recursos (solo nivel 5)
     // Un jugador experto gestiona sus cartas para no quedarse sin opciones.
