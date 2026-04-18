@@ -28,6 +28,7 @@ const CARD_SIM_EFFECTS = {
   'Fuego 4':    { draw: 1 },
   'Gravedad 1': { draw: 2 },
   'Luz 0':      { draw: 2 },
+  'Luz 1':      { draw: 1 },  // onTurnEnd — roba 1 por turno mientras esté bocarriba
   'Luz 2':      { draw: 2 },
   'Metal 1':    { draw: 2, preventCompile: true },
   'Metal 3':    { draw: 1, eliminate: { strategy: 'lineOver8' } },
@@ -35,8 +36,11 @@ const CARD_SIM_EFFECTS = {
   'Psique 0':   { draw: 2, opponentDiscard: 2 },
   'Velocidad 1':{ draw: 2 },
   'Vida 2':     { draw: 1, flipOpponent: 1 },
+  'Vida 4':     { draw: 1 },  // roba 1 si cubre otra carta (condición frecuente en mid-game)
   'Agua 2':     { draw: 2 },
   'Amor 1':     { draw: 1 },
+  'Guerra 3':   { draw: 1 },  // onPlay roba 1
+  'Valor 2':    { draw: 1 },  // onPlay roba 1
 
   // ── Self discard (cost cards) ─────────────────────────
   'Espíritu 5': { selfDiscard: 1 },
@@ -73,6 +77,8 @@ const CARD_SIM_EFFECTS = {
   'Psique 1':   { preventCompile: true },
   // Psique 4: onTurnEnd — may return 1 opponent card to hand (and flip self facedown)
   'Psique 4':   { returnOpponent: 1 },
+  'Guerra 4':   { opponentDiscard: 1 },  // onPlay oponente descarta 1
+  'Hielo 1':    { opponentDiscard: 1 },  // onOpponentPlayInLine — aproximado como efecto inmediato
 
   // ── Eliminate ────────────────────────────────────────
   'Muerte 0':   { eliminate: { strategy: 'eachOtherLine' } },
@@ -82,6 +88,7 @@ const CARD_SIM_EFFECTS = {
   'Odio 0':     { eliminate: { strategy: 'highest' } },
   'Odio 1':     { selfDiscard: 3, eliminate: { strategy: 'highest', count: 2 } },
   'Odio 2':     { selfEliminateHighest: true, eliminate: { strategy: 'highest' } },
+  'Valor 1':    { eliminate: { strategy: 'highest' } },  // elimina carta en línea ganadora del oponente
 
   // ── Flip opponent cards (reduces their score) ─────────
   'Espíritu 2': { flipOpponent: 1 },
@@ -90,6 +97,9 @@ const CARD_SIM_EFFECTS = {
   'Oscuridad 1':{ flipOpponent: 1 },
   'Gravedad 2': { flipOpponent: 1 },
   'Vida 1':     { flipOpponent: 2 },
+  'Agua 0':     { flipOpponent: 1 },  // voltea 1 cualquiera + voltea self (coste no modelado)
+  'Amor 4':     { flipOpponent: 1 },  // revela 1 de mano propia, voltea 1 cualquiera
+  'Guerra 2':   { flipOpponent: 1 },  // onPlay voltea 1 cualquiera
 
   // ── Flip self line (hide own cards) ──────────────────
   'Apatía 1':   { flipSelfLineAllFaceUp: true },
@@ -117,12 +127,19 @@ const CARD_SIM_EFFECTS = {
   'Corrupción 1': { returnOpponent: 1 },
   'Miedo 2':      { returnOpponent: 1 },
   'Agua 4':       { returnOpponent: 1 },  // devuelve carta propia (ai) al ser AI — equivalente en sim
+  'Hielo 2':      { returnOpponent: 1 },  // shift any ≈ devuelve carta de mayor valor del oponente
+
+  // ── Prevent compile / restrict opponent ───────────────
+  // Metal 2: persistent — el oponente no puede jugar bocabajo en esta línea
+  'Metal 2':      { preventCompile: true },
+
+  // ── Mixed effects ─────────────────────────────────────
+  'Valor 0':      { draw: 1, opponentDiscard: 1 },  // roba 1 + descarta oponente (onTurnEnd condicional)
+  'Paz 2':        { draw: 1 },                       // roba 1 + juega mano bocabajo (extra presence no modelada)
 
   // ── Mass / composite flips ────────────────────────────
   'Plaga 3':      { flipOpponent: 3 },    // voltea todas las bocabajo del rival en la línea (~3 max)
-  'Gravedad 2':   { flipOpponent: 1 },    // flip + shift simplificado a solo flip
   'Caos 0':       { flipOpponent: 2 },    // voltea cubiertas en cada línea (~2 en promedio)
-  'Vida 1':       { flipOpponent: 2 },    // doble flip
 
   // ── Opponent forced discard ───────────────────────────
   'Miedo 4':      { opponentDiscard: 1 },
