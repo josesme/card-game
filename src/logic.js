@@ -3895,14 +3895,8 @@ function showGameOver(playerWon) {
         });
     }, T_CARDS);
 
-    // ── Phase 3: cards glow ───────────────────────────────────────────────────
-    const T_GLOW = T_CARDS + 2 * 420 + 1200;
-    delay(() => {
-        if (vsCards) vsCards.querySelectorAll('.vs-proto-card').forEach(c => c.classList.add(glowClass));
-    }, T_GLOW);
-
-    // ── Phase 4: orbs converge ────────────────────────────────────────────────
-    const T_ORBS = T_GLOW + 900;
+    // ── Phase 4: orbs converge (arrancan al terminar la tercera carta) ─────────
+    const T_ORBS = T_CARDS + 2 * 420 + 700;
     delay(() => {
         if (!vsCards) return;
         const screenR = screen.getBoundingClientRect();
@@ -3987,10 +3981,21 @@ function showGameOver(playerWon) {
     }, T_FLASH);
 
     // ── Phase 6: divider + buttons ────────────────────────────────────────────
-    // Divider aparece cuando termina el segundo scramble
     const T_DIVIDER = T_FLASH + 300 + 1300 + (titleFirst !== titleFinal ? 2000 + 1500 : 0) + 500;
     delay(() => { if (vsDivider) vsDivider.style.width = '240px'; }, T_DIVIDER);
     delay(() => { if (vsActions) vsActions.style.opacity = '1'; }, T_DIVIDER + 700);
+
+    // ── Phase 7: float sincronizado al aparecer el título final ───────────────
+    const T_FLOAT = T_FLASH + 3700;
+    delay(() => {
+        if (!vsCards) return;
+        vsCards.querySelectorAll('.vs-proto-card').forEach(card => {
+            if (typeof gsap !== 'undefined') {
+                card.style.transition = 'none'; // evitar conflicto con CSS transition de entrada
+                gsap.to(card, { y: -8, duration: 1.4, ease: 'sine.inOut', yoyo: true, repeat: -1 });
+            }
+        });
+    }, T_FLOAT);
 
     screen.addEventListener('click', onSkip);
     document.addEventListener('keydown', onKeySkip);
