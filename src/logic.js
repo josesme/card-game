@@ -3724,151 +3724,234 @@ function showGameOver(playerWon) {
 
     const accentColor  = playerWon ? '#FFD93D' : '#722E9A';
     const glowClass    = playerWon ? 'vs-glow-player' : 'vs-glow-ai';
-    const titleText    = playerWon ? 'Compilación completada' : 'Proceso terminado';
-    const eyebrowText  = playerWon ? 'PROTOCOLO COMPILADO' : 'SECUENCIA INTERRUMPIDA';
+    const titleText    = playerWon ? 'La realidad ha sido reescrita' : 'Proceso terminado';
     const subtitleText = playerWon
-        ? 'Compilaste los 3 protocolos. La realidad ha sido reescrita.'
+        ? 'Compilaste los 3 protocolos.'
         : 'La IA compiló sus 3 protocolos primero. Inténtalo de nuevo.';
 
-    const vsTitle    = document.getElementById('vs-title');
-    const vsEyebrow  = document.getElementById('vs-eyebrow');
-    const vsGlitch   = document.getElementById('vs-glitch');
+    const vsTerminal = document.getElementById('vs-terminal');
     const vsCards    = document.getElementById('vs-cards');
+    const vsTitle    = document.getElementById('vs-title');
     const vsDivider  = document.getElementById('vs-divider');
     const vsSubtitle = document.getElementById('vs-subtitle');
     const vsActions  = document.getElementById('vs-actions');
     const vsSkip     = document.getElementById('vs-skip');
 
-    // Build protocol cards — portrait with real card image
-    const winner = playerWon ? 'player' : 'ai';
+    // Build protocol cards
+    const winner    = playerWon ? 'player' : 'ai';
     const protocols = gameState[winner].protocols || [];
     if (vsCards) {
         vsCards.innerHTML = '';
         protocols.forEach(protocol => {
             const imgUrl = getCardImageUrl(protocol, 1);
-            const color = (PROTOCOL_DEFS[protocol] && PROTOCOL_DEFS[protocol].color) || 'rgba(255,255,255,0.2)';
-            const card = document.createElement('div');
+            const color  = (PROTOCOL_DEFS[protocol] && PROTOCOL_DEFS[protocol].color) || 'rgba(255,255,255,0.2)';
+            const card   = document.createElement('div');
             card.className = 'vs-proto-card';
             card.style.borderColor = color;
-            card.innerHTML = `
-                <img class="vs-proto-img" src="${imgUrl}" alt="${protocol}">
-                <div class="vs-proto-title"><span>${protocol}</span></div>
-            `;
+            card.innerHTML = `<img class="vs-proto-img" src="${imgUrl}" alt="${protocol}">
+                <div class="vs-proto-title"><span>${protocol}</span></div>`;
             vsCards.appendChild(card);
         });
     }
 
-    // Set colors
-    if (vsTitle) vsTitle.style.color = '#00d4ff';
-    if (vsDivider) vsDivider.style.color = '#00d4ff';
+    if (vsTitle)    { vsTitle.style.color = '#00d4ff'; vsTitle.style.transform = 'translateY(32px)'; }
+    if (vsDivider)  vsDivider.style.color = '#00d4ff';
     if (vsSubtitle) vsSubtitle.style.color = '#3a8a9a';
 
-    // Activate a card: pulse glow + expanding ring pings
-    function activateCard(card) {
-        card.classList.add(glowClass);
-        const rect = card.getBoundingClientRect();
-        [0, 320, 640].forEach(offset => {
+    // ── Terminal typing ───────────────────────────────────────────────────────
+    const CHAR_MS  = 16;
+    const LINE_GAP = 350;
+    const termLines = [
+        { t: '> verificando_protocolos...',              color: '#2a5a3a' },
+        ...protocols.map(p => ({
+            t: `> ${p.toLowerCase().replace(/\s/g,'_')}.prt    [compilado]`,
+            color: '#3a7a4a'
+        })),
+        { t: '> singularidad_index: 72.4%  ↑', color: accentColor, bold: true },
+    ];
+
+    // Cumulative start time for each line
+    let cumMs = 0;
+    const lineSchedule = termLines.map((line, i) => {
+        const startAt = cumMs;
+        cumMs += line.t.length * CHAR_MS + (i < termLines.length - 1 ? LINE_GAP : 0);
+        return { ...line, startAt };
+    });
+    const TERM_DONE = cumMs; // ms after terminal starts typing
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+    const timers   = [];
+    const typeIvs  = [];
+    const dynEls   = [];
+    function delay(fn, ms)      { timers.push(setTimeout(fn, ms)); }
+    function clearAllTimers()   { timers.forEach(clearTimeout); typeIvs.forEach(clearInterval); }
+    function spawnOrbs() {
+        if (!vsCards) return;
+        const screenR = screen.getBoundingClientRect();
+        const destX   = screenR.left + screenR.width / 2;
+        // Converge just above #vs-title (which is off-screen via translateY but still in flow)
+        const destY   = screenR.top + screenR.height * 0.62;
+
+        vsCards.querySelectorAll('.vs-proto-card').forEach((card, ci) => {
             setTimeout(() => {
-                const ring = document.createElement('div');
-                ring.className = 'vs-ring';
-                ring.style.cssText = `
-                    left:${rect.left}px;
-                    top:${rect.top}px;
-                    width:${rect.width}px;
-                    height:${rect.height}px;
-                    border-color:${accentColor};
-                `;
-                screen.appendChild(ring);
-                requestAnimationFrame(() => requestAnimationFrame(() => {
-                    ring.style.transform = 'scale(2.6)';
-                    ring.style.opacity = '0';
-                }));
-                setTimeout(() => ring.remove(), 1100);
-            }, offset);
+                const r  = card.getBoundingClientRect();
+                const sx = r.left + r.width / 2;
+                const sy = r.top + r.height * 0.3;
+                for (let k = 0; k < 5; k++) {
+                    const orb = document.createElement('div');
+                    const jitter = (Math.random() - 0.5) * 28;
+                    orb.style.cssText = `position:fixed;width:6px;height:6px;border-radius:50%;
+                        background:${accentColor};box-shadow:0 0 8px ${accentColor},0 0 16px ${accentColor}88;
+                        left:${sx-3}px;top:${sy-3}px;pointer-events:none;z-index:9010;opacity:0.9;`;
+                    screen.appendChild(orb);
+                    dynEls.push(orb);
+                    setTimeout(() => {
+                        if (typeof gsap !== 'undefined') {
+                            gsap.to(orb, { left: destX - 3 + jitter, top: destY - 3,
+                                duration: 0.55, ease: 'power2.in',
+                                onComplete: () => { orb.style.opacity = '0'; setTimeout(() => orb.remove(), 200); }
+                            });
+                        } else { orb.remove(); }
+                    }, k * 55);
+                }
+            }, ci * 130);
         });
     }
 
-    // Reveal immediately (skip path used by click/ESC)
+    function spawnFlash() {
+        const flash = document.createElement('div');
+        flash.style.cssText = `position:fixed;inset:0;background:${accentColor};opacity:0;pointer-events:none;z-index:9005;`;
+        screen.appendChild(flash); dynEls.push(flash);
+        if (typeof gsap !== 'undefined') {
+            gsap.timeline()
+                .to(flash, { opacity: 0.5, duration: 0.12, ease: 'power2.out' })
+                .to(flash, { opacity: 0,   duration: 0.5,  ease: 'power2.in',
+                    onComplete: () => flash.remove() });
+        } else { setTimeout(() => flash.remove(), 700); }
+
+        const screenR = screen.getBoundingClientRect();
+        const ring = document.createElement('div');
+        const cx = screenR.left + screenR.width / 2;
+        const cy = screenR.top  + screenR.height * 0.62;
+        ring.style.cssText = `position:fixed;border-radius:50%;border:1.5px solid ${accentColor};
+            opacity:0.85;width:24px;height:24px;left:${cx-12}px;top:${cy-12}px;
+            pointer-events:none;z-index:9008;`;
+        screen.appendChild(ring); dynEls.push(ring);
+        if (typeof gsap !== 'undefined') {
+            gsap.to(ring, { width: 520, height: 520, left: cx - 260, top: cy - 260,
+                opacity: 0, duration: 1.1, ease: 'power2.out', onComplete: () => ring.remove() });
+        } else { setTimeout(() => ring.remove(), 1200); }
+    }
+
+    // ── Skip / reveal final ───────────────────────────────────────────────────
     function revealFinal() {
-        if (vsGlitch) { vsGlitch.classList.remove('glitch-active'); vsGlitch.style.opacity = '0'; }
-        if (vsCards) vsCards.querySelectorAll('.vs-proto-card').forEach(c => c.classList.add('vs-card-in'));
-        if (vsTitle) { vsTitle.style.opacity = '1'; vsTitle.textContent = titleText; }
-        if (vsEyebrow) { vsEyebrow.style.opacity = '1'; vsEyebrow.textContent = eyebrowText; }
-        if (vsDivider) { vsDivider.style.width = '240px'; }
+        dynEls.forEach(el => el.remove());
+        if (vsTerminal) vsTerminal.style.opacity = '0';
+        if (vsCards) vsCards.querySelectorAll('.vs-proto-card').forEach(c => {
+            c.classList.add('vs-card-in');
+            c.classList.add(glowClass);
+        });
+        if (vsTitle) {
+            vsTitle.style.transition = 'none';
+            vsTitle.style.transform  = 'translateY(0)';
+            vsTitle.style.opacity    = '1';
+            vsTitle.textContent      = titleText;
+        }
+        if (vsDivider)  vsDivider.style.width   = '240px';
         if (vsSubtitle) { vsSubtitle.style.opacity = '1'; vsSubtitle.textContent = subtitleText; }
-        if (vsActions) vsActions.style.opacity = '1';
-        if (vsSkip) vsSkip.classList.remove('vs-visible');
+        if (vsActions)  vsActions.style.opacity  = '1';
+        if (vsSkip)     vsSkip.classList.remove('vs-visible');
         screen.removeEventListener('click', onSkip);
         document.removeEventListener('keydown', onKeySkip);
     }
 
     let skipped = false;
     function onSkip() {
-        if (skipped) return;
-        skipped = true;
-        clearAllTimers();
-        revealFinal();
+        if (skipped) return; skipped = true;
+        clearAllTimers(); revealFinal();
     }
     function onKeySkip(e) { if (e.key === 'Escape' || e.key === ' ') onSkip(); }
 
-    const timers = [];
-    function delay(fn, ms) { timers.push(setTimeout(fn, ms)); }
-    function clearAllTimers() { timers.forEach(clearTimeout); }
-
-    // Show screen (fade in black bg)
+    // ── Show screen ───────────────────────────────────────────────────────────
     screen.classList.remove('hidden');
-    requestAnimationFrame(() => { screen.classList.add('vs-active'); });
-
-    // Sequence
+    requestAnimationFrame(() => screen.classList.add('vs-active'));
     delay(() => { if (vsSkip) vsSkip.classList.add('vs-visible'); }, 400);
+
+    // ── Phase 1: terminal typing ──────────────────────────────────────────────
+    const T_TERM = 700;
     delay(() => {
-        if (vsEyebrow) { vsEyebrow.textContent = eyebrowText; vsEyebrow.style.opacity = '1'; }
-    }, 700);
-    delay(() => {
-        if (vsGlitch) { vsGlitch.style.opacity = '1'; vsGlitch.classList.add('glitch-active'); }
-    }, 1000);
-    delay(() => {
-        if (vsGlitch) { vsGlitch.classList.remove('glitch-active'); vsGlitch.style.opacity = '0'; }
-    }, 2300);
-    // Cards float in staggered
-    delay(() => {
-        if (vsCards) {
-            vsCards.querySelectorAll('.vs-proto-card').forEach((card, i) => {
-                setTimeout(() => card.classList.add('vs-card-in'), i * 220);
-            });
-        }
-    }, 2600);
-    // Cards activate one by one (glow + particles) after landing
+        if (!vsTerminal) return;
+        vsTerminal.style.opacity = '1';
+        lineSchedule.forEach(({ t, color, bold, startAt }) => {
+            const lt = setTimeout(() => {
+                const line = document.createElement('div');
+                line.className = 'vs-t-line';
+                line.style.cssText = `color:${color};${bold ? 'font-weight:700;' : ''}`;
+                const cursor = document.createElement('span');
+                cursor.className = 'vs-cursor';
+                cursor.style.color = color;
+                line.appendChild(cursor);
+                vsTerminal.appendChild(line);
+                let idx = 0;
+                const iv = setInterval(() => {
+                    if (idx >= t.length) { clearInterval(iv); cursor.remove(); return; }
+                    line.textContent = t.slice(0, ++idx);
+                    line.appendChild(cursor);
+                }, CHAR_MS);
+                typeIvs.push(iv);
+            }, startAt);
+            timers.push(lt);
+        });
+    }, T_TERM);
+
+    // ── Phase 2: cards float in ───────────────────────────────────────────────
+    const T_CARDS = T_TERM + TERM_DONE + 500;
     delay(() => {
         if (!vsCards) return;
-        const cards = vsCards.querySelectorAll('.vs-proto-card');
-        cards.forEach((card, i) => {
-            setTimeout(() => activateCard(card), i * 380);
+        vsCards.querySelectorAll('.vs-proto-card').forEach((card, i) => {
+            setTimeout(() => card.classList.add('vs-card-in'), i * 200);
         });
-    }, 3400);
-    // Title scrambles in after last activation settles
+    }, T_CARDS);
+
+    // ── Phase 3: cards glow ───────────────────────────────────────────────────
+    const T_GLOW = T_CARDS + 750;
     delay(() => {
-        if (vsTitle) {
-            vsTitle.style.opacity = '1';
-            if (window.scrTxt) {
-                window.scrTxt(vsTitle, titleText, { duration: 1.2, chars: 'upperCase' });
-            } else {
-                vsTitle.textContent = titleText;
+        if (vsCards) vsCards.querySelectorAll('.vs-proto-card').forEach(c => c.classList.add(glowClass));
+    }, T_GLOW);
+
+    // ── Phase 4: orbs converge ────────────────────────────────────────────────
+    const T_ORBS  = T_GLOW + 500;
+    const T_FLASH = T_ORBS + 2 * 130 + 4 * 55 + 600; // last orb lands ~950ms after launch
+    delay(spawnOrbs,  T_ORBS);
+
+    // ── Phase 5: flash + ring + title rises ───────────────────────────────────
+    delay(() => {
+        spawnFlash();
+        if (vsTerminal) { vsTerminal.style.transition = 'opacity 0.4s'; vsTerminal.style.opacity = '0'; }
+        setTimeout(() => {
+            if (vsTitle) {
+                vsTitle.style.opacity   = '1';
+                vsTitle.style.transform = 'translateY(0)';
+                if (window.scrTxt) {
+                    window.scrTxt(vsTitle, titleText, { duration: 1.3, chars: 'upperCase' });
+                } else {
+                    vsTitle.textContent = titleText;
+                }
             }
-        }
-    }, 4800);
-    delay(() => { if (vsDivider) vsDivider.style.width = '240px'; }, 5500);
+        }, 220);
+    }, T_FLASH);
+
+    // ── Phase 6: divider + subtitle + buttons ─────────────────────────────────
+    delay(() => { if (vsDivider) vsDivider.style.width = '240px'; }, T_FLASH + 1400);
     delay(() => {
         if (vsSubtitle) {
             vsSubtitle.style.opacity = '1';
             if (window.scrTxt) {
-                window.scrTxt(vsSubtitle, subtitleText, { duration: 1.5, chars: 'lowerCase' });
-            } else {
-                vsSubtitle.textContent = subtitleText;
-            }
+                window.scrTxt(vsSubtitle, subtitleText, { duration: 1.4, chars: 'lowerCase' });
+            } else { vsSubtitle.textContent = subtitleText; }
         }
-    }, 5900);
-    delay(() => { if (vsActions) vsActions.style.opacity = '1'; }, 6600);
+    }, T_FLASH + 1800);
+    delay(() => { if (vsActions) vsActions.style.opacity = '1'; }, T_FLASH + 2500);
 
     screen.addEventListener('click', onSkip);
     document.addEventListener('keydown', onKeySkip);
