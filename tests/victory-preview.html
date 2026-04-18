@@ -578,16 +578,14 @@ function runFinal() {
   delay(() => {
     [...cards].forEach((card, i) => {
       setTimeout(() => {
-        gsap.to(card, {
-          opacity:1, y:0, duration:0.7, ease:'power2.out',
-          onComplete: () => {
-            // Flotación continua: cada carta con duración y fase distintas
-            gsap.to(card, {
-              y: -8, duration: 2.0 + i * 0.35, ease:'sine.inOut',
-              yoyo:true, repeat:-1, delay: i * 0.5
-            });
-          }
-        });
+        // Entrada: solo opacidad, sin tocar transform
+        gsap.fromTo(card, { opacity:0 }, { opacity:1, duration:0.7, ease:'power2.out' });
+        // Float independiente: arranca tras la entrada, fase distinta por carta
+        gsap.fromTo(card,
+          { y: 0 },
+          { y: -8, duration: 2.0 + i * 0.35, ease:'sine.inOut',
+            yoyo:true, repeat:-1, delay: 0.7 + i * 0.5 }
+        );
       }, i * 420);
     });
   }, T_CARDS);
