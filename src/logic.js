@@ -4121,8 +4121,6 @@ function aiAutoPick() {
 }
 
 function aiScoreDraftProtocol(available) {
-    // Tier list basada en el canal de estrategia de la comunidad.
-    // Fuente: Discord strategy chat — análisis de jugadores experimentados.
     const META_TIER = {
         // Tier S — consistentemente fuertes
         'Velocidad': 30, 'Psique': 28, 'Plaga': 26, 'Luz': 25, 'Fuego': 24, 'Vida': 24,
@@ -4134,41 +4132,60 @@ function aiScoreDraftProtocol(available) {
         'Claridad': 16, 'Diversidad': 14, 'Valor': 15, 'Hielo': 13,
         'Espejo': 18, 'Tiempo': 13, 'Unidad': 14, 'Guerra': 13,
         'Paz': 8, 'Humo': 12, 'Suerte': 10,
-        // Tier B/C — situacionales o débiles
         'Metal': 8, 'Apatía': 9,
     };
 
-    // Sinergias explícitas del chat de estrategia.
-    // Par A+B → bonus cuando la IA ya tiene A y considera B (o viceversa).
+    // Pares sinérgicos — bonus cuando la IA ya tiene el compañero.
+    // Fuente: strategy chat + análisis de la comunidad.
     const SYNERGIES = [
-        { pair: ['Fuego', 'Luz'],        bonus: 20 }, // "Fire needs to discard, Light gives draw"
-        { pair: ['Fuego', 'Corrupción'], bonus: 22 }, // "So strong" — discard heavy
-        { pair: ['Psique', 'Plaga'],     bonus: 20 }, // classic discard synergy
-        { pair: ['Vida', 'Agua'],        bonus: 16 }, // pacing control
-        { pair: ['Vida', 'Metal'],       bonus: 14 }, // designer's combo
-        { pair: ['Agua', 'Metal'],       bonus: 14 }, // idem
-        { pair: ['Amor', 'Asimilación'], bonus: 16 }, // "strongest deck stealer combo"
-        { pair: ['Amor', 'Gravedad'],    bonus: 14 }, // idem
+        // Draw + discard engine
+        { pair: ['Fuego', 'Luz'],           bonus: 20 }, // Fire necesita descartar, Light da robo
+        { pair: ['Fuego', 'Corrupción'],     bonus: 22 }, // "So strong" — discard heavy
+        { pair: ['Psique', 'Plaga'],         bonus: 20 }, // discard synergy clásica
+        { pair: ['Luz', 'Psique'],           bonus: 14 },
+        { pair: ['Luz', 'Plaga'],            bonus: 14 },
+        { pair: ['Luz', 'Odio'],             bonus: 14 }, // Light multiplica Hate hand cycling
+        // Death + Hate + Fire — paquete de denial/discard
+        { pair: ['Muerte', 'Odio'],          bonus: 16 }, // Muerte reactiva + Odio cicla mano
+        { pair: ['Muerte', 'Fuego'],         bonus: 14 }, // Muerte reactiva + Fire castiga descarte
+        { pair: ['Odio', 'Fuego'],           bonus: 16 }, // Hate cycles, Fire punishes
+        // Pacing / control
+        { pair: ['Vida', 'Agua'],            bonus: 16 },
+        { pair: ['Vida', 'Metal'],           bonus: 14 }, // combo del diseñador
+        { pair: ['Agua', 'Metal'],           bonus: 14 },
+        // Face-down synergy
+        { pair: ['Oscuridad', 'Apatía'],     bonus: 16 }, // paquete bocabajo + control retrigger
+        // Spirit + Gravity — Spirit 1 libera Gravity 0 a cualquier línea
+        { pair: ['Espíritu', 'Gravedad'],    bonus: 18 },
+        // Steal package
+        { pair: ['Amor', 'Asimilación'],     bonus: 16 }, // "strongest deck stealer combo"
+        { pair: ['Amor', 'Gravedad'],        bonus: 14 },
         { pair: ['Asimilación', 'Gravedad'], bonus: 14 },
-        { pair: ['Luz', 'Psique'],       bonus: 14 }, // draw + discard
-        { pair: ['Luz', 'Plaga'],        bonus: 14 }, // draw + discard
     ];
 
-    // Contrapicks identificados en el chat.
-    // Si el jugador tiene A, coger B para contrarrestarlo.
+    // Contrapicks — si el jugador tiene A, coger B es ventajoso.
     const COUNTERPICKS = [
-        { playerHas: 'Gravedad', aiPick: 'Metal',   bonus: 20 }, // "Metal best counter to Gravity"
-        { playerHas: 'Gravedad', aiPick: 'Muerte',  bonus: 14 }, // "Death 2 best play vs Grav 0"
-        { playerHas: 'Espíritu', aiPick: 'Oscuridad', bonus: 12 }, // Darkness disrupts Spirit combos
+        { playerHas: 'Gravedad',  aiPick: 'Metal',    bonus: 20 }, // "Metal best counter to Gravity"
+        { playerHas: 'Gravedad',  aiPick: 'Muerte',   bonus: 14 }, // "Death 2 best play vs Grav 0"
+        { playerHas: 'Espíritu',  aiPick: 'Oscuridad',bonus: 12 }, // Darkness disrupts Spirit combos
+        // War soft-lockea mazos de robo pesado
+        { playerHas: 'Luz',       aiPick: 'Guerra',   bonus: 18 },
+        { playerHas: 'Psique',    aiPick: 'Guerra',   bonus: 18 },
+        { playerHas: 'Fuego',     aiPick: 'Guerra',   bonus: 16 },
+        { playerHas: 'Velocidad', aiPick: 'Guerra',   bonus: 14 },
+        { playerHas: 'Oscuridad', aiPick: 'Guerra',   bonus: 14 },
+        // Apathy counters retrigger-heavy decks
+        { playerHas: 'Psique',    aiPick: 'Apatía',   bonus: 14 },
+        { playerHas: 'Gravedad',  aiPick: 'Apatía',   bonus: 10 },
     ];
+
+    // Grupos funcionales para detectar solapamiento
+    const DRAW_HEAVY   = new Set(['Luz', 'Fuego', 'Psique', 'Velocidad', 'Oscuridad']);
+    const CONTROL_PACK = new Set(['Metal', 'Agua', 'Vida', 'Apatía']);
 
     const scores = available.map(proto => {
-        let score = 0;
+        let score = META_TIER[proto] ?? 12;
 
-        // 1. Tier base del meta
-        score += META_TIER[proto] ?? 12;
-
-        // 2. Sinergias con picks propios ya realizados
         SYNERGIES.forEach(({ pair, bonus }) => {
             if (pair.includes(proto)) {
                 const partner = pair.find(p => p !== proto);
@@ -4176,25 +4193,22 @@ function aiScoreDraftProtocol(available) {
             }
         });
 
-        // 3. Contrapicks según lo que tiene el jugador
         COUNTERPICKS.forEach(({ playerHas, aiPick, bonus }) => {
             if (aiPick === proto && draftState.playerPicks.includes(playerHas)) score += bonus;
         });
 
-        // 4. Penalizar si el jugador ya tiene este protocolo (no podemos cogérselo,
-        //    pero sí evitar elegir uno con misma función si él ya la cubre)
-        if (draftState.playerPicks.includes(proto)) score -= 50; // no debería ocurrir pero salvaguarda
+        // Salvaguarda: no debería ocurrir, pero evitar pick ya tomado
+        if (draftState.playerPicks.includes(proto)) score -= 50;
 
-        // 5. Evitar solapamiento funcional con picks propios
-        //    (tres protocolos de robo puro sin control = mano llena, sin presencia en mesa)
-        const ownDrawCount = draftState.aiPicks.filter(p =>
-            (META_TIER[p] ?? 0) >= 20 && ['Luz', 'Fuego', 'Psique', 'Velocidad', 'Oscuridad'].includes(p)
-        ).length;
-        if (ownDrawCount >= 2 && ['Luz', 'Fuego', 'Psique', 'Velocidad', 'Oscuridad'].includes(proto)) {
-            score -= 15;
-        }
+        // Penalizar solapamiento: 2+ protocolos de robo puro sin control en mesa
+        const ownDrawCount = draftState.aiPicks.filter(p => DRAW_HEAVY.has(p)).length;
+        if (ownDrawCount >= 2 && DRAW_HEAVY.has(proto)) score -= 15;
 
-        // 6. Ruido pequeño para variedad entre partidas (no predecible 100%)
+        // Penalizar solapamiento: 2+ protocolos de control/pacing sin amenaza
+        const ownControlCount = draftState.aiPicks.filter(p => CONTROL_PACK.has(p)).length;
+        if (ownControlCount >= 2 && CONTROL_PACK.has(proto)) score -= 12;
+
+        // Ruido pequeño para variedad entre partidas
         score += Math.random() * 6;
 
         return { proto, score };
@@ -4202,6 +4216,37 @@ function aiScoreDraftProtocol(available) {
 
     scores.sort((a, b) => b.score - a.score);
     return scores[0].proto;
+}
+
+// Reordena los protocolos de la IA para maximizar matchups favorables contra los del jugador.
+// Prueba las 6 permutaciones posibles y elige la de mayor ventaja total.
+function aiOrderProtocols(aiPicks, playerPicks) {
+    const MATCHUP_BONUS = [
+        ['Metal',     'Gravedad',  15],
+        ['Muerte',    'Gravedad',  10],
+        ['Oscuridad', 'Espíritu',  10],
+        ['Apatía',    'Psique',    12],
+        ['Apatía',    'Gravedad',   8],
+        ['Guerra',    'Luz',        12],
+        ['Guerra',    'Psique',     12],
+        ['Guerra',    'Fuego',      10],
+        ['Guerra',    'Velocidad',  10],
+    ];
+
+    const perms = (arr) => arr.length <= 1 ? [arr] :
+        arr.flatMap((x, i) => perms([...arr.slice(0, i), ...arr.slice(i+1)]).map(p => [x, ...p]));
+
+    let best = aiPicks, bestScore = -Infinity;
+    perms(aiPicks).forEach(perm => {
+        const score = perm.reduce((sum, aiProto, i) => {
+            const playerProto = playerPicks[i];
+            return sum + MATCHUP_BONUS
+                .filter(([ai, p]) => ai === aiProto && p === playerProto)
+                .reduce((s, [,, b]) => s + b, 0);
+        }, 0);
+        if (score > bestScore) { bestScore = score; best = perm; }
+    });
+    return best;
 }
 
 function updateDraftUI() {
@@ -4233,7 +4278,8 @@ function showDraftResult() {
 
     // Build matchup preview
     // P1 pick[i] faces AI pick[i]: mismo índice = misma columna física (P2 construye de su derecha a izquierda)
-    const aiOrdered = [...draftState.aiPicks];
+    const aiOrdered = aiOrderProtocols(draftState.aiPicks, draftState.playerPicks);
+    draftState.aiOrdered = aiOrdered; // guardado para startGameFromDraft
     const matchupsEl = document.getElementById('line-matchups');
     matchupsEl.innerHTML = '';
     const lineNames = ['Izquierda', 'Centro', 'Derecha'];
@@ -4274,7 +4320,7 @@ function startGameFromDraft() {
     if (draftState && draftState.playerPicks && draftState.playerPicks.length > 0) {
         // Viene del draft (tiene cartas seleccionadas)
         gameState.player.protocols = [...draftState.playerPicks];
-        gameState.ai.protocols = [...draftState.aiPicks];
+        gameState.ai.protocols = draftState.aiOrdered || [...draftState.aiPicks];
         console.log('✅ Loaded from draftState:', { 
             player: gameState.player.protocols,
             ai: gameState.ai.protocols 
