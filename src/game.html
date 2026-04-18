@@ -1295,8 +1295,10 @@
             letter-spacing: 1px;
             line-height: 2;
             color: #00d4ff;
-            text-align: left;
-            width: min(460px, 85vw);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            max-width: 85vw;
             margin-bottom: 32px;
             opacity: 0;
             transition: opacity 0.4s ease;

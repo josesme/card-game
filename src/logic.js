@@ -3722,18 +3722,15 @@ function showGameOver(playerWon) {
     const screen = document.getElementById('victory-screen');
     if (!screen) return;
 
-    const accentColor  = playerWon ? '#FFD93D' : '#722E9A';
-    const glowClass    = playerWon ? 'vs-glow-player' : 'vs-glow-ai';
-    const titleText    = playerWon ? 'La realidad ha sido reescrita' : 'Proceso terminado';
-    const subtitleText = playerWon
-        ? 'Compilaste los 3 protocolos.'
-        : 'La IA compiló sus 3 protocolos primero. Inténtalo de nuevo.';
+    const accentColor = playerWon ? '#FFD93D' : '#722E9A';
+    const glowClass   = playerWon ? 'vs-glow-player' : 'vs-glow-ai';
+    const titleFirst  = playerWon ? 'Compilación completa' : 'Proceso terminado';
+    const titleFinal  = playerWon ? 'La realidad ha sido reescrita' : 'Proceso terminado';
 
     const vsTerminal = document.getElementById('vs-terminal');
     const vsCards    = document.getElementById('vs-cards');
     const vsTitle    = document.getElementById('vs-title');
     const vsDivider  = document.getElementById('vs-divider');
-    const vsSubtitle = document.getElementById('vs-subtitle');
     const vsActions  = document.getElementById('vs-actions');
     const vsSkip     = document.getElementById('vs-skip');
 
@@ -3754,93 +3751,77 @@ function showGameOver(playerWon) {
         });
     }
 
-    if (vsTitle)    { vsTitle.style.color = '#00d4ff'; vsTitle.style.transform = 'translateY(32px)'; }
-    if (vsDivider)  vsDivider.style.color = '#00d4ff';
-    if (vsSubtitle) vsSubtitle.style.color = '#3a8a9a';
+    if (vsTitle) { vsTitle.style.color = '#00d4ff'; vsTitle.style.transform = 'translateY(32px)'; }
 
-    // ── Terminal typing ───────────────────────────────────────────────────────
-    const CHAR_MS  = 16;
-    const LINE_GAP = 350;
+    // ── Terminal ──────────────────────────────────────────────────────────────
+    const CHAR_MS     = 16;
+    const LINE_GAP    = 600;
+    const PROGRESS_MS = 2600;
+    const PROGRESS_VAL = 72.4;
+    const singPrefix  = '> singularidad_index: ';
+
     const termLines = [
-        { t: '> verificando_protocolos...',              color: '#2a5a3a' },
+        { t: '> verificando_protocolos...',  color: '#2a5a3a' },
         ...protocols.map(p => ({
             t: `> ${p.toLowerCase().replace(/\s/g,'_')}.prt    [compilado]`,
             color: '#3a7a4a'
         })),
-        { t: '> singularidad_index: 72.4%  ↑', color: accentColor, bold: true },
+        { t: singPrefix, color: accentColor, bold: true, progress: true },
     ];
 
-    // Cumulative start time for each line
     let cumMs = 0;
     const lineSchedule = termLines.map((line, i) => {
         const startAt = cumMs;
         cumMs += line.t.length * CHAR_MS + (i < termLines.length - 1 ? LINE_GAP : 0);
         return { ...line, startAt };
     });
-    const TERM_DONE = cumMs; // ms after terminal starts typing
+    const TERM_DONE = cumMs;
 
     // ── Helpers ───────────────────────────────────────────────────────────────
-    const timers   = [];
-    const typeIvs  = [];
-    const dynEls   = [];
-    function delay(fn, ms)      { timers.push(setTimeout(fn, ms)); }
-    function clearAllTimers()   { timers.forEach(clearTimeout); typeIvs.forEach(clearInterval); }
-    function spawnOrbs() {
-        if (!vsCards) return;
-        const screenR = screen.getBoundingClientRect();
-        const destX   = screenR.left + screenR.width / 2;
-        // Converge just above #vs-title (which is off-screen via translateY but still in flow)
-        const destY   = screenR.top + screenR.height * 0.62;
+    const timers  = [];
+    const dynEls  = [];
+    function delay(fn, ms)    { timers.push(setTimeout(fn, ms)); }
+    function clearAllTimers() { timers.forEach(clearTimeout); }
 
-        vsCards.querySelectorAll('.vs-proto-card').forEach((card, ci) => {
-            setTimeout(() => {
-                const r  = card.getBoundingClientRect();
-                const sx = r.left + r.width / 2;
-                const sy = r.top + r.height * 0.3;
-                for (let k = 0; k < 5; k++) {
-                    const orb = document.createElement('div');
-                    const jitter = (Math.random() - 0.5) * 28;
-                    orb.style.cssText = `position:fixed;width:6px;height:6px;border-radius:50%;
-                        background:${accentColor};box-shadow:0 0 8px ${accentColor},0 0 16px ${accentColor}88;
-                        left:${sx-3}px;top:${sy-3}px;pointer-events:none;z-index:9010;opacity:0.9;`;
-                    screen.appendChild(orb);
-                    dynEls.push(orb);
-                    setTimeout(() => {
-                        if (typeof gsap !== 'undefined') {
-                            gsap.to(orb, { left: destX - 3 + jitter, top: destY - 3,
-                                duration: 0.55, ease: 'power2.in',
-                                onComplete: () => { orb.style.opacity = '0'; setTimeout(() => orb.remove(), 200); }
-                            });
-                        } else { orb.remove(); }
-                    }, k * 55);
+    function launchProgress(lineEl, color) {
+        const valSpan = document.createElement('span');
+        valSpan.textContent = '0.0%';
+        valSpan.style.color = color;
+        lineEl.appendChild(valSpan);
+
+        const barLine  = document.createElement('div');
+        barLine.className = 'vs-t-line';
+        const barTrack = document.createElement('span');
+        barTrack.style.cssText = `display:inline-block;width:160px;height:2px;
+            background:${color}30;vertical-align:middle;margin-right:8px;position:relative;`;
+        const barFill = document.createElement('span');
+        barFill.style.cssText = `display:block;height:100%;width:0px;
+            background:${color};box-shadow:0 0 6px ${color};`;
+        barTrack.appendChild(barFill);
+        barLine.appendChild(barTrack);
+        if (vsTerminal) vsTerminal.appendChild(barLine);
+
+        if (typeof gsap !== 'undefined') {
+            const obj = { val: 0, w: 0 };
+            gsap.to(obj, {
+                val: PROGRESS_VAL, w: 160,
+                duration: PROGRESS_MS / 1000,
+                ease: 'power1.inOut',
+                onUpdate: () => {
+                    valSpan.textContent = obj.val.toFixed(1) + '%';
+                    barFill.style.width = obj.w + 'px';
+                },
+                onComplete: () => {
+                    const arrow = document.createElement('span');
+                    arrow.textContent = '  ↑';
+                    arrow.style.color = color;
+                    lineEl.appendChild(arrow);
                 }
-            }, ci * 130);
-        });
-    }
-
-    function spawnFlash() {
-        const flash = document.createElement('div');
-        flash.style.cssText = `position:fixed;inset:0;background:${accentColor};opacity:0;pointer-events:none;z-index:9005;`;
-        screen.appendChild(flash); dynEls.push(flash);
-        if (typeof gsap !== 'undefined') {
-            gsap.timeline()
-                .to(flash, { opacity: 0.5, duration: 0.12, ease: 'power2.out' })
-                .to(flash, { opacity: 0,   duration: 0.5,  ease: 'power2.in',
-                    onComplete: () => flash.remove() });
-        } else { setTimeout(() => flash.remove(), 700); }
-
-        const screenR = screen.getBoundingClientRect();
-        const ring = document.createElement('div');
-        const cx = screenR.left + screenR.width / 2;
-        const cy = screenR.top  + screenR.height * 0.62;
-        ring.style.cssText = `position:fixed;border-radius:50%;border:1.5px solid ${accentColor};
-            opacity:0.85;width:24px;height:24px;left:${cx-12}px;top:${cy-12}px;
-            pointer-events:none;z-index:9008;`;
-        screen.appendChild(ring); dynEls.push(ring);
-        if (typeof gsap !== 'undefined') {
-            gsap.to(ring, { width: 520, height: 520, left: cx - 260, top: cy - 260,
-                opacity: 0, duration: 1.1, ease: 'power2.out', onComplete: () => ring.remove() });
-        } else { setTimeout(() => ring.remove(), 1200); }
+            });
+        } else {
+            valSpan.textContent = PROGRESS_VAL + '%';
+            barFill.style.width = '160px';
+        }
     }
 
     // ── Skip / reveal final ───────────────────────────────────────────────────
@@ -3855,12 +3836,11 @@ function showGameOver(playerWon) {
             vsTitle.style.transition = 'none';
             vsTitle.style.transform  = 'translateY(0)';
             vsTitle.style.opacity    = '1';
-            vsTitle.textContent      = titleText;
+            vsTitle.textContent      = titleFinal;
         }
-        if (vsDivider)  vsDivider.style.width   = '240px';
-        if (vsSubtitle) { vsSubtitle.style.opacity = '1'; vsSubtitle.textContent = subtitleText; }
-        if (vsActions)  vsActions.style.opacity  = '1';
-        if (vsSkip)     vsSkip.classList.remove('vs-visible');
+        if (vsDivider) vsDivider.style.width  = '240px';
+        if (vsActions) vsActions.style.opacity = '1';
+        if (vsSkip)    vsSkip.classList.remove('vs-visible');
         screen.removeEventListener('click', onSkip);
         document.removeEventListener('keydown', onKeySkip);
     }
@@ -3882,76 +3862,135 @@ function showGameOver(playerWon) {
     delay(() => {
         if (!vsTerminal) return;
         vsTerminal.style.opacity = '1';
-        lineSchedule.forEach(({ t, color, bold, startAt }) => {
-            const lt = setTimeout(() => {
-                const line = document.createElement('div');
-                line.className = 'vs-t-line';
-                line.style.cssText = `color:${color};${bold ? 'font-weight:700;' : ''}`;
+        lineSchedule.forEach(({ t, color, bold, progress, startAt }) => {
+            timers.push(setTimeout(() => {
+                const lineDOM = document.createElement('div');
+                lineDOM.className = 'vs-t-line';
+                lineDOM.style.cssText = `color:${color};${bold ? 'font-weight:700;' : ''}`;
                 const cursor = document.createElement('span');
                 cursor.className = 'vs-cursor';
                 cursor.style.color = color;
-                line.appendChild(cursor);
-                vsTerminal.appendChild(line);
+                lineDOM.appendChild(cursor);
+                vsTerminal.appendChild(lineDOM);
                 let idx = 0;
                 const iv = setInterval(() => {
-                    if (idx >= t.length) { clearInterval(iv); cursor.remove(); return; }
-                    line.textContent = t.slice(0, ++idx);
-                    line.appendChild(cursor);
+                    if (idx >= t.length) {
+                        clearInterval(iv); cursor.remove();
+                        if (progress) launchProgress(lineDOM, color);
+                        return;
+                    }
+                    lineDOM.textContent = t.slice(0, ++idx);
+                    lineDOM.appendChild(cursor);
                 }, CHAR_MS);
-                typeIvs.push(iv);
-            }, startAt);
-            timers.push(lt);
+            }, startAt));
         });
     }, T_TERM);
 
-    // ── Phase 2: cards float in ───────────────────────────────────────────────
-    const T_CARDS = T_TERM + TERM_DONE + 500;
+    // ── Phase 2: cards float in (after progress bar completes) ───────────────
+    const T_CARDS = T_TERM + TERM_DONE + PROGRESS_MS + 1000;
     delay(() => {
         if (!vsCards) return;
         vsCards.querySelectorAll('.vs-proto-card').forEach((card, i) => {
-            setTimeout(() => card.classList.add('vs-card-in'), i * 200);
+            setTimeout(() => card.classList.add('vs-card-in'), i * 420);
         });
     }, T_CARDS);
 
     // ── Phase 3: cards glow ───────────────────────────────────────────────────
-    const T_GLOW = T_CARDS + 750;
+    const T_GLOW = T_CARDS + 2 * 420 + 1200;
     delay(() => {
         if (vsCards) vsCards.querySelectorAll('.vs-proto-card').forEach(c => c.classList.add(glowClass));
     }, T_GLOW);
 
     // ── Phase 4: orbs converge ────────────────────────────────────────────────
-    const T_ORBS  = T_GLOW + 500;
-    const T_FLASH = T_ORBS + 2 * 130 + 4 * 55 + 600; // last orb lands ~950ms after launch
-    delay(spawnOrbs,  T_ORBS);
+    const T_ORBS = T_GLOW + 900;
+    delay(() => {
+        if (!vsCards) return;
+        const screenR = screen.getBoundingClientRect();
+        const destX   = screenR.left + screenR.width / 2;
+        const destY   = screenR.top  + screenR.height * 0.62;
+        vsCards.querySelectorAll('.vs-proto-card').forEach((card, ci) => {
+            setTimeout(() => {
+                const r  = card.getBoundingClientRect();
+                const sx = r.left + r.width / 2;
+                const sy = r.top  + r.height * 0.3;
+                for (let k = 0; k < 5; k++) {
+                    const orb = document.createElement('div');
+                    const jitter = (Math.random() - 0.5) * 28;
+                    orb.style.cssText = `position:fixed;width:6px;height:6px;border-radius:50%;
+                        background:${accentColor};box-shadow:0 0 8px ${accentColor},0 0 16px ${accentColor}88;
+                        left:${sx-3}px;top:${sy-3}px;pointer-events:none;z-index:9010;opacity:0.9;`;
+                    screen.appendChild(orb); dynEls.push(orb);
+                    setTimeout(() => {
+                        if (typeof gsap !== 'undefined') {
+                            gsap.to(orb, { left: destX - 3 + jitter, top: destY - 3,
+                                duration: 0.75, ease: 'power2.in',
+                                onComplete: () => { orb.style.opacity = '0'; setTimeout(() => orb.remove(), 200); }
+                            });
+                        } else { orb.remove(); }
+                    }, k * 75);
+                }
+            }, ci * 180);
+        });
+    }, T_ORBS);
 
     // ── Phase 5: flash + ring + title rises ───────────────────────────────────
+    const T_FLASH = T_ORBS + 2 * 180 + 4 * 75 + 900;
     delay(() => {
-        spawnFlash();
-        if (vsTerminal) { vsTerminal.style.transition = 'opacity 0.4s'; vsTerminal.style.opacity = '0'; }
+        // Flash
+        const flash = document.createElement('div');
+        flash.style.cssText = `position:fixed;inset:0;background:${accentColor};opacity:0;pointer-events:none;z-index:9005;`;
+        screen.appendChild(flash); dynEls.push(flash);
+        if (typeof gsap !== 'undefined') {
+            gsap.timeline()
+                .to(flash, { opacity: 0.45, duration: 0.22, ease: 'power2.out' })
+                .to(flash, { opacity: 0,    duration: 1.1,  ease: 'power2.in',
+                    onComplete: () => flash.remove() });
+        } else { setTimeout(() => flash.remove(), 1400); }
+
+        // Ring — expansión lenta
+        const screenR = screen.getBoundingClientRect();
+        const cx = screenR.left + screenR.width  / 2;
+        const cy = screenR.top  + screenR.height * 0.62;
+        const ring = document.createElement('div');
+        ring.style.cssText = `position:fixed;border-radius:50%;border:1.5px solid ${accentColor};
+            opacity:0.85;width:24px;height:24px;left:${cx-12}px;top:${cy-12}px;
+            pointer-events:none;z-index:9008;`;
+        screen.appendChild(ring); dynEls.push(ring);
+        if (typeof gsap !== 'undefined') {
+            gsap.to(ring, { width: 540, height: 540, left: cx - 270, top: cy - 270,
+                opacity: 0, duration: 2.2, ease: 'power1.out', onComplete: () => ring.remove() });
+        } else { setTimeout(() => ring.remove(), 2400); }
+
+        // Terminal fade out
+        if (vsTerminal) { vsTerminal.style.transition = 'opacity 0.5s'; vsTerminal.style.opacity = '0'; }
+
+        // Title rise → scramble primera frase → pausa → scramble segunda frase
         setTimeout(() => {
             if (vsTitle) {
                 vsTitle.style.opacity   = '1';
                 vsTitle.style.transform = 'translateY(0)';
                 if (window.scrTxt) {
-                    window.scrTxt(vsTitle, titleText, { duration: 1.3, chars: 'upperCase' });
+                    window.scrTxt(vsTitle, titleFirst, { duration: 1.3, chars: 'upperCase' });
+                    if (titleFirst !== titleFinal) {
+                        setTimeout(() => {
+                            window.scrTxt(vsTitle, titleFinal, { duration: 1.5, chars: 'upperCase' });
+                        }, 1300 + 2000);
+                    }
                 } else {
-                    vsTitle.textContent = titleText;
+                    vsTitle.textContent = titleFirst;
+                    if (titleFirst !== titleFinal) {
+                        setTimeout(() => { vsTitle.textContent = titleFinal; }, 3300);
+                    }
                 }
             }
-        }, 220);
+        }, 300);
     }, T_FLASH);
 
-    // ── Phase 6: divider + subtitle + buttons ─────────────────────────────────
-    delay(() => { if (vsDivider) vsDivider.style.width = '240px'; }, T_FLASH + 1400);
-    delay(() => {
-        if (vsSubtitle) {
-            vsSubtitle.style.opacity = '1';
-            if (window.scrTxt) {
-                window.scrTxt(vsSubtitle, subtitleText, { duration: 1.4, chars: 'lowerCase' });
-            } else { vsSubtitle.textContent = subtitleText; }
-        }
-    }, T_FLASH + 1800);
-    delay(() => { if (vsActions) vsActions.style.opacity = '1'; }, T_FLASH + 2500);
+    // ── Phase 6: divider + buttons ────────────────────────────────────────────
+    // Divider aparece cuando termina el segundo scramble
+    const T_DIVIDER = T_FLASH + 300 + 1300 + (titleFirst !== titleFinal ? 2000 + 1500 : 0) + 500;
+    delay(() => { if (vsDivider) vsDivider.style.width = '240px'; }, T_DIVIDER);
+    delay(() => { if (vsActions) vsActions.style.opacity = '1'; }, T_DIVIDER + 700);
 
     screen.addEventListener('click', onSkip);
     document.addEventListener('keydown', onKeySkip);
