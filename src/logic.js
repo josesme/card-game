@@ -95,6 +95,7 @@ let gameState = {
     isProcessing: false,                                    // ⚠️ BLOQUEO: true mientras se resuelve una acción del jugador
     _lastScrambleTime: 0,                                   // ⏱️ COOLDOWN GLOBAL: timestamp último scramble
     actionLog: [],                                          // ring buffer para paneles laterales de la mano: [{isAI, icon, msg, turn}], max 50
+    actionLogVersion: 0,                                    // contador monotónico: incrementa con cada push aunque el tamaño no cambie
     turnCount: 0,                                           // contador de turnos, incrementado en startTurn
 };
 
@@ -3553,6 +3554,7 @@ function logEvent(msg, { icon, isAI } = {}) {
 
     gameState.actionLog.push({ isAI: _isAI, icon: _icon, msg, turn: gameState.turnCount });
     if (gameState.actionLog.length > 50) gameState.actionLog.shift();
+    gameState.actionLogVersion++;
     _updateUnifiedLog();
 
     // Refleja el evento en la hand-bar, sin pisar instrucciones interactivas activas.
@@ -3622,10 +3624,10 @@ function _updateUnifiedLog() {
         entriesEl._lastLogLength = 0;
         return;
     }
-    const prevLength = entriesEl._lastLogLength || 0;
-    const isNewEntry = log.length > prevLength;
-    const isCleared  = log.length < prevLength;
-    entriesEl._lastLogLength = log.length;
+    const currentVersion = gameState.actionLogVersion;
+    const isNewEntry = currentVersion > (entriesEl._lastLogVersion ?? -1);
+    const isCleared  = log.length === 0;
+    entriesEl._lastLogVersion = currentVersion;
 
     // No reemplazar innerHTML si el log no cambió — evita matar animaciones GSAP en curso
     // cuando updateUI() se llama varias veces sin que haya logEvent nuevo entre medias.
