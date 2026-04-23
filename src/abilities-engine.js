@@ -3986,6 +3986,8 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         // Jugador elige las dos líneas a intercambiar
         gameState.effectContext = { type: 'rearrange', target: 'player', count: 1, selected: [], swapCards: true };
         if (typeof highlightEffectTargets === 'function') highlightEffectTargets();
+        if (typeof showRearrangeDoneButton === 'function') showRearrangeDoneButton();
+        if (typeof updateStatus === 'function') updateStatus('Elige dos líneas propias para intercambiar sus pilas. Pulsa Listo cuando termines.');
         updateUI();
       } else {
         // IA: intercambia la línea con peor diferencia con la de mejor diferencia
