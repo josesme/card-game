@@ -3779,7 +3779,7 @@ function showGameOver(playerWon) {
         if (typeof gsap !== 'undefined') {
             const obj = { val: 0, w: 0 };
             gsap.to(obj, {
-                val: PROGRESS_VAL, w: 160,
+                val: PROGRESS_VAL, w: 160 * (PROGRESS_VAL / 100),
                 duration: PROGRESS_MS / 1000,
                 ease: 'power1.inOut',
                 onUpdate: () => {
@@ -3795,7 +3795,7 @@ function showGameOver(playerWon) {
             });
         } else {
             valSpan.textContent = PROGRESS_VAL + '%';
-            barFill.style.width = '160px';
+            barFill.style.width = (160 * PROGRESS_VAL / 100) + 'px';
         }
     }
 
