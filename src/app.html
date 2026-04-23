@@ -270,6 +270,20 @@
 
         .home-version { color: var(--ui-text-muted); font-size: 8px; letter-spacing: 1px; margin-top: 16px; }
 
+        /* ── Glitch transition ────────────────────────────────── */
+        #cut-overlay {
+            position: fixed; inset: 0; z-index: 800;
+            background: #080d1f;
+            opacity: 0; pointer-events: none;
+        }
+        .glitch-band {
+            position: fixed; left: 0; right: 0; z-index: 801;
+            pointer-events: none; opacity: 0;
+        }
+        #band-cyan  { height: 3px; background: rgba(0,245,255,0.9); box-shadow: 0 0 8px 3px rgba(0,245,255,0.5); }
+        #band-pink  { height: 2px; background: rgba(255,0,128,0.85); box-shadow: 0 0 8px 3px rgba(255,0,128,0.4); }
+        #band-white { height: 2px; background: rgba(255,255,255,0.7); }
+
         /* ── Botón fullscreen global ──────────────────────────── */
         #btn-fullscreen {
             position: fixed;
@@ -558,6 +572,12 @@
     </style>
 </head>
 <body data-spa="true">
+
+<!-- ── Glitch transition overlays ─────────────────────────── -->
+<div id="cut-overlay"></div>
+<div id="band-cyan"  class="glitch-band"></div>
+<div id="band-pink"  class="glitch-band"></div>
+<div id="band-white" class="glitch-band"></div>
 
 <!-- ── Botón fullscreen global (sobre todas las vistas) ───── -->
 <button id="btn-fullscreen" onclick="toggleFullscreen()" title="Pantalla completa">
@@ -1060,6 +1080,70 @@ window.homeModule = {
 };
 </script>
 <script>
+// ── Glitch transition ────────────────────────────────────────────────────
+(function() {
+    const SPEED   = 1.0;
+    const cutEl   = document.getElementById('cut-overlay');
+    const bCyan   = document.getElementById('band-cyan');
+    const bPink   = document.getElementById('band-pink');
+    const bWhite  = document.getElementById('band-white');
+
+    function ms(base) { return base * SPEED; }
+    function raf2(fn) { requestAnimationFrame(() => requestAnimationFrame(fn)); }
+    function band(el, top, opacity) { el.style.top = top + 'px'; el.style.opacity = opacity; }
+
+    let busy = false;
+
+    function glitchThen(onCut) {
+        if (busy) return;
+        busy = true;
+        const H = window.innerHeight;
+        const activeView = document.querySelector('.view:not(.hidden)');
+
+        const steps = [
+            () => {
+                if (activeView) activeView.style.transform = 'translateX(22px) translateY(-3px)';
+                band(bCyan,  H * 0.28, 1);
+            },
+            () => {
+                if (activeView) activeView.style.transform = 'translateX(-28px) translateY(2px)';
+                band(bCyan,  H * 0.41, 0.8);
+                band(bPink,  H * 0.55, 1);
+            },
+            () => {
+                if (activeView) activeView.style.transform = 'translateX(16px) translateY(-2px)';
+                band(bCyan,  H * 0.19, 1);
+                band(bPink,  H * 0.81, 0.9);
+                band(bWhite, H * 0.50, 0.8);
+            },
+            () => {
+                if (activeView) activeView.style.transform = '';
+                band(bCyan, 0, 0); band(bPink, 0, 0); band(bWhite, 0, 0);
+                cutEl.style.transition = 'none';
+                cutEl.style.opacity    = '1';
+
+                setTimeout(() => {
+                    onCut(); // router hace el switch aquí
+                    raf2(() => {
+                        cutEl.style.transition = `opacity ${ms(80)}ms ease-out`;
+                        cutEl.style.opacity    = '0';
+                        setTimeout(() => { busy = false; }, ms(100));
+                    });
+                }, ms(40));
+            }
+        ];
+
+        const gaps = [ms(80), ms(100), ms(80)];
+        let i = 0;
+        (function next() { steps[i](); if (++i < steps.length) setTimeout(next, gaps[i - 1]); })();
+    }
+
+    // Envolver router.navigate para que toda navegación use el glitch
+    window._routerNavigateRaw = null; // se asigna tras init del router
+    window._glitchThen = glitchThen;
+})();
+</script>
+<script>
     router.register('home',  document.getElementById('view-home'),  window.homeModule);
     router.register('draft', document.getElementById('view-draft'), window.draftModule);
     router.register('game',  document.getElementById('view-game'),  {
@@ -1072,6 +1156,13 @@ window.homeModule = {
             window.teardownGameUI();
         }
     });
+
+    // Wrap navigate so every view change plays the glitch transition
+    const _navRaw = router.navigate.bind(router);
+    router.navigate = function(to) {
+        if (router.current === null) { _navRaw(to); return; } // primera carga: sin transición
+        window._glitchThen(() => _navRaw(to));
+    };
 
     router.navigate(location.hash.slice(1) || 'home');
 </script>
