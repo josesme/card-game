@@ -6,6 +6,33 @@ Historial de cambios y evolución del proyecto. Formato resumido con secciones e
 
 ## 🎯 Versión Actual
 
+**v2.3.0** — SPA
+
+<details>
+<summary><strong>Ver detalles de v2.3.0</strong></summary>
+
+### v2.3.0 — Single Page Application
+
+**Fecha:** Abril 2026
+
+#### Cambios Implementados
+
+- ✅ **SPA completa** — index, draft y game unificados en `app.html`
+- ✅ **Router hash-based** — navegación sin recarga via `router.js`
+- ✅ **Home view portada** — selector de dificultad, edición y Control Component en `app.html`
+- ✅ **Transición glitch** — 3 pulsos de desplazamiento + corte entre vistas
+- ✅ **Ficheros standalone redirigidos** — `index/draft/game.html` redirigen a `app.html`
+- ✅ **Fix crítico logic.js** — handlers de botón movidos a `initializeModalButtons()` para evitar crash en parse-time
+
+#### Archivos Clave
+
+- `src/app.html` — SPA principal
+- `src/router.js` — router hash-based
+
+</details>
+
+---
+
 **v2.2.0** — Animaciones y Audio
 
 <details>

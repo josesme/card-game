@@ -8,9 +8,6 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 
 > Decisiones pendientes de validar con experiencia de juego real antes de comprometer trabajo.
 
-- **SPA (Single Page Application)** — Unificar index, draft y game en un único documento HTML. Resuelve: pantalla completa persistente entre vistas, eliminación de recargas de página, transiciones animadas entre fases (fade, scan-line). Coste estimado: Alto (2-3 sesiones, riesgo de regresiones en lógica de juego). Prerequisito para audio continuo.
-
-- **Migración a Unity** — Descartada en esta fase. Reevaluar solo si se decide distribución como aplicación nativa (Steam, mobile). Coste: reescritura completa.
 
 ---
 
