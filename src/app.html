@@ -1022,8 +1022,7 @@ function applyHomeScale() {
     container.style.transform = 'none';
     const scale = Math.min(
         (window.innerHeight - 40) / container.offsetHeight,
-        (window.innerWidth  - 80) / container.offsetWidth,
-        1
+        (window.innerWidth  - 80) / container.offsetWidth
     );
     if (Math.abs(scale - 1) > 0.01) container.style.transform = `scale(${scale.toFixed(4)})`;
 }
