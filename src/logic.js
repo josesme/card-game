@@ -1742,7 +1742,7 @@ function highlightEffectTargets() {
         if (typeof showHandSelectOverlay === 'function') {
             showHandSelectOverlay(ctx.type, ctx.count - ctx.selected.length, ctx);
         }
-    } else if (ctx.type === 'eliminate' || ctx.type === 'flip' || ctx.type === 'return' || ctx.type === 'shift' || ctx.type === 'selectCardToCopy' || ctx.type === 'rearrange' || ctx.type === 'swap') {
+    } else if (ctx.type === 'eliminate' || ctx.type === 'flip' || ctx.type === 'return' || ctx.type === 'shift' || ctx.type === 'selectCardToCopy' || ctx.type === 'rearrange' || ctx.type === 'swap' || ctx.type === 'revealField') {
         markFieldTargets();    // === FIELD TARGETING ===
         _fieldTooltipAttach(); // === FIELD TARGETING ===
     } else if (ctx.type === 'reveal') {
@@ -1973,6 +1973,8 @@ function markFieldTargets() {
         if (ctx.excludeLine && line === ctx.excludeLine) return;
         // Filter
         if (ctx.filter && !cardMatchesFilter(cardObj, ctx)) return;
+        // revealField: solo cartas bocabajo son seleccionables
+        if (ctx.type === 'revealField' && !cardObj.faceDown) return;
         // Persistent modifiers (prevent*)
         if (typeof getPersistentModifiers === 'function') {
             const mods = getPersistentModifiers(cardObj);
