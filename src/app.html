@@ -4,19 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>COMPILE</title>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&family=Teko:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="design-tokens.css">
     <link rel="stylesheet" href="ui-components.css">
     <style>
+        @font-face {
+            font-family: 'DoctorGlitch';
+            src: url('../src/fonts/DoctorGlitch.otf') format('opentype');
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         html, body {
             width: 100%; height: 100%;
             overflow: hidden;
-            background: url('../images/Background/Compile_2.png') no-repeat center center fixed;
-            background-size: cover;
             color: #e0e0e0;
             font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+        }
+
+        body {
+            background: url('../images/Background/Compile_2.png') no-repeat center center fixed;
+            background-size: cover;
         }
 
         body::before {
@@ -27,18 +36,24 @@
             z-index: 0;
         }
 
-        .view {
-            position: fixed;
-            inset: 0;
-            z-index: 1;
+        /* ── Vistas ───────────────────────────────────────────── */
+        .view          { position: fixed; inset: 0; z-index: 1; display: block; }
+        .view.hidden   { display: none; }
+
+        /* Home usa flex centrado; draft/game gestionan su propio layout */
+        #view-home {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             gap: 24px;
         }
+        #view-home.hidden { display: none; }
 
-        .view.hidden { display: none; }
+        .title-img-home {
+            max-height: 120px;
+            filter: drop-shadow(0 0 16px rgba(255, 217, 61, 0.4));
+        }
 
         .view-label {
             font-size: 9px;
@@ -48,23 +63,306 @@
             color: var(--ui-cyan);
         }
 
-        .title-img {
-            max-height: 120px;
-            filter: drop-shadow(0 0 16px rgba(255, 217, 61, 0.4));
+        .nav-row { display: flex; gap: 12px; margin-top: 12px; }
+
+        /* ── Botón fullscreen global ──────────────────────────── */
+        #btn-fullscreen {
+            position: fixed;
+            top: 12px; right: 16px;
+            width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--ui-bg);
+            border: 1.5px solid var(--ui-cyan);
+            border-radius: 8px;
+            cursor: pointer;
+            padding: 0;
+            z-index: 200;
+            box-shadow: 0 0 12px var(--ui-cyan-glow), 0 0 3px rgba(0,245,255,0.55);
+            transition: box-shadow 0.25s, background 0.25s;
+        }
+        #btn-fullscreen svg {
+            width: 22px; height: 22px;
+            stroke: var(--ui-cyan); stroke-width: 2; fill: none;
+            filter: drop-shadow(0 0 8px rgba(0,245,255,0.66));
+        }
+        #btn-fullscreen:hover {
+            background: #061220;
+            box-shadow: 0 0 18px rgba(0,245,255,0.5), 0 0 6px rgba(0,245,255,0.7);
         }
 
-        .nav-row {
+        /* ── CSS: vista Draft ─────────────────────────────────── */
+        #draft-viewport {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            overflow: hidden;
             display: flex;
-            gap: 12px;
-            margin-top: 12px;
+            justify-content: center;
+            align-items: flex-start;
+            z-index: 1;
+        }
+
+        #draft-container {
+            transform-origin: top center;
+            width: 100%;
+            max-width: 1400px;
+            padding: 16px 24px 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #draft-container .title-img {
+            max-height: 64px;
+            filter: drop-shadow(0 0 12px rgba(255, 217, 61, 0.4));
+            margin-bottom: 4px;
+        }
+
+        .subtitle {
+            color: var(--ui-cyan);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 14px;
+        }
+
+        .current-turn {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            font-size: 9px;
+            letter-spacing: 1px;
+            color: #ffffff;
+            margin-bottom: 14px;
+        }
+
+        .protocols-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            width: 100%;
+            margin-bottom: 16px;
+        }
+
+        .protocol-card {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.25s;
+            user-select: none;
+            border: 2px solid transparent;
+            height: 0;
+            padding-bottom: 30%;
+            container-type: inline-size;
+        }
+
+        .protocol-card .slot-title {
+            position: absolute;
+            top: 5.5cqw; left: calc(2.5% + 3px);
+            width: calc(34% + 3px); height: 12cqw;
+            background:
+                repeating-linear-gradient(180deg, rgba(0,0,0,0.30) 0px, rgba(0,0,0,0.30) 1px, transparent 1px, transparent 3px),
+                #202225;
+            border: 1px solid rgba(255,255,255,0.25);
+            overflow: hidden;
+            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%);
+            z-index: 2;
+            display: flex; align-items: center; padding-left: 4px;
+        }
+
+        .protocol-card .slot-title-text {
+            transform: scaleX(0.82);
+            transform-origin: left center;
+            font-family: 'DoctorGlitch', sans-serif;
+            font-size: 4.8cqw;
+            color: #ffffff;
+            -webkit-text-stroke: 0.4px #202225;
+            text-transform: uppercase;
+            white-space: nowrap;
+            line-height: 1;
+        }
+
+        .protocol-card-img {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: auto;
+            display: block; border-radius: 6px;
+        }
+
+        .protocol-card-overlay {
+            position: absolute;
+            bottom: 1px; left: calc(5% - 3px); right: calc(5% - 3px);
+            display: flex; flex-direction: column; gap: 4px; align-items: center;
+        }
+
+        .protocol-card-logo-box {
+            background: rgba(20,24,32,0.72);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,255,255,0.35);
+            border-left: 2px solid rgba(255,255,255,0.18);
+            border-radius: 3px 8px 3px 8px;
+            padding: 5px 1px; position: relative; top: 10px; left: 1px;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .protocol-card-logo {
+            display: block; height: 44px;
+            opacity: 0.85;
+            filter: drop-shadow(0 1px 3px rgba(0,0,0,0.8));
+        }
+
+        .protocol-card-abilities-box {
+            background: rgba(20,24,32,0.72);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,255,255,0.35);
+            border-right: 2px solid rgba(255,255,255,0.18);
+            border-radius: 8px 3px 8px 3px;
+            padding: 4px 2px; width: 100%; text-align: center;
+        }
+
+        .protocol-card-abilities { font-size: 0.72em; color: #e0e6ee; line-height: 1.3; }
+
+        .protocols-grid:not(.player-turn):not(.loading) .protocol-card:not(.unavailable) {
+            opacity: 0.5; filter: brightness(0.62);
+            transition: opacity 0.5s ease, filter 0.5s ease, transform 0.25s, box-shadow 0.25s;
+        }
+        .protocols-grid.player-turn .protocol-card:not(.unavailable) {
+            opacity: 1; filter: brightness(1);
+            box-shadow: 0 0 12px rgba(0, 212, 255, 0.18);
+            transition: opacity 0.35s ease, filter 0.35s ease, transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+        }
+        .protocols-grid.player-turn .protocol-card:not(.unavailable):hover {
+            transform: translateY(-6px);
+            box-shadow: 0 8px 24px rgba(255, 217, 61, 0.35);
+        }
+        .protocol-card.unavailable { opacity: 0.2; cursor: not-allowed; filter: grayscale(0.7); }
+        .protocol-card.unavailable:hover { transform: none; box-shadow: none; }
+        .protocol-card.selected-player { border-color: var(--player-primary); box-shadow: 0 0 16px rgba(255, 217, 61, 0.5); }
+        .protocol-card.selected-ai     { border-color: var(--ai-primary);     box-shadow: 0 0 16px rgba(114, 46, 154, 0.5); }
+
+        .selections-row {
+            display: flex; align-items: stretch; width: 100%; gap: 0;
+            margin-bottom: 14px;
+            background: rgba(26, 31, 58, 0.6);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px; overflow: hidden;
+        }
+
+        .selection-box { flex: 1; padding: 8px 16px; display: flex; flex-direction: column; gap: 6px; }
+        .selection-box.ai-box { align-items: flex-end; border-left: 1px solid rgba(255,255,255,0.06); }
+
+        .selection-label { font-size: 9px; font-weight: 600; letter-spacing: 2px; }
+        .selection-label.player { color: var(--player-primary); }
+        .selection-label.ai     { color: var(--ai-primary); }
+
+        .selection-slots { display: flex; gap: 8px; align-items: center; }
+        .ai-box .selection-slots { justify-content: flex-end; }
+
+        .selection-card-thumb {
+            width: 120px; height: 42px;
+            border-radius: 4px; overflow: hidden; border: 2px solid; position: relative;
+        }
+
+        .selection-card-thumb .slot-title {
+            position: absolute; top: 5px; left: 4px;
+            width: 46px; height: 14px;
+            background:
+                repeating-linear-gradient(180deg, rgba(0,0,0,0.30) 0px, rgba(0,0,0,0.30) 1px, transparent 1px, transparent 3px),
+                #202225;
+            border: 1px solid rgba(255,255,255,0.25);
+            overflow: hidden;
+            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%);
+            z-index: 2;
+        }
+
+        .selection-card-thumb .slot-title::before {
+            content: attr(data-text);
+            position: absolute; left: 3px; top: 50%;
+            transform: translateY(-50%) scaleX(0.82);
+            transform-origin: left center;
+            font-family: 'DoctorGlitch', sans-serif;
+            font-size: 8px; color: #ffffff;
+            -webkit-text-stroke: 0.4px #202225;
+            text-transform: uppercase; white-space: nowrap; line-height: 1;
+        }
+
+        .selection-card-thumb > img:first-child {
+            position: absolute; top: 0; left: 0; width: 100%; height: auto; display: block;
+        }
+
+        .thumb-logo-box {
+            position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%);
+            background: rgba(20,24,32,0.72); backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,255,255,0.35); border-left: 2px solid rgba(255,255,255,0.18);
+            border-radius: 3px 6px 3px 6px; padding: 3px 2px;
+            display: flex; align-items: center; justify-content: center; z-index: 3;
+        }
+
+        .thumb-logo { display: block; height: 18px; opacity: 0.85; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.8)); }
+
+        .slot-empty { width: 120px; height: 42px; border: 1px dashed rgba(255,255,255,0.12); border-radius: 4px; }
+
+        .vs-divider {
+            display: flex; align-items: center; justify-content: center; padding: 0 20px;
+            font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 11px;
+            color: var(--ui-cyan);
+            border-left: 1px solid rgba(255,255,255,0.06);
+            border-right: 1px solid rgba(255,255,255,0.06);
+        }
+
+        /* Animaciones de carta */
+        @keyframes cardEnter {
+            from { clip-path: inset(0 0 100% 0); }
+            to   { clip-path: inset(0 0 0% 0); }
+        }
+        @keyframes scanLineV {
+            from { top: 0%; } to { top: 100%; }
+        }
+        .card-entering {
+            animation: cardEnter 0.8s linear both;
+            position: relative;
+        }
+        .card-entering::after {
+            content: '';
+            position: absolute; left: 0; right: 0; height: 3px;
+            background: linear-gradient(to right, transparent 0%, var(--ui-cyan, #00d4ff) 30%, #fff 50%, var(--ui-cyan, #00d4ff) 70%, transparent 100%);
+            box-shadow: 0 0 8px 2px var(--ui-cyan, #00d4ff);
+            animation: scanLineV 0.8s linear both;
+            pointer-events: none; z-index: 10;
+        }
+        @keyframes cardLeave {
+            from { opacity: 1; filter: grayscale(0); }
+            to   { opacity: 0.2; filter: grayscale(0.8); }
+        }
+        @keyframes scanLineUp {
+            from { top: 100%; } to { top: 0%; }
+        }
+        .card-leaving {
+            animation: cardLeave 0.8s linear forwards;
+            overflow: hidden; pointer-events: none;
+        }
+        .card-leaving::after {
+            content: '';
+            position: absolute; left: 0; right: 0; height: 3px;
+            background: linear-gradient(to right, transparent 0%, var(--ui-cyan, #00d4ff) 30%, #fff 50%, var(--ui-cyan, #00d4ff) 70%, transparent 100%);
+            box-shadow: 0 0 8px 2px var(--ui-cyan, #00d4ff);
+            animation: scanLineUp 0.8s linear forwards;
+            pointer-events: none; z-index: 10;
         }
     </style>
 </head>
 <body>
 
+<!-- ── Botón fullscreen global (sobre todas las vistas) ───── -->
+<button id="btn-fullscreen" onclick="toggleFullscreen()" title="Pantalla completa">
+    <svg id="fs-icon-expand" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+    <svg id="fs-icon-shrink" viewBox="0 0 24 24" style="display:none"><path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/><path d="M3 21l7-7"/></svg>
+</button>
+
 <!-- ── VIEW: HOME ─────────────────────────────────────────── -->
 <div id="view-home" class="view hidden">
-    <img src="../images/Background/Compile.png" class="title-img" alt="COMPILE">
+    <img src="../images/Background/Compile.png" class="title-img-home" alt="COMPILE">
     <p class="view-label">Juego de cartas · IA adaptativa</p>
     <div class="nav-row">
         <button class="ui-btn" onclick="router.navigate('draft')">JUGAR</button>
@@ -73,27 +371,90 @@
 
 <!-- ── VIEW: DRAFT ────────────────────────────────────────── -->
 <div id="view-draft" class="view hidden">
-    <p class="view-label">Draft de Protocolos</p>
-    <p style="color:#888;font-size:11px">[contenido del draft — paso 3]</p>
-    <div class="nav-row">
-        <button class="ui-btn ui-btn--danger" onclick="router.navigate('home')">VOLVER</button>
-        <button class="ui-btn" onclick="router.navigate('game')">COMENZAR JUEGO</button>
+    <div id="draft-viewport">
+    <div id="draft-container">
+        <img src="../images/Background/Compile.png" class="title-img" alt="COMPILE">
+        <p class="subtitle" id="draft-subtitle">Selecciona Tus Protocolos</p>
+        <div class="current-turn" id="current-turn">Asignando primer jugador...</div>
+        <div class="protocols-grid" id="protocols-grid"></div>
+        <div class="selections-row">
+            <div class="selection-box player-box">
+                <div class="selection-label player">JUGADOR</div>
+                <div class="selection-slots" id="player-selection"></div>
+            </div>
+            <div class="vs-divider">VS</div>
+            <div class="selection-box ai-box">
+                <div class="selection-label ai">IA</div>
+                <div class="selection-slots" id="ai-selection"></div>
+            </div>
+        </div>
+        <div style="display: flex; gap: 12px; justify-content: center; align-items: center;">
+            <button class="ui-btn ui-btn--danger" onclick="router.navigate('home')">VOLVER</button>
+            <button class="ui-btn" id="start-game-btn" disabled>COMENZAR JUEGO</button>
+        </div>
+    </div>
     </div>
 </div>
 
-<!-- ── VIEW: GAME ─────────────────────────────────────────── -->
+<!-- ── VIEW: GAME (placeholder — paso 4) ─────────────────── -->
 <div id="view-game" class="view hidden">
-    <p class="view-label">Tablero de Juego</p>
-    <p style="color:#888;font-size:11px">[contenido del juego — paso 4]</p>
-    <div class="nav-row">
+    <p class="view-label" style="position:relative;z-index:2">Tablero de Juego</p>
+    <p style="color:#888;font-size:11px;position:relative;z-index:2">[contenido del juego — paso 4]</p>
+    <div class="nav-row" style="position:relative;z-index:2">
         <button class="ui-btn ui-btn--danger" onclick="router.navigate('draft')">NUEVO DRAFT</button>
     </div>
 </div>
 
+<!-- ── Scripts ─────────────────────────────────────────────── -->
+<script src="gsap.min.js"></script>
+<script src="ScrambleText.min.js"></script>
+<script>
+    if (typeof ScrambleTextPlugin !== 'undefined' && typeof gsap !== 'undefined') {
+        gsap.registerPlugin(ScrambleTextPlugin);
+    }
+
+    window.scrTxt = function(el, text, opts) {
+        if (typeof el === 'string') el = document.getElementById(el);
+        if (!el) return;
+        var t = (text === undefined || text === null) ? '' : String(text);
+        if (el.getAttribute('data-scr-last') === t) return;
+        el.setAttribute('data-scr-last', t);
+        if (typeof ScrambleTextPlugin === 'undefined' || typeof gsap === 'undefined') {
+            el.textContent = t; return;
+        }
+        var dur   = (opts && opts.duration !== undefined) ? opts.duration : 1.0;
+        var chars = (opts && opts.chars)   || 'upperCase';
+        var speed = (opts && opts.speed)   || 0.5;
+        gsap.to(el, { duration: dur, scrambleText: { text: t, chars: chars, speed: speed, revealDelay: 0 } });
+    };
+
+    function setFsIcons(isFs) {
+        document.getElementById('fs-icon-expand').style.display = isFs ? 'none' : '';
+        document.getElementById('fs-icon-shrink').style.display = isFs ? '' : 'none';
+    }
+    function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(() => {});
+            setFsIcons(true);
+            sessionStorage.setItem('fs', '1');
+        } else {
+            document.exitFullscreen().catch(() => {});
+            setFsIcons(false);
+            sessionStorage.removeItem('fs');
+        }
+    }
+    document.addEventListener('fullscreenchange', () => {
+        setFsIcons(!!document.fullscreenElement);
+        if (!document.fullscreenElement) sessionStorage.removeItem('fs');
+    });
+</script>
+
+<script src="cards-data.js"></script>
+<script src="draft-logic.js"></script>
 <script src="router.js"></script>
 <script>
     router.register('home',  document.getElementById('view-home'),  null);
-    router.register('draft', document.getElementById('view-draft'), null);
+    router.register('draft', document.getElementById('view-draft'), window.draftModule);
     router.register('game',  document.getElementById('view-game'),  null);
 
     router.navigate(location.hash.slice(1) || 'home');
