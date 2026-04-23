@@ -4044,3 +4044,9 @@ if (typeof CARDS_DATA !== 'undefined') {
 }
 
 window.gameModule = { init: startGameFromDraft };
+
+// Auto-init en modo standalone (game.html).
+// En modo SPA (app.html con data-spa="true"), el router llama gameModule.init() explícitamente.
+if (!document.body.hasAttribute('data-spa') && document.getElementById('game-container')) {
+    startGameFromDraft();
+}
