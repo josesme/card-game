@@ -1525,45 +1525,29 @@ function showActionModal(handIndex) {
     }
 }
 
-ui.btnPlayUp.onclick = () => playSelectedCard(false);
-ui.btnPlayDown.onclick = () => playSelectedCard(true);
-ui.btnCancel.onclick = () => {
-    ui.actionModal.classList.add('hidden');
-    gameState.selectedCardIndex = null;
-};
-
-// Initialize modal button handlers with error checking
 function initializeModalButtons() {
-    if (ui.btnPlayUp) {
-        ui.btnPlayUp.onclick = () => {
-            console.log('🔘 btnPlayUp clicked');
-            playSelectedCard(false);
-        };
-        console.log('✅ btnPlayUp handler attached');
-    } else {
-        console.error('❌ btnPlayUp not found');
-    }
-    
-    if (ui.btnPlayDown) {
-        ui.btnPlayDown.onclick = () => {
-            console.log('🔘 btnPlayDown clicked');
-            playSelectedCard(true);
-        };
-        console.log('✅ btnPlayDown handler attached');
-    } else {
-        console.error('❌ btnPlayDown not found');
-    }
-    
-    if (ui.btnCancel) {
-        ui.btnCancel.onclick = () => {
-            console.log('🔘 btnCancel clicked');
-            ui.actionModal.classList.add('hidden');
-            gameState.selectedCardIndex = null;
-        };
-        console.log('✅ btnCancel handler attached');
-    } else {
-        console.error('❌ btnCancel not found');
-    }
+    if (ui.btnPlayUp) ui.btnPlayUp.onclick = () => playSelectedCard(false);
+    if (ui.btnPlayDown) ui.btnPlayDown.onclick = () => playSelectedCard(true);
+    if (ui.btnCancel) ui.btnCancel.onclick = () => {
+        ui.actionModal.classList.add('hidden');
+        gameState.selectedCardIndex = null;
+    };
+    if (ui.btnRefresh) ui.btnRefresh.onclick = () => {
+        if (gameState.turn !== 'player' || gameState.phase !== 'action') return;
+        if (gameState.player.hand.length >= 5) {
+            alert('No puedes actualizar si tienes 5 o más cartas.');
+            return;
+        }
+        const handBefore = gameState.player.hand.length;
+        while (gameState.player.hand.length < 5) {
+            if (!drawCard('player')) break;
+        }
+        const drawn = gameState.player.hand.length - handBefore;
+        if (drawn > 0) window._animPendingHand = (window._animPendingHand || 0) + drawn;
+        gameState.refreshedThisTurn = 'player';
+        logEvent(`Actualiza mazo (roba ${drawn})`, { isAI: false });
+        endTurn('player');
+    };
 }
 
 // --- Motor de Habilidades ---
@@ -3131,29 +3115,6 @@ if (btnStopDiscard) btnStopDiscard.onclick = () => {
     }
 };
 
-ui.btnRefresh.onclick = () => {
-    console.log('🔘 btnRefresh clicked - checking conditions...');
-    if (gameState.turn !== 'player' || gameState.phase !== 'action') {
-        console.warn('❌ Cannot refresh - not player action phase');
-        return;
-    }
-    if (gameState.player.hand.length >= 5) {
-        console.warn('❌ Cannot refresh - hand too full');
-        alert("No puedes actualizar si tienes 5 o más cartas.");
-        return;
-    }
-    console.log('✅ Refreshing hand...');
-    const handBefore = gameState.player.hand.length;
-    while(gameState.player.hand.length < 5) {
-        if(!drawCard('player')) break;
-    }
-    const drawn = gameState.player.hand.length - handBefore;
-    if (drawn > 0) window._animPendingHand = (window._animPendingHand || 0) + drawn;
-    gameState.refreshedThisTurn = 'player';
-    console.log('🔄 Hand refreshed, ending turn');
-    logEvent(`Actualiza mazo (roba ${drawn})`, { isAI: false });
-    endTurn('player');
-}
 
 function playAITurn() {
     // FASE 2: IA INTELIGENTE - Minimax + Evaluación Estratégica
