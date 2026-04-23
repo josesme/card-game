@@ -6,7 +6,9 @@
     <title>COMPILE</title>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&family=Teko:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="design-tokens.css">
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="ui-components.css">
+    <link rel="stylesheet" href="game-styles.css">
     <style>
         @font-face {
             font-family: 'DoctorGlitch';
@@ -396,14 +398,260 @@
     </div>
 </div>
 
-<!-- ── VIEW: GAME (placeholder — paso 4) ─────────────────── -->
+<!-- ── VIEW: GAME ─────────────────────────────────────────── -->
 <div id="view-game" class="view hidden">
-    <p class="view-label" style="position:relative;z-index:2">Tablero de Juego</p>
-    <p style="color:#888;font-size:11px;position:relative;z-index:2">[contenido del juego — paso 4]</p>
-    <div class="nav-row" style="position:relative;z-index:2">
-        <button class="ui-btn ui-btn--danger" onclick="router.navigate('draft')">NUEVO DRAFT</button>
+<canvas id="mtx-bg"></canvas>
+
+<div id="game-container">
+    <!-- HEADER -->
+    <header style="text-align: center; margin-bottom: 10px; position: relative; display: flex; align-items: center; justify-content: center;">
+        <div style="position: absolute; left: 0; display: flex; gap: 8px;">
+            <button class="ui-btn ui-btn--sm" onclick="router.navigate('draft')">NUEVO DRAFT</button>
+            <button class="ui-btn ui-btn--sm ui-btn--danger" onclick="router.navigate('home')">ABANDONAR</button>
+        </div>
+        <img src="../images/Background/Compile.png" alt="COMPILE" style="height: auto; max-height: 50px; filter: drop-shadow(0 0 12px rgba(255,217,61,0.4));">
+        <div style="position: absolute; right: 0; display: flex; gap: 6px; align-items: center;">
+            <button id="log-toggle" onclick="document.getElementById('log-overlay').classList.toggle('open')" title="Log del juego">
+                <svg viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 13H8"/><path d="M16 17H8"/><path d="M16 13h-2"/></svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- ═══ GAME BOARD (3 vertical columns) ═══ -->
+    <div class="battle-field">
+
+        <!-- Column: IZQUIERDA -->
+        <div class="battle-column">
+            <div class="proto-row">
+                <div id="proto-izquierda-player" class="proto-box player">
+                    <div class="proto-card-name">—</div>
+                    <div class="proto-card-status"></div>
+                    <div class="proto-score player-score">0</div>
+                </div>
+                <div id="proto-izquierda-ai" class="proto-box ai">
+                    <div class="proto-card-name">—</div>
+                    <div class="proto-card-status"></div>
+                    <div class="proto-score ai-score">0</div>
+                </div>
+            </div>
+            <div id="line-izquierda" class="line-container">
+                <div class="player-stack vertical-stack"></div>
+                <div class="line-separator-h"></div>
+                <div class="ai-stack vertical-stack"></div>
+            </div>
+        </div>
+
+        <!-- Column: CENTRO -->
+        <div class="battle-column">
+            <div class="proto-row">
+                <div id="proto-centro-player" class="proto-box player">
+                    <div class="proto-card-name">—</div>
+                    <div class="proto-card-status"></div>
+                    <div class="proto-score player-score">0</div>
+                </div>
+                <div id="proto-centro-ai" class="proto-box ai">
+                    <div class="proto-card-name">—</div>
+                    <div class="proto-card-status"></div>
+                    <div class="proto-score ai-score">0</div>
+                </div>
+            </div>
+            <div id="line-centro" class="line-container">
+                <div class="player-stack vertical-stack"></div>
+                <div class="line-separator-h"></div>
+                <div class="ai-stack vertical-stack"></div>
+            </div>
+        </div>
+
+        <!-- Column: DERECHA -->
+        <div class="battle-column">
+            <div class="proto-row">
+                <div id="proto-derecha-player" class="proto-box player">
+                    <div class="proto-card-name">—</div>
+                    <div class="proto-card-status"></div>
+                    <div class="proto-score player-score">0</div>
+                </div>
+                <div id="proto-derecha-ai" class="proto-box ai">
+                    <div class="proto-card-name">—</div>
+                    <div class="proto-card-status"></div>
+                    <div class="proto-score ai-score">0</div>
+                </div>
+            </div>
+            <div id="line-derecha" class="line-container">
+                <div class="player-stack vertical-stack"></div>
+                <div class="line-separator-h"></div>
+                <div class="ai-stack vertical-stack"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Hidden containers for logic.js compat -->
+    <div id="ai-hand"         style="display: none;"></div>
+    <div id="player-hand-col" style="display: none;"></div>
+    <div id="hand-section"    style="display: none;"></div>
+</div>
+
+<!-- ═══ CARD PREVIEW PANEL ═══ -->
+<div id="card-preview-panel">
+    <div id="card-preview-inner"></div>
+</div>
+
+<div id="field-cursor-tooltip"></div>
+
+<button id="btn-hand-mode" title="Cambiar modo mano" onclick="setHandMode(document.getElementById('hand-overlay').classList.contains('peek-mode') ? 'classic' : 'peek')">≡</button>
+
+<!-- ═══ HAND OVERLAY ═══ -->
+<div id="hand-overlay">
+    <div class="hand-bar">
+      <div class="hand-bar-inner">
+        <div style="display: flex; align-items: center; gap: 8px; width: 220px; flex-shrink: 0;">
+            <span style="color: var(--player-primary); font-size: 0.85em; font-weight: bold;">JUG</span>
+            <span class="stat-label">Mazo</span>
+            <span id="player-deck-count" class="stat-value" style="color: var(--player-primary);">0</span>
+            <span class="stat-label">Desc.</span>
+            <span id="player-trash-count" class="stat-value" style="color: var(--player-300);">0</span>
+        </div>
+        <div id="discard-banner"></div>
+        <button id="btn-stop-discard" class="hidden ui-btn ui-btn--sm ui-btn--danger">DETENER DESCARTE</button>
+        <div id="action-instruction" style="display:none; font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:600; letter-spacing:1px; color:#e07b00; text-align:center; flex:1;"></div>
+        <span id="control-indicator" title="Control Component" style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--ui-dim); flex-shrink: 0;">△</span>
+        <button id="btn-rearrange-done" class="hidden ui-btn ui-btn--sm" style="background:var(--ui-cyan);color:#0a0e27;font-weight:700;flex-shrink:0;">LISTO</button>
+        <div style="display: flex; align-items: center; gap: 8px; width: 220px; flex-shrink: 0; justify-content: flex-end;">
+            <span style="color: var(--ui-pink); font-family: var(--ui-font); font-size: 9px; font-weight: 600; letter-spacing: 1px;">IA</span>
+            <span class="stat-label">Mano</span>
+            <span id="ai-hand-count" class="stat-value" style="color: var(--ui-pink);">0</span>
+            <span class="stat-label">Mazo</span>
+            <span id="ai-deck-count" class="stat-value" style="color: var(--ui-pink);">0</span>
+            <span class="stat-label">Desc.</span>
+            <span id="ai-trash-count" class="stat-value" style="color: var(--ui-pink);">0</span>
+        </div>
+        <span id="hand-count-badge" style="display:none;"></span>
+      </div>
+    </div>
+    <div class="hand-content">
+        <div id="hand-side-player" class="hand-side-fan hand-side-fan--player">
+            <div id="hs-fan-player" class="hs-fan"></div>
+        </div>
+        <div id="hs-unified-log" class="hs-unified-log">
+            <div class="hs-log-header" id="hs-log-header">
+                <button id="player-deck-btn" title="Recargar Mazo" class="ui-btn ui-btn--sm">ACTUALIZAR</button>
+            </div>
+            <div id="hs-log-scroll-wrap">
+                <div id="hs-unified-entries" class="hs-log-entries"></div>
+            </div>
+        </div>
+        <div class="slider-wrap">
+            <div class="slider-viewport" id="hand-slider-vp">
+                <div id="player-hand" style="flex-shrink: 0; display: flex; flex-wrap: nowrap; gap: var(--hand-card-gap); min-height: 245px; overflow: visible; align-items: center; padding-bottom: 8px; transition: transform 0.32s cubic-bezier(0.4,0,0.2,1); will-change: transform;"></div>
+                <button class="slider-arrow prev" id="hand-slider-prev" onclick="slideHand(-1)" disabled>&#8249;</button>
+                <button class="slider-arrow next" id="hand-slider-next" onclick="slideHand(1)" disabled>&#8250;</button>
+            </div>
+            <div class="slider-dots" id="hand-slider-dots"></div>
+        </div>
+        <div id="hand-side-ai" class="hand-side-fan hand-side-fan--ai">
+            <div id="hs-fan-ai" class="hs-fan"></div>
+        </div>
     </div>
 </div>
+
+<!-- ============================================================
+     EFFECT OVERLAYS
+     ============================================================ -->
+<div id="command-confirm" class="effect-overlay hidden">
+    <div class="effect-panel" style="max-width: 440px;">
+        <div class="effect-header">
+            <div class="effect-header-text">
+                <div class="effect-title">CONFIRMACIÓN</div>
+            </div>
+        </div>
+        <div class="effect-confirm-body">
+            <div class="confirm-text" id="confirm-msg"></div>
+        </div>
+        <div class="effect-actions">
+            <button class="ui-btn" id="btn-confirm-yes">SÍ</button>
+            <button class="ui-btn ui-btn--danger" id="btn-confirm-no">NO</button>
+        </div>
+    </div>
+</div>
+
+<div id="action-modal" class="effect-overlay hidden">
+    <div class="effect-panel" style="max-width: 400px;">
+        <div class="effect-header">
+            <div class="effect-header-text">
+                <div class="effect-title">JUGAR CARTA</div>
+            </div>
+        </div>
+        <div id="modal-card-preview" style="padding: 18px 22px; display: flex; justify-content: center;"></div>
+        <div class="effect-actions" style="flex-direction: column; gap: 8px;">
+            <div style="display: flex; gap: 10px; width: 100%;">
+                <button id="btn-play-up" class="ui-btn ui-btn--flex">BOCARRIBA</button>
+                <button id="btn-play-down" class="ui-btn ui-btn--flex ui-btn--purple">BOCABAJO</button>
+            </div>
+            <button id="btn-cancel" class="ui-btn ui-btn--danger" style="width: 100%;">CANCELAR</button>
+        </div>
+    </div>
+</div>
+
+<div id="reveal-modal" class="effect-overlay hidden">
+    <div class="effect-panel theme-reveal">
+        <div class="effect-header">
+            <div class="effect-header-text">
+                <div class="effect-title" id="reveal-title">CARTAS REVELADAS</div>
+                <div class="effect-subtitle" id="reveal-subtitle"></div>
+            </div>
+            <div class="effect-source" id="reveal-source"></div>
+        </div>
+        <div class="effect-cards" id="reveal-cards-container"></div>
+        <div class="effect-actions" id="reveal-actions">
+            <button class="ui-btn" id="btn-reveal-close">CONTINUAR</button>
+        </div>
+    </div>
+</div>
+
+<div id="overlay-select" class="effect-overlay hidden">
+    <div class="effect-panel">
+        <div class="effect-header">
+            <div class="effect-header-text">
+                <div class="effect-title" id="select-title"></div>
+                <div class="effect-subtitle" id="select-subtitle"></div>
+            </div>
+            <div class="effect-source" id="select-source"></div>
+        </div>
+        <div class="effect-cards" id="select-cards"></div>
+        <div class="effect-info">
+            <div class="effect-counter" id="select-counter"></div>
+        </div>
+        <div class="effect-actions" id="select-actions"></div>
+    </div>
+</div>
+
+<div id="notify-toast" class="effect-notify"></div>
+
+<!-- VICTORY SCREEN -->
+<div id="victory-screen" class="hidden">
+    <div id="vs-terminal"></div>
+    <div id="vs-cards"></div>
+    <div id="vs-title">La realidad ha sido reescrita</div>
+    <div id="vs-divider"></div>
+    <div id="vs-subtitle">—</div>
+    <div id="vs-actions">
+        <button class="ui-btn" onclick="router.navigate('draft')">NUEVO DRAFT</button>
+        <button class="ui-btn ui-btn--purple" onclick="router.navigate('home')">PANTALLA PRINCIPAL</button>
+    </div>
+</div>
+
+<!-- LOG OVERLAY -->
+<div id="log-overlay">
+    <div class="log-header">
+        <span>Log del Juego</span>
+        <button class="log-close" onclick="document.getElementById('log-overlay').classList.remove('open')">✕</button>
+    </div>
+    <div id="game-log-box" style="flex: 1; padding: 12px; overflow: hidden; display: flex; flex-direction: column;">
+        <div id="game-log" style="flex: 1; overflow-y: auto; min-height: 0; display: flex; flex-direction: column; gap: 4px; scrollbar-width: thin; scrollbar-color: rgba(255,217,61,0.2) transparent;"></div>
+    </div>
+</div>
+
+</div><!-- /view-game -->
 
 <!-- ── Scripts ─────────────────────────────────────────────── -->
 <script src="gsap.min.js"></script>
@@ -451,11 +699,29 @@
 
 <script src="cards-data.js"></script>
 <script src="draft-logic.js"></script>
+<script src="Flip.min.js"></script>
+<script src="animations.js"></script>
+<script src="ai-profiles.js"></script>
+<script src="ai-evaluator.js"></script>
+<script src="minimax.js"></script>
+<script src="modal-copy.js"></script>
+<script src="abilities-engine.js"></script>
+<script src="logic.js"></script>
+<script src="game-ui-helpers.js"></script>
 <script src="router.js"></script>
 <script>
     router.register('home',  document.getElementById('view-home'),  null);
     router.register('draft', document.getElementById('view-draft'), window.draftModule);
-    router.register('game',  document.getElementById('view-game'),  null);
+    router.register('game',  document.getElementById('view-game'),  {
+        init: function() {
+            document.body.classList.add('in-game');
+            window.initGameUI();
+            if (window.gameModule && window.gameModule.init) window.gameModule.init();
+        },
+        teardown: function() {
+            window.teardownGameUI();
+        }
+    });
 
     router.navigate(location.hash.slice(1) || 'home');
 </script>
