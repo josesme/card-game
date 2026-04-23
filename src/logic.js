@@ -11,27 +11,28 @@
  */
 
 // Core Game Logic for Compile - Official Rules Updated
-const ui = {
-    playerDeckCount: document.getElementById('player-deck-count'),
-    playerTrashCount: document.getElementById('player-trash-count'),
-    aiDeckCount: document.getElementById('ai-deck-count'),
-    aiTrashCount: document.getElementById('ai-trash-count'),
-    playerHand: document.getElementById('player-hand'),
-    aiHand: document.getElementById('ai-hand'),
-    actionModal: document.getElementById('action-modal'),
-    modalCardPreview: document.getElementById('modal-card-preview'),
-    btnPlayUp: document.getElementById('btn-play-up'),
-    btnPlayDown: document.getElementById('btn-play-down'),
-    btnCancel: document.getElementById('btn-cancel'),
-    confirmArea: document.getElementById('command-confirm'),
-    confirmMsg: document.getElementById('confirm-msg'),
-    btnConfirmYes: document.getElementById('btn-confirm-yes'),
-    btnConfirmNo: document.getElementById('btn-confirm-no'),
-    btnRefresh: document.getElementById('player-deck-btn'),
-    victoryScreen: document.getElementById('victory-screen'),
-    winnerText: document.getElementById('winner-text'),
-    btnRestart: document.getElementById('btn-restart'),
-};
+let ui = {};
+function _initUI() {
+    ui.playerDeckCount  = document.getElementById('player-deck-count');
+    ui.playerTrashCount = document.getElementById('player-trash-count');
+    ui.aiDeckCount      = document.getElementById('ai-deck-count');
+    ui.aiTrashCount     = document.getElementById('ai-trash-count');
+    ui.playerHand       = document.getElementById('player-hand');
+    ui.aiHand           = document.getElementById('ai-hand');
+    ui.actionModal      = document.getElementById('action-modal');
+    ui.modalCardPreview = document.getElementById('modal-card-preview');
+    ui.btnPlayUp        = document.getElementById('btn-play-up');
+    ui.btnPlayDown      = document.getElementById('btn-play-down');
+    ui.btnCancel        = document.getElementById('btn-cancel');
+    ui.confirmArea      = document.getElementById('command-confirm');
+    ui.confirmMsg       = document.getElementById('confirm-msg');
+    ui.btnConfirmYes    = document.getElementById('btn-confirm-yes');
+    ui.btnConfirmNo     = document.getElementById('btn-confirm-no');
+    ui.btnRefresh       = document.getElementById('player-deck-btn');
+    ui.victoryScreen    = document.getElementById('victory-screen');
+    ui.winnerText       = document.getElementById('winner-text');
+    ui.btnRestart       = document.getElementById('btn-restart');
+}
 
 const LINES = ['izquierda', 'centro', 'derecha'];
 
@@ -46,7 +47,7 @@ let GLOBAL_CARDS = null; // cargado desde data/cards.json al iniciar
 let gameState = {
     player: {
         deck: [], trash: [], hand: [],
-        protocols: JSON.parse(sessionStorage.getItem('playerProtocols') || '["Espíritu", "Muerte", "Fuego"]'),
+        protocols: [],
         compiled: [],
         discardedSinceLastCheck: false,
         drawnSinceLastCheck: false,
@@ -56,7 +57,7 @@ let gameState = {
     },
     ai: {
         deck: [], trash: [], hand: [],
-        protocols: JSON.parse(sessionStorage.getItem('aiProtocols') || '["Vida", "Luz", "Oscuridad"]'),
+        protocols: [],
         compiled: [],
         discardedSinceLastCheck: false,
         drawnSinceLastCheck: false,
@@ -3981,6 +3982,7 @@ function showGameOver(playerWon) {
 }
 
 function startGameFromDraft() {
+    _initUI();
     gameState.player.protocols = JSON.parse(sessionStorage.getItem('playerProtocols') || '["Espíritu", "Muerte", "Fuego"]');
     gameState.ai.protocols    = JSON.parse(sessionStorage.getItem('aiProtocols')     || '["Vida", "Luz", "Oscuridad"]');
 
@@ -4032,12 +4034,13 @@ function swapCompiledState(lineA, lineB, owner) {
     else if (hasB && !hasA) arr[arr.indexOf(lineB)] = lineA;
 }
 
-// ========================== START ==========================
+// ========================== MODULE EXPORT ==========================
 if (typeof CARDS_DATA !== 'undefined') {
     PROTOCOL_DEFS = CARDS_DATA._protocolMeta || {};
     const { _protocolMeta, ...cards } = CARDS_DATA;
     GLOBAL_CARDS = cards;
-    startGameFromDraft();
 } else {
     console.error('❌ CARDS_DATA no definido — asegúrate de cargar cards-data.js antes de logic.js');
 }
+
+window.gameModule = { init: startGameFromDraft };

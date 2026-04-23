@@ -2506,12 +2506,9 @@ function processHandSelection(type, selectedSet, ctx) {
 <script src="abilities-engine.js"></script>
 <script src="logic.js"></script>
 <script>
-// Initialize modal scramble after all scripts are loaded
+gameModule.init();
 window.addEventListener('load', function() {
-    if (typeof window._initModalScramble === 'function') {
-        console.log('[Scramble] Initializing modal scramble...');
-        window._initModalScramble();
-    }
+    if (typeof window._initModalScramble === 'function') window._initModalScramble();
 });
 </script>
 <script>
