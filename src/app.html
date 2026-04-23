@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COMPILE</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="design-tokens.css">
+    <link rel="stylesheet" href="ui-components.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background: url('../images/Background/Compile_2.png') no-repeat center center fixed;
+            background-size: cover;
+            color: #e0e0e0;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 14, 39, 0.72);
+            z-index: 0;
+        }
+
+        .view {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+        }
+
+        .view.hidden { display: none; }
+
+        .view-label {
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--ui-cyan);
+        }
+
+        .title-img {
+            max-height: 120px;
+            filter: drop-shadow(0 0 16px rgba(255, 217, 61, 0.4));
+        }
+
+        .nav-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ── VIEW: HOME ─────────────────────────────────────────── -->
+<div id="view-home" class="view hidden">
+    <img src="../images/Background/Compile.png" class="title-img" alt="COMPILE">
+    <p class="view-label">Juego de cartas · IA adaptativa</p>
+    <div class="nav-row">
+        <button class="ui-btn" onclick="router.navigate('draft')">JUGAR</button>
+    </div>
+</div>
+
+<!-- ── VIEW: DRAFT ────────────────────────────────────────── -->
+<div id="view-draft" class="view hidden">
+    <p class="view-label">Draft de Protocolos</p>
+    <p style="color:#888;font-size:11px">[contenido del draft — paso 3]</p>
+    <div class="nav-row">
+        <button class="ui-btn ui-btn--danger" onclick="router.navigate('home')">VOLVER</button>
+        <button class="ui-btn" onclick="router.navigate('game')">COMENZAR JUEGO</button>
+    </div>
+</div>
+
+<!-- ── VIEW: GAME ─────────────────────────────────────────── -->
+<div id="view-game" class="view hidden">
+    <p class="view-label">Tablero de Juego</p>
+    <p style="color:#888;font-size:11px">[contenido del juego — paso 4]</p>
+    <div class="nav-row">
+        <button class="ui-btn ui-btn--danger" onclick="router.navigate('draft')">NUEVO DRAFT</button>
+    </div>
+</div>
+
+<script src="router.js"></script>
+<script>
+    router.register('home',  document.getElementById('view-home'),  null);
+    router.register('draft', document.getElementById('view-draft'), null);
+    router.register('game',  document.getElementById('view-game'),  null);
+
+    router.navigate(location.hash.slice(1) || 'home');
+</script>
+
+</body>
+</html>
