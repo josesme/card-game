@@ -2095,6 +2095,7 @@ function handleFieldCardClick(line, target, cardIdx) {
             return;
         }
         const _doElim = () => {
+            if (typeof AudioManager !== 'undefined') AudioManager.playSound('card-eliminated');
             gameState.field[line][target].splice(cardIdx, 1);
             gameState[target].trash.push(cardObj.card);
             gameState[gameState.turn].eliminatedSinceLastCheck = true;
@@ -2531,6 +2532,7 @@ function resolveEffectAI(type, target, count, opts = {}) {
             if (line !== null) {
                 const cardObj = gameState.field[line][actualTarget][gameState.field[line][actualTarget].length - 1];
                 if (window.animCardEliminate) window.animCardEliminate(cardObj.card.id, null);
+                if (typeof AudioManager !== 'undefined') AudioManager.playSound('card-eliminated');
                 gameState.field[line][actualTarget].pop();
                 gameState[actualTarget].trash.push(cardObj.card);
                 gameState[gameState.turn].eliminatedSinceLastCheck = true;
@@ -3381,7 +3383,7 @@ function executeAIMove(move) {
     });
     checkDeleteOnCover(move.line, landSide);
     window._animPendingField = { line: move.line, target: landSide };
-    if (typeof AudioManager !== 'undefined') AudioManager.playSound(move.faceUp ? 'card-play' : 'card-facedown');
+    if (typeof AudioManager !== 'undefined') AudioManager.playSound('card-play-ai');
     updateUI();
 
     const sideText = landSide !== 'ai' ? ' (lado rival)' : '';

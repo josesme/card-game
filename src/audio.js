@@ -16,14 +16,15 @@
 
     // Sound slots — drop the matching .ogg file in sounds/sfx/ to activate each one.
     const SFX_FILES = {
-        'card-play':    'sounds/sfx/card-play.ogg',
-        'card-facedown':'sounds/sfx/card-facedown.ogg',
-        'compile':      'sounds/sfx/compile.ogg',
-        'victory':      'sounds/sfx/victory.ogg',
-        'defeat':       'sounds/sfx/defeat.ogg',
-        'draw':         'sounds/sfx/draw.ogg',
-        'ability':      'sounds/sfx/ability.ogg',
-        'turn-end':     'sounds/sfx/turn-end.ogg',
+        'card-play':      'sounds/sfx/card-play.ogg',
+        'card-facedown':  'sounds/sfx/card-facedown.ogg',
+        'card-play-ai':   'sounds/sfx/card-play-ai.ogg',
+        'card-eliminated':'sounds/sfx/card-eliminated.ogg',
+        'compile':        'sounds/sfx/compile.ogg',
+        'victory':        'sounds/sfx/victory.ogg',
+        'defeat':         'sounds/sfx/defeat.ogg',
+        'draw':           'sounds/sfx/draw.ogg',
+        'turn-end':       'sounds/sfx/turn-end.ogg',
     };
 
     // ── BGM load + start ─────────────────────────────────────────────────────
