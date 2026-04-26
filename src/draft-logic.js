@@ -77,6 +77,8 @@
 
     // ── Draft logic ────────────────────────────────────────────────────────────
     function initDraft() {
+        _aiArchetype = _pickAIArchetype();
+        console.log(`🤖 Arquetipo IA: ${_aiArchetype.name} (${_aiArchetype.tier})`);
         draftState.firstPlayer = Math.random() > 0.5 ? 'player' : 'ai';
         startRound();
     }
@@ -120,6 +122,43 @@
             }
         });
     }
+
+    // ── AI archetypes ──────────────────────────────────────────────────────────
+    // Each archetype defines a strategic goal drawn from compile-estrategy-es.md.
+    // core: protocols the AI strongly wants. flex: good additions.
+    // tier: S/A/B — used to weight archetype selection by difficulty.
+    const AI_ARCHETYPES = [
+        { name: 'Control Explosivo',    tier: 'S', core: ['Gravedad', 'Muerte'],              flex: ['Velocidad', 'Fuego', 'Espíritu', 'Oscuridad'] },
+        { name: 'Speed + Gravedad',     tier: 'S', core: ['Velocidad', 'Gravedad'],            flex: ['Espíritu', 'Fuego', 'Tiempo', 'Oscuridad'] },
+        { name: 'Muerte + Gravedad',    tier: 'S', core: ['Muerte', 'Gravedad'],               flex: ['Espíritu', 'Fuego', 'Velocidad', 'Oscuridad'] },
+        { name: 'Motor Vida-Agua',      tier: 'A', core: ['Vida', 'Agua'],                     flex: ['Oscuridad', 'Espíritu', 'Luz', 'Humo'] },
+        { name: 'Speed + Fuego',        tier: 'A', core: ['Velocidad', 'Fuego'],               flex: ['Espíritu', 'Tiempo', 'Oscuridad'] },
+        { name: 'Espíritu Pegamento',   tier: 'A', core: ['Espíritu', 'Gravedad'],             flex: ['Fuego', 'Hielo', 'Agua', 'Vida'] },
+        { name: 'Interacción Agresiva', tier: 'A', core: ['Muerte', 'Odio'],                   flex: ['Fuego', 'Plaga', 'Guerra', 'Espíritu'] },
+        { name: 'Motor de Descarte',    tier: 'A', core: ['Plaga', 'Fuego'],                   flex: ['Odio', 'Corrupción', 'Tiempo', 'Miedo'] },
+        { name: 'Combo Psique',         tier: 'A', core: ['Psique', 'Oscuridad'],              flex: ['Velocidad', 'Caos', 'Espíritu'] },
+        { name: 'Bocabajos Oscuridad',  tier: 'B', core: ['Oscuridad', 'Humo'],               flex: ['Vida', 'Agua', 'Apatía', 'Gravedad'] },
+        { name: 'Tiempo-Claridad',      tier: 'B', core: ['Tiempo', 'Claridad'],               flex: ['Espejo', 'Humo', 'Velocidad'] },
+        { name: 'Tortura Descarte',     tier: 'B', core: ['Plaga', 'Corrupción'],              flex: ['Miedo', 'Tiempo', 'Fuego'] },
+    ];
+
+    // Picks a random archetype weighted by difficulty: higher levels prefer S-tier.
+    function _pickAIArchetype() {
+        const diff = parseInt(sessionStorage.getItem('aiDifficultyDepth') || '3');
+        const tierWeight = { S: [1,1,2,3,4], A: [2,2,3,3,2], B: [3,3,2,1,1] };
+        const idx = Math.min(Math.max(diff - 1, 0), 4);
+        let total = 0;
+        const pool = AI_ARCHETYPES.map(a => {
+            const w = (tierWeight[a.tier] || [1,1,1,1,1])[idx];
+            total += w;
+            return { a, w };
+        });
+        let r = Math.random() * total;
+        for (const { a, w } of pool) { r -= w; if (r <= 0) return a; }
+        return pool[pool.length - 1].a;
+    }
+
+    let _aiArchetype = null;
 
     // ── AI evaluation ──────────────────────────────────────────────────────────
     const PROTOCOL_STRENGTH = {
@@ -184,6 +223,13 @@
         let score = PROTOCOL_STRENGTH[protocol] || 5;
         aiAlready.forEach(p  => { score += getDraftSynergy(protocol, p) * 1.8; });
         playerPicked.forEach(p => { if ((PROTOCOL_COUNTER[protocol] || []).includes(p)) score += 3; });
+
+        // Archetype affinity: strongly bias toward chosen strategy
+        if (_aiArchetype) {
+            if (_aiArchetype.core.includes(protocol))       score += 10;
+            else if (_aiArchetype.flex.includes(protocol))  score += 4;
+        }
+
         return score;
     }
 
