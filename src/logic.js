@@ -1360,6 +1360,7 @@ function checkCompilePhase(who) {
     }
 
     if (compiledAny) {
+        if (typeof AudioManager !== 'undefined') AudioManager.playSound('compile');
         window.queueAnim?.({ type: 'compile', line: compiledLine });
         updateUI();
         if (gameState.pendingCompileShift) {
@@ -1543,7 +1544,10 @@ function initializeModalButtons() {
             if (!drawCard('player')) break;
         }
         const drawn = gameState.player.hand.length - handBefore;
-        if (drawn > 0) window._animPendingHand = (window._animPendingHand || 0) + drawn;
+        if (drawn > 0) {
+            window._animPendingHand = (window._animPendingHand || 0) + drawn;
+            if (typeof AudioManager !== 'undefined') AudioManager.playSound('draw');
+        }
         gameState.refreshedThisTurn = 'player';
         logEvent(`Actualiza mazo (roba ${drawn})`, { isAI: false });
         endTurn('player');
@@ -3063,6 +3067,7 @@ function finalizePlay(targetLine, isFaceDown) {
     insertCardIntoStack(gameState.field[targetLine][targetSide], playedCard);
     checkDeleteOnCover(targetLine, targetSide);
     window._animPendingField = { line: targetLine, target: targetSide };
+    if (typeof AudioManager !== 'undefined') AudioManager.playSound(isFaceDown ? 'card-facedown' : 'card-play');
     updateUI(); // Sincronizar DOM antes de disparar efectos — animación de entrada empieza aquí
 
     // Delay para que la animación de entrada sea visible antes de que aparezca el modal
@@ -3376,6 +3381,7 @@ function executeAIMove(move) {
     });
     checkDeleteOnCover(move.line, landSide);
     window._animPendingField = { line: move.line, target: landSide };
+    if (typeof AudioManager !== 'undefined') AudioManager.playSound(move.faceUp ? 'card-play' : 'card-facedown');
     updateUI();
 
     const sideText = landSide !== 'ai' ? ' (lado rival)' : '';
@@ -3706,6 +3712,7 @@ function checkWinCondition() {
 function showGameOver(playerWon) {
     const screen = document.getElementById('victory-screen');
     if (!screen) return;
+    if (typeof AudioManager !== 'undefined') AudioManager.playSound(playerWon ? 'victory' : 'defeat');
 
     const accentColor = playerWon ? '#FFD93D' : '#722E9A';
     const titleFirst  = playerWon ? 'Compilación completa' : 'Proceso terminado';
@@ -3970,6 +3977,7 @@ function startGameFromDraft() {
     };
 
     initGame();
+    if (typeof AudioManager !== 'undefined') AudioManager.preloadSounds?.();
 }
 
 function swapProtocols(lineA, lineB, owner = 'player') {

@@ -1200,6 +1200,8 @@ function triggerCardEffect(card, trigger, targetPlayer, opts = {}) {
   const effectList = effectDef[trigger];
   if (!Array.isArray(effectList)) return;
 
+  if (trigger === 'onPlay' && typeof AudioManager !== 'undefined') AudioManager.playSound('ability');
+
   gameState.effectQueue = gameState.effectQueue || [];
   if (opts.deferred) {
     // Deferred: agregar al FINAL de la cola (para efectos reactivos que van después de los propios)
