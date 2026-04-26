@@ -2,23 +2,17 @@
 
 (function () {
 
-    let ctx          = null;   // AudioContext
-    let gainNode     = null;   // master gain — mute sin detener
-    let introBuffer  = null;
-    let loopBuffer   = null;
-    let introSource  = null;
-    let loopSource   = null;
-    let _loaded      = false;
-    let _started     = false;
-    let _muted       = false;
+    let ctx         = null;
+    let introBuffer = null;
+    let loopBuffer  = null;
+    let _loaded     = false;
+    let _started    = false;
+    let _stopped    = false;   // true = usuario lo detuvo explícitamente
 
     // ── Carga ambos buffers en paralelo ──────────────────────────────────
     async function _load() {
         if (_loaded) return;
-        ctx      = new (window.AudioContext || window.webkitAudioContext)();
-        gainNode = ctx.createGain();
-        gainNode.connect(ctx.destination);
-        gainNode.gain.value = _muted ? 0 : 1;
+        ctx = new (window.AudioContext || window.webkitAudioContext)();
 
         const [introData, loopData] = await Promise.all([
             fetch('sounds/inicio.ogg').then(r => r.arrayBuffer()),
@@ -32,67 +26,67 @@
     }
 
     // ── Inicia reproducción: intro → loop gapless ────────────────────────
-    async function play() {
-        if (_started) return;
-        try {
-            await _load();
-            if (ctx.state === 'suspended') await ctx.resume();
+    async function _start() {
+        await _load();
+        if (ctx.state === 'suspended') await ctx.resume();
 
-            const now = ctx.currentTime;
+        const now = ctx.currentTime;
 
-            // Intro — se reproduce una sola vez
-            introSource = ctx.createBufferSource();
-            introSource.buffer = introBuffer;
-            introSource.connect(gainNode);
-            introSource.start(now);
+        const intro = ctx.createBufferSource();
+        intro.buffer = introBuffer;
+        intro.connect(ctx.destination);
+        intro.start(now);
 
-            // Loop — empieza exactamente al terminar el intro
-            loopSource = ctx.createBufferSource();
-            loopSource.buffer = loopBuffer;
-            loopSource.loop   = true;
-            loopSource.connect(gainNode);
-            loopSource.start(now + introBuffer.duration);
+        const loop = ctx.createBufferSource();
+        loop.buffer = loopBuffer;
+        loop.loop   = true;
+        loop.connect(ctx.destination);
+        loop.start(now + introBuffer.duration);
 
-            _started = true;
-        } catch (e) {
-            console.warn('[Audio] play failed:', e);
+        _started = true;
+    }
+
+    // ── Toggle: suspend (pausa real, sin CPU) / resume ───────────────────
+    async function toggle() {
+        if (!_started) {
+            // Primera vez: arrancar
+            _stopped = false;
+            await _start();
+            return _stopped;
         }
-    }
 
-    // ── Mute / unmute via GainNode — sin detener ni reiniciar ────────────
-    function setMuted(muted) {
-        _muted = muted;
-        if (gainNode) gainNode.gain.value = muted ? 0 : 1;
-        localStorage.setItem('bgm_muted', muted ? '1' : '0');
-    }
+        if (ctx.state === 'running') {
+            await ctx.suspend();   // pausa real — libera CPU de audio
+            _stopped = true;
+        } else {
+            await ctx.resume();
+            _stopped = false;
+        }
 
-    function toggleMute() {
-        setMuted(!_muted);
-        return _muted;
+        localStorage.setItem('audio_stopped', _stopped ? '1' : '0');
+        return _stopped;
     }
 
     // ── Arranque en primera interacción del usuario ───────────────────────
-    // Los navegadores bloquean audio hasta que hay un gesto explícito.
     function _attachAutostart() {
+        if (_stopped) return;   // usuario lo desactivó — no arrancar
         const events = ['click', 'keydown', 'touchstart'];
         function onGesture() {
             events.forEach(ev => document.removeEventListener(ev, onGesture));
-            play();
+            _start().catch(() => {});
         }
         events.forEach(ev => document.addEventListener(ev, onGesture, { once: true }));
     }
 
-    // ── Init público ──────────────────────────────────────────────────────
     function init() {
-        _muted = localStorage.getItem('bgm_muted') === '1';
+        _stopped = localStorage.getItem('audio_stopped') === '1';
         _attachAutostart();
     }
 
     window.AudioManager = {
         init,
-        play,
-        toggleMute,
-        getIsMuted: () => _muted,
+        toggle,
+        isStopped: () => _stopped,
     };
 
 })();
