@@ -3193,7 +3193,7 @@ function playAITurn() {
 
     // Depth: level 5 looks one step further
     const actualDepth = diffDepth === 5 ? 6 : diffDepth;
-    const TIME_BUDGETS = { 1: 500, 2: 500, 3: 1000, 4: 2000, 5: 3000 };
+    const TIME_BUDGETS = { 1: 500, 2: 500, 3: 1500, 4: 3000, 5: 5000 };
     const timeBudgetMs = TIME_BUDGETS[diffDepth] ?? 1500;
 
     const worker = _ensureAIWorker(diffDepth);

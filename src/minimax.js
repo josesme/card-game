@@ -559,10 +559,25 @@ class MiniMax {
   }
 
   /**
+   * Fast structural clone: copies only mutable parts, shares card object refs.
+   * ~10× faster than JSON.parse/stringify — card objects themselves are never mutated.
+   */
+  _cloneState(s) {
+    const cloneStack = arr => arr.map(o => ({ card: o.card, faceDown: o.faceDown }));
+    const cloneLine  = line => ({ ...line, player: cloneStack(line.player), ai: cloneStack(line.ai) });
+    return {
+      ...s,
+      player: { ...s.player, hand: [...s.player.hand], deck: [...s.player.deck], trash: [...s.player.trash], compiled: [...s.player.compiled] },
+      ai:     { ...s.ai,     hand: [...s.ai.hand],     deck: [...s.ai.deck],     trash: [...s.ai.trash],     compiled: [...s.ai.compiled] },
+      field:  { izquierda: cloneLine(s.field.izquierda), centro: cloneLine(s.field.centro), derecha: cloneLine(s.field.derecha) },
+    };
+  }
+
+  /**
    * 📋 SIMULATE MOVE: Apply move to game state copy
    */
   simulateMove(gameState, move, player) {
-    const newState = JSON.parse(JSON.stringify(gameState));
+    const newState = this._cloneState(gameState);
     const pState = newState[player];
 
     if (move.action === 'refresh') {
