@@ -3196,8 +3196,9 @@ function playAITurn() {
         } else {
             move = bestMoveResult.bestMove;
             console.log(`🤖 IA Decision (depth=${bestMoveResult.depthReached}):`, {
+                action: move.action || 'play',
                 line: move.line,
-                cardName: move.card.nombre,
+                cardName: move.card?.nombre,
                 faceUp: move.faceUp,
                 score: Math.round(bestMoveResult.score),
             });
