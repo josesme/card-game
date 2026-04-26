@@ -668,6 +668,10 @@
         </div>
         <img src="../images/Background/Compile.png" alt="COMPILE" style="height: auto; max-height: 50px; filter: drop-shadow(0 0 12px rgba(255,217,61,0.4));">
         <div style="position: absolute; right: 0; display: flex; gap: 6px; align-items: center;">
+            <button id="btn-mute" onclick="toggleMuteBtn()" title="Música">
+                <svg id="mute-icon-on"  viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                <svg id="mute-icon-off" viewBox="0 0 24 24" style="display:none"><path d="M11 5 6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+            </button>
             <button id="log-toggle" onclick="document.getElementById('log-overlay').classList.toggle('open')" title="Log del juego">
                 <svg viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 13H8"/><path d="M16 17H8"/><path d="M16 13h-2"/></svg>
             </button>
@@ -965,6 +969,22 @@
 <script src="abilities-engine.js"></script>
 <script src="logic.js"></script>
 <script src="game-ui-helpers.js"></script>
+<script src="audio.js"></script>
+<script>
+    function toggleMuteBtn() {
+        const muted = AudioManager.toggleMute();
+        document.getElementById('mute-icon-on').style.display  = muted ? 'none' : '';
+        document.getElementById('mute-icon-off').style.display = muted ? '' : 'none';
+    }
+    // Sincronizar icono con estado guardado
+    document.addEventListener('DOMContentLoaded', () => {
+        AudioManager.init();
+        if (AudioManager.getIsMuted()) {
+            document.getElementById('mute-icon-on').style.display  = 'none';
+            document.getElementById('mute-icon-off').style.display = '';
+        }
+    });
+</script>
 <script src="router.js"></script>
 <script>
 // ── Home module ─────────────────────────────────────────────────────────
