@@ -998,8 +998,8 @@
 <script src="game-ui-helpers.js"></script>
 <script src="audio.js"></script>
 <script>
-    function toggleAudioBtn() {
-        const stopped = AudioManager.toggle();
+    async function toggleAudioBtn() {
+        const stopped = await AudioManager.toggle();
         document.getElementById('audio-icon-on').style.display  = stopped ? 'none' : '';
         document.getElementById('audio-icon-off').style.display = stopped ? '' : 'none';
     }
