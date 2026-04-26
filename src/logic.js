@@ -3118,8 +3118,22 @@ if (btnStopDiscard) btnStopDiscard.onclick = () => {
 };
 
 
+// ── AI Worker singleton ──────────────────────────────────────────────────────
+let _aiWorker = null;
+
+function _ensureAIWorker() {
+    if (_aiWorker) return _aiWorker;
+    _aiWorker = new Worker('minimax-worker.js');
+    _aiWorker.onerror = (e) => console.error('❌ Worker error:', e.message);
+    _aiWorker.postMessage({
+        type:         'init',
+        cardEffects:  window.CARD_EFFECTS,
+        globalCards:  GLOBAL_CARDS,
+    });
+    return _aiWorker;
+}
+
 function playAITurn() {
-    // FASE 2: IA INTELIGENTE - Minimax + Evaluación Estratégica
     const diffDepth = parseInt(sessionStorage.getItem('aiDifficultyDepth') || '3');
     const diffName  = sessionStorage.getItem('aiDifficultyName') || 'NÚCLEO';
 
@@ -3133,97 +3147,74 @@ function playAITurn() {
         return;
     }
 
-    try {
-        // Inicializar motores de IA (primera vez o si cambia profundidad)
-        if (!window.aiEvaluator) {
-            window.aiEvaluator = new AIEvaluator(gameState);
-            // Aplicar perfil de comportamiento para este nivel (una vez por partida)
-            if (typeof getRandomProfileForLevel === 'function') {
-                const profile = getRandomProfileForLevel(diffDepth);
-                if (profile) {
-                    applyAIProfile(window.aiEvaluator, profile);
-                    console.log(`✅ Perfil IA aplicado: ${profile.name}`);
-                }
-            }
-            console.log('✅ Motor de Evaluación inicializado');
-        }
-        window.aiEvaluator.diffDepth = diffDepth;
-        
-        // Re-inicializar minimax si la profundidad actual es diferente a la deseada.
-        // Nivel 5 usa depth 6 para mayor anticipación.
-        const actualDepth = diffDepth === 5 ? 6 : diffDepth;
-        if (!window.miniMax || window.miniMax.maxDepth !== actualDepth) {
-            window.miniMax = new MiniMax(window.aiEvaluator, actualDepth);
-            console.log(`✅ Minimax inicializado (depth=${actualDepth}, lore=${diffName})`);
-        }
+    const possibleMoves = generateAIPossibleMoves();
+    if (possibleMoves.length === 0) {
+        while(gameState.ai.hand.length < 5) drawCard('ai');
+        logEvent("IA actualiza su mazo (sin jugadas)", { isAI: true });
+        endTurn('ai');
+        return;
+    }
 
-        // Generar todos los movimientos posibles
-        const possibleMoves = generateAIPossibleMoves();
-        console.log('Movimientos posibles generados:', possibleMoves);
+    // Memory filter: limit visible player discard by difficulty level
+    const MEMORY_LIMITS = { 1: 0, 2: 1, 3: 3, 4: Infinity, 5: Infinity };
+    const memoryLimit = MEMORY_LIMITS[diffDepth] ?? Infinity;
+    const visiblePlayerTrash = memoryLimit === Infinity
+        ? gameState.player.trash
+        : gameState.player.trash.slice(-memoryLimit);
+    const stateForAI = {
+        ...gameState,
+        player: { ...gameState.player, trash: visiblePlayerTrash }
+    };
 
-        if (possibleMoves.length === 0) {
-            // Sin movimientos disponibles, recargar
-            while(gameState.ai.hand.length < 5) drawCard('ai');
-            logEvent("IA actualiza su mazo (sin jugadas)", { isAI: true });
-            endTurn('ai');
-            return;
-        }
+    // Epsilon-greedy: levels 1-2 commit intentional errors (skip worker for these)
+    const EPSILON = { 1: 0.5, 2: 0.2 };
+    const epsilon = EPSILON[diffDepth] ?? 0;
+    if (epsilon > 0 && Math.random() < epsilon) {
+        const move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+        console.log(`🎲 IA nivel ${diffDepth}: jugada aleatoria (epsilon=${epsilon})`);
+        executeAIMove(move);
+        setTimeout(() => endTurn('ai'), 1200);
+        return;
+    }
 
-        // Filtrar el descarte del jugador según la memoria de cada nivel.
-        // Un jugador novato no recuerda lo que el rival descartó hace varios turnos.
-        // Nivel 1: ninguna carta recordada. Nivel 2: solo la última. Nivel 3: últimas 3.
-        // Nivel 4-5: descarte completo visible.
-        const MEMORY_LIMITS = { 1: 0, 2: 1, 3: 3, 4: Infinity, 5: Infinity };
-        const memoryLimit = MEMORY_LIMITS[diffDepth] ?? Infinity;
-        const visiblePlayerTrash = memoryLimit === Infinity
-            ? gameState.player.trash
-            : gameState.player.trash.slice(-memoryLimit);
-        const stateForAI = {
-            ...gameState,
-            player: { ...gameState.player, trash: visiblePlayerTrash }
-        };
+    // Depth: level 5 looks one step further
+    const actualDepth = diffDepth === 5 ? 6 : diffDepth;
+    const TIME_BUDGETS = { 1: 500, 2: 500, 3: 1000, 4: 2000, 5: 3000 };
+    const timeBudgetMs = TIME_BUDGETS[diffDepth] ?? 1500;
 
-        // Usar minimax para encontrar el mejor movimiento
-        const bestMoveResult = window.miniMax.findBestMove(stateForAI, possibleMoves);
-        console.log('Resultado de Minimax:', bestMoveResult);
+    const worker = _ensureAIWorker();
 
-        if (!bestMoveResult || !bestMoveResult.bestMove) {
-            throw new Error('Minimax no encontró movimiento válido');
-        }
+    function onWorkerMessage({ data: msg }) {
+        if (msg.type !== 'result') return;
+        worker.removeEventListener('message', onWorkerMessage);
 
-        // Epsilon-greedy: niveles 1-2 cometen errores reales ignorando minimax
-        const EPSILON = { 1: 0.5, 2: 0.2 };
-        const epsilon = EPSILON[diffDepth] ?? 0;
-        const playRandom = epsilon > 0 && Math.random() < epsilon;
-
+        const bestMoveResult = msg.result;
         let move;
-        if (playRandom) {
+        if (!bestMoveResult || !bestMoveResult.bestMove) {
+            console.error('❌ Worker sin resultado, fallback aleatorio');
             move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
-            console.log(`🎲 IA nivel ${diffDepth}: jugada aleatoria (epsilon=${epsilon})`);
         } else {
             move = bestMoveResult.bestMove;
+            console.log(`🤖 IA Decision (depth=${bestMoveResult.depthReached}):`, {
+                line: move.line,
+                cardName: move.card.nombre,
+                faceUp: move.faceUp,
+                score: Math.round(bestMoveResult.score),
+            });
         }
 
-        // Log de decisión de IA
-        console.log('🤖 IA Decision:', {
-            line: move.line,
-            cardName: move.card.nombre,
-            faceUp: move.faceUp,
-            score: playRandom ? 'random' : Math.round(bestMoveResult.score),
-            stats: playRandom ? null : bestMoveResult.statistics,
-        });
-
-        // Ejecutar el movimiento elegido y terminar turno
-        // Delay de 400ms: da tiempo a la animación CSS de entrada de carta y mejora legibilidad de la jugada
         executeAIMove(move);
-        console.log('Estado final del juego tras movimiento de IA:', JSON.stringify(gameState));
         setTimeout(() => endTurn('ai'), 1200);
-
-    } catch (error) {
-        // Fallback: Si IA falla, juega aleatorio (playAITurnRandom llama endTurn)
-        console.error('❌ IA Error:', error.message);
-        playAITurnRandom();
     }
+
+    worker.addEventListener('message', onWorkerMessage);
+    worker.postMessage({
+        type:         'findBestMove',
+        gameState:    stateForAI,
+        possibleMoves,
+        maxDepth:     actualDepth,
+        timeBudgetMs,
+    });
 }
 
 function playAITurnRandom() {
@@ -4005,6 +3996,9 @@ if (typeof CARDS_DATA !== 'undefined') {
 } else {
     console.error('❌ CARDS_DATA no definido — asegúrate de cargar cards-data.js antes de logic.js');
 }
+
+// Expose for minimax worker initialization
+window.GLOBAL_CARDS = GLOBAL_CARDS;
 
 window.gameModule = { init: startGameFromDraft };
 

@@ -5634,3 +5634,5 @@ function getUnityPlayLine(player) {
   }
   return null;
 }
+
+window.CARD_EFFECTS = CARD_EFFECTS;
