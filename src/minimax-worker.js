@@ -12,6 +12,7 @@ self.onmessage = function({ data: msg }) {
         self.CARD_EFFECTS  = msg.cardEffects;
         self.GLOBAL_CARDS  = msg.globalCards;
         _evaluator = new AIEvaluator({});
+        if (msg.profileWeights) Object.assign(_evaluator.weights, msg.profileWeights);
         self.postMessage({ type: 'ready' });
         return;
     }

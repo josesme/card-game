@@ -3121,14 +3121,28 @@ if (btnStopDiscard) btnStopDiscard.onclick = () => {
 // ── AI Worker singleton ──────────────────────────────────────────────────────
 let _aiWorker = null;
 
-function _ensureAIWorker() {
+function _ensureAIWorker(diffDepth) {
     if (_aiWorker) return _aiWorker;
+
+    // Pick a random personality profile for this game and extract its weights
+    let profileWeights = null;
+    if (typeof getRandomProfileForLevel === 'function') {
+        const profile = getRandomProfileForLevel(diffDepth);
+        if (profile) {
+            const tmp = new AIEvaluator({});
+            applyAIProfile(tmp, profile);
+            profileWeights = { ...tmp.weights };
+            console.log(`✅ Perfil IA: ${profile.name}`);
+        }
+    }
+
     _aiWorker = new Worker('minimax-worker.js');
     _aiWorker.onerror = (e) => console.error('❌ Worker error:', e.message);
     _aiWorker.postMessage({
-        type:         'init',
-        cardEffects:  window.CARD_EFFECTS,
-        globalCards:  GLOBAL_CARDS,
+        type:          'init',
+        cardEffects:   window.CARD_EFFECTS,
+        globalCards:   GLOBAL_CARDS,
+        profileWeights,
     });
     return _aiWorker;
 }
@@ -3182,7 +3196,7 @@ function playAITurn() {
     const TIME_BUDGETS = { 1: 500, 2: 500, 3: 1000, 4: 2000, 5: 3000 };
     const timeBudgetMs = TIME_BUDGETS[diffDepth] ?? 1500;
 
-    const worker = _ensureAIWorker();
+    const worker = _ensureAIWorker(diffDepth);
 
     function onWorkerMessage({ data: msg }) {
         if (msg.type !== 'result') return;
