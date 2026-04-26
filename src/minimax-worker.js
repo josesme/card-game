@@ -18,8 +18,8 @@ self.onmessage = function({ data: msg }) {
     }
 
     if (msg.type === 'findBestMove') {
-        const { gameState, possibleMoves, maxDepth, timeBudgetMs } = msg;
-        _evaluator.diffDepth = maxDepth;
+        const { gameState, possibleMoves, diffDepth, maxDepth, timeBudgetMs } = msg;
+        _evaluator.diffDepth = diffDepth;
 
         const deadline = Date.now() + timeBudgetMs;
         let bestResult = null;

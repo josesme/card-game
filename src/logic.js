@@ -3227,6 +3227,7 @@ function playAITurn() {
         type:         'findBestMove',
         gameState:    stateForAI,
         possibleMoves,
+        diffDepth,
         maxDepth:     actualDepth,
         timeBudgetMs,
     });
