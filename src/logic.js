@@ -3069,7 +3069,7 @@ function finalizePlay(targetLine, isFaceDown) {
     insertCardIntoStack(gameState.field[targetLine][targetSide], playedCard);
     checkDeleteOnCover(targetLine, targetSide);
     window._animPendingField = { line: targetLine, target: targetSide };
-    if (typeof AudioManager !== 'undefined') AudioManager.playSound(isFaceDown ? 'card-facedown' : 'card-play');
+    if (typeof AudioManager !== 'undefined') AudioManager.playSound('card-play');
     updateUI(); // Sincronizar DOM antes de disparar efectos — animación de entrada empieza aquí
 
     // Delay para que la animación de entrada sea visible antes de que aparezca el modal
@@ -3383,7 +3383,7 @@ function executeAIMove(move) {
     });
     checkDeleteOnCover(move.line, landSide);
     window._animPendingField = { line: move.line, target: landSide };
-    if (typeof AudioManager !== 'undefined') AudioManager.playSound('card-play-ai');
+    if (typeof AudioManager !== 'undefined') AudioManager.playSound('card-play');
     updateUI();
 
     const sideText = landSide !== 'ai' ? ' (lado rival)' : '';
