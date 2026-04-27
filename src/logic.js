@@ -4002,6 +4002,11 @@ function startGameFromDraft() {
     gameState.player.protocols = JSON.parse(sessionStorage.getItem('playerProtocols') || '["Espíritu", "Muerte", "Fuego"]');
     gameState.ai.protocols    = JSON.parse(sessionStorage.getItem('aiProtocols')     || '["Vida", "Luz", "Oscuridad"]');
 
+    ['game-log', 'hs-unified-entries'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = '';
+    });
+
     gameState.player.deck = []; gameState.player.hand = []; gameState.player.trash = []; gameState.player.compiled = [];
     gameState.ai.deck    = []; gameState.ai.hand    = []; gameState.ai.trash    = []; gameState.ai.compiled    = [];
 
