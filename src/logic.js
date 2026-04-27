@@ -4071,7 +4071,7 @@ function startGameFromDraft() {
     gameState._animQueue              = [];
     window._animQueue                 = [];
 
-    if (typeof AudioManager !== 'undefined') { AudioManager.playBGM?.('game'); AudioManager.preloadSounds?.(); }
+    if (typeof AudioManager !== 'undefined') { AudioManager.preloadSounds?.(); }
     initGame();
 }
 

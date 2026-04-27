@@ -694,8 +694,8 @@
     <!-- HEADER -->
     <header style="text-align: center; margin-bottom: 10px; position: relative; display: flex; align-items: center; justify-content: center;">
         <div style="position: absolute; left: 0; display: flex; gap: 8px;">
-            <button class="ui-btn ui-btn--sm" onclick="AudioManager.playBGM?.('init'); router.navigate('draft')">NUEVO DRAFT</button>
-            <button class="ui-btn ui-btn--sm ui-btn--danger" onclick="AudioManager.playBGM?.('init'); router.navigate('home')">ABANDONAR</button>
+            <button class="ui-btn ui-btn--sm" onclick="AudioManager.playBGM?.(); router.navigate('draft')">NUEVO DRAFT</button>
+            <button class="ui-btn ui-btn--sm ui-btn--danger" onclick="AudioManager.playBGM?.(); router.navigate('home')">ABANDONAR</button>
         </div>
         <img src="../images/Background/Compile.png" alt="COMPILE" style="height: auto; max-height: 50px; filter: drop-shadow(0 0 12px rgba(255,217,61,0.4));">
         <div style="position: absolute; right: 0; display: flex; gap: 6px; align-items: center;">
@@ -923,8 +923,8 @@
     <div id="vs-divider"></div>
     <div id="vs-subtitle">—</div>
     <div id="vs-actions">
-        <button class="ui-btn" onclick="AudioManager.stopSounds?.(); AudioManager.playBGM?.('init'); router.navigate('draft')">NUEVO DRAFT</button>
-        <button class="ui-btn ui-btn--purple" onclick="AudioManager.stopSounds?.(); AudioManager.playBGM?.('init'); router.navigate('home')">PANTALLA PRINCIPAL</button>
+        <button class="ui-btn" onclick="AudioManager.stopSounds?.(); AudioManager.playBGM?.(); router.navigate('draft')">NUEVO DRAFT</button>
+        <button class="ui-btn ui-btn--purple" onclick="AudioManager.stopSounds?.(); AudioManager.playBGM?.(); router.navigate('home')">PANTALLA PRINCIPAL</button>
     </div>
 </div>
 

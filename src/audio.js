@@ -11,10 +11,6 @@
     const DUCK_DOWN_MS  = 50;
     const DUCK_UP_MS    = 400;
 
-    const BGM_FILES = {
-        'init': 'sounds/sfx/Init.ogg',
-    };
-
     const AMBIENT_INDEX = 'sounds/sfx/ambient/index.json';
     let   _ambientList  = null;   // cargado una vez, luego cacheado
     const _bgmCache  = new Map();
@@ -67,7 +63,7 @@
     }
 
     // ── BGM ──────────────────────────────────────────────────────────────────
-    async function _resolveGameBGMPath() {
+    async function _resolveAmbientPath() {
         if (!_ambientList) {
             try {
                 const res = await fetch(AMBIENT_INDEX);
@@ -79,7 +75,7 @@
         return `sounds/sfx/ambient/${file}`;
     }
 
-    async function playBGM(name) {
+    async function playBGM() {
         if (_stopped) return;
         const gen = ++_bgmGen;
 
@@ -93,9 +89,7 @@
             _bgmSource = null;
         }
 
-        const path = name === 'game'
-            ? await _resolveGameBGMPath()
-            : BGM_FILES[name] ?? null;
+        const path = await _resolveAmbientPath();
         if (!path || gen !== _bgmGen) return;
 
         let buf = _bgmCache.get(path);
@@ -152,7 +146,7 @@
             if (_stopped) {
                 _stopped = false;
                 localStorage.setItem('audio_stopped', '0');
-                await playBGM('init');
+                await playBGM();
             }
             return _stopped;
         }
@@ -224,7 +218,7 @@
         const events = ['click', 'keydown', 'touchstart'];
         function onGesture() {
             events.forEach(ev => document.removeEventListener(ev, onGesture));
-            playBGM('init').catch(() => {});
+            playBGM().catch(() => {});
         }
         events.forEach(ev => document.addEventListener(ev, onGesture, { once: true }));
     }
