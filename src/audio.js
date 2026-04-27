@@ -146,7 +146,16 @@
 
     // ── BGM toggle (mute / unmute everything) ────────────────────────────────
     async function toggle() {
-        if (!ctx) return _stopped;
+        if (!ctx) {
+            // ctx nunca se creó: o nunca hubo gesto, o la página se recargó con audio muted.
+            // Si estaba silenciado, interpretamos el click como "activar" — arrancamos.
+            if (_stopped) {
+                _stopped = false;
+                localStorage.setItem('audio_stopped', '0');
+                await playBGM('init');
+            }
+            return _stopped;
+        }
         if (ctx.state === 'running') {
             await ctx.suspend();
             _stopped = true;
