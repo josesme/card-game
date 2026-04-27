@@ -30,15 +30,15 @@
     // Anima la carta directamente en su contexto DOM, luego ejecuta el callback
     // para que el splice y updateUI ocurran DESPUÉS de que la animación termine.
     function animCardEliminate(cardId, onDone) {
-        if (typeof gsap === 'undefined') { if (onDone) onDone(); return; }
         var el = document.querySelector('.card-in-field[data-id="' + cardId + '"]');
         if (!el) { if (onDone) onDone(); return; }
         el.style.transition = 'none';
-        gsap.fromTo(el,
-            { clipPath: 'inset(0 0 0% 0)' },
-            { clipPath: 'inset(0 0 100% 0)', duration: 0.4, ease: 'power2.in',
-              onComplete: function () { if (onDone) onDone(); } }
-        );
+        el.classList.add('card-leaving');
+        el.addEventListener('animationend', function handler(e) {
+            if (e.animationName !== 'cardLeave') return;
+            el.removeEventListener('animationend', handler);
+            if (onDone) onDone();
+        });
     }
 
     window.animCardEliminate = animCardEliminate;

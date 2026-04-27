@@ -579,15 +579,15 @@
             pointer-events: none; z-index: 10;
         }
         @keyframes cardLeave {
-            from { opacity: 1; filter: grayscale(0); }
-            to   { opacity: 0.2; filter: grayscale(0.8); }
+            from { clip-path: inset(0 0 0% 0); }
+            to   { clip-path: inset(100% 0 0% 0); }
         }
         @keyframes scanLineUp {
             from { top: 100%; } to { top: 0%; }
         }
         .card-leaving {
             animation: cardLeave 0.8s linear forwards;
-            overflow: hidden; pointer-events: none;
+            position: relative; overflow: hidden; pointer-events: none;
         }
         .card-leaving::after {
             content: '';
