@@ -2348,20 +2348,23 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       // Odio 2: elimina tu carta descubierta de mayor valor, luego la del oponente.
       // Si hay empate en el mayor valor, el jugador elige cuál eliminar.
       // Si Odio 2 es su carta de mayor valor (se suicida), el segundo efecto no se activa.
+      // "uncovered" = top card of each stack (last element); face orientation irrelevant.
       const findAllHighest = (player) => {
         let maxVal = -1;
         LINES.forEach(l => {
-          gameState.field[l][player].forEach(c => {
-            if (c.card.valor > maxVal) maxVal = c.card.valor;
-          });
+          const stack = gameState.field[l][player];
+          if (!stack.length) return;
+          const top = stack[stack.length - 1];
+          if (top.card.valor > maxVal) maxVal = top.card.valor;
         });
         if (maxVal < 0) return [];
         const ties = [];
         LINES.forEach(l => {
-          gameState.field[l][player].forEach((c, idx) => {
-            if (c.card.valor === maxVal)
-              ties.push({ card: c, line: l, idx });
-          });
+          const stack = gameState.field[l][player];
+          if (!stack.length) return;
+          const idx = stack.length - 1;
+          if (stack[idx].card.valor === maxVal)
+            ties.push({ card: stack[idx], line: l, idx });
         });
         return ties;
       };
