@@ -17,10 +17,11 @@
 
     const AMBIENT_INDEX = 'sounds/sfx/ambient/index.json';
     let   _ambientList  = null;   // cargado una vez, luego cacheado
-    const _bgmCache = new Map();
+    const _bgmCache  = new Map();
     let   _bgmSource = null;
     let   _bgmGain   = null;   // GainNode for BGM — ducked by SFX
     let   _duckTimer = null;   // pending return-to-base timeout
+    let   _bgmGen    = 0;      // generación — aborta llamadas async obsoletas
 
     // ── SFX state ────────────────────────────────────────────────────────────
     const _sfxCache  = new Map();
@@ -78,8 +79,11 @@
 
     async function playBGM(name) {
         if (_stopped) return;
+        const gen = ++_bgmGen;
+
         _ensureContext();
         if (ctx.state === 'suspended') await ctx.resume();
+        if (gen !== _bgmGen) return;
         _ensureBgmGain();
 
         if (_bgmSource) {
@@ -90,7 +94,7 @@
         const path = name === 'game'
             ? await _resolveGameBGMPath()
             : BGM_FILES[name] ?? null;
-        if (!path) return;
+        if (!path || gen !== _bgmGen) return;
 
         let buf = _bgmCache.get(path);
         if (!buf) {
@@ -101,6 +105,7 @@
                 _bgmCache.set(path, buf);
             } catch (_) { return; }
         }
+        if (gen !== _bgmGen) return;
 
         const src = ctx.createBufferSource();
         src.buffer = buf;
