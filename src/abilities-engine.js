@@ -2379,7 +2379,10 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       if (ties.length === 1 || targetPlayer === 'ai') {
         // Auto-eliminar (única carta o la IA es quien jugó Odio 2)
         const chosen = ties[0];
+        // Block landPendingCard from calling endTurn while the animation runs async
+        gameState.effectContext = { type: 'animating' };
         const doAutoElim = () => {
+          gameState.effectContext = null;
           gameState.field[chosen.line][phasePlayer].splice(chosen.idx, 1);
           gameState[phasePlayer].trash.push(chosen.card.card);
           gameState[gameState.turn].eliminatedSinceLastCheck = true;
