@@ -6,7 +6,7 @@
     let _stopped = false;
 
     // ── BGM state ────────────────────────────────────────────────────────────
-    const BGM_BASE_VOL  = 0.22;
+    const BGM_BASE_VOL  = 0.14;
     const BGM_DUCK_VOL  = 0.06;
     const DUCK_DOWN_MS  = 50;
     const DUCK_UP_MS    = 400;
