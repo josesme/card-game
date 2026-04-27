@@ -1397,6 +1397,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       if (actionDef.forceCurrentLine && gameState.currentEffectLine) {
         shiftOpts.forceLine = gameState.currentEffectLine;
       }
+      if (actionDef.targetAll) shiftOpts.targetAll = true;
       startEffect('shift', resolvedTarget, count || 1, shiftOpts);
       break;
     }
