@@ -3964,6 +3964,21 @@ function showGameOver(playerWon) {
 
 function startGameFromDraft() {
     _initUI();
+    const vs = document.getElementById('victory-screen');
+    if (vs) {
+        vs.classList.remove('vs-active');
+        vs.classList.add('hidden');
+        const vsTerminal = document.getElementById('vs-terminal');
+        const vsCards    = document.getElementById('vs-cards');
+        const vsTitle    = document.getElementById('vs-title');
+        const vsDivider  = document.getElementById('vs-divider');
+        const vsActions  = document.getElementById('vs-actions');
+        if (vsTerminal) { vsTerminal.innerHTML = ''; vsTerminal.style.opacity = ''; }
+        if (vsCards)    vsCards.innerHTML = '';
+        if (vsTitle)    { vsTitle.style.opacity = ''; vsTitle.style.transform = ''; }
+        if (vsDivider)  vsDivider.style.width = '';
+        if (vsActions)  vsActions.style.opacity = '';
+    }
     gameState.player.protocols = JSON.parse(sessionStorage.getItem('playerProtocols') || '["Espíritu", "Muerte", "Fuego"]');
     gameState.ai.protocols    = JSON.parse(sessionStorage.getItem('aiProtocols')     || '["Vida", "Luz", "Oscuridad"]');
 
