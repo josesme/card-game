@@ -1619,7 +1619,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       if (targetPlayer === 'player') {
         _confirmDialog('mayShiftSelf',
           () => {
-            gameState.effectContext = { type: 'shiftSelf', sourceLine: selfLine, target: 'player', count: 1, selected: [], waitingForLine: true };
+            gameState.effectContext = { type: 'shiftSelf', sourceLine: selfLine, target: 'player', count: 1, selected: [], waitingForLine: true, cardName: triggerCardName };
             updateStatus(`${triggerCardName}: elige línea destino`);
             highlightSelectableLines(selfLine, 'player');
           },

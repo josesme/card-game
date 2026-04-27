@@ -336,7 +336,7 @@ function handleShiftTargetLine(destinationLine) {
             // Buscar por referencia directa si está disponible, si no por nombre
             const idx = ctx.cardRef
                 ? stack.indexOf(ctx.cardRef)
-                : stack.findIndex(c => c.card.nombre === (ctx.cardName || 'Espíritu 3'));
+                : stack.findIndex(c => c.card.nombre === ctx.cardName);
             if (idx !== -1) {
                 const [cardObj] = stack.splice(idx, 1);
                 gameState.field[destinationLine][ctx.target].push(cardObj);
