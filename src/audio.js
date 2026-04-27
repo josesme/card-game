@@ -13,8 +13,10 @@
 
     const BGM_FILES = {
         'init': 'sounds/sfx/Init.ogg',
-        'game': 'sounds/sfx/Game.ogg',
     };
+
+    const AMBIENT_INDEX = 'sounds/sfx/ambient/index.json';
+    let   _ambientList  = null;   // cargado una vez, luego cacheado
     const _bgmCache = new Map();
     let   _bgmSource = null;
     let   _bgmGain   = null;   // GainNode for BGM — ducked by SFX
@@ -62,17 +64,16 @@
     }
 
     // ── BGM ──────────────────────────────────────────────────────────────────
-    async function _loadBGM(name) {
-        if (_bgmCache.has(name)) return _bgmCache.get(name);
-        const path = BGM_FILES[name];
-        if (!path) return null;
-        try {
-            const res = await fetch(path);
-            if (!res.ok) return null;
-            const buf = await _ensureContext().decodeAudioData(await res.arrayBuffer());
-            _bgmCache.set(name, buf);
-            return buf;
-        } catch (_) { return null; }
+    async function _resolveGameBGMPath() {
+        if (!_ambientList) {
+            try {
+                const res = await fetch(AMBIENT_INDEX);
+                _ambientList = res.ok ? await res.json() : [];
+            } catch (_) { _ambientList = []; }
+        }
+        if (!_ambientList.length) return null;
+        const file = _ambientList[Math.floor(Math.random() * _ambientList.length)];
+        return `sounds/sfx/ambient/${file}`;
     }
 
     async function playBGM(name) {
@@ -86,8 +87,20 @@
             _bgmSource = null;
         }
 
-        const buf = await _loadBGM(name);
-        if (!buf) return;
+        const path = name === 'game'
+            ? await _resolveGameBGMPath()
+            : BGM_FILES[name] ?? null;
+        if (!path) return;
+
+        let buf = _bgmCache.get(path);
+        if (!buf) {
+            try {
+                const res = await fetch(path);
+                if (!res.ok) return;
+                buf = await ctx.decodeAudioData(await res.arrayBuffer());
+                _bgmCache.set(path, buf);
+            } catch (_) { return; }
+        }
 
         const src = ctx.createBufferSource();
         src.buffer = buf;
