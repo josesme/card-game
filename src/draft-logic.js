@@ -278,6 +278,7 @@
         picks.forEach((protocol, i) => {
             const cardEl = document.querySelector(`.protocol-card[data-proto="${protocol}"]`);
             setTimeout(() => {
+                if (typeof AudioManager !== 'undefined') AudioManager.playSound?.('card-eliminated');
                 _animPickProtocol(cardEl, () => { if (++done === picks.length) doSelect(); });
             }, i * 400);
         });
