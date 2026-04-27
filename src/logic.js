@@ -950,11 +950,12 @@ function updateUI() {
             }
         }
 
-        // Mark compiled protocols if they exist
+        // Mark compiled protocols — reset first so stale classes from prior swaps don't linger
+        const pCard = document.getElementById(`proto-${line}-player`);
+        const aCard = document.getElementById(`proto-${line}-ai`);
+        [pCard, aCard].forEach(el => { if (el) el.classList.remove('compiled', 'compiled-player', 'compiled-ai'); });
         if (gameState.field[line].compiledBy) {
             const compiledBy = gameState.field[line].compiledBy;
-            const pCard = document.getElementById(`proto-${line}-player`);
-            const aCard = document.getElementById(`proto-${line}-ai`);
             const cardToMark = compiledBy === 'player' ? pCard : aCard;
             if (cardToMark) {
                 cardToMark.classList.add('compiled');
