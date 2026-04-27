@@ -36,7 +36,7 @@
         el.style.transition = 'none';
         gsap.fromTo(el,
             { clipPath: 'inset(0 0 0% 0)' },
-            { clipPath: 'inset(0 0 100% 0)', duration: 1.5, ease: 'power2.in',
+            { clipPath: 'inset(0 0 100% 0)', duration: 0.4, ease: 'power2.in',
               onComplete: function () { if (onDone) onDone(); } }
         );
     }
