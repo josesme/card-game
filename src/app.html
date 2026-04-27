@@ -1168,6 +1168,18 @@ window.homeModule = {
                 band(bWhite, H * 0.50, 0.8);
             },
             () => {
+                if (activeView) activeView.style.transform = 'translateX(-20px) translateY(4px)';
+                band(bCyan,  H * 0.33, 1);
+                band(bPink,  H * 0.67, 1);
+                band(bWhite, H * 0.50, 0.9);
+            },
+            () => {
+                if (activeView) activeView.style.transform = 'translateX(26px) translateY(-1px)';
+                band(bCyan,  H * 0.12, 0.9);
+                band(bPink,  H * 0.78, 1);
+                band(bWhite, H * 0.56, 0.7);
+            },
+            () => {
                 if (activeView) activeView.style.transform = '';
                 band(bCyan, 0, 0); band(bPink, 0, 0); band(bWhite, 0, 0);
                 cutEl.style.transition = 'none';
@@ -1184,7 +1196,9 @@ window.homeModule = {
             }
         ];
 
-        const gaps = [ms(80), ms(100), ms(80)];
+        // gaps[i] = tiempo entre step i y step i+1
+        // total ≈ 100+120+100+700+900+40 = 1960ms ≈ 2s
+        const gaps = [ms(100), ms(120), ms(100), ms(700), ms(900)];
         let i = 0;
         (function next() { steps[i](); if (++i < steps.length) setTimeout(next, gaps[i - 1]); })();
     }
