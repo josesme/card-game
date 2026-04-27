@@ -6,7 +6,7 @@
     let _stopped = false;
 
     // ── BGM state ────────────────────────────────────────────────────────────
-    const BGM_FILES = { 'init': 'sounds/init.ogg' };
+    const BGM_FILES = { 'init': 'sounds/sfx/Init.ogg' };
     const _bgmCache = new Map();
     let   _bgmSource = null;
 
