@@ -21,8 +21,9 @@
     let   _duckTimer = null;   // pending return-to-base timeout
 
     // ── SFX state ────────────────────────────────────────────────────────────
-    const _sfxCache = new Map();
-    let   _sfxGain  = null;
+    const _sfxCache  = new Map();
+    let   _sfxGain   = null;
+    const _activeSfx = new Set();
 
     const SFX_FILES = {
         'card-play':       'sounds/sfx/card-play.ogg',
@@ -156,6 +157,8 @@
             const src = ctx.createBufferSource();
             src.buffer = buf;
             src.connect(_sfxGain);
+            src.onended = () => _activeSfx.delete(src);
+            _activeSfx.add(src);
             src.start();
         });
     }
@@ -182,12 +185,18 @@
         _attachAutostart();
     }
 
+    function stopSounds() {
+        _activeSfx.forEach(src => { try { src.stop(); } catch (_) {} });
+        _activeSfx.clear();
+    }
+
     window.AudioManager = {
         init,
         toggle,
         playBGM,
         stopBGM,
         playSound,
+        stopSounds,
         preloadSounds,
         isStopped: () => _stopped,
     };

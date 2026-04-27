@@ -923,8 +923,8 @@
     <div id="vs-divider"></div>
     <div id="vs-subtitle">—</div>
     <div id="vs-actions">
-        <button class="ui-btn" onclick="AudioManager.playBGM?.('init'); router.navigate('draft')">NUEVO DRAFT</button>
-        <button class="ui-btn ui-btn--purple" onclick="AudioManager.playBGM?.('init'); router.navigate('home')">PANTALLA PRINCIPAL</button>
+        <button class="ui-btn" onclick="AudioManager.stopSounds?.(); AudioManager.playBGM?.('init'); router.navigate('draft')">NUEVO DRAFT</button>
+        <button class="ui-btn ui-btn--purple" onclick="AudioManager.stopSounds?.(); AudioManager.playBGM?.('init'); router.navigate('home')">PANTALLA PRINCIPAL</button>
     </div>
 </div>
 
