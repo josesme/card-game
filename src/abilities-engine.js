@@ -2354,7 +2354,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           const stack = gameState.field[l][player];
           if (stack.length === 0) return;
           const top = stack[stack.length - 1];
-          if (!top.faceDown && top.card.valor > maxVal) maxVal = top.card.valor;
+          if (top.card.valor > maxVal) maxVal = top.card.valor;
         });
         if (maxVal < 0) return [];
         const ties = [];
@@ -2362,7 +2362,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           const stack = gameState.field[l][player];
           if (stack.length === 0) return;
           const top = stack[stack.length - 1];
-          if (!top.faceDown && top.card.valor === maxVal)
+          if (top.card.valor === maxVal)
             ties.push({ card: top, line: l, idx: stack.length - 1 });
         });
         return ties;
