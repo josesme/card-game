@@ -1147,6 +1147,7 @@ window.homeModule = {
     function glitchThen(onCut) {
         if (busy) return;
         busy = true;
+        if (typeof AudioManager !== 'undefined') AudioManager.playSound?.('transition');
         const H = window.innerHeight;
         const activeView = document.querySelector('.view:not(.hidden)');
 

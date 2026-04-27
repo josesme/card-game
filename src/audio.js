@@ -36,6 +36,7 @@
         'victory':         'sounds/sfx/victory.ogg',
         'defeat':          'sounds/sfx/defeat.ogg',
         'draw':            'sounds/sfx/draw.ogg',
+        'transition':      'sounds/sfx/transition.ogg',
     };
 
     // Volumen individual por slot (relativo al _sfxGain global de 0.65).
@@ -48,6 +49,7 @@
         'victory':         1.0,
         'defeat':          1.0,
         'draw':            0.7,
+        'transition':      0.8,
     };
 
     // ── Context ──────────────────────────────────────────────────────────────
