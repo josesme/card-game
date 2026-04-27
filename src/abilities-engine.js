@@ -15,6 +15,16 @@
 // 1. DEFINICIÓN DE EFECTOS POR CARTA
 // ============================================================================
 
+// Tracked timer wrapper — falls back to plain setTimeout in test environments
+// where window._after is unavailable.
+function _gameAfter(ms, fn) {
+    if (typeof window !== 'undefined' && typeof window._after === 'function') {
+        window._after(ms, fn);
+    } else {
+        setTimeout(fn, ms);
+    }
+}
+
 const CARD_EFFECTS = {
   // ========== ESPÍRITU ==========
   'Espíritu 0': {
@@ -1235,13 +1245,13 @@ function processAbilityEffect() {
     } else if (gameState.pendingCheckCompile) {
       const who = gameState.pendingCheckCompile;
       gameState.pendingCheckCompile = null;
-      setTimeout(() => checkCompilePhase(who), 600);
+      _gameAfter(600, () => checkCompilePhase(who));
     } else if (gameState.processingEndTriggers) {
       processNextEndTrigger(gameState.pendingEndTurnWho);
     } else if (gameState.pendingStartTurn) {
       const next = gameState.pendingStartTurn;
       gameState.pendingStartTurn = null;
-      setTimeout(() => startTurn(next), 500);
+      _gameAfter(500, () => startTurn(next));
     } else if (gameState.pendingTurnEnd) {
       const who = gameState.pendingTurnEnd;
       gameState.pendingTurnEnd = null;

@@ -43,6 +43,21 @@ let PROTOCOL_DEFS = {}; // cargado desde data/cards.json al iniciar
 let GLOBAL_CARDS = null; // cargado desde data/cards.json al iniciar
 
 
+// ── Timer management ─────────────────────────────────────────────────────────
+// All game-flow setTimeouts go through _after() so _cancelTimers() can kill
+// them when a new game starts, preventing stale callbacks from corrupting state.
+const _timers = new Set();
+function _after(ms, fn) {
+    const id = setTimeout(() => { _timers.delete(id); fn(); }, ms);
+    _timers.add(id);
+}
+function _cancelTimers() {
+    _timers.forEach(clearTimeout);
+    _timers.clear();
+}
+window._cancelGameTimers = _cancelTimers;
+window._after = _after; // abilities-engine.js uses this
+
 // Game State
 let gameState = {
     player: {
@@ -289,7 +304,7 @@ function handleShiftTargetLine(destinationLine) {
         gameState.effectContext = null;
         clearEffectHighlights();
         updateUI();
-        setTimeout(() => endTurn(ctx.resumeFor), 2000);
+        _after(2000, () => endTurn(ctx.resumeFor));
         return;
     }
 
@@ -1198,7 +1213,7 @@ function startTurn(who) {
 
 function resumeControlAction(action, who) {
     if (action === 'endTurn') {
-        setTimeout(() => endTurn(who), 300);
+        _after(300, () => endTurn(who));
     } else if (action === 'doRefreshAndContinue') {
         if (typeof onRefreshEffects === 'function') onRefreshEffects(who);
         if (typeof onOpponentRefreshEffects === 'function') onOpponentRefreshEffects(who);
@@ -1206,7 +1221,7 @@ function resumeControlAction(action, who) {
             gameState.pendingStartTurn = (who === 'player' ? 'ai' : 'player');
             return;
         }
-        setTimeout(() => startTurn(who === 'player' ? 'ai' : 'player'), 1000);
+        _after(1000, () => startTurn(who === 'player' ? 'ai' : 'player'));
     }
 }
 
@@ -1338,7 +1353,7 @@ function checkCompilePhase(who) {
         gameState.preventCompile[who]--;
         logEvent(`Compilado bloqueado por Metal 1`, { isAI: who === 'ai' });
         // Saltar la fase de compilado completamente — ir directo a fase de acción
-        setTimeout(() => actionPhase(who), 800);
+        _after(800, () => actionPhase(who));
         return;
     }
 
@@ -1370,13 +1385,13 @@ function checkCompilePhase(who) {
             updateStatus('Velocidad 2: elige línea donde cambiar la carta');
             highlightSelectableLines(sourceLine, 'player');
         } else {
-            setTimeout(() => {
+            _after(2000, () => {
                 if (gameState.controlComponent === who) {
                     offerControlRearrange(who, 'endTurn');
                 } else {
                     endTurn(who);
                 }
-            }, 2000);
+            });
         }
     } else {
         console.log(`✅ No compilations, moving to action phase`);
@@ -1391,7 +1406,7 @@ function actionPhase(who) {
     updateTurnVisuals();
 
     if (who === 'ai') {
-        setTimeout(playAITurn, 1500);
+        _after(1500, playAITurn);
     }
 }
 
@@ -2136,7 +2151,7 @@ function handleFieldCardClick(line, target, cardIdx) {
         cardObj._animateFlip = true;
         updateUI(); // inicia animación — finishEffect debe esperar
         const _isTop = cardIdx === gameState.field[line][target].length - 1;
-        setTimeout(() => {
+        _after(700, () => {
             ctx.selected.push(cardObj);
             if (ctx.selected.length >= ctx.count) {
                 finishEffect();
@@ -2147,7 +2162,7 @@ function handleFieldCardClick(line, target, cardIdx) {
             if (wasFaceDown && _isTop) {
                 triggerFlipFaceUp(cardObj, line, target);
             }
-        }, 700);
+        });
         return;
     } else if (ctx.type === 'shift') {
         const cardObj = gameState.field[line][target][cardIdx];
@@ -2422,11 +2437,11 @@ function finishEffect() {
     } else if (gameState.effectQueue.length === 0 && gameState.pendingCheckCompile) {
         const who = gameState.pendingCheckCompile;
         gameState.pendingCheckCompile = null;
-        setTimeout(() => checkControlPhase(who), 600);
+        _after(600, () => checkControlPhase(who));
     } else if (gameState.effectQueue.length === 0 && gameState.pendingStartTurn) {
         const next = gameState.pendingStartTurn;
         gameState.pendingStartTurn = null;
-        setTimeout(() => startTurn(next), 500);
+        _after(500, () => startTurn(next));
     } else if (gameState.effectQueue.length === 0 && gameState.pendingTurnEnd) {
         const who = gameState.pendingTurnEnd;
         gameState.pendingTurnEnd = null;
@@ -3075,7 +3090,7 @@ function finalizePlay(targetLine, isFaceDown) {
     updateUI(); // Sincronizar DOM antes de disparar efectos — animación de entrada empieza aquí
 
     // Delay para que la animación de entrada sea visible antes de que aparezca el modal
-    setTimeout(() => {
+    _after(1000, () => {
         console.log(`✅ Card played: ${card.nombre} on ${targetLine} (${isFaceDown ? 'face-down' : 'face-up'})`);
         logEvent(`${isFaceDown ? 'Bocabajo' : card.nombre} en ${targetLine}`, { isAI: false });
 
@@ -3196,7 +3211,7 @@ function playAITurn() {
         const move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
         console.log(`🎲 IA nivel ${diffDepth}: jugada aleatoria (epsilon=${epsilon})`);
         executeAIMove(move);
-        setTimeout(() => endTurn('ai'), 1200);
+        _after(1200, () => endTurn('ai'));
         return;
     }
 
@@ -3228,7 +3243,7 @@ function playAITurn() {
         }
 
         executeAIMove(move);
-        setTimeout(() => endTurn('ai'), 1200);
+        _after(1200, () => endTurn('ai'));
     }
 
     worker.addEventListener('message', onWorkerMessage);
@@ -3276,7 +3291,7 @@ function playAITurnRandom() {
     } else {
         console.error('❌ Fallback aleatorio falló: No hay líneas disponibles');
     }
-    setTimeout(() => endTurn('ai'), 600);
+    _after(600, () => endTurn('ai'));
 }
 
 /**
@@ -3395,13 +3410,13 @@ function executeAIMove(move) {
     logEvent(logMsg, { isAI: true });
     
     // Delay para que la animación de entrada sea visible antes de ejecutar efectos
-    setTimeout(() => {
+    _after(600, () => {
         if (move.faceUp) {
             gameState.currentEffectLine = move.line;
             executeEffect(movedCard, 'ai');
         }
         if (typeof onOpponentPlayInLineEffects === 'function') onOpponentPlayInLineEffects('ai', move.line);
-    }, 600);
+    });
 }
 
 function endTurn(who) {
@@ -3492,7 +3507,7 @@ function continueAfterEndEffects(who) {
     }
 
     console.log(`⏱️ Starting next turn...`);
-    setTimeout(() => startTurn(who === 'player' ? 'ai' : 'player'), 1000);
+    _after(1000, () => startTurn(who === 'player' ? 'ai' : 'player'));
 }
 
 // updateStatus: muestra instrucción interactiva en #action-instruction (hand-bar).
@@ -3966,6 +3981,7 @@ function showGameOver(playerWon) {
 }
 
 function startGameFromDraft() {
+    _cancelTimers(); // kill any pending callbacks from previous game
     _initUI();
     const vs = document.getElementById('victory-screen');
     if (vs) {
@@ -4034,6 +4050,26 @@ function startGameFromDraft() {
     gameState.ai.eliminatedSinceLastCheck     = false;
     gameState.ai.eliminatedLastTurn           = false;
     gameState.ai.skipNextCacheCheck           = false;
+
+    // Fields not in initial definition that can survive between games
+    gameState.selectedCardIndex       = null;
+    gameState.selectionModeFaceUp     = false;
+    gameState.preventCompile          = { player: 0, ai: 0 };
+    gameState.pendingEndTurnFor       = null;
+    gameState.pendingCompileShift     = null;
+    gameState.refreshedThisTurn       = null;
+    gameState.revealedPlayerCards     = [];
+    gameState.controlComponent        = null;
+    gameState.pendingControlResume    = null;
+    gameState.pendingStartTurnWho     = null;
+    gameState.pendingEndTurnWho       = null;
+    gameState._plaga2PlayerDiscarded  = undefined;
+    gameState._discardToOpponentTrash = false;
+    gameState._inOpponentDrawEffects  = false;
+    gameState._inOpponentDiscardEffects = false;
+    gameState._inOwnDiscardEffects    = false;
+    gameState._animQueue              = [];
+    window._animQueue                 = [];
 
     if (typeof AudioManager !== 'undefined') { AudioManager.playBGM?.('game'); AudioManager.preloadSounds?.(); }
     initGame();
