@@ -17,6 +17,7 @@
     // Sound slots — drop the matching .ogg file in sounds/sfx/ to activate each one.
     const SFX_FILES = {
         'card-play':      'sounds/sfx/card-play.ogg',
+        'card-flip':      'sounds/sfx/card-flip.ogg',
         'card-eliminated':'sounds/sfx/card-eliminated.ogg',
         'compile':        'sounds/sfx/compile.ogg',
         'victory':        'sounds/sfx/victory.ogg',

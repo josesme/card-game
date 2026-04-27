@@ -2129,6 +2129,7 @@ function handleFieldCardClick(line, target, cardIdx) {
             updateStatus(`${cardObj.card.nombre} no puede ser volteada`);
             return;
         }
+        if (typeof AudioManager !== 'undefined') AudioManager.playSound('card-flip');
         const wasFaceDown = cardObj.faceDown;
         cardObj.faceDown = !cardObj.faceDown;
         gameState.lastFlippedCard = { cardObj, line, target };
@@ -2540,6 +2541,7 @@ function resolveEffectAI(type, target, count, opts = {}) {
             }
         }
     } else if (type === 'flip') {
+        if (typeof AudioManager !== 'undefined') AudioManager.playSound('card-flip');
         let flippedCount = 0;
         let lastFlippedSide = actualTarget; // para el log: qué lado se volteó realmente
         for (let i = 0; i < count; i++) {
