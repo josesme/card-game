@@ -35,6 +35,18 @@
         'draw':            'sounds/sfx/draw.ogg',
     };
 
+    // Volumen individual por slot (relativo al _sfxGain global de 0.65).
+    // Slots sin entrada usan 1.0 (sin cambio).
+    const SFX_VOL = {
+        'card-play':       0.7,
+        'card-flip':       0.5,
+        'card-eliminated': 0.8,
+        'compile':         1.0,
+        'victory':         1.0,
+        'defeat':          1.0,
+        'draw':            0.7,
+    };
+
     // ── Context ──────────────────────────────────────────────────────────────
     function _ensureContext() {
         if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -156,7 +168,15 @@
             _duck();
             const src = ctx.createBufferSource();
             src.buffer = buf;
-            src.connect(_sfxGain);
+            const vol = SFX_VOL[name] ?? 1.0;
+            if (vol !== 1.0) {
+                const slotGain = ctx.createGain();
+                slotGain.gain.value = vol;
+                src.connect(slotGain);
+                slotGain.connect(_sfxGain);
+            } else {
+                src.connect(_sfxGain);
+            }
             src.onended = () => _activeSfx.delete(src);
             _activeSfx.add(src);
             src.start();
