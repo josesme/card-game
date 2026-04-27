@@ -3716,7 +3716,10 @@ function checkWinCondition() {
 function showGameOver(playerWon) {
     const screen = document.getElementById('victory-screen');
     if (!screen) return;
-    if (typeof AudioManager !== 'undefined') AudioManager.playSound(playerWon ? 'victory' : 'defeat');
+    if (typeof AudioManager !== 'undefined') {
+        AudioManager.stopBGM?.();
+        AudioManager.playSound(playerWon ? 'victory' : 'defeat');
+    }
 
     const accentColor = playerWon ? '#FFD93D' : '#722E9A';
     const titleFirst  = playerWon ? 'Compilación completa' : 'Proceso terminado';
