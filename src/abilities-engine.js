@@ -3513,15 +3513,21 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         }, 50);
 
         let selectedIdx = null;
-        container.querySelectorAll('.effect-card').forEach(el => {
+        container.querySelectorAll('.effect-card.selectable').forEach(el => {
           el.onclick = () => {
-            container.querySelectorAll('.effect-card').forEach(x => x.classList.remove('selected'));
-            el.classList.add('selected');
-            selectedIdx = parseInt(el.dataset.idx);
-            gameState.effectContext.selectedIdx = selectedIdx;
+            const wasSelected = el.classList.contains('selected');
+            container.querySelectorAll('.effect-card.selectable').forEach(x => x.classList.remove('selected'));
+            if (!wasSelected) {
+              el.classList.add('selected');
+              selectedIdx = parseInt(el.dataset.idx);
+              gameState.effectContext.selectedIdx = selectedIdx;
+            } else {
+              selectedIdx = null;
+              gameState.effectContext.selectedIdx = null;
+            }
           };
         });
-        
+
         document.getElementById('btn-reveal-continue').onclick = () => {
           if (selectedIdx === null) { updateStatus('Claridad 3: elige una carta primero'); return; }
           const chosenCard = matchCards[selectedIdx];
@@ -3617,12 +3623,11 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         if (subtitleEl) subtitleEl.textContent = 'Roba 1 carta con Valor 1, baraja el mazo y juega una carta Valor 1';
         if (sourceEl) sourceEl.textContent = triggerCardName || '';
         container.innerHTML = revealedCards.map((c, idx) =>
-          `<div class="reveal-card-select" data-idx="${idx}" style="transform:scale(0.85);transform-origin:top center;cursor:pointer;">${createCardHTML(c)}</div>`
+          `<div class="effect-card selectable" data-idx="${idx}">${createCardHTML(c)}</div>`
         ).join('');
         actionsEl.innerHTML = '<button class="ui-btn" id="btn-reveal-continue">ROBAR</button>';
         modal.classList.remove('hidden');
-        
-        // Apply scramble effect to card texts in reveal modal
+
         setTimeout(function() {
             if (window.scrTxt) {
                 container.querySelectorAll('.slot-title-text, .card-img-zone-text').forEach(function(el) {
@@ -3633,13 +3638,14 @@ function resolveAbilityAction(actionDef, targetPlayer) {
                 });
             }
         }, 50);
-        
+
         let selectedIdx = null;
-        container.querySelectorAll('.reveal-card-select').forEach(el => {
+        container.querySelectorAll('.effect-card.selectable').forEach(el => {
           el.onclick = () => {
-            container.querySelectorAll('.reveal-card-select').forEach(x => x.classList.remove('selected'));
-            el.classList.add('selected');
-            selectedIdx = parseInt(el.dataset.idx);
+            const wasSelected = el.classList.contains('selected');
+            container.querySelectorAll('.effect-card.selectable').forEach(x => x.classList.remove('selected'));
+            if (!wasSelected) { el.classList.add('selected'); selectedIdx = parseInt(el.dataset.idx); }
+            else              { selectedIdx = null; }
           };
         });
         document.getElementById('btn-reveal-continue').onclick = () => {
@@ -4468,16 +4474,13 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           if (sourceEl) sourceEl.textContent = triggerCardName || '';
           
           // Mostrar cartas del descarte con click para seleccionar
-          container.innerHTML = gameState.player.trash.map((c, idx) => 
-            `<div class="reveal-card-select" data-idx="${idx}" style="transform: scale(0.85); transform-origin: top center; cursor: pointer;">
-              ${createCardHTML(c)}
-            </div>`
+          container.innerHTML = gameState.player.trash.map((c, idx) =>
+            `<div class="effect-card selectable" data-idx="${idx}">${createCardHTML(c)}</div>`
           ).join('');
-          
+
           actionsEl.innerHTML = '<button class="ui-btn" id="btn-reveal-continue">JUGAR</button>';
           modal.classList.remove('hidden');
-          
-          // Apply scramble effect to card texts in reveal modal
+
           setTimeout(function() {
               if (window.scrTxt) {
                   container.querySelectorAll('.slot-title-text, .card-img-zone-text').forEach(function(el) {
@@ -4489,14 +4492,13 @@ function resolveAbilityAction(actionDef, targetPlayer) {
               }
           }, 50);
 
-          // Manejar selección de carta
           let selectedIdx = null;
-          container.querySelectorAll('.reveal-card-select').forEach(el => {
+          container.querySelectorAll('.effect-card.selectable').forEach(el => {
             el.onclick = () => {
-              container.querySelectorAll('.reveal-card-select').forEach(x => x.classList.remove('selected'));
-              el.classList.add('selected');
-              selectedIdx = parseInt(el.dataset.idx);
-              gameState.effectContext.selectedIdx = selectedIdx;
+              const wasSelected = el.classList.contains('selected');
+              container.querySelectorAll('.effect-card.selectable').forEach(x => x.classList.remove('selected'));
+              if (!wasSelected) { el.classList.add('selected'); selectedIdx = parseInt(el.dataset.idx); gameState.effectContext.selectedIdx = selectedIdx; }
+              else              { selectedIdx = null; gameState.effectContext.selectedIdx = null; }
             };
           });
           
@@ -4586,12 +4588,11 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           if (subtitleEl) subtitleEl.textContent = 'Se jugará bocabajo en otra línea';
           if (sourceEl) sourceEl.textContent = triggerCardName || '';
           container.innerHTML = trashSnapshot.map((c, idx) =>
-            `<div class="reveal-card-select" data-idx="${idx}" style="transform:scale(0.85);transform-origin:top center;cursor:pointer;">${createCardHTML(c)}</div>`
+            `<div class="effect-card selectable" data-idx="${idx}">${createCardHTML(c)}</div>`
           ).join('');
           actionsEl.innerHTML = '<button class="ui-btn" id="btn-reveal-continue">ELEGIR LÍNEA</button>';
           modal.classList.remove('hidden');
-          
-          // Apply scramble effect to card texts in reveal modal
+
           setTimeout(function() {
               if (window.scrTxt) {
                   container.querySelectorAll('.slot-title-text, .card-img-zone-text').forEach(function(el) {
@@ -4602,13 +4603,14 @@ function resolveAbilityAction(actionDef, targetPlayer) {
                   });
               }
           }, 50);
-          
+
           let selectedIdx = null;
-          container.querySelectorAll('.reveal-card-select').forEach(el => {
+          container.querySelectorAll('.effect-card.selectable').forEach(el => {
             el.onclick = () => {
-              container.querySelectorAll('.reveal-card-select').forEach(x => x.classList.remove('selected'));
-              el.classList.add('selected');
-              selectedIdx = parseInt(el.dataset.idx);
+              const wasSelected = el.classList.contains('selected');
+              container.querySelectorAll('.effect-card.selectable').forEach(x => x.classList.remove('selected'));
+              if (!wasSelected) { el.classList.add('selected'); selectedIdx = parseInt(el.dataset.idx); }
+              else              { selectedIdx = null; }
             };
           });
           document.getElementById('btn-reveal-continue').onclick = () => {
