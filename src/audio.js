@@ -2,17 +2,17 @@
 
 (function () {
 
+    let ctx     = null;
+    let _stopped = false;
+
     // ── BGM state ────────────────────────────────────────────────────────────
-    let ctx         = null;
-    let introBuffer = null;
-    let loopBuffer  = null;
-    let _loaded     = false;
-    let _started    = false;
-    let _stopped    = false;
+    const BGM_FILES = { 'init': 'sounds/init.ogg' };
+    const _bgmCache = new Map();
+    let   _bgmSource = null;
 
     // ── SFX state ────────────────────────────────────────────────────────────
-    const _sfxCache = new Map();   // name → AudioBuffer
-    let   _sfxGain  = null;        // GainNode shared by all SFX
+    const _sfxCache = new Map();
+    let   _sfxGain  = null;
 
     // Sound slots — drop the matching .ogg file in sounds/sfx/ to activate each one.
     const SFX_FILES = {
@@ -25,50 +25,57 @@
         'draw':           'sounds/sfx/draw.ogg',
     };
 
-    // ── BGM load + start ─────────────────────────────────────────────────────
-    async function _load() {
-        if (_loaded) return;
-        ctx = new (window.AudioContext || window.webkitAudioContext)();
-
-        const [introData, loopData] = await Promise.all([
-            fetch('sounds/inicio.ogg').then(r => r.arrayBuffer()),
-            fetch('sounds/bucle.ogg').then(r => r.arrayBuffer()),
-        ]);
-        [introBuffer, loopBuffer] = await Promise.all([
-            ctx.decodeAudioData(introData),
-            ctx.decodeAudioData(loopData),
-        ]);
-        _loaded = true;
+    // ── Context ──────────────────────────────────────────────────────────────
+    function _ensureContext() {
+        if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+        return ctx;
     }
 
-    async function _start() {
-        await _load();
+    // ── BGM ──────────────────────────────────────────────────────────────────
+    async function _loadBGM(name) {
+        if (_bgmCache.has(name)) return _bgmCache.get(name);
+        const path = BGM_FILES[name];
+        if (!path) return null;
+        try {
+            const res = await fetch(path);
+            if (!res.ok) return null;
+            const buf = await _ensureContext().decodeAudioData(await res.arrayBuffer());
+            _bgmCache.set(name, buf);
+            return buf;
+        } catch (_) { return null; }
+    }
+
+    async function playBGM(name) {
+        if (_stopped) return;
+        _ensureContext();
         if (ctx.state === 'suspended') await ctx.resume();
 
-        const now = ctx.currentTime;
-
-        const intro = ctx.createBufferSource();
-        intro.buffer = introBuffer;
-        intro.connect(ctx.destination);
-        intro.start(now);
-
-        const loop = ctx.createBufferSource();
-        loop.buffer = loopBuffer;
-        loop.loop   = true;
-        loop.connect(ctx.destination);
-        loop.start(now + introBuffer.duration);
-
-        _started = true;
-    }
-
-    // ── BGM toggle ───────────────────────────────────────────────────────────
-    async function toggle() {
-        if (!_started) {
-            _stopped = false;
-            await _start();
-            return _stopped;
+        if (_bgmSource) {
+            try { _bgmSource.stop(); } catch (_) {}
+            _bgmSource = null;
         }
 
+        const buf = await _loadBGM(name);
+        if (!buf) return;
+
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        src.loop   = true;
+        src.connect(ctx.destination);
+        src.start();
+        _bgmSource = src;
+    }
+
+    function stopBGM() {
+        if (_bgmSource) {
+            try { _bgmSource.stop(); } catch (_) {}
+            _bgmSource = null;
+        }
+    }
+
+    // ── BGM toggle (mute / unmute everything) ────────────────────────────────
+    async function toggle() {
+        if (!ctx) return _stopped;
         if (ctx.state === 'running') {
             await ctx.suspend();
             _stopped = true;
@@ -76,7 +83,6 @@
             await ctx.resume();
             _stopped = false;
         }
-
         localStorage.setItem('audio_stopped', _stopped ? '1' : '0');
         return _stopped;
     }
@@ -96,12 +102,12 @@
 
         try {
             const res = await fetch(path);
-            if (!res.ok) return null;           // file not yet present — silent skip
+            if (!res.ok) return null;
             const buf = await ctx.decodeAudioData(await res.arrayBuffer());
             _sfxCache.set(name, buf);
             return buf;
         } catch (_) {
-            return null;                        // decode error — silent skip
+            return null;
         }
     }
 
@@ -126,13 +132,13 @@
         await Promise.all(Object.keys(SFX_FILES).map(name => _loadSfx(name)));
     }
 
-    // ── Autostart on first gesture ───────────────────────────────────────────
+    // ── Autostart BGM on first gesture (home screen) ─────────────────────────
     function _attachAutostart() {
         if (_stopped) return;
         const events = ['click', 'keydown', 'touchstart'];
         function onGesture() {
             events.forEach(ev => document.removeEventListener(ev, onGesture));
-            _start().catch(() => {});
+            playBGM('init').catch(() => {});
         }
         events.forEach(ev => document.addEventListener(ev, onGesture, { once: true }));
     }
@@ -145,6 +151,8 @@
     window.AudioManager = {
         init,
         toggle,
+        playBGM,
+        stopBGM,
         playSound,
         preloadSounds,
         isStopped: () => _stopped,

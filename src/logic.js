@@ -3980,8 +3980,8 @@ function startGameFromDraft() {
         derecha:   { player: [], ai: [], compiledBy: null },
     };
 
+    if (typeof AudioManager !== 'undefined') { AudioManager.stopBGM?.(); AudioManager.preloadSounds?.(); }
     initGame();
-    if (typeof AudioManager !== 'undefined') AudioManager.preloadSounds?.();
 }
 
 function swapProtocols(lineA, lineB, owner = 'player') {
