@@ -2387,6 +2387,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           }
           processAbilityEffect();
         };
+        if (typeof AudioManager !== 'undefined') AudioManager.playSound?.('card-eliminated');
         if (window.animCardEliminate) {
           window.animCardEliminate(chosen.card.card.id, doAutoElim);
         } else {
@@ -2800,6 +2801,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
               updateUI();
               processAbilityEffect();
             };
+            if (typeof AudioManager !== 'undefined') AudioManager.playSound?.('card-eliminated');
             if (window.animCardEliminate) window.animCardEliminate(removed.card.id, doElim);
             else doElim();
           } else {
@@ -2856,6 +2858,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           processAbilityEffect();
         };
         toElim.forEach(({ cardObj }) => {
+          if (typeof AudioManager !== 'undefined') AudioManager.playSound?.('card-eliminated');
           if (window.animCardEliminate) {
             window.animCardEliminate(cardObj.card.id, () => { if (++done === toElim.length) doAll(); });
           } else {
@@ -2898,6 +2901,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             processAbilityEffect();
           };
           toElim.forEach(({ cardObj }) => {
+            if (typeof AudioManager !== 'undefined') AudioManager.playSound?.('card-eliminated');
             if (window.animCardEliminate) {
               window.animCardEliminate(cardObj.card.id, () => { if (++done === toElim.length) doAll(); });
             } else {
@@ -3735,6 +3739,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             updateUI();
             processAbilityEffect();
           };
+          if (typeof AudioManager !== 'undefined') AudioManager.playSound?.('card-eliminated');
           if (window.animCardEliminate) window.animCardEliminate(removed.card.id, doElim);
           else doElim();
         } else {
@@ -4367,6 +4372,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
               updateUI();
               processAbilityEffect();
             };
+            if (typeof AudioManager !== 'undefined') AudioManager.playSound?.('card-eliminated');
             if (window.animCardEliminate) window.animCardEliminate(cardObj.card.id, doElim);
             else doElim();
           } else {

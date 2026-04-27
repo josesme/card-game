@@ -2095,7 +2095,6 @@ function handleFieldCardClick(line, target, cardIdx) {
             return;
         }
         const _doElim = () => {
-            if (typeof AudioManager !== 'undefined') AudioManager.playSound('card-eliminated');
             gameState.field[line][target].splice(cardIdx, 1);
             gameState[target].trash.push(cardObj.card);
             gameState[gameState.turn].eliminatedSinceLastCheck = true;
@@ -2111,6 +2110,7 @@ function handleFieldCardClick(line, target, cardIdx) {
             if (ctx.selected.length >= ctx.count) finishEffect();
             else updateUI();
         };
+        if (typeof AudioManager !== 'undefined') AudioManager.playSound('card-eliminated');
         if (window.animCardEliminate) {
             window.animCardEliminate(cardObj.card.id, _doElim);
         } else {
