@@ -110,6 +110,7 @@
         const cardEl = document.querySelector(`.protocol-card[data-proto="${protocol}"]`);
         if (cardEl) cardEl.onclick = null;
 
+        if (typeof AudioManager !== 'undefined') AudioManager.playSound?.('card-eliminated');
         _animPickProtocol(cardEl, () => {
             draftState.playerSelected.push(protocol);
             draftState.available.splice(draftState.available.indexOf(protocol), 1);
