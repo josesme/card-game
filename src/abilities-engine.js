@@ -2793,11 +2793,21 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           })[0];
           const fdIdx = gameState.field[l].ai.findIndex(c => c.faceDown);
           if (fdIdx >= 0) {
-            const [removed] = gameState.field[l].ai.splice(fdIdx, 1);
-            gameState.ai.trash.push(removed.card);
+            const removed = gameState.field[l].ai[fdIdx];
+            const doElim = () => {
+              gameState.field[l].ai.splice(fdIdx, 1);
+              gameState.ai.trash.push(removed.card);
+              updateUI();
+              processAbilityEffect();
+            };
+            if (window.animCardEliminate) window.animCardEliminate(removed.card.id, doElim);
+            else doElim();
+          } else {
+            processAbilityEffect();
           }
+        } else {
+          processAbilityEffect();
         }
-        processAbilityEffect();
       } else {
         // IA jugó Plaga 4: el jugador (oponente) elige una de sus propias cartas bocabajo
         startEffect('eliminate', 'player', count || 1, { filter: 'faceDown' });
@@ -2823,17 +2833,35 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         });
         processAbilityEffect();
       } else {
+        // Recopilar cartas a eliminar (una por línea distinta)
+        const toElim = [];
         otherLines.forEach(l => {
-          // IA elimina la carta superior de cualquier pila en esa línea
           const targets = ['player', 'ai'].filter(p => gameState.field[l][p].length > 0);
           if (targets.length > 0) {
-            // Preferir eliminar carta del rival; solo propia si no hay del rival
             const p = targets.includes('player') ? 'player' : 'ai';
-            const removed = gameState.field[l][p].pop();
-            gameState[p].trash.push(removed.card);
+            const stack = gameState.field[l][p];
+            toElim.push({ line: l, owner: p, cardObj: stack[stack.length - 1] });
           }
         });
-        processAbilityEffect();
+        if (toElim.length === 0) { processAbilityEffect(); break; }
+        // Animar en paralelo; al terminar la última, aplicar estado
+        let done = 0;
+        const doAll = () => {
+          toElim.forEach(({ line, owner, cardObj }) => {
+            const idx = gameState.field[line][owner].indexOf(cardObj);
+            if (idx >= 0) gameState.field[line][owner].splice(idx, 1);
+            gameState[owner].trash.push(cardObj.card);
+          });
+          updateUI();
+          processAbilityEffect();
+        };
+        toElim.forEach(({ cardObj }) => {
+          if (window.animCardEliminate) {
+            window.animCardEliminate(cardObj.card.id, () => { if (++done === toElim.length) doAll(); });
+          } else {
+            if (++done === toElim.length) doAll();
+          }
+        });
       }
       break;
     }
@@ -2853,17 +2881,32 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           if (count > bestCount) { bestCount = count; bestLine = l; }
         });
         if (bestLine) {
+          const toElim = [];
           ['player', 'ai'].forEach(p => {
-            const toKeep = [];
             gameState.field[bestLine][p].forEach(c => {
-              if (c.faceDown || (c.card.valor >= min && c.card.valor <= max)) {
-                gameState[p].trash.push(c.card);
-              } else { toKeep.push(c); }
+              if (c.faceDown || (c.card.valor >= min && c.card.valor <= max)) toElim.push({ owner: p, cardObj: c });
             });
-            gameState.field[bestLine][p] = toKeep;
           });
+          if (toElim.length === 0) { processAbilityEffect(); break; }
+          let done = 0;
+          const doAll = () => {
+            ['player', 'ai'].forEach(p => {
+              gameState.field[bestLine][p] = gameState.field[bestLine][p].filter(c => !toElim.some(e => e.cardObj === c));
+            });
+            toElim.forEach(({ owner, cardObj }) => gameState[owner].trash.push(cardObj.card));
+            updateUI();
+            processAbilityEffect();
+          };
+          toElim.forEach(({ cardObj }) => {
+            if (window.animCardEliminate) {
+              window.animCardEliminate(cardObj.card.id, () => { if (++done === toElim.length) doAll(); });
+            } else {
+              if (++done === toElim.length) doAll();
+            }
+          });
+        } else {
+          processAbilityEffect();
         }
-        processAbilityEffect();
       }
       break;
     }
@@ -3684,9 +3727,19 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         startEffect('eliminate', 'ai', 1, { allowedLines: winLines });
       } else {
         const best = winLines.sort((a, b) => calculateScore(gameState, b, 'player') - calculateScore(gameState, a, 'player'))[0];
-        const removed = gameState.field[best].player.pop();
-        if (removed) { gameState.player.trash.push(removed.card); updateUI(); }
-        processAbilityEffect();
+        const removed = gameState.field[best].player[gameState.field[best].player.length - 1];
+        if (removed) {
+          const doElim = () => {
+            gameState.field[best].player.pop();
+            gameState.player.trash.push(removed.card);
+            updateUI();
+            processAbilityEffect();
+          };
+          if (window.animCardEliminate) window.animCardEliminate(removed.card.id, doElim);
+          else doElim();
+        } else {
+          processAbilityEffect();
+        }
       }
       break;
     }
@@ -4301,18 +4354,25 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           // filter exactValue + targetAll: permite seleccionar cubierta o descubierta
           startEffect('eliminate', 'any', 1, { filter: 'exactValue', exactVal: targetVal, targetAll: true, statusMsg: `ELIMINAR (Valor ${targetVal})` });
         } else {
-          let done = false;
-          LINES.forEach(l => {
-            if (done) return;
+          let found = null;
+          for (const l of LINES) {
             const idx = gameState.field[l].player.findIndex(c => c.card.valor === targetVal);
-            if (idx >= 0) {
-              const [removed] = gameState.field[l].player.splice(idx, 1);
-              gameState.player.trash.push(removed.card);
-              done = true;
-            }
-          });
-          updateUI();
-          processAbilityEffect();
+            if (idx >= 0) { found = { line: l, idx, cardObj: gameState.field[l].player[idx] }; break; }
+          }
+          if (found) {
+            const { line, idx, cardObj } = found;
+            const doElim = () => {
+              gameState.field[line].player.splice(idx, 1);
+              gameState.player.trash.push(cardObj.card);
+              updateUI();
+              processAbilityEffect();
+            };
+            if (window.animCardEliminate) window.animCardEliminate(cardObj.card.id, doElim);
+            else doElim();
+          } else {
+            updateUI();
+            processAbilityEffect();
+          }
         }
       } else {
         updateUI();
