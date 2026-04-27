@@ -60,6 +60,20 @@ Al terminar cualquier trabajo, seguir estas reglas según el tipo de cambio:
 - Decisión técnica no obvia → comentario inline con contexto del porqué.
 - No dejar la documentación para el final de la sesión; documentar al resolver.
 
+## Reglas de juego — verificación antes de actuar
+
+Antes de afirmar que "el texto de la carta dice X" o que "las reglas dicen X", citar la fuente exacta y haberla leído. Las fuentes válidas, en orden de prioridad:
+
+1. **Texto literal de la carta** — campo `descripcion` en `GLOBAL_CARDS` (en `logic.js`).
+2. **CODEX** — `docs/CODEX.md`, sección de la familia correspondiente.
+3. **Referencia externa** — BGG / visor de cartas (ver memory para URLs).
+
+Si no se ha leído la fuente antes de afirmar algo, decir explícitamente "necesito verificarlo" y leerla antes de proponer cualquier cambio. **Nunca presentar una inferencia como un hecho verificado.**
+
+Cuando haya conflicto entre fuentes (ej: el texto de la carta no menciona una restricción que sí aparece en el CODEX), señalarlo al usuario antes de decidir qué implementar.
+
+---
+
 ## CSS — debugging de estilos que no se aplican
 
 - **Nunca mover un elemento en el DOM para resolver un problema de estilo.** Cambia estilos, no estructura.
