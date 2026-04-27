@@ -3998,6 +3998,43 @@ function startGameFromDraft() {
         derecha:   { player: [], ai: [], compiledBy: null },
     };
 
+    // Reset estado global que sobrevive entre partidas
+    gameState.phase              = 'action';
+    gameState.turn               = 'player';
+    gameState.isProcessing       = false;
+    gameState.effectContext      = null;
+    gameState.effectQueue        = [];
+    gameState.pendingTurnEnd     = null;
+    gameState.pendingStartTurn   = null;
+    gameState.pendingCheckCompile = null;
+    gameState.pendingLanding     = null;
+    gameState.processingStartTriggers = false;
+    gameState.processingEndTriggers   = false;
+    gameState.pendingStartTriggers    = [];
+    gameState.pendingEndTriggers      = [];
+    gameState.uncoveredThisTurn       = new Set();
+    gameState.selectionMode      = false;
+    gameState.currentEffectLine  = null;
+    gameState.currentTriggerCard = null;
+    gameState.coveringCard       = null;
+    gameState.lastFlippedCard    = null;
+    gameState.playOnSide         = null;
+    gameState.pendingPlayCard    = false;
+    gameState.skipPhase          = null;
+    gameState.ignoreEffectsLines = {};
+    gameState.player.drawnSinceLastCheck      = false;
+    gameState.player.discardedSinceLastCheck  = false;
+    gameState.player.drawnLastTurn            = false;
+    gameState.player.eliminatedSinceLastCheck = false;
+    gameState.player.eliminatedLastTurn       = false;
+    gameState.player.skipNextCacheCheck       = false;
+    gameState.ai.drawnSinceLastCheck          = false;
+    gameState.ai.discardedSinceLastCheck      = false;
+    gameState.ai.drawnLastTurn                = false;
+    gameState.ai.eliminatedSinceLastCheck     = false;
+    gameState.ai.eliminatedLastTurn           = false;
+    gameState.ai.skipNextCacheCheck           = false;
+
     if (typeof AudioManager !== 'undefined') { AudioManager.playBGM?.('game'); AudioManager.preloadSounds?.(); }
     initGame();
 }
