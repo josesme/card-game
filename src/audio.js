@@ -11,7 +11,10 @@
     const DUCK_DOWN_MS  = 50;
     const DUCK_UP_MS    = 400;
 
-    const BGM_FILES = { 'init': 'sounds/sfx/Init.ogg' };
+    const BGM_FILES = {
+        'init': 'sounds/sfx/Init.ogg',
+        'game': 'sounds/sfx/Game.ogg',
+    };
     const _bgmCache = new Map();
     let   _bgmSource = null;
     let   _bgmGain   = null;   // GainNode for BGM — ducked by SFX

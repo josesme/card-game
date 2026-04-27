@@ -3995,7 +3995,7 @@ function startGameFromDraft() {
         derecha:   { player: [], ai: [], compiledBy: null },
     };
 
-    if (typeof AudioManager !== 'undefined') { AudioManager.stopBGM?.(); AudioManager.preloadSounds?.(); }
+    if (typeof AudioManager !== 'undefined') { AudioManager.playBGM?.('game'); AudioManager.preloadSounds?.(); }
     initGame();
 }
 
