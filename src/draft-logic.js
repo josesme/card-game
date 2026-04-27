@@ -366,11 +366,14 @@
             const totalMs  = (COLS - 1) * colDelay + 800 + 150;
             _draftEnterReadyAt = Date.now() + totalMs + 1400;
             cards.forEach((el, i) => {
+                const col = i % COLS;
                 setTimeout(() => {
                     el.style.clipPath = '';
                     el.classList.add('card-entering');
                     el.addEventListener('animationend', () => el.classList.remove('card-entering'), { once: true });
-                }, (i % COLS) * colDelay);
+                    // primer elemento de cada columna dispara el sonido
+                    if (i < COLS && typeof AudioManager !== 'undefined') AudioManager.playSound?.('card-flip');
+                }, col * colDelay);
             });
             setTimeout(() => { _draftLoadingDone = true; grid.classList.remove('loading'); }, totalMs);
         }
