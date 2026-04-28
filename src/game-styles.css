@@ -794,9 +794,13 @@ body.in-game::before {
     0% { background-position: -200% 0; }
     100% { background-position: 200% 0; }
 }
+@keyframes proto-float {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(-5px); }
+}
 .proto-box.compiled-player {
     border: 3px solid var(--player-primary) !important;
-    animation: pulse-player 1.5s ease-in-out infinite;
+    animation: pulse-player 1.5s ease-in-out infinite, proto-float 2.4s ease-in-out infinite;
     position: relative; overflow: hidden;
 }
 .proto-box.compiled-player::after {
@@ -809,7 +813,7 @@ body.in-game::before {
 }
 .proto-box.compiled-ai {
     border: 3px solid #9B4DCA !important;
-    animation: pulse-ai 1.5s ease-in-out infinite;
+    animation: pulse-ai 1.5s ease-in-out infinite, proto-float 2.4s ease-in-out infinite;
     position: relative; overflow: hidden;
 }
 .proto-box.compiled-ai::after {
