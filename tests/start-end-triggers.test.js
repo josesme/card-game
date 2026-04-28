@@ -81,6 +81,7 @@ function getEngine() {
   global.executeNewEffect = jest.fn();
   global.continueAfterEndEffects = jest.fn();
   global.checkCompilePhase = jest.fn();
+  global.checkControlPhase = jest.fn();
   global.checkWinCondition = jest.fn();
   global.startTurn = jest.fn();
   global.endTurn = jest.fn();
@@ -156,6 +157,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   global.continueAfterEndEffects = jest.fn();
   global.checkCompilePhase = jest.fn();
+  global.checkControlPhase = jest.fn();
   global.startTurn = jest.fn();
   global.endTurn = jest.fn();
   global.setTimeout = jest.fn((fn) => fn());
@@ -260,8 +262,8 @@ describe('processNextStartTrigger — comportamiento', () => {
     GS.pendingStartTurnWho = 'player';
     GS.pendingCheckCompile = 'player'; // debería resolverse al continuar
     ENGINE.processNextStartTrigger('player');
-    // El motor interno llama processAbilityEffect → checkCompilePhase (via setTimeout mock)
-    expect(global.checkCompilePhase).toHaveBeenCalledWith('player');
+    // El motor interno llama processAbilityEffect → _routeAfterEffects → checkControlPhase (via setTimeout mock)
+    expect(global.checkControlPhase).toHaveBeenCalledWith('player');
   });
 
   test('con 1 trigger: encola efectos en effectQueue al disparar', () => {

@@ -1228,6 +1228,31 @@ function triggerCardEffect(card, trigger, targetPlayer, opts = {}) {
 }
 
 /**
+ * Enruta al siguiente estado del juego cuando la cola de efectos está vacía.
+ * Fuente de verdad única — usada tanto por processAbilityEffect como por finishEffect.
+ */
+function _routeAfterEffects() {
+  if (gameState.processingStartTriggers) {
+    processNextStartTrigger(gameState.pendingStartTurnWho);
+  } else if (gameState.pendingCheckCompile) {
+    const who = gameState.pendingCheckCompile;
+    gameState.pendingCheckCompile = null;
+    _gameAfter(600, () => checkControlPhase(who));
+  } else if (gameState.processingEndTriggers) {
+    processNextEndTrigger(gameState.pendingEndTurnWho);
+  } else if (gameState.pendingStartTurn) {
+    const next = gameState.pendingStartTurn;
+    gameState.pendingStartTurn = null;
+    _gameAfter(500, () => startTurn(next));
+  } else if (gameState.pendingTurnEnd) {
+    const who = gameState.pendingTurnEnd;
+    gameState.pendingTurnEnd = null;
+    _gameAfter(500, () => endTurn(who));
+  }
+}
+window._routeAfterEffects = _routeAfterEffects;
+
+/**
  * Procesa el siguiente efecto en la cola
  */
 function processAbilityEffect() {
@@ -1240,23 +1265,7 @@ function processAbilityEffect() {
       landPendingCard();
       return;
     }
-    if (gameState.processingStartTriggers) {
-      processNextStartTrigger(gameState.pendingStartTurnWho);
-    } else if (gameState.pendingCheckCompile) {
-      const who = gameState.pendingCheckCompile;
-      gameState.pendingCheckCompile = null;
-      _gameAfter(600, () => checkCompilePhase(who));
-    } else if (gameState.processingEndTriggers) {
-      processNextEndTrigger(gameState.pendingEndTurnWho);
-    } else if (gameState.pendingStartTurn) {
-      const next = gameState.pendingStartTurn;
-      gameState.pendingStartTurn = null;
-      _gameAfter(500, () => startTurn(next));
-    } else if (gameState.pendingTurnEnd) {
-      const who = gameState.pendingTurnEnd;
-      gameState.pendingTurnEnd = null;
-      _gameAfter(500, () => endTurn(who));
-    }
+    _routeAfterEffects();
     return;
   }
 

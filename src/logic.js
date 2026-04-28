@@ -2481,25 +2481,10 @@ function finishEffect() {
     // Route to ability engine if queue items are in new format
     if (gameState.effectQueue.length > 0 && gameState.effectQueue[0].effect !== undefined) {
         processAbilityEffect();
-    } else if (gameState.processingEndTriggers) {
-        // Resume end-trigger chain after an interactive effect resolved (e.g. Asimilación 6 onTurnEnd)
-        if (typeof processNextEndTrigger === 'function') processNextEndTrigger(gameState.pendingEndTurnWho);
-    } else if (gameState.processingStartTriggers) {
-        if (typeof processNextStartTrigger === 'function') processNextStartTrigger(gameState.pendingStartTurnWho);
-    } else if (gameState.effectQueue.length === 0 && gameState.pendingCheckCompile) {
-        const who = gameState.pendingCheckCompile;
-        gameState.pendingCheckCompile = null;
-        _after(600, () => checkControlPhase(who));
-    } else if (gameState.effectQueue.length === 0 && gameState.pendingStartTurn) {
-        const next = gameState.pendingStartTurn;
-        gameState.pendingStartTurn = null;
-        _after(500, () => startTurn(next));
-    } else if (gameState.effectQueue.length === 0 && gameState.pendingTurnEnd) {
-        const who = gameState.pendingTurnEnd;
-        gameState.pendingTurnEnd = null;
-        endTurn(who);
+    } else if (gameState.effectQueue.length === 0) {
+        if (typeof _routeAfterEffects === 'function') _routeAfterEffects();
     } else {
-        processNextEffect();
+        processNextEffect(); // old-format queue items
     }
 }
 
