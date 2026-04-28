@@ -1255,7 +1255,7 @@ function processAbilityEffect() {
     } else if (gameState.pendingTurnEnd) {
       const who = gameState.pendingTurnEnd;
       gameState.pendingTurnEnd = null;
-      endTurn(who);
+      _gameAfter(500, () => endTurn(who));
     }
     return;
   }

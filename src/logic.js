@@ -3258,7 +3258,6 @@ function playAITurn() {
         const move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
         console.log(`🎲 IA nivel ${diffDepth}: jugada aleatoria (epsilon=${epsilon})`);
         executeAIMove(move);
-        _after(1200, () => endTurn('ai'));
         return;
     }
 
@@ -3290,7 +3289,6 @@ function playAITurn() {
         }
 
         executeAIMove(move);
-        _after(1200, () => endTurn('ai'));
     }
 
     worker.addEventListener('message', onWorkerMessage);
@@ -3421,7 +3419,8 @@ function executeAIMove(move) {
         }
         gameState.refreshedThisTurn = 'ai';
         logEvent('IA actualiza su mazo', { isAI: true });
-        return; // endTurn se llama en el caller (playAITurn)
+        _after(500, () => endTurn('ai'));
+        return;
     }
 
     const movedCard = gameState.ai.hand.splice(move.cardIndex, 1)[0];
@@ -3463,6 +3462,11 @@ function executeAIMove(move) {
             executeEffect(movedCard, 'ai');
         }
         if (typeof onOpponentPlayInLineEffects === 'function') onOpponentPlayInLineEffects('ai', move.line);
+        // Signal turn-end: processAbilityEffect will call endTurn once effects + animations resolve
+        gameState.pendingTurnEnd = 'ai';
+        if (!gameState.effectContext && gameState.effectQueue.length === 0) {
+            processAbilityEffect();
+        }
     });
 }
 
