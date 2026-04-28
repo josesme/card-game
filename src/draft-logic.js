@@ -39,7 +39,7 @@
         const info = PROTOCOL_IMG_MAP[protocol];
         if (!info) return '';
         const folder = info.ed === 1 ? 'Main_1' : 'Main_2';
-        return `../images/cards/${folder}/${info.en}_${valor}.jpg`;
+        return `images/cards/${folder}/${info.en}_${valor}.jpg`;
     }
 
     // ── State ──────────────────────────────────────────────────────────────────
@@ -340,7 +340,7 @@
                 <div class="slot-title"><span class="slot-title-text">${protocol}</span></div>
                 <div class="protocol-card-overlay">
                     <div class="protocol-card-logo-box">
-                        <img class="protocol-card-logo" src="../images/Background/Logo.png" alt="COMPILE">
+                        <img class="protocol-card-logo" src="images/Background/Logo.png" alt="COMPILE">
                     </div>
                     <div class="protocol-card-abilities-box">
                         <div class="protocol-card-abilities">${PROTOCOL_DEFS[protocol].abilities}</div>
@@ -409,7 +409,7 @@
                             <img src="${getCardImageUrl(p, 1)}" alt="${p}">
                             <div class="slot-title" data-text="${p}"></div>
                             <div class="thumb-logo-box">
-                                <img class="thumb-logo" src="../images/Background/Logo.png" alt="">
+                                <img class="thumb-logo" src="images/Background/Logo.png" alt="">
                             </div>
                         </div>
                     `);

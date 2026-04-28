@@ -26,7 +26,7 @@
         }
 
         body {
-            background: url('../images/Background/Compile_2.png') no-repeat center center fixed;
+            background: url('images/Background/Compile_2.png') no-repeat center center fixed;
             background-size: cover;
         }
 
@@ -622,7 +622,7 @@
 <!-- ── VIEW: HOME ─────────────────────────────────────────── -->
 <div id="view-home" class="view hidden">
     <div id="home-container">
-        <img src="../images/Background/Compile.png" class="title-img-home" alt="COMPILE" style="max-height:180px;margin-bottom:24px;">
+        <img src="images/Background/Compile.png" class="title-img-home" alt="COMPILE" style="max-height:180px;margin-bottom:24px;">
         <p class="view-label" id="home-tagline">Juego de cartas · IA adaptativa</p>
 
         <p class="diff-label" id="diff-label-1">Nivel de compilación</p>
@@ -663,7 +663,7 @@
 <div id="view-draft" class="view hidden">
     <div id="draft-viewport">
     <div id="draft-container">
-        <img src="../images/Background/Compile.png" class="title-img" alt="COMPILE">
+        <img src="images/Background/Compile.png" class="title-img" alt="COMPILE">
         <p class="subtitle" id="draft-subtitle">Selecciona Tus Protocolos</p>
         <div class="current-turn" id="current-turn">Asignando primer jugador...</div>
         <div class="protocols-grid" id="protocols-grid"></div>
@@ -697,7 +697,7 @@
             <button class="ui-btn ui-btn--sm" onclick="AudioManager.playBGM?.(); router.navigate('draft')">NUEVO DRAFT</button>
             <button class="ui-btn ui-btn--sm ui-btn--danger" onclick="AudioManager.playBGM?.(); router.navigate('home')">ABANDONAR</button>
         </div>
-        <img src="../images/Background/Compile.png" alt="COMPILE" style="height: auto; max-height: 50px; filter: drop-shadow(0 0 12px rgba(255,217,61,0.4));">
+        <img src="images/Background/Compile.png" alt="COMPILE" style="height: auto; max-height: 50px; filter: drop-shadow(0 0 12px rgba(255,217,61,0.4));">
         <div style="position: absolute; right: 0; display: flex; gap: 6px; align-items: center;">
             <button id="log-toggle" onclick="document.getElementById('log-overlay').classList.toggle('open')" title="Log del juego">
                 <svg viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 13H8"/><path d="M16 17H8"/><path d="M16 13h-2"/></svg>

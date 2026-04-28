@@ -669,15 +669,15 @@ function getCardImageUrl(protocol, valor) {
     const info = PROTOCOL_IMG_MAP[protocol];
     if (!info) return '';
     const folder = info.ed === 1 ? 'Main_1' : 'Main_2';
-    return `../images/cards/${folder}/${info.en}_${valor}.jpg`;
+    return `images/cards/${folder}/${info.en}_${valor}.jpg`;
 }
 
 function getCardBackUrl(protocol) {
     const info = PROTOCOL_IMG_MAP[protocol];
-    if (!info) return '../images/cards/Main_2/dorso.webp';
+    if (!info) return 'images/cards/Main_2/dorso.webp';
     return info.ed === 1
-        ? '../images/cards/Main_1/rear.jpg'
-        : '../images/cards/Main_2/dorso.webp';
+        ? 'images/cards/Main_1/rear.jpg'
+        : 'images/cards/Main_2/dorso.webp';
 }
 
 // Detectar si estamos en v2
@@ -686,7 +686,7 @@ const _isV2Layout = !!document.querySelector('.vertical-stack');
 function createCardHTML(card, faceDown = false) {
     if (faceDown) {
         if (_isV2Layout) {
-            const backUrl = card ? getCardBackUrl(card.protocol) : '../images/cards/Main_2/dorso.webp';
+            const backUrl = card ? getCardBackUrl(card.protocol) : 'images/cards/Main_2/dorso.webp';
             return `<div class="card face-down card-img" style="background-image: url('${backUrl}');">
             </div>`;
         }

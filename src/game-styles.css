@@ -645,8 +645,8 @@ body.in-game::before {
     pointer-events: none;
     z-index: 0;
 }
-.player-stack.vertical-stack::before { background-image: url('../images/Background/Human.png'); }
-.ai-stack.vertical-stack::before     { background-image: url('../images/Background/IA_2.png'); }
+.player-stack.vertical-stack::before { background-image: url('images/Background/Human.png'); }
+.ai-stack.vertical-stack::before     { background-image: url('images/Background/IA_2.png'); }
 
 .vertical-stack .card-field-wrapper {
     position: absolute;
