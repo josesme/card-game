@@ -2808,13 +2808,14 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           if (fdIdx >= 0) {
             const removed = gameState.field[l].ai[fdIdx];
             const doElim = () => {
+              gameState.effectContext = null;
               gameState.field[l].ai.splice(fdIdx, 1);
               gameState.ai.trash.push(removed.card);
               updateUI();
               processAbilityEffect();
             };
             if (typeof AudioManager !== 'undefined') AudioManager.playSound?.('card-eliminated');
-            if (window.animCardEliminate) window.animCardEliminate(removed.card.id, doElim);
+            if (window.animCardEliminate) { gameState.effectContext = { type: 'animating' }; window.animCardEliminate(removed.card.id, doElim); }
             else doElim();
           } else {
             processAbilityEffect();
@@ -2861,6 +2862,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         // Animar en paralelo; al terminar la última, aplicar estado
         let done = 0;
         const doAll = () => {
+          gameState.effectContext = null;
           toElim.forEach(({ line, owner, cardObj }) => {
             const idx = gameState.field[line][owner].indexOf(cardObj);
             if (idx >= 0) gameState.field[line][owner].splice(idx, 1);
@@ -2869,6 +2871,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           updateUI();
           processAbilityEffect();
         };
+        gameState.effectContext = { type: 'animating' };
         toElim.forEach(({ cardObj }) => {
           if (typeof AudioManager !== 'undefined') AudioManager.playSound?.('card-eliminated');
           if (window.animCardEliminate) {
@@ -2905,6 +2908,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           if (toElim.length === 0) { processAbilityEffect(); break; }
           let done = 0;
           const doAll = () => {
+            gameState.effectContext = null;
             ['player', 'ai'].forEach(p => {
               gameState.field[bestLine][p] = gameState.field[bestLine][p].filter(c => !toElim.some(e => e.cardObj === c));
             });
@@ -2912,6 +2916,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             updateUI();
             processAbilityEffect();
           };
+          gameState.effectContext = { type: 'animating' };
           toElim.forEach(({ cardObj }) => {
             if (typeof AudioManager !== 'undefined') AudioManager.playSound?.('card-eliminated');
             if (window.animCardEliminate) {
@@ -3746,13 +3751,14 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         const removed = gameState.field[best].player[gameState.field[best].player.length - 1];
         if (removed) {
           const doElim = () => {
+            gameState.effectContext = null;
             gameState.field[best].player.pop();
             gameState.player.trash.push(removed.card);
             updateUI();
             processAbilityEffect();
           };
           if (typeof AudioManager !== 'undefined') AudioManager.playSound?.('card-eliminated');
-          if (window.animCardEliminate) window.animCardEliminate(removed.card.id, doElim);
+          if (window.animCardEliminate) { gameState.effectContext = { type: 'animating' }; window.animCardEliminate(removed.card.id, doElim); }
           else doElim();
         } else {
           processAbilityEffect();
@@ -4379,13 +4385,14 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           if (found) {
             const { line, idx, cardObj } = found;
             const doElim = () => {
+              gameState.effectContext = null;
               gameState.field[line].player.splice(idx, 1);
               gameState.player.trash.push(cardObj.card);
               updateUI();
               processAbilityEffect();
             };
             if (typeof AudioManager !== 'undefined') AudioManager.playSound?.('card-eliminated');
-            if (window.animCardEliminate) window.animCardEliminate(cardObj.card.id, doElim);
+            if (window.animCardEliminate) { gameState.effectContext = { type: 'animating' }; window.animCardEliminate(cardObj.card.id, doElim); }
             else doElim();
           } else {
             updateUI();

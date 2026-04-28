@@ -3468,6 +3468,11 @@ function executeAIMove(move) {
 
 function endTurn(who) {
     if (gameState.phase === 'game_over') return;
+    // Defer if an animation or interactive effect is in progress
+    if (gameState.effectContext || gameState.effectQueue.length > 0) {
+        gameState.pendingTurnEnd = who;
+        return;
+    }
     console.log(`⏸️ Ending turn for ${who}`);
 
     // ⚠️ BLOQUEO: Resetear isProcessing al terminar el turno
