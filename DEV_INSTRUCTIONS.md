@@ -74,6 +74,12 @@ Cuando haya conflicto entre fuentes (ej: el texto de la carta no menciona una re
 
 ---
 
+## Convenciones de UI
+
+- **Botones siempre en mayúsculas** — La clase `.ui-btn` tiene `text-transform: uppercase` en `ui-components.css`. El texto de los botones se escribe en minúsculas o title case en el HTML/JS; el CSS los convierte automáticamente. No añadir `text-transform` inline ni escribir el texto en mayúsculas explícitas.
+
+---
+
 ## CSS — debugging de estilos que no se aplican
 
 - **Nunca mover un elemento en el DOM para resolver un problema de estilo.** Cambia estilos, no estructura.

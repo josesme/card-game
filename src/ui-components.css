@@ -16,6 +16,7 @@
     font-size: 11px;
     font-family: var(--ui-font);
     letter-spacing: 2px;
+    text-transform: uppercase;
     transition: all 0.25s;
     display: inline-flex;
     align-items: center;

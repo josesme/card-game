@@ -593,6 +593,7 @@ function luz2ShowPostRevealModal(cardObj, line, revSide) {
     confirmArea.classList.remove('hidden');
 
     const _hideConfirm = () => {
+        gameState.effectContext = null;
         confirmArea.classList.add('hidden');
         if (cardPreview) { cardPreview.innerHTML = ''; cardPreview.style.display = 'none'; }
         btnYes.textContent = 'SÍ';
