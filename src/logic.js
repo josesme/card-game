@@ -580,12 +580,28 @@ function luz2ShowPostRevealModal(cardObj, line, revSide) {
     // Mantener contexto para saber que Luz 2 está en progreso
     gameState.effectContext = { type: 'confirm', luz2: true, line, revSide, cardObj };
     updateTurnVisuals();
+
+    const cardPreview = document.getElementById('confirm-card-preview');
+    if (cardPreview) {
+        cardPreview.innerHTML = createCardHTML(cardObj.card);
+        cardPreview.style.display = 'flex';
+    }
+    confirmMsg.textContent = 'Luz 2 — ¿Quieres cambiar de línea esta carta (bocabajo) o voltearla en la misma línea?';
+    btnYes.textContent = 'Cambiar';
+    btnNo.textContent  = 'Voltear';
+
     confirmArea.classList.remove('hidden');
-    confirmMsg.textContent = `Luz 2 — ${cardObj.card.nombre}: SÍ = Cambiar de línea (bocabajo) · NO = Voltear bocarriba`;
+
+    const _hideConfirm = () => {
+        confirmArea.classList.add('hidden');
+        if (cardPreview) { cardPreview.innerHTML = ''; cardPreview.style.display = 'none'; }
+        btnYes.textContent = 'SÍ';
+        btnNo.textContent  = 'NO';
+        hideCardPreview();
+    };
 
     btnYes.onclick = () => {
-        confirmArea.classList.add('hidden');
-        hideCardPreview();
+        _hideConfirm();
         const currentIdx = gameState.field[line][revSide].indexOf(cardObj);
         if (currentIdx === -1) { if (typeof processAbilityEffect === 'function') processAbilityEffect(); return; }
         // Shift pre-seleccionado sobre la carta revelada (sigue bocabajo)
@@ -601,8 +617,7 @@ function luz2ShowPostRevealModal(cardObj, line, revSide) {
     };
 
     btnNo.onclick = () => {
-        confirmArea.classList.add('hidden');
-        hideCardPreview();
+        _hideConfirm();
         // Voltear bocarriba: ahora sí cambia el estado
         cardObj.faceDown = false;
         cardObj._animateFlip = true;
