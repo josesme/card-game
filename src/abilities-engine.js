@@ -61,7 +61,7 @@ const CARD_EFFECTS = {
 
   'Espíritu 4': {
     onPlay: [
-      { action: 'rearrangeProtocols', target: 'self' }
+      { action: 'rearrangeProtocols', target: 'self', mode: 'one' }
     ]
   },
 
@@ -1698,7 +1698,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       break;
 
     case 'rearrangeProtocols':
-      startEffect('rearrange', resolvedTarget, count || 1, { owner: targetPlayer });
+      startEffect('rearrange', resolvedTarget, count || 1, { owner: targetPlayer, mode: actionDef.mode || 'free' });
       break;
 
     case 'forceSwapProtocols':

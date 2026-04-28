@@ -1767,9 +1767,12 @@ function startEffect(type, target, count, opts = {}) {
     const targetDesc = target === 'ai' ? ' del OPONENTE' : target === 'player' ? ' TUYAS' : '';
     if (type === 'rearrange') {
         const ownerDesc = target === 'ai' ? 'del OPONENTE' : 'TUYOS';
-        updateStatus(`Reorganizar protocolos ${ownerDesc}: intercambia líneas y pulsa Listo`);
-        // Mostrar botón "Listo" para confirmar reorganización
-        showRearrangeDoneButton();
+        if (opts.mode === 'one') {
+            updateStatus(`Reorganiza 2 protocolos ${ownerDesc}: selecciona la primera línea`);
+        } else {
+            updateStatus(`Reorganizar protocolos ${ownerDesc}: intercambia líneas y pulsa Listo`);
+            showRearrangeDoneButton({ disabled: true });
+        }
     } else if (opts.statusMsg) {
         updateStatus(`Efecto: elige ${count} carta(s)${targetDesc} para ${opts.statusMsg}`);
     } else {
@@ -2271,18 +2274,20 @@ function handleFieldCardClick(line, target, cardIdx) {
             const protoBox = document.getElementById(`proto-${l}-${protoSide}`);
             if (protoBox) { const chk = protoBox.querySelector('.rearrange-check'); if (chk) chk.remove(); }
         };
+        const isOneMode = ctx.mode === 'one';
         if (!ctx.firstProtocol) {
             if (line === ctx._lastDeselected) { delete ctx._lastDeselected; return; }
             ctx.firstProtocol = line;
             const p = gameState[owner].protocols;
             const idx = LINES.indexOf(line);
-            updateStatus(`Reorganizar: ${p[idx]} (${line}) seleccionado. Elige otra línea o deselecciona.`);
+            updateStatus(`Reorganizar: ${p[idx]} (${line}) seleccionado. Elige otra línea${isOneMode ? '' : ' o deselecciona'}.`);
             addCheck(line);
         } else if (ctx.firstProtocol === line) {
+            if (isOneMode) return; // en modo one no se puede deseleccionar, solo elegir segunda
             ctx.firstProtocol = null;
             ctx._lastDeselected = line;
             removeCheck(line);
-            updateStatus('Selección cancelada. Elige una línea o pulsa Listo.');
+            updateStatus('Selección cancelada. Elige una línea.');
         } else {
             const first = ctx.firstProtocol;
             const second = line;
@@ -2296,8 +2301,18 @@ function handleFieldCardClick(line, target, cardIdx) {
                 swapProtocols(first, second, owner);
             }
             updateUI();
-            setRearrangeActiveColumns(true);
-            updateStatus('Protocolos intercambiados. Elige otra pareja o pulsa Listo.');
+            if (isOneMode) {
+                // "Reorganiza 2": un swap es todo — completar automáticamente
+                setRearrangeActiveColumns(false);
+                finishEffect();
+                if (typeof processAbilityEffect === 'function') processAbilityEffect();
+            } else {
+                // Habilitar Listo tras el primer swap
+                const btn = document.getElementById('btn-rearrange-done');
+                if (btn) btn.disabled = false;
+                setRearrangeActiveColumns(true);
+                updateStatus('Protocolos intercambiados. Elige otra pareja o pulsa Listo.');
+            }
         }
         return;
     } else if (ctx.type === 'selectCardToCopy') {
@@ -2410,13 +2425,15 @@ function setRearrangeActiveColumns(active) {
     }
 }
 
-function showRearrangeDoneButton() {
+function showRearrangeDoneButton({ disabled = false } = {}) {
     setRearrangeActiveColumns(true);
     const btn = document.getElementById('btn-rearrange-done');
     if (!btn) return;
     btn.classList.remove('hidden');
+    btn.disabled = disabled;
     btn.onclick = () => {
         btn.classList.add('hidden');
+        btn.disabled = false;
         setRearrangeActiveColumns(false);
         finishEffect();
         if (typeof processAbilityEffect === 'function') processAbilityEffect();
