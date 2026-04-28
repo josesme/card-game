@@ -2867,6 +2867,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             const idx = gameState.field[line][owner].indexOf(cardObj);
             if (idx >= 0) gameState.field[line][owner].splice(idx, 1);
             gameState[owner].trash.push(cardObj.card);
+            _log(`${triggerCardName}: elimina ${cardObj.card.nombre}`, { isAI: true });
           });
           updateUI();
           processAbilityEffect();
@@ -2912,7 +2913,9 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             ['player', 'ai'].forEach(p => {
               gameState.field[bestLine][p] = gameState.field[bestLine][p].filter(c => !toElim.some(e => e.cardObj === c));
             });
+            const playerElim = toElim.filter(e => e.owner === 'player').map(e => e.cardObj.card.nombre);
             toElim.forEach(({ owner, cardObj }) => gameState[owner].trash.push(cardObj.card));
+            if (playerElim.length > 0) _log(`${triggerCardName}: elimina ${playerElim.join(', ')}`, { isAI: true });
             updateUI();
             processAbilityEffect();
           };
@@ -3754,6 +3757,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             gameState.effectContext = null;
             gameState.field[best].player.pop();
             gameState.player.trash.push(removed.card);
+            _log(`${triggerCardName}: elimina ${removed.card.nombre}`, { isAI: true });
             updateUI();
             processAbilityEffect();
           };
@@ -4388,6 +4392,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
               gameState.effectContext = null;
               gameState.field[line].player.splice(idx, 1);
               gameState.player.trash.push(cardObj.card);
+              _log(`${triggerCardName}: elimina ${cardObj.card.nombre}`, { isAI: true });
               updateUI();
               processAbilityEffect();
             };

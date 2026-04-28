@@ -2577,6 +2577,7 @@ function aiPickFlipLine(target) {
 
 function resolveEffectAI(type, target, count, opts = {}) {
     const actualTarget = (target === 'any') ? (type === 'discard' ? 'ai' : 'player') : target;
+    let eliminatedNames = [];
 
     if (type === 'discard') {
         for (let i = 0; i < count; i++) {
@@ -2594,6 +2595,7 @@ function resolveEffectAI(type, target, count, opts = {}) {
             const line = aiPickEliminateLine(actualTarget, opts);
             if (line !== null) {
                 const cardObj = gameState.field[line][actualTarget][gameState.field[line][actualTarget].length - 1];
+                eliminatedNames.push(cardObj.card.nombre);
                 if (window.animCardEliminate) window.animCardEliminate(cardObj.card.id, null);
                 if (typeof AudioManager !== 'undefined') AudioManager.playSound('card-eliminated');
                 gameState.field[line][actualTarget].pop();
@@ -2828,9 +2830,13 @@ function resolveEffectAI(type, target, count, opts = {}) {
     }
 
     const typeLabels = { discard: 'descartó', eliminate: 'eliminó', flip: 'volteó', shift: 'cambió de línea', return: 'devolvió a mano' };
-    const whoLabel = actualTarget === 'player' ? 'tu carta' : 'su carta';
     const triggerLabel = gameState.currentTriggerCard ? ` [${gameState.currentTriggerCard}]` : '';
-    logEvent(`IA ${typeLabels[type] || type} ${whoLabel}${triggerLabel}`, { isAI: true });
+    if (type === 'eliminate' && eliminatedNames.length > 0 && actualTarget === 'player') {
+        logEvent(`IA eliminó ${eliminatedNames.join(', ')}${triggerLabel}`, { isAI: true });
+    } else {
+        const whoLabel = actualTarget === 'player' ? 'tu carta' : 'su carta';
+        logEvent(`IA ${typeLabels[type] || type} ${whoLabel}${triggerLabel}`, { isAI: true });
+    }
     if (typeof processAbilityEffect === 'function') processAbilityEffect();
 }
 
