@@ -87,6 +87,24 @@ Cuando haya conflicto entre fuentes (ej: el texto de la carta no menciona una re
 - **Un diagnóstico, una verificación.** Hacer un solo cambio, confirmar si resolvió el problema, y solo entonces continuar. Los cambios especulativos en cadena sin verificación empeoran el estado y confunden la causa.
 - Cuando el usuario muestra capturas indicando diferencia visual, asumir que tiene razón sobre el hecho aunque no sobre la causa. No descartar el problema como "sutil" o "de contexto" sin haber verificado con DevTools.
 
+## Calidad del fix antes de implementar
+
+Antes de implementar cualquier corrección, evaluar explícitamente si el enfoque elegido es un **fix estructural** o un **parche**. La diferencia:
+
+- **Fix estructural**: hace que el comportamiento incorrecto sea imposible. El código expresa el invariante directamente.
+- **Parche**: requiere recordar hacer algo en el sitio correcto, en el orden correcto, o en el momento correcto. Funciona hoy pero falla cuando cambia el contexto.
+
+Señales de que un enfoque es un parche:
+- Ajustar un timer para evitar una condición de carrera → el timer correcto depende de la duración de algo que puede cambiar.
+- Añadir un guard en el caller en lugar de dentro de la función → cualquier caller nuevo que lo olvide introduce el bug.
+- Duplicar lógica de routing entre dos funciones → las copias divergen y producen bugs distintos en cada una.
+
+**Regla concreta sobre timers**: los delays (`_after`, `_gameAfter`, `setTimeout`) son solo para UX (duración de animaciones). Nunca deben usarse para coordinar estado de juego o garantizar orden de ejecución. Si un fix requiere ajustar un timer para que "llegue a tiempo", ese fix es un parche; la solución correcta es usar estado explícito (flags, callbacks, colas).
+
+Si en la evaluación inicial el enfoque elegido es un parche, señalarlo antes de implementar y proponer la alternativa estructural, aunque cueste más.
+
+---
+
 ## Refactoring proactivo
 
 El asistente debe identificar y ejecutar mejoras de coste/beneficio favorable **sin esperar a que el usuario las pida**. La regla es: si al resolver un bug o añadir una feature se detecta una oportunidad clara, aplicarla en el mismo commit o en el siguiente, y explicar brevemente qué se hizo y por qué.
