@@ -1845,7 +1845,7 @@ function executeReturnByValueFromLineBoth(line) {
     ['player', 'ai'].forEach(p => {
         const remaining = [];
         gameState.field[line][p].forEach(c => {
-            if (!c.faceDown && c.card.valor === value) {
+            if (c.card.valor === value) {
                 gameState[p].hand.push(c.card);
             } else {
                 remaining.push(c);
@@ -1853,7 +1853,7 @@ function executeReturnByValueFromLineBoth(line) {
         });
         gameState.field[line][p] = remaining;
     });
-    
+
     finishEffect();
 }
 

@@ -423,6 +423,9 @@ No. Solo la carta superior de una pila está descubierta.
 **Agua 1**
 - ACLARACIÓN: No fuerza el barajado del descarte si el mazo está vacío.
 
+**Agua 3**
+- ACLARACIÓN: "Devuelve todas las cartas con Valor 2 de 1 línea" afecta a todas las cartas con ese valor independientemente de si están bocarriba o bocabajo.
+
 ---
 
 ### 🤝 Unidad (Unity)

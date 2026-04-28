@@ -1809,38 +1809,35 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'returnAllCardsWithValueFromLine': {
-      // Agua 3: Return ALL face-up cards with value 2 from 1 chosen line (both players)
+      // Agua 3: return ALL cards with value 2 from 1 chosen line (both players, any face orientation)
       const val = actionDef.value;
       if (targetPlayer === 'player') {
         const linesWithCards = LINES.filter(l =>
-          gameState.field[l].player.some(c => !c.faceDown && c.card.valor === val) ||
-          gameState.field[l].ai.some(c => !c.faceDown && c.card.valor === val)
+          gameState.field[l].player.some(c => c.card.valor === val) ||
+          gameState.field[l].ai.some(c => c.card.valor === val)
         );
 
         if (linesWithCards.length === 0) {
-          // No lines with value 2 cards - skip
           if (typeof updateStatus === 'function') {
             updateStatus(`Agua 3: No hay cartas con valor ${val} en ninguna línea`);
           }
           processAbilityEffect();
         } else {
-          // Always show overlay so player can choose the line
           startEffect('massReturnByValueBoth', 'any', 1, { value: val, lines: linesWithCards });
         }
       } else {
         // AI: pick the line with the most matching cards (both players)
         let bestLine = null, bestCount = 0;
         LINES.forEach(l => {
-          const playerCount = gameState.field[l].player.filter(c => !c.faceDown && c.card.valor === val).length;
-          const aiCount = gameState.field[l].ai.filter(c => !c.faceDown && c.card.valor === val).length;
-          const count = playerCount + aiCount;
+          const count = gameState.field[l].player.filter(c => c.card.valor === val).length +
+                        gameState.field[l].ai.filter(c => c.card.valor === val).length;
           if (count > bestCount) { bestCount = count; bestLine = l; }
         });
         if (bestLine) {
           ['player', 'ai'].forEach(p => {
             const remaining = [];
             gameState.field[bestLine][p].forEach(c => {
-              if (!c.faceDown && c.card.valor === val) {
+              if (c.card.valor === val) {
                 gameState[p].hand.push(c.card);
               } else {
                 remaining.push(c);
