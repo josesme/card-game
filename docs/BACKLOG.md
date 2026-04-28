@@ -8,8 +8,6 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 
 > Decisiones pendientes de validar con experiencia de juego real antes de comprometer trabajo.
 
-- **Refactor estado inicial como función fábrica** — Reemplazar el reset manual de campos en `startGameFromDraft` por una función `createGameState()` que devuelva el estado limpio. `Object.assign(gameState, createGameState())` garantiza que cualquier campo nuevo queda reseteado automáticamente sin lista manual. Elimina la clase entera de bugs de estado filtrado entre partidas.
-
 ---
 
 ## Polish & Social

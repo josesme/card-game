@@ -59,8 +59,8 @@ window._cancelGameTimers = _cancelTimers;
 window._after = _after; // abilities-engine.js uses this
 
 // Game State
-let gameState = {
-    player: {
+function createGameState() {
+    const playerState = () => ({
         deck: [], trash: [], hand: [],
         protocols: [],
         compiled: [],
@@ -69,51 +69,64 @@ let gameState = {
         drawnLastTurn: false,
         eliminatedSinceLastCheck: false,
         eliminatedLastTurn: false,
-    },
-    ai: {
-        deck: [], trash: [], hand: [],
-        protocols: [],
-        compiled: [],
-        discardedSinceLastCheck: false,
-        drawnSinceLastCheck: false,
-        drawnLastTurn: false,
-        eliminatedSinceLastCheck: false,
-        eliminatedLastTurn: false,
-    },
-    field: {
-        izquierda: { player: [], ai: [], compiledBy: null },
-        centro: { player: [], ai: [], compiledBy: null },
-        derecha: { player: [], ai: [], compiledBy: null },
-    },
-    turn: 'player', // 'player' or 'ai'
-    phase: 'start', // 'start', 'check_compile', 'action', 'check_cache', 'end'
-    selectedCardIndex: null,
-    selectionMode: false,
-    selectionModeFaceUp: false, // true when selectionMode is for a face-up play (Espíritu 1)
-    effectContext: null, // { type: 'discard'|'eliminate'|'flip', count: 1, target: 'player'|'ai', ... }
-    effectQueue: [],
-    currentEffectLine: null,
-    preventCompile: { player: 0, ai: 0 }, // turns remaining where compile is blocked
-    lastFlippedCard: null,   // last card flipped via interactive effect
-    pendingPlayCard: false,  // waiting for player to play a card mid-effect
-    ignoreEffectsLines: {},  // lines where effects are suppressed this turn
-    pendingEndTurnFor: null,    // set when endTurn is waiting for interactive discard
-    pendingTurnEnd: null,       // set when finalizePlay is waiting for effects to resolve
-    pendingCompileShift: null,  // Velocidad 2: card to move after compile
-    uncoveredThisTurn: new Set(),                           // IDs de cartas ya activadas por onUncovered este turno
-    pendingLanding: null,                                   // carta en commit queue: aterriza tras resolver onCover
-    refreshedThisTurn: null,                                // quién usó Refresh este turno (para Velocidad 1)
-    currentTriggerCard: null,                               // nombre de la carta que disparó el efecto activo
-    pendingCheckCompile: null,                              // set en startTurn; avanza a checkCompilePhase cuando la cola de efectos se vacía
-    revealedPlayerCards: [],                                // cartas reveladas por Amor 4 — visibles para la IA
-    controlComponent: null,                                 // null = neutral, 'player' o 'ai' = dueño actual
-    pendingControlResume: null,                             // { who, action } — resume tras rearrange de Control Component
-    isProcessing: false,                                    // ⚠️ BLOQUEO: true mientras se resuelve una acción del jugador
-    _lastScrambleTime: 0,                                   // ⏱️ COOLDOWN GLOBAL: timestamp último scramble
-    actionLog: [],                                          // ring buffer para paneles laterales de la mano: [{isAI, icon, msg, turn}], max 50
-    actionLogVersion: 0,                                    // contador monotónico: incrementa con cada push aunque el tamaño no cambie
-    turnCount: 0,                                           // contador de turnos, incrementado en startTurn
-};
+        skipNextCacheCheck: false,
+    });
+    return {
+        player: playerState(),
+        ai: playerState(),
+        field: {
+            izquierda: { player: [], ai: [], compiledBy: null },
+            centro:    { player: [], ai: [], compiledBy: null },
+            derecha:   { player: [], ai: [], compiledBy: null },
+        },
+        turn: 'player',
+        phase: 'action',
+        selectedCardIndex: null,
+        selectionMode: false,
+        selectionModeFaceUp: false,
+        effectContext: null,
+        effectQueue: [],
+        currentEffectLine: null,
+        preventCompile: { player: 0, ai: 0 },
+        lastFlippedCard: null,
+        pendingPlayCard: false,
+        ignoreEffectsLines: {},
+        pendingEndTurnFor: null,
+        pendingTurnEnd: null,
+        pendingCompileShift: null,
+        uncoveredThisTurn: new Set(),
+        pendingLanding: null,
+        refreshedThisTurn: null,
+        currentTriggerCard: null,
+        pendingCheckCompile: null,
+        revealedPlayerCards: [],
+        controlComponent: null,
+        pendingControlResume: null,
+        isProcessing: false,
+        _lastScrambleTime: 0,
+        actionLog: [],
+        actionLogVersion: 0,
+        turnCount: 0,
+        pendingStartTurn: null,
+        pendingStartTurnWho: null,
+        pendingEndTurnWho: null,
+        processingStartTriggers: false,
+        processingEndTriggers: false,
+        pendingStartTriggers: [],
+        pendingEndTriggers: [],
+        coveringCard: null,
+        playOnSide: null,
+        skipPhase: null,
+        _plaga2PlayerDiscarded: undefined,
+        _discardToOpponentTrash: false,
+        _inOpponentDrawEffects: false,
+        _inOpponentDiscardEffects: false,
+        _inOwnDiscardEffects: false,
+        _animQueue: [],
+    };
+}
+
+let gameState = createGameState();
 
 function createDeckForPlayer(target) {
     let deck = [];
@@ -3999,83 +4012,26 @@ function startGameFromDraft() {
         if (vsDivider)  vsDivider.style.width = '';
         if (vsActions)  vsActions.style.opacity = '';
     }
-    gameState.player.protocols = JSON.parse(sessionStorage.getItem('playerProtocols') || '["Espíritu", "Muerte", "Fuego"]');
-    gameState.ai.protocols    = JSON.parse(sessionStorage.getItem('aiProtocols')     || '["Vida", "Luz", "Oscuridad"]');
+    // Read protocols before reset — Object.assign replaces player/ai objects entirely
+    const savedProtocols = {
+        player: JSON.parse(sessionStorage.getItem('playerProtocols') || '["Espíritu", "Muerte", "Fuego"]'),
+        ai:     JSON.parse(sessionStorage.getItem('aiProtocols')     || '["Vida", "Luz", "Oscuridad"]'),
+    };
 
     ['game-log', 'hs-unified-entries'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.innerHTML = '';
     });
 
-    gameState.player.deck = []; gameState.player.hand = []; gameState.player.trash = []; gameState.player.compiled = [];
-    gameState.ai.deck    = []; gameState.ai.hand    = []; gameState.ai.trash    = []; gameState.ai.compiled    = [];
+    Object.assign(gameState, createGameState());
+    gameState.player.protocols = savedProtocols.player;
+    gameState.ai.protocols     = savedProtocols.ai;
+    window._animQueue          = [];
 
     ['player-deck-count','player-trash-count','ai-deck-count','ai-trash-count','ai-hand-count','hand-count-badge'].forEach(id => {
         const el = document.getElementById(id);
         if (el) { el.textContent = '0'; el.removeAttribute('data-scr-last'); }
     });
-    gameState.field = {
-        izquierda: { player: [], ai: [], compiledBy: null },
-        centro:    { player: [], ai: [], compiledBy: null },
-        derecha:   { player: [], ai: [], compiledBy: null },
-    };
-
-    // Reset estado global que sobrevive entre partidas
-    gameState.phase              = 'action';
-    gameState.turn               = 'player';
-    gameState.isProcessing       = false;
-    gameState.effectContext      = null;
-    gameState.effectQueue        = [];
-    gameState.pendingTurnEnd     = null;
-    gameState.pendingStartTurn   = null;
-    gameState.pendingCheckCompile = null;
-    gameState.pendingLanding     = null;
-    gameState.processingStartTriggers = false;
-    gameState.processingEndTriggers   = false;
-    gameState.pendingStartTriggers    = [];
-    gameState.pendingEndTriggers      = [];
-    gameState.uncoveredThisTurn       = new Set();
-    gameState.selectionMode      = false;
-    gameState.currentEffectLine  = null;
-    gameState.currentTriggerCard = null;
-    gameState.coveringCard       = null;
-    gameState.lastFlippedCard    = null;
-    gameState.playOnSide         = null;
-    gameState.pendingPlayCard    = false;
-    gameState.skipPhase          = null;
-    gameState.ignoreEffectsLines = {};
-    gameState.player.drawnSinceLastCheck      = false;
-    gameState.player.discardedSinceLastCheck  = false;
-    gameState.player.drawnLastTurn            = false;
-    gameState.player.eliminatedSinceLastCheck = false;
-    gameState.player.eliminatedLastTurn       = false;
-    gameState.player.skipNextCacheCheck       = false;
-    gameState.ai.drawnSinceLastCheck          = false;
-    gameState.ai.discardedSinceLastCheck      = false;
-    gameState.ai.drawnLastTurn                = false;
-    gameState.ai.eliminatedSinceLastCheck     = false;
-    gameState.ai.eliminatedLastTurn           = false;
-    gameState.ai.skipNextCacheCheck           = false;
-
-    // Fields not in initial definition that can survive between games
-    gameState.selectedCardIndex       = null;
-    gameState.selectionModeFaceUp     = false;
-    gameState.preventCompile          = { player: 0, ai: 0 };
-    gameState.pendingEndTurnFor       = null;
-    gameState.pendingCompileShift     = null;
-    gameState.refreshedThisTurn       = null;
-    gameState.revealedPlayerCards     = [];
-    gameState.controlComponent        = null;
-    gameState.pendingControlResume    = null;
-    gameState.pendingStartTurnWho     = null;
-    gameState.pendingEndTurnWho       = null;
-    gameState._plaga2PlayerDiscarded  = undefined;
-    gameState._discardToOpponentTrash = false;
-    gameState._inOpponentDrawEffects  = false;
-    gameState._inOpponentDiscardEffects = false;
-    gameState._inOwnDiscardEffects    = false;
-    gameState._animQueue              = [];
-    window._animQueue                 = [];
 
     if (typeof AudioManager !== 'undefined') { AudioManager.preloadSounds?.(); }
     initGame();
