@@ -2099,11 +2099,12 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       const hasFaceDown = gameState.field[sourceLine][targetPlayer].some(c => c.faceDown);
       if (!hasFaceDown) { processAbilityEffect(); break; }
       if (targetPlayer === 'player') {
-        // Let player pick destination line
+        // Let player pick destination line (exclude source line)
         gameState.effectContext = { type: 'moveAllFaceDown', sourceLine, owner: 'player', selected: [], count: 1 };
         gameState.effectContext.waitingForLine = true;
-        updateStatus('Elige línea destino para desplazar todas tus cartas bocabajo');
-        highlightSelectableLines(null, 'player');
+        updateStatus('Luz 3 — Elige línea destino para las cartas bocabajo');
+        highlightSelectableLines(sourceLine, 'player');
+        updateTurnVisuals();
       } else {
         // IA mueve bocabajos a línea con mayor potencial de compilado
         const others = LINES.filter(l => l !== sourceLine);
