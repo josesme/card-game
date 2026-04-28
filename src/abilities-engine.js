@@ -4141,7 +4141,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'mayFlipIfUnityOnField': {
-      // Unidad 3: si hay otra Unidad bocarriba en el campo, voltea 1 carta bocabajo
+      // Unidad 3: si hay otra Unidad bocarriba en el campo, voltea 1 carta bocarriba → bocabajo
       const hasOtherUnity = LINES.some(l =>
         ['player', 'ai'].some(p =>
           gameState.field[l][p].some(c => !c.faceDown && c.card.nombre !== triggerCardName && c.card.nombre.startsWith('Unidad'))
@@ -4149,20 +4149,20 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       );
       if (!hasOtherUnity) { processAbilityEffect(); break; }
       if (targetPlayer === 'player') {
-        startEffect('flip', 'any', 1, { filter: 'faceDown' });
+        startEffect('flip', 'any', 1, { filter: 'faceUp', owner: 'player' });
       } else {
         let done = false;
         LINES.forEach(l => {
           if (done) return;
-          const st = gameState.field[l].ai;
-          const fd = st.filter(c => c.faceDown);
-          if (fd.length > 0) {
-            const flipped = fd.sort((a, b) => b.card.valor - a.card.valor)[0];
-            flipped.faceDown = false;
-            if (typeof triggerFlipFaceUp === 'function') triggerFlipFaceUp(flipped, l, 'ai');
+          const st = gameState.field[l].player;
+          const fu = st.filter(c => !c.faceDown);
+          if (fu.length > 0) {
+            const flipped = fu.sort((a, b) => b.card.valor - a.card.valor)[0];
+            flipped.faceDown = true;
             done = true;
           }
         });
+        updateUI();
         processAbilityEffect();
       }
       break;
