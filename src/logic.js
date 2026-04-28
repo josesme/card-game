@@ -2821,8 +2821,11 @@ function resolveEffectAI(type, target, count, opts = {}) {
 
     const typeLabels = { discard: 'descartó', eliminate: 'eliminó', flip: 'volteó', shift: 'cambió de línea', return: 'devolvió a mano' };
     const triggerLabel = gameState.currentTriggerCard ? ` [${gameState.currentTriggerCard}]` : '';
-    if (type === 'eliminate' && eliminatedNames.length > 0 && actualTarget === 'player') {
-        logEvent(`IA eliminó ${eliminatedNames.join(', ')}${triggerLabel}`, { isAI: true });
+    if (type === 'eliminate') {
+        if (eliminatedNames.length > 0) {
+            logEvent(`IA eliminó ${eliminatedNames.join(', ')}${triggerLabel}`, { isAI: true });
+        }
+        // Sin cartas eliminadas → sin log (efecto sin objetivo válido)
     } else {
         const whoLabel = actualTarget === 'player' ? 'tu carta' : 'su carta';
         logEvent(`IA ${typeLabels[type] || type} ${whoLabel}${triggerLabel}`, { isAI: true });
