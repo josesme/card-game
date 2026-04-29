@@ -438,14 +438,27 @@ class AIEvaluator {
   }
 
   /**
-   * Estimate the highest card value the player might hold,
-   * using only public information: protocols (18 cards known) minus
-   * face-up field cards and discards (both visible).
+   * Build the pool of card values the player might still hold,
+   * using only public information:
+   *   - Base: the actual cards from the player's chosen protocols (known from draft)
+   *   - Minus: face-up field cards (visible) + discards (visible) + revealed hand cards
+   * Never reads state.player.hand or state.player.deck (private).
    */
-  _estimatePlayerBestCard(state) {
-    const pool = [0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5];
-    const LINES = ['izquierda', 'centro', 'derecha'];
+  _buildPlayerPool(state) {
+    const protocols = state.player.protocols || [];
+    const pool = [];
 
+    protocols.forEach(proto => {
+      const cards = (typeof GLOBAL_CARDS !== 'undefined' && GLOBAL_CARDS && GLOBAL_CARDS[proto]) || [];
+      cards.forEach(c => pool.push(c.valor !== undefined ? c.valor : (c.value || 0)));
+    });
+
+    // Fallback: if GLOBAL_CARDS not available use generic pool
+    if (pool.length === 0) {
+      pool.push(0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5);
+    }
+
+    const LINES = ['izquierda', 'centro', 'derecha'];
     LINES.forEach(line => {
       (state.field[line].player || []).forEach(c => {
         if (!c.faceDown) {
@@ -458,26 +471,21 @@ class AIEvaluator {
       const idx = pool.indexOf(c.valor);
       if (idx !== -1) pool.splice(idx, 1);
     });
+    (state.revealedPlayerCards || []).forEach(c => {
+      const idx = pool.indexOf(c.valor !== undefined ? c.valor : (c.value || 0));
+      if (idx !== -1) pool.splice(idx, 1);
+    });
 
+    return pool;
+  }
+
+  _estimatePlayerBestCard(state) {
+    const pool = this._buildPlayerPool(state);
     return pool.length > 0 ? Math.max(...pool) : 2.5;
   }
 
-  // Media estimada del valor de las cartas que le quedan al jugador (pool público)
   _estimatePlayerAvgCard(state) {
-    const pool = [0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5];
-    const LINES = ['izquierda', 'centro', 'derecha'];
-    LINES.forEach(line => {
-      (state.field[line].player || []).forEach(c => {
-        if (!c.faceDown) {
-          const idx = pool.indexOf(c.card.valor);
-          if (idx !== -1) pool.splice(idx, 1);
-        }
-      });
-    });
-    (state.player.trash || []).forEach(c => {
-      const idx = pool.indexOf(c.valor);
-      if (idx !== -1) pool.splice(idx, 1);
-    });
+    const pool = this._buildPlayerPool(state);
     if (pool.length === 0) return 2.5;
     return pool.reduce((s, v) => s + v, 0) / pool.length;
   }
@@ -488,23 +496,8 @@ class AIEvaluator {
     return (vals[0] || 0) + (vals[1] || 0);
   }
 
-  // Suma estimada de los 2 mejores valores que podría tener el jugador
-  // Usa el mismo pool público que _estimatePlayerBestCard
   _estimatePlayerTop2Sum(state) {
-    const pool = [0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5];
-    const LINES = ['izquierda', 'centro', 'derecha'];
-    LINES.forEach(line => {
-      (state.field[line].player || []).forEach(c => {
-        if (!c.faceDown) {
-          const idx = pool.indexOf(c.card.valor);
-          if (idx !== -1) pool.splice(idx, 1);
-        }
-      });
-    });
-    (state.player.trash || []).forEach(c => {
-      const idx = pool.indexOf(c.valor);
-      if (idx !== -1) pool.splice(idx, 1);
-    });
+    const pool = this._buildPlayerPool(state);
     pool.sort((a, b) => b - a);
     return (pool[0] || 0) + (pool[1] || 0);
   }
