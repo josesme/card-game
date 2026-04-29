@@ -40,33 +40,35 @@
 
 ---
 
-### 2. Modelo de movimientos del jugador — Impacto Medio / Coste Medio
+---
 
-Archivo: `src/minimax.js:355` (`generatePlayerMoves`)
+## Ideas futuras (aplazadas — bajo valor residual tras sesión 2026-04-30)
 
-Las cartas desconocidas del jugador se modelan como un único movimiento con valor promedio estimado. La IA no distingue el riesgo de que el jugador tenga un 5 oculto en una línea cerca de compilar.
+> Estas mejoras fueron evaluadas y descartadas para implementación inmediata. El arreglo de `_buildPlayerPool()` cubrió la parte más valiosa del punto 2; los puntos 3 y 4 tienen valor real pero no hay síntoma concreto que los justifique ahora.
 
-Mejora: generar dos escenarios (optimista: valor máximo posible del pool; pesimista: valor promedio) y elegir el movimiento AI que sea mejor contra ambos. Requiere refactor moderado de `generatePlayerMoves` y `minimaxAlpha`.
+### A. Escenarios multi-valor para cartas desconocidas del jugador
+
+**Archivo:** `src/minimax.js:355` (`generatePlayerMoves`)  
+**Valor real:** Bajo (antes era Medio — el arreglo de `_buildPlayerPool` ya calibra bien el pool por protocolo, que era la mayor fuente de error).  
+**Coste:** Medio-Alto — requiere explorar 2 ramas por carta desconocida en vez de 1, aumentando el árbol de búsqueda. Puede requerir limitar profundidad para compensar.
+
+La idea: generar movimiento optimista (valor máximo del pool) y pesimista (valor promedio) y elegir el movimiento AI que sea mejor contra ambos. Solo aportaría en situaciones donde el jugador tiene exactamente 1 carta que cambia el resultado de una línea — cada vez menos frecuente ahora que el pool es preciso.
 
 ---
 
-### 3. Quiescence search — Impacto Bajo-Medio / Coste Medio
+### B. Extender quiescence search a efectos de alto impacto
 
-Archivo: `src/minimax.js:225`
-
-El quiescence search actualmente solo extiende cuando `score >= 10` en una línea (compile inmediato). No extiende para efectos tácticos de alto impacto (ej. un eliminate que despejaría 4+ puntos).
-
-Mejora: añadir condición secundaria en `isHotPosition` para detectar si existe una carta con `eliminate: highest` jugable en una línea con `score >= 7` del oponente.
+**Archivo:** `src/minimax.js:225` (`isHotPosition`)  
+**Valor real:** Bajo-Medio — la búsqueda corta justo antes de intercambios tácticos importantes (un eliminate que despeja 4+ puntos no se extiende, solo los compiles).  
+**Coste:** Medio — añadir condición en `isHotPosition` para detectar si hay una carta con `eliminate: highest` jugable en línea rival con `score >= 7`. Sin riesgo de romper nada, pero requiere validar que no dispara la extensión demasiado a menudo (degradaría rendimiento).
 
 ---
 
-### 4. Peso `opportunities` en nivel 5 — Impacto Bajo / Coste Muy Bajo
+### C. Subir peso `opportunities` en nivel 5
 
-Archivo: `src/ai-profiles.js:308`
-
-Con `level5_grandmaster`, la relación compilationThreat (108) vs opportunities (21) es ~5:1. En mid-game, la IA no presiona suficientemente en varias líneas simultáneas antes de estar en rango de compilar.
-
-Cambio mínimo: en `applyAIProfile`, para `opportunities` usar `(aggression + compilationPriority) / 2 * 45` en lugar de `aggression * 35`. Solo afecta a niveles con `compilationPriority >= 0.8`.
+**Archivo:** `src/ai-profiles.js:308` (`applyAIProfile`)  
+**Valor real:** Bajo — el nivel 5 puede ser algo pasivo en mid-game antes de estar en rango de compilar. No hay queja reportada.  
+**Coste:** Muy bajo — 1 línea. Cambiar `aggression * 35` por `(aggression + compilationPriority) / 2 * 45` en el cálculo de `opportunities`. Solo afecta perfiles con `compilationPriority >= 0.8` (niveles 3–5).
 
 ---
 
