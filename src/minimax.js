@@ -157,6 +157,121 @@ const CARD_SIM_EFFECTS = {
   // Diversidad 0 y Unidad 1 pueden compilar directamente — el árbol debe valorarlas alto
   'Diversidad 0': { draw: 1 },            // efecto compile condicional; aproximamos como +draw para que la IA la valore
   'Unidad 1':     { draw: 1 },            // ídem — el valor real se captura si la condición se cumple en partida
+
+  // ── Main 1 — huecos cubiertos ────────────────────────
+  // Muerte 1: Start trigger — roba 1, elimina otra carta, se auto-elimina
+  'Muerte 1':   { draw: 1, eliminate: { strategy: 'highest' } },
+  // Luz 3: cambia TODAS las bocabajo de esta línea a otra → disruption de campo rival
+  'Luz 3':      { returnOpponent: 1 },
+  // Amor 3: toma 1 carta aleatoria de la mano rival, da 1 propia → ganancia neta de calidad
+  'Amor 3':     { draw: 1 },
+  // Espíritu 3: reactivo (tras robar); Espíritu 4: reorganiza protocolos — sin efecto directo en sim
+  // Gravedad 4: cambia bocabajo propia a esta línea — posicional, sin impacto oponente
+  // Velocidad 2/3: reactivos o posicionales propios; Apatía 0/2: modificadores de score (calculateScore)
+  // Apatía 4: voltea propia cubierta; Odio 3/4: reactivos; Vida 3: trigger al cubrir; Luz 4: informacional
+
+  // ── Main 2 — huecos en familias ya presentes ─────────
+  // Guerra 0: después de que oponente robe → puede eliminar 1 carta (trigger frecuente)
+  'Guerra 0':   { eliminate: { strategy: 'highest' } },
+  // Guerra 1: después de que oponente actualice → descarta+actualiza (motor de robo potente)
+  'Guerra 1':   { draw: 2 },
+  'Guerra 5':   { selfDiscard: 1 },
+  'Hielo 5':    { selfDiscard: 1 },
+  // Hielo 3/4: reactivo o propiedad pasiva — sin efecto directo
+  // Paz 1: ambos descartan toda la mano — impacto propio alto, skip
+  // Paz 3: descarta 1 (opcional) + voltea carta con valor > cartas en mano
+  'Paz 3':      { flipOpponent: 1 },
+  // Paz 4/6: reactivo o condicional propio
+  'Paz 5':      { selfDiscard: 1 },
+  // Claridad 0: modificador de score persistente (calculateScore lo aplica)
+  // Claridad 1: trigger al ser cubierta (roba 3) + revela mano oponente → draw potencial
+  'Claridad 1': { draw: 2 },
+  // Claridad 4: baraja descarte en mazo → recarga futura
+  'Claridad 4': { draw: 1 },
+  'Claridad 5': { selfDiscard: 1 },
+  // Caos 1: reorganiza ambos protocolos — complejo; Caos 2/3: posicional propio / propiedad
+  // Caos 4: descarta mano + roba mismo número → reset de calidad de mano
+  'Caos 4':     { draw: 1 },
+  'Caos 5':     { selfDiscard: 1 },
+  // Miedo 0: suprime comandos de oponente este turno + voltea/cambia 1 carta
+  'Miedo 0':    { flipOpponent: 1 },
+  'Miedo 5':    { selfDiscard: 1 },
+  // Corrupción 0: voltea propia en pila — sin efecto sobre oponente
+  // Corrupción 2: roba 1 + descarta 1 (neto 0) + persistente: oponente descarta 1 al descartar tú
+  'Corrupción 2': { opponentDiscard: 1 },
+  // Corrupción 3: voltea 1 carta cubierta bocarriba (propia o rival)
+  'Corrupción 3': { flipOpponent: 1 },
+  'Corrupción 5': { selfDiscard: 1 },
+  // Corrupción 6: condicional auto-eliminar en turno final — sin efecto directo
+  // Diversidad 1: cambia 1 carta + roba tantas como protocolos distintos en línea (~2 en midgame)
+  'Diversidad 1': { returnOpponent: 1, draw: 2 },
+  // Diversidad 3/6: modificador persistente de score / auto-eliminar condicional
+  // Diversidad 4: voltea carta con valor < número de protocolos distintos en campo
+  'Diversidad 4': { flipOpponent: 1 },
+  'Diversidad 5': { selfDiscard: 1 },
+  // Unidad 0: si hay otra Unidad en campo → voltea 1 o roba 1 (draw es opción dominante)
+  'Unidad 0':   { draw: 1 },
+  // Unidad 2: roba N igual a cartas Unidad en campo (~2 en midgame típico)
+  'Unidad 2':   { draw: 2 },
+  // Unidad 3: si hay otra Unidad → voltea 1 carta bocarriba
+  'Unidad 3':   { flipOpponent: 1 },
+  // Unidad 4: complejo condicional (mano vacía → roba todas las Unidad del mazo)
+  'Unidad 5':   { selfDiscard: 1 },
+  // Valor 3/6: reactivo / condicional propio; Valor 5: estándar
+  'Valor 5':    { selfDiscard: 1 },
+
+  // ── Asimilación (Main 2 — familia completa) ──────────
+  // Asimilación 0: devuelve 1 carta bocabajo del oponente
+  'Asimilación 0': { returnOpponent: 1 },
+  // Asimilación 1: roba carta superior del mazo rival + descarta en su pila
+  'Asimilación 1': { draw: 1 },
+  // Asimilación 2: Final — juega bocabajo la carta superior del mazo rival en esta pila (AI gana presencia)
+  'Asimilación 2': { draw: 1 },
+  // Asimilación 4: intercambio mutuo de carta superior de mazo — neutro, skip
+  'Asimilación 5': { selfDiscard: 1 },
+  // Asimilación 6: juega propia bocabajo en lado rival — auto-perjudicial, skip
+
+  // ── Suerte (Main 2 — familia completa) ───────────────
+  // Suerte 0: roba 3, revela la que coincida con número dicho, puede jugarla
+  'Suerte 0':   { draw: 2 },
+  // Suerte 1: juega bocabajo la carta superior de tu mazo (ignora comandos de acción)
+  'Suerte 1':   { draw: 1 },
+  // Suerte 2: descarta carta superior propia, roba tantas como su valor (~media 2.5)
+  'Suerte 2':   { draw: 2 },
+  // Suerte 3: condicional sobre protocolo declarado — demasiado probabilístico para sim
+  // Suerte 4: descarta carta superior del mazo rival; elimina carta que comparta valor
+  'Suerte 4':   { eliminate: { strategy: 'highest' } },
+  'Suerte 5':   { selfDiscard: 1 },
+
+  // ── Espejo (Main 2 — familia completa) ───────────────
+  // Espejo 0: score +1 por carta rival en línea — calculateScore lo aplica
+  // Espejo 1: copia efecto de carta rival — demasiado variable para sim
+  // Espejo 2: intercambia tus dos pilas — posicional propio
+  // Espejo 3: voltea 1 propia + 1 rival en misma línea
+  'Espejo 3':   { flipOpponent: 1 },
+  // Espejo 4: reactivo (roba cuando rival roba)
+  'Espejo 5':   { selfDiscard: 1 },
+
+  // ── Humo (Main 2 — familia completa) ─────────────────
+  // Humo 0: en cada línea con bocabajo, juega bocabajo la carta superior de tu mazo
+  'Humo 0':     { playFromDeck: { target: 'occupiedLines' } },
+  // Humo 1: voltea propia + puede cambiarla; Humo 2: score persistente (calculateScore)
+  // Humo 3: juega bocabajo en 1 línea con bocabajo (subconjunto de Humo 0)
+  'Humo 3':     { playFromDeck: { target: 'occupiedLines' } },
+  // Humo 4: cambia 1 carta cubierta bocabajo — posicional propio
+  'Humo 5':     { selfDiscard: 1 },
+
+  // ── Tiempo (Main 2 — familia completa) ───────────────
+  // Tiempo 0: juega 1 carta de tu descarte + baraja el descarte en el mazo
+  'Tiempo 0':   { draw: 1 },
+  // Tiempo 1: voltea 1 cubierta + descarta todo el mazo — demasiado destructivo para approx
+  // Tiempo 2: después de barajar → roba 1 carta (+ puede cambiar esta carta)
+  'Tiempo 2':   { draw: 1 },
+  // Tiempo 3: revela 1 del descarte, juégala bocabajo en otra línea
+  'Tiempo 3':   { playFromDeck: { target: 'otherLines' } },
+  // Tiempo 4: roba 2 + descarta 2 (reset de calidad de mano)
+  'Tiempo 4':   { draw: 2, selfDiscard: 2 },
+  'Tiempo 5':   { selfDiscard: 1 },
 };
 
 class MiniMax {
