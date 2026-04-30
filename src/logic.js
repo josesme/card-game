@@ -3783,9 +3783,32 @@ function checkWinCondition() {
     }
 }
 
+function saveMatchRecord(playerWon) {
+    try {
+        const record = {
+            fecha:                    new Date().toISOString().slice(0, 10),
+            ganador:                  playerWon ? 'player' : 'ai',
+            turnos:                   gameState.turnCount,
+            nivel_ia:                 parseInt(sessionStorage.getItem('aiDifficultyDepth') || '3'),
+            nombre_nivel:             sessionStorage.getItem('aiDifficultyName') || '',
+            protocolos_jugador:       (gameState.player.protocols || []).slice(),
+            protocolos_ia:            (gameState.ai.protocols || []).slice(),
+            lineas_compiladas_jugador: gameState.player.compiled.length,
+            lineas_compiladas_ia:     gameState.ai.compiled.length,
+        };
+        const key     = 'compile_match_history';
+        const history = JSON.parse(localStorage.getItem(key) || '[]');
+        history.push(record);
+        localStorage.setItem(key, JSON.stringify(history));
+    } catch (e) {
+        console.warn('[STATS] No se pudo guardar el registro:', e);
+    }
+}
+
 function showGameOver(playerWon) {
     const screen = document.getElementById('victory-screen');
     if (!screen) return;
+    saveMatchRecord(playerWon);
     if (typeof AudioManager !== 'undefined') {
         AudioManager.stopBGM?.();
         AudioManager.playSound(playerWon ? 'victory' : 'defeat');

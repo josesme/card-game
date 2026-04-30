@@ -287,6 +287,30 @@
         #band-pink  { height: 2px; background: rgba(255,0,128,0.85); box-shadow: 0 0 8px 3px rgba(255,0,128,0.4); }
         #band-white { height: 2px; background: rgba(255,255,255,0.7); }
 
+        /* ── Botón estadísticas global ────────────────────────── */
+        #btn-stats {
+            position: fixed;
+            top: 12px; right: 120px;
+            height: 44px;
+            padding: 0 16px;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--ui-bg);
+            border: 1.5px solid var(--ui-cyan);
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px; font-weight: 700; letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--ui-cyan);
+            z-index: 200;
+            box-shadow: 0 0 12px var(--ui-cyan-glow), 0 0 3px rgba(0,245,255,0.55);
+            transition: box-shadow 0.25s, background 0.25s;
+        }
+        #btn-stats:hover {
+            background: #061220;
+            box-shadow: 0 0 18px rgba(0,245,255,0.5), 0 0 6px rgba(0,245,255,0.7);
+        }
+
         /* ── Botón audio global ───────────────────────────────── */
         #btn-audio {
             position: fixed;
@@ -336,6 +360,132 @@
             background: #061220;
             box-shadow: 0 0 18px rgba(0,245,255,0.5), 0 0 6px rgba(0,245,255,0.7);
         }
+
+        /* ── Overlay Estadísticas ─────────────────────────────── */
+        #stats-overlay {
+            position: fixed; inset: 0; z-index: 600;
+            display: flex; flex-direction: column;
+            background: #030712;
+            font-family: 'JetBrains Mono', monospace;
+            /* vars propias del overlay */
+            --st-bg: #030712; --st-panel: #040c14; --st-card: #030a12;
+            --st-div: #0d2035; --st-cyan: #00f5ff; --st-muted: #4a6a7a;
+            --st-sec: #6a8a9a; --st-text: #a0c4d0;
+            --st-win: #FFD93D; --st-loss: #a855f7;
+            --st-win-bg: #2a1f05; --st-loss-bg: #1a0a2e;
+        }
+        #stats-overlay.hidden { display: none; }
+
+        #stats-overlay .st-hdr {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; height: 52px; flex-shrink: 0;
+            background: var(--st-panel); border-bottom: 1px solid var(--st-div);
+        }
+        #stats-overlay .st-hdr-left { display: flex; align-items: center; gap: 16px; }
+        #stats-overlay .st-hdr-logo { font-size: 16px; font-weight: 700; color: var(--st-cyan); letter-spacing: 4px; }
+        #stats-overlay .st-hdr-sep  { width: 1px; height: 22px; background: var(--st-div); }
+        #stats-overlay .st-hdr-title { font-size: 14px; font-weight: 600; color: var(--st-sec); letter-spacing: 1px; text-transform: uppercase; }
+        #stats-overlay .st-btn-close {
+            font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
+            letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all 0.25s;
+            display: inline-flex; align-items: center; justify-content: center;
+            padding: 0 20px; height: 36px;
+            color: var(--st-cyan); background: var(--st-bg);
+            border: 1px solid rgba(0,245,255,0.4);
+            box-shadow: 0 0 12px rgba(0,245,255,0.33), 0 0 2px rgba(0,245,255,0.55);
+        }
+        #stats-overlay .st-btn-close:hover { background: var(--st-cyan); color: var(--st-bg); box-shadow: none; }
+
+        #stats-overlay .st-body { display: flex; flex: 1; min-height: 0; }
+
+        #stats-overlay .st-sidebar {
+            width: 415px; flex-shrink: 0;
+            border-right: 1px solid var(--st-div);
+            display: flex; flex-direction: column;
+        }
+        #stats-overlay .st-sidebar .st-sec { flex: 1; border-bottom: 1px solid var(--st-div); }
+        #stats-overlay .st-sidebar .st-sec:last-child { border-bottom: none; }
+
+        #stats-overlay .st-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+        #stats-overlay .st-top-row { display: flex; flex: 5; min-height: 0; border-bottom: 1px solid var(--st-div); }
+        #stats-overlay .st-top-col { flex: 1; display: flex; flex-direction: column; justify-content: flex-start; padding: 16px 20px; }
+        #stats-overlay .st-top-col + .st-top-col { border-left: 1px solid var(--st-div); }
+        #stats-overlay .st-top-col-body { flex: 1; display: flex; flex-direction: column; justify-content: space-around; }
+
+        #stats-overlay .st-bottom-row { flex: 6; display: flex; flex-direction: column; padding: 16px 20px; min-height: 0; }
+        #stats-overlay .st-proto-boxes { display: flex; flex: 1; gap: 16px; margin-top: 14px; min-height: 0; }
+        #stats-overlay .st-proto-box { flex: 1; display: flex; flex-direction: column; padding: 0 16px; min-height: 0; }
+        #stats-overlay .st-proto-box + .st-proto-box { border-left: 1px solid var(--st-div); }
+
+        #stats-overlay .st-sec { padding: 16px 20px; }
+        #stats-overlay .st-sec-label {
+            font-size: 14px; font-weight: 600; color: var(--st-sec);
+            letter-spacing: 1px; text-transform: uppercase; margin-bottom: 14px;
+        }
+        #stats-overlay .st-sec-label-sm {
+            font-size: 14px; font-weight: 600; color: var(--st-sec);
+            letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px;
+        }
+
+        #stats-overlay .st-heroes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+        #stats-overlay .st-hero-cell { background: var(--st-card); border: 1px solid var(--st-div); padding: 14px 16px; border-radius: 2px; }
+        #stats-overlay .st-hero-val  { font-size: 36px; font-weight: 700; color: var(--st-cyan); line-height: 1; display: block; }
+        #stats-overlay .st-hero-lbl  { font-size: 10px; color: var(--st-muted); letter-spacing: 1px; margin-top: 4px; display: block; }
+
+        #stats-overlay .st-wr-wrap { margin-bottom: 10px; }
+        #stats-overlay .st-wr-bar  { height: 10px; background: var(--st-loss); border-radius: 3px; overflow: hidden; margin-bottom: 6px; }
+        #stats-overlay .st-wr-fill { height: 100%; background: var(--st-win); border-radius: 3px; }
+        #stats-overlay .st-wr-labels { display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; }
+        #stats-overlay .st-wr-w { color: var(--st-win); }
+        #stats-overlay .st-wr-l { color: var(--st-loss); }
+
+        #stats-overlay .st-streak { display: flex; gap: 6px; flex-wrap: wrap; }
+        #stats-overlay .st-dot { width: 30px; height: 30px; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+        #stats-overlay .st-dot.v { background: var(--st-win-bg); color: var(--st-win); border: 1px solid #5a3f15; }
+        #stats-overlay .st-dot.d { background: var(--st-loss-bg); color: var(--st-loss); border: 1px solid #3d1a6a; }
+        #stats-overlay .st-dot.cur { box-shadow: 0 0 8px currentColor; }
+
+        #stats-overlay .st-stat-row { display: flex; justify-content: space-between; align-items: baseline; padding: 5px 0; border-bottom: 1px solid #0a1a28; }
+        #stats-overlay .st-stat-row:last-child { border-bottom: none; }
+        #stats-overlay .st-sk { font-size: 14px; color: var(--st-sec); }
+        #stats-overlay .st-sv { font-size: 15px; font-weight: 700; color: var(--st-cyan); }
+        #stats-overlay .st-sv.win   { color: var(--st-win); }
+        #stats-overlay .st-sv.loss  { color: var(--st-loss); }
+        #stats-overlay .st-sv.muted { color: var(--st-muted); font-size: 14px; font-weight: 400; }
+
+        #stats-overlay .st-trend { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 2px; }
+        #stats-overlay .st-trend.up   { background: var(--st-win-bg); color: var(--st-win); }
+        #stats-overlay .st-trend.down { background: var(--st-loss-bg); color: var(--st-loss); }
+
+        #stats-overlay .st-rhythm { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+        #stats-overlay .st-r-cell { background: var(--st-card); border: 1px solid var(--st-div); padding: 12px 8px; border-radius: 2px; text-align: center; }
+        #stats-overlay .st-r-val  { font-size: 28px; font-weight: 700; color: var(--st-cyan); display: block; line-height: 1; }
+        #stats-overlay .st-r-val.win  { color: var(--st-win); }
+        #stats-overlay .st-r-val.loss { color: var(--st-loss); }
+        #stats-overlay .st-r-sub  { font-size: 10px; color: var(--st-muted); letter-spacing: 1px; margin-top: 5px; display: block; }
+
+        #stats-overlay .st-lvl-row { display: flex; align-items: center; gap: 10px; padding: 5px 0; }
+        #stats-overlay .st-lvl-tag { font-size: 14px; font-weight: 600; color: var(--st-sec); letter-spacing: 1px; text-transform: uppercase; min-width: 56px; }
+        #stats-overlay .st-bar-track { flex: 1; height: 8px; background: var(--st-loss); border-radius: 3px; overflow: hidden; }
+        #stats-overlay .st-bar-fill  { height: 100%; border-radius: 3px; }
+        #stats-overlay .st-lvl-stat  { font-size: 11px; font-weight: 700; min-width: 72px; text-align: right; color: var(--st-cyan); }
+
+        #stats-overlay .st-proto-rows { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+        #stats-overlay .st-proto-row { flex: 1; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #0a1a28; }
+        #stats-overlay .st-proto-row:last-child { border-bottom: none; }
+        #stats-overlay .st-p-dot   { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+        #stats-overlay .st-p-name  { font-size: 14px; color: var(--st-text); min-width: 106px; }
+        #stats-overlay .st-p-track { flex: 1; height: 7px; background: var(--st-div); border-radius: 3px; overflow: hidden; }
+        #stats-overlay .st-p-fill  { height: 100%; border-radius: 3px; opacity: .9; }
+        #stats-overlay .st-p-count { font-size: 13px; color: var(--st-cyan); min-width: 28px; text-align: right; }
+        #stats-overlay .st-p-pct   { font-size: 13px; font-weight: 600; min-width: 42px; text-align: right; color: var(--st-cyan); }
+        #stats-overlay .st-inner-div { flex-shrink: 0; height: 1px; background: var(--st-div); }
+
+        #stats-overlay .st-chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+        #stats-overlay .st-chip  { font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 2px; border: 1px solid; letter-spacing: .5px; }
+
+        #stats-overlay .st-footer { height: 28px; background: var(--st-panel); border-top: 1px solid var(--st-div); display: flex; align-items: center; padding: 0 20px; flex-shrink: 0; }
+        #stats-overlay .st-footer-txt { font-size: 14px; font-weight: 600; color: var(--st-sec); letter-spacing: 1px; text-transform: uppercase; }
 
         /* ── CSS: vista Draft ─────────────────────────────────── */
         #draft-viewport {
@@ -606,6 +756,9 @@
 <div id="band-cyan"  class="glitch-band"></div>
 <div id="band-pink"  class="glitch-band"></div>
 <div id="band-white" class="glitch-band"></div>
+
+<!-- ── Botón estadísticas global ──────────────────────────── -->
+<button id="btn-stats" onclick="openStatsOverlay()">Estadísticas</button>
 
 <!-- ── Botón audio global (sobre todas las vistas) ────────── -->
 <button id="btn-audio" onclick="toggleAudioBtn()" title="Música">
@@ -942,9 +1095,206 @@
 
 </div><!-- /view-game -->
 
+<!-- ── OVERLAY: ESTADÍSTICAS ───────────────────────────────── -->
+<div id="stats-overlay" class="hidden">
+
+  <div class="st-hdr">
+    <div class="st-hdr-left">
+      <span class="st-hdr-logo">COMPILE</span>
+      <div class="st-hdr-sep"></div>
+      <span class="st-hdr-title">◈ Estadísticas del sistema</span>
+    </div>
+    <button class="st-btn-close" onclick="closeStatsOverlay()">Cerrar ×</button>
+  </div>
+
+  <div class="st-body">
+
+    <!-- SIDEBAR -->
+    <div class="st-sidebar">
+
+      <div class="st-sec" style="flex:1.5">
+        <div class="st-sec-label">◈ Rendimiento global</div>
+        <div class="st-heroes">
+          <div class="st-hero-cell"><span class="st-hero-val">47</span><span class="st-hero-lbl">PARTIDAS</span></div>
+          <div class="st-hero-cell"><span class="st-hero-val">63%</span><span class="st-hero-lbl">VICTORIAS</span></div>
+        </div>
+        <div class="st-wr-wrap">
+          <div class="st-wr-bar"><div class="st-wr-fill" style="width:63%"></div></div>
+          <div class="st-wr-labels">
+            <span class="st-wr-w">▲ 30 victorias</span>
+            <span class="st-wr-l">▼ 17 derrotas</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="st-sec" style="flex:1.8">
+        <div class="st-sec-label">◈ Tendencia — últimas 10</div>
+        <div class="st-streak" style="margin-bottom:12px">
+          <div class="st-dot d">D</div><div class="st-dot v">V</div><div class="st-dot v">V</div>
+          <div class="st-dot d">D</div><div class="st-dot v">V</div><div class="st-dot v">V</div>
+          <div class="st-dot v">V</div><div class="st-dot d">D</div><div class="st-dot v">V</div>
+          <div class="st-dot v cur">V</div>
+        </div>
+        <div class="st-stat-row"><span class="st-sk">Últimas 10 partidas</span><span class="st-sv">70%</span></div>
+        <div class="st-stat-row"><span class="st-sk">Resto del historial</span><span class="st-sv">57%</span></div>
+        <div class="st-stat-row"><span class="st-sk">Tendencia</span><span class="st-trend up">↑ +13%</span></div>
+      </div>
+
+      <div class="st-sec" style="flex:1.2">
+        <div class="st-sec-label">◈ Racha</div>
+        <div class="st-stat-row"><span class="st-sk">Actual</span><span class="st-sv">▲ 2 victorias</span></div>
+        <div class="st-stat-row"><span class="st-sk">Mejor</span><span class="st-sv">7 victorias</span></div>
+        <div class="st-stat-row"><span class="st-sk">Peor</span><span class="st-sv">4 derrotas</span></div>
+      </div>
+
+      <div class="st-sec" style="flex:1.9">
+        <div class="st-sec-label">◈ Turnos por partida</div>
+        <div class="st-rhythm" style="margin-bottom:12px">
+          <div class="st-r-cell"><span class="st-r-val">18.4</span><span class="st-r-sub">MEDIA</span></div>
+          <div class="st-r-cell"><span class="st-r-val win">16.2</span><span class="st-r-sub">VICTORIA</span></div>
+          <div class="st-r-cell"><span class="st-r-val loss">21.8</span><span class="st-r-sub">DERROTA</span></div>
+        </div>
+        <div class="st-stat-row" style="padding:10px 0"><span class="st-sk">Partidas &gt;20 turnos</span><span class="st-sv" style="font-size:13px">32%</span></div>
+        <div class="st-stat-row" style="padding:10px 0"><span class="st-sk">Partidas &gt;30 turnos</span><span class="st-sv" style="font-size:13px">18%</span></div>
+        <div class="st-stat-row" style="padding:10px 0"><span class="st-sk">Partidas &gt;40 turnos</span><span class="st-sv" style="font-size:13px">8%</span></div>
+      </div>
+
+      <div class="st-sec" style="flex:3.6">
+        <div class="st-sec-label">◈ Combinaciones draft</div>
+        <div class="st-sec-label-sm" style="margin-bottom:10px;text-transform:none">↑ Más ganadora</div>
+        <div class="st-chips" style="margin-top:0;margin-bottom:10px">
+          <span class="st-chip" style="color:#4338ca;border-color:#4338ca50;background:#4338ca12">Asimilación</span>
+          <span class="st-chip" style="color:#16a34a;border-color:#16a34a50;background:#16a34a12">Corrupción</span>
+          <span class="st-chip" style="color:#0d9488;border-color:#0d948850;background:#0d948812">Diversidad</span>
+        </div>
+        <div class="st-stat-row" style="padding:8px 0"><span class="st-sk">Partidas</span><span class="st-sv">10</span></div>
+        <div class="st-stat-row" style="padding:8px 0;border-bottom:none"><span class="st-sk">Win rate</span><span class="st-sv">80%</span></div>
+        <div class="st-inner-div" style="margin:14px 0"></div>
+        <div class="st-sec-label-sm" style="margin-bottom:10px;text-transform:none">↓ Más perdedora</div>
+        <div class="st-chips" style="margin-top:0;margin-bottom:10px">
+          <span class="st-chip" style="color:#4338ca;border-color:#4338ca50;background:#4338ca12">Asimilación</span>
+          <span class="st-chip" style="color:#16a34a;border-color:#16a34a50;background:#16a34a12">Corrupción</span>
+          <span class="st-chip" style="color:#0d9488;border-color:#0d948850;background:#0d948812">Diversidad</span>
+        </div>
+        <div class="st-stat-row" style="padding:8px 0"><span class="st-sk">Partidas</span><span class="st-sv">4</span></div>
+        <div class="st-stat-row" style="padding:8px 0"><span class="st-sk">Win rate</span><span class="st-sv">25%</span></div>
+      </div>
+
+    </div>
+
+    <!-- MAIN -->
+    <div class="st-main">
+
+      <div class="st-top-row">
+
+        <div class="st-top-col" style="flex:1">
+          <div class="st-sec-label">◈ Victorias por nivel IA</div>
+          <div class="st-top-col-body">
+            <div class="st-lvl-row"><span class="st-lvl-tag">Nivel 1</span><div class="st-bar-track"><div class="st-bar-fill" style="width:90%;background:var(--st-win)"></div></div><span class="st-lvl-stat">90% — 9/10</span></div>
+            <div class="st-lvl-row"><span class="st-lvl-tag">Nivel 2</span><div class="st-bar-track"><div class="st-bar-fill" style="width:80%;background:var(--st-win)"></div></div><span class="st-lvl-stat">80% — 8/10</span></div>
+            <div class="st-lvl-row"><span class="st-lvl-tag">Nivel 3</span><div class="st-bar-track"><div class="st-bar-fill" style="width:60%;background:var(--st-win)"></div></div><span class="st-lvl-stat">60% — 6/10</span></div>
+            <div class="st-lvl-row"><span class="st-lvl-tag">Nivel 4</span><div class="st-bar-track"><div class="st-bar-fill" style="width:40%;background:var(--st-win)"></div></div><span class="st-lvl-stat">40% — 4/10</span></div>
+            <div class="st-lvl-row"><span class="st-lvl-tag">Nivel 5</span><div class="st-bar-track"><div class="st-bar-fill" style="width:20%;background:var(--st-win)"></div></div><span class="st-lvl-stat">20% — 2/10</span></div>
+          </div>
+        </div>
+
+        <div class="st-top-col" style="flex:1">
+          <div class="st-sec-label">◈ Presencia en resultado</div>
+          <div style="display:flex;flex-direction:column;flex:1;min-height:0">
+            <div class="st-sk" style="color:var(--st-sec);margin-bottom:4px">↑ En victoria</div>
+            <div class="st-proto-row"><div class="st-p-dot" style="background:#f97316"></div><span class="st-p-name">Fuego</span><div class="st-p-track"><div class="st-p-fill" style="width:87%;background:#f97316"></div></div><span class="st-p-count">26</span><span class="st-p-pct">87%</span></div>
+            <div class="st-proto-row"><div class="st-p-dot" style="background:#06b6d4"></div><span class="st-p-name">Velocidad</span><div class="st-p-track"><div class="st-p-fill" style="width:73%;background:#06b6d4"></div></div><span class="st-p-count">22</span><span class="st-p-pct">73%</span></div>
+            <div class="st-proto-row"><div class="st-p-dot" style="background:#3b82f6"></div><span class="st-p-name">Agua</span><div class="st-p-track"><div class="st-p-fill" style="width:67%;background:#3b82f6"></div></div><span class="st-p-count">20</span><span class="st-p-pct">67%</span></div>
+            <div class="st-inner-div" style="margin:6px 0"></div>
+            <div class="st-sk" style="color:var(--st-sec);margin-bottom:4px">↓ En derrota</div>
+            <div class="st-proto-row"><div class="st-p-dot" style="background:#b91c1c"></div><span class="st-p-name">Odio</span><div class="st-p-track"><div class="st-p-fill" style="width:100%;background:#b91c1c"></div></div><span class="st-p-count">2</span><span class="st-p-pct" style="color:var(--st-loss)">100%</span></div>
+            <div class="st-proto-row"><div class="st-p-dot" style="background:#6b7280"></div><span class="st-p-name">Apatía</span><div class="st-p-track"><div class="st-p-fill" style="width:67%;background:#6b7280"></div></div><span class="st-p-count">2</span><span class="st-p-pct" style="color:var(--st-loss)">67%</span></div>
+            <div class="st-proto-row"><div class="st-p-dot" style="background:#ec4899"></div><span class="st-p-name">Psique</span><div class="st-p-track"><div class="st-p-fill" style="width:55%;background:#ec4899"></div></div><span class="st-p-count">11</span><span class="st-p-pct" style="color:var(--st-loss)">55%</span></div>
+          </div>
+        </div>
+
+        <div class="st-top-col" style="flex:0.55">
+          <div class="st-sec-label">◈ Última partida</div>
+          <div class="st-top-col-body">
+            <div class="st-stat-row"><span class="st-sk">Fecha</span><span class="st-sv">28/04/2026</span></div>
+            <div class="st-stat-row"><span class="st-sk">Resultado</span><span class="st-sv win">VICTORIA</span></div>
+            <div class="st-stat-row"><span class="st-sk">Nivel IA</span><span class="st-sv">3</span></div>
+            <div class="st-stat-row"><span class="st-sk">Turnos</span><span class="st-sv">14</span></div>
+            <div class="st-stat-row"><span class="st-sk">Actualizaciones</span><span class="st-sv">3</span></div>
+            <div style="padding:5px 0;border-bottom:1px solid #0a1a28">
+              <div class="st-sk" style="margin-bottom:6px;color:var(--st-win)">Protocolos jugador</div>
+              <div class="st-chips" style="margin:0">
+                <span class="st-chip" style="color:#4338ca;border-color:#4338ca50;background:#4338ca12">Asimilación</span>
+                <span class="st-chip" style="color:#16a34a;border-color:#16a34a50;background:#16a34a12">Corrupción</span>
+                <span class="st-chip" style="color:#0d9488;border-color:#0d948850;background:#0d948812">Diversidad</span>
+              </div>
+            </div>
+            <div style="padding:5px 0">
+              <div class="st-sk" style="margin-bottom:6px;color:var(--st-loss)">Protocolos IA</div>
+              <div class="st-chips" style="margin:0">
+                <span class="st-chip" style="color:#4338ca;border-color:#4338ca50;background:#4338ca12">Asimilación</span>
+                <span class="st-chip" style="color:#16a34a;border-color:#16a34a50;background:#16a34a12">Corrupción</span>
+                <span class="st-chip" style="color:#0d9488;border-color:#0d948850;background:#0d948812">Diversidad</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="st-bottom-row">
+        <div class="st-sec-label">◈ Uso de protocolos</div>
+        <div class="st-proto-boxes">
+
+          <div class="st-proto-box">
+            <div class="st-sec-label-sm" style="color:var(--st-win);text-transform:none;margin-bottom:8px">Protocolos jugador</div>
+            <div class="st-proto-rows">
+              <div class="st-proto-row"><div class="st-p-dot" style="background:#f97316"></div><span class="st-p-name">Fuego</span><div class="st-p-track"><div class="st-p-fill" style="width:85%;background:#f97316"></div></div><span class="st-p-count">32</span><span class="st-p-pct">71%</span></div>
+              <div class="st-proto-row"><div class="st-p-dot" style="background:#ef4444"></div><span class="st-p-name">Muerte</span><div class="st-p-track"><div class="st-p-fill" style="width:74%;background:#ef4444"></div></div><span class="st-p-count">28</span><span class="st-p-pct">64%</span></div>
+              <div class="st-proto-row"><div class="st-p-dot" style="background:#3b82f6"></div><span class="st-p-name">Agua</span><div class="st-p-track"><div class="st-p-fill" style="width:63%;background:#3b82f6"></div></div><span class="st-p-count">24</span><span class="st-p-pct">67%</span></div>
+              <div class="st-proto-row"><div class="st-p-dot" style="background:#ec4899"></div><span class="st-p-name">Psique</span><div class="st-p-track"><div class="st-p-fill" style="width:53%;background:#ec4899"></div></div><span class="st-p-count">20</span><span class="st-p-pct">55%</span></div>
+              <div class="st-proto-row"><div class="st-p-dot" style="background:#06b6d4"></div><span class="st-p-name">Velocidad</span><div class="st-p-track"><div class="st-p-fill" style="width:47%;background:#06b6d4"></div></div><span class="st-p-count">18</span><span class="st-p-pct">67%</span></div>
+              <div class="st-inner-div"></div>
+              <div class="st-proto-row"><div class="st-p-dot" style="background:#8b5cf6;opacity:.5"></div><span class="st-p-name" style="color:var(--st-muted)">Espíritu</span><div class="st-p-track"><div class="st-p-fill" style="width:16%;background:#8b5cf6"></div></div><span class="st-p-count" style="color:var(--st-muted)">6</span><span class="st-p-pct">50%</span></div>
+              <div class="st-proto-row"><div class="st-p-dot" style="background:#94a3b8;opacity:.5"></div><span class="st-p-name" style="color:var(--st-muted)">Metal</span><div class="st-p-track"><div class="st-p-fill" style="width:11%;background:#94a3b8"></div></div><span class="st-p-count" style="color:var(--st-muted)">4</span><span class="st-p-pct">50%</span></div>
+              <div class="st-proto-row"><div class="st-p-dot" style="background:#10b981;opacity:.5"></div><span class="st-p-name" style="color:var(--st-muted)">Vida</span><div class="st-p-track"><div class="st-p-fill" style="width:8%;background:#10b981"></div></div><span class="st-p-count" style="color:var(--st-muted)">3</span><span class="st-p-pct" style="color:var(--st-loss)">33%</span></div>
+              <div class="st-proto-row"><div class="st-p-dot" style="background:#6b7280;opacity:.5"></div><span class="st-p-name" style="color:var(--st-muted)">Apatía</span><div class="st-p-track"><div class="st-p-fill" style="width:8%;background:#6b7280"></div></div><span class="st-p-count" style="color:var(--st-muted)">3</span><span class="st-p-pct" style="color:var(--st-loss)">33%</span></div>
+              <div class="st-proto-row"><div class="st-p-dot" style="background:#b91c1c;opacity:.5"></div><span class="st-p-name" style="color:var(--st-muted)">Odio</span><div class="st-p-track"><div class="st-p-fill" style="width:5%;background:#b91c1c"></div></div><span class="st-p-count" style="color:var(--st-muted)">2</span><span class="st-p-pct" style="color:var(--st-loss)">0%</span></div>
+            </div>
+          </div>
+
+          <div class="st-proto-box">
+            <div class="st-sec-label-sm" style="color:var(--st-loss);text-transform:none;margin-bottom:8px">Protocolos IA</div>
+            <div class="st-proto-rows">
+              <div class="st-proto-row"><div class="st-p-dot" style="background:#94a3b8"></div><span class="st-p-name">Metal</span><div class="st-p-track"><div class="st-p-fill" style="width:74%;background:#94a3b8"></div></div><span class="st-p-count">28</span><span class="st-p-pct" style="color:var(--st-loss)">45%</span></div>
+              <div class="st-proto-row"><div class="st-p-dot" style="background:#facc15"></div><span class="st-p-name">Luz</span><div class="st-p-track"><div class="st-p-fill" style="width:63%;background:#facc15"></div></div><span class="st-p-count">24</span><span class="st-p-pct" style="color:var(--st-loss)">42%</span></div>
+              <div class="st-proto-row"><div class="st-p-dot" style="background:#64748b"></div><span class="st-p-name">Oscuridad</span><div class="st-p-track"><div class="st-p-fill" style="width:55%;background:#64748b"></div></div><span class="st-p-count">21</span><span class="st-p-pct">52%</span></div>
+              <div class="st-proto-row"><div class="st-p-dot" style="background:#a855f7"></div><span class="st-p-name">Plaga</span><div class="st-p-track"><div class="st-p-fill" style="width:47%;background:#a855f7"></div></div><span class="st-p-count">18</span><span class="st-p-pct">56%</span></div>
+              <div class="st-proto-row"><div class="st-p-dot" style="background:#6366f1"></div><span class="st-p-name">Gravedad</span><div class="st-p-track"><div class="st-p-fill" style="width:39%;background:#6366f1"></div></div><span class="st-p-count">15</span><span class="st-p-pct">60%</span></div>
+              <div class="st-inner-div"></div>
+              <div class="st-proto-row"><div class="st-p-dot" style="background:#10b981;opacity:.5"></div><span class="st-p-name" style="color:var(--st-muted)">Vida</span><div class="st-p-track"><div class="st-p-fill" style="width:13%;background:#10b981"></div></div><span class="st-p-count" style="color:var(--st-muted)">5</span><span class="st-p-pct">60%</span></div>
+              <div class="st-proto-row"><div class="st-p-dot" style="background:#8b5cf6;opacity:.5"></div><span class="st-p-name" style="color:var(--st-muted)">Espíritu</span><div class="st-p-track"><div class="st-p-fill" style="width:10%;background:#8b5cf6"></div></div><span class="st-p-count" style="color:var(--st-muted)">4</span><span class="st-p-pct">75%</span></div>
+              <div class="st-proto-row"><div class="st-p-dot" style="background:#f97316;opacity:.5"></div><span class="st-p-name" style="color:var(--st-muted)">Fuego</span><div class="st-p-track"><div class="st-p-fill" style="width:8%;background:#f97316"></div></div><span class="st-p-count" style="color:var(--st-muted)">3</span><span class="st-p-pct">33%</span></div>
+              <div class="st-proto-row"><div class="st-p-dot" style="background:#06b6d4;opacity:.5"></div><span class="st-p-name" style="color:var(--st-muted)">Velocidad</span><div class="st-p-track"><div class="st-p-fill" style="width:5%;background:#06b6d4"></div></div><span class="st-p-count" style="color:var(--st-muted)">2</span><span class="st-p-pct">50%</span></div>
+              <div class="st-proto-row"><div class="st-p-dot" style="background:#ec4899;opacity:.5"></div><span class="st-p-name" style="color:var(--st-muted)">Psique</span><div class="st-p-track"><div class="st-p-fill" style="width:3%;background:#ec4899"></div></div><span class="st-p-count" style="color:var(--st-muted)">1</span><span class="st-p-pct" style="color:var(--st-loss)">0%</span></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="st-footer">
+    <span class="st-footer-txt">Datos almacenados localmente — 47 registros — Última actualización: hace 2 días</span>
+  </div>
+
+</div>
+
 <!-- ── Scripts ─────────────────────────────────────────────── -->
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/ScrambleTextPlugin.min.js"></script>
+<script src="ScrambleText.min.js"></script>
 <script>
     if (typeof ScrambleTextPlugin !== 'undefined' && typeof gsap !== 'undefined') {
         gsap.registerPlugin(ScrambleTextPlugin);
@@ -1231,6 +1581,47 @@ window.homeModule = {
     };
 
     router.navigate(location.hash.slice(1) || 'home');
+</script>
+<script>
+// ── Stats overlay ────────────────────────────────────────────────────────
+function openStatsOverlay() {
+    window._glitchThen(function () {
+        document.getElementById('stats-overlay').classList.remove('hidden');
+        _triggerStatsScramble();
+    });
+}
+
+function closeStatsOverlay() {
+    window._glitchThen(function () {
+        document.getElementById('stats-overlay').classList.add('hidden');
+    });
+}
+
+function _triggerStatsScramble() {
+    var overlay = document.getElementById('stats-overlay');
+    // Reset cache so scramble replays on every open
+    overlay.querySelectorAll('[data-scr-last]').forEach(function (el) {
+        el.removeAttribute('data-scr-last');
+    });
+    function anim(sel, dur, chars) {
+        overlay.querySelectorAll(sel).forEach(function (el) {
+            var t = el.textContent.trim();
+            if (t && window.scrTxt) window.scrTxt(el, t, { duration: dur, chars: chars });
+        });
+    }
+    anim('.st-hdr-logo, .st-hdr-title',         1.2, 'upperCase');
+    anim('.st-sec-label',                        1.0, 'upperCase');
+    anim('.st-hero-val, .st-r-val',              1.0, '0123456789');
+    anim('.st-wr-w, .st-wr-l',                   0.9, 'upperCase');
+    anim('.st-trend',                            0.9, 'upperCase');
+    anim('.st-sk',                               0.8, 'upperCase');
+    anim('.st-sv, .st-lvl-stat',                 0.8, '0123456789%');
+    anim('.st-lvl-tag',                          0.8, 'upperCase');
+    anim('.st-p-name',                           0.8, 'upperCase');
+    anim('.st-p-count, .st-p-pct',               0.7, '0123456789%');
+    anim('.st-sec-label-sm',                     0.8, 'upperCase');
+    anim('.st-footer-txt',                       1.0, 'upperCase');
+}
 </script>
 
 </body>
