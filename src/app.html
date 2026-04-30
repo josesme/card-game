@@ -1115,69 +1115,50 @@
       <div class="st-sec" style="flex:1.5">
         <div class="st-sec-label">◈ Rendimiento global</div>
         <div class="st-heroes">
-          <div class="st-hero-cell"><span class="st-hero-val">47</span><span class="st-hero-lbl">PARTIDAS</span></div>
-          <div class="st-hero-cell"><span class="st-hero-val">63%</span><span class="st-hero-lbl">VICTORIAS</span></div>
+          <div class="st-hero-cell"><span class="st-hero-val" id="st-v-total">0</span><span class="st-hero-lbl">PARTIDAS</span></div>
+          <div class="st-hero-cell"><span class="st-hero-val" id="st-v-winpct">0%</span><span class="st-hero-lbl">VICTORIAS</span></div>
         </div>
         <div class="st-wr-wrap">
-          <div class="st-wr-bar"><div class="st-wr-fill" style="width:63%"></div></div>
+          <div class="st-wr-bar"><div class="st-wr-fill" id="st-v-bar" style="width:0%"></div></div>
           <div class="st-wr-labels">
-            <span class="st-wr-w">▲ 30 victorias</span>
-            <span class="st-wr-l">▼ 17 derrotas</span>
+            <span class="st-wr-w" id="st-v-ww">▲ 0 victorias</span>
+            <span class="st-wr-l" id="st-v-wl">▼ 0 derrotas</span>
           </div>
         </div>
       </div>
 
       <div class="st-sec" style="flex:1.8">
         <div class="st-sec-label">◈ Tendencia — últimas 10</div>
-        <div class="st-streak" style="margin-bottom:12px">
-          <div class="st-dot d">D</div><div class="st-dot v">V</div><div class="st-dot v">V</div>
-          <div class="st-dot d">D</div><div class="st-dot v">V</div><div class="st-dot v">V</div>
-          <div class="st-dot v">V</div><div class="st-dot d">D</div><div class="st-dot v">V</div>
-          <div class="st-dot v cur">V</div>
-        </div>
-        <div class="st-stat-row"><span class="st-sk">Últimas 10 partidas</span><span class="st-sv">70%</span></div>
-        <div class="st-stat-row"><span class="st-sk">Resto del historial</span><span class="st-sv">57%</span></div>
-        <div class="st-stat-row"><span class="st-sk">Tendencia</span><span class="st-trend up">↑ +13%</span></div>
+        <div class="st-streak" id="st-v-dots" style="margin-bottom:12px"></div>
+        <div class="st-stat-row"><span class="st-sk">Últimas 10 partidas</span><span class="st-sv" id="st-v-last10">—</span></div>
+        <div class="st-stat-row"><span class="st-sk">Resto del historial</span><span class="st-sv" id="st-v-rest">—</span></div>
+        <div class="st-stat-row"><span class="st-sk">Tendencia</span><span class="st-trend" id="st-v-trend">—</span></div>
       </div>
 
       <div class="st-sec" style="flex:1.2">
         <div class="st-sec-label">◈ Racha</div>
-        <div class="st-stat-row"><span class="st-sk">Actual</span><span class="st-sv">▲ 2 victorias</span></div>
-        <div class="st-stat-row"><span class="st-sk">Mejor</span><span class="st-sv">7 victorias</span></div>
-        <div class="st-stat-row"><span class="st-sk">Peor</span><span class="st-sv">4 derrotas</span></div>
+        <div class="st-stat-row"><span class="st-sk">Actual</span><span class="st-sv" id="st-v-racha-actual">—</span></div>
+        <div class="st-stat-row"><span class="st-sk">Mejor</span><span class="st-sv" id="st-v-racha-mejor">—</span></div>
+        <div class="st-stat-row"><span class="st-sk">Peor</span><span class="st-sv" id="st-v-racha-peor">—</span></div>
       </div>
 
       <div class="st-sec" style="flex:1.9">
         <div class="st-sec-label">◈ Turnos por partida</div>
         <div class="st-rhythm" style="margin-bottom:12px">
-          <div class="st-r-cell"><span class="st-r-val">18.4</span><span class="st-r-sub">MEDIA</span></div>
-          <div class="st-r-cell"><span class="st-r-val win">16.2</span><span class="st-r-sub">VICTORIA</span></div>
-          <div class="st-r-cell"><span class="st-r-val loss">21.8</span><span class="st-r-sub">DERROTA</span></div>
+          <div class="st-r-cell"><span class="st-r-val" id="st-v-t-media">—</span><span class="st-r-sub">MEDIA</span></div>
+          <div class="st-r-cell"><span class="st-r-val win" id="st-v-t-win">—</span><span class="st-r-sub">VICTORIA</span></div>
+          <div class="st-r-cell"><span class="st-r-val loss" id="st-v-t-loss">—</span><span class="st-r-sub">DERROTA</span></div>
         </div>
-        <div class="st-stat-row" style="padding:10px 0"><span class="st-sk">Partidas &gt;20 turnos</span><span class="st-sv" style="font-size:13px">32%</span></div>
-        <div class="st-stat-row" style="padding:10px 0"><span class="st-sk">Partidas &gt;30 turnos</span><span class="st-sv" style="font-size:13px">18%</span></div>
-        <div class="st-stat-row" style="padding:10px 0"><span class="st-sk">Partidas &gt;40 turnos</span><span class="st-sv" style="font-size:13px">8%</span></div>
+        <div class="st-stat-row" style="padding:10px 0"><span class="st-sk">Partidas &gt;20 turnos</span><span class="st-sv" id="st-v-gt20" style="font-size:13px">—</span></div>
+        <div class="st-stat-row" style="padding:10px 0"><span class="st-sk">Partidas &gt;30 turnos</span><span class="st-sv" id="st-v-gt30" style="font-size:13px">—</span></div>
+        <div class="st-stat-row" style="padding:10px 0"><span class="st-sk">Partidas &gt;40 turnos</span><span class="st-sv" id="st-v-gt40" style="font-size:13px">—</span></div>
       </div>
 
       <div class="st-sec" style="flex:3.6">
         <div class="st-sec-label">◈ Combinaciones draft</div>
-        <div class="st-sec-label-sm" style="margin-bottom:10px;text-transform:none">↑ Más ganadora</div>
-        <div class="st-chips" style="margin-top:0;margin-bottom:10px">
-          <span class="st-chip" style="color:#4338ca;border-color:#4338ca50;background:#4338ca12">Asimilación</span>
-          <span class="st-chip" style="color:#16a34a;border-color:#16a34a50;background:#16a34a12">Corrupción</span>
-          <span class="st-chip" style="color:#0d9488;border-color:#0d948850;background:#0d948812">Diversidad</span>
-        </div>
-        <div class="st-stat-row" style="padding:8px 0"><span class="st-sk">Partidas</span><span class="st-sv">10</span></div>
-        <div class="st-stat-row" style="padding:8px 0;border-bottom:none"><span class="st-sk">Win rate</span><span class="st-sv">80%</span></div>
+        <div id="st-v-combo-win"></div>
         <div class="st-inner-div" style="margin:14px 0"></div>
-        <div class="st-sec-label-sm" style="margin-bottom:10px;text-transform:none">↓ Más perdedora</div>
-        <div class="st-chips" style="margin-top:0;margin-bottom:10px">
-          <span class="st-chip" style="color:#4338ca;border-color:#4338ca50;background:#4338ca12">Asimilación</span>
-          <span class="st-chip" style="color:#16a34a;border-color:#16a34a50;background:#16a34a12">Corrupción</span>
-          <span class="st-chip" style="color:#0d9488;border-color:#0d948850;background:#0d948812">Diversidad</span>
-        </div>
-        <div class="st-stat-row" style="padding:8px 0"><span class="st-sk">Partidas</span><span class="st-sv">4</span></div>
-        <div class="st-stat-row" style="padding:8px 0"><span class="st-sk">Win rate</span><span class="st-sv">25%</span></div>
+        <div id="st-v-combo-loss"></div>
       </div>
 
     </div>
@@ -1190,11 +1171,11 @@
         <div class="st-top-col" style="flex:1">
           <div class="st-sec-label">◈ Victorias por nivel IA</div>
           <div class="st-top-col-body">
-            <div class="st-lvl-row"><span class="st-lvl-tag">Nivel 1</span><div class="st-bar-track"><div class="st-bar-fill" style="width:90%;background:var(--st-win)"></div></div><span class="st-lvl-stat">90% — 9/10</span></div>
-            <div class="st-lvl-row"><span class="st-lvl-tag">Nivel 2</span><div class="st-bar-track"><div class="st-bar-fill" style="width:80%;background:var(--st-win)"></div></div><span class="st-lvl-stat">80% — 8/10</span></div>
-            <div class="st-lvl-row"><span class="st-lvl-tag">Nivel 3</span><div class="st-bar-track"><div class="st-bar-fill" style="width:60%;background:var(--st-win)"></div></div><span class="st-lvl-stat">60% — 6/10</span></div>
-            <div class="st-lvl-row"><span class="st-lvl-tag">Nivel 4</span><div class="st-bar-track"><div class="st-bar-fill" style="width:40%;background:var(--st-win)"></div></div><span class="st-lvl-stat">40% — 4/10</span></div>
-            <div class="st-lvl-row"><span class="st-lvl-tag">Nivel 5</span><div class="st-bar-track"><div class="st-bar-fill" style="width:20%;background:var(--st-win)"></div></div><span class="st-lvl-stat">20% — 2/10</span></div>
+            <div class="st-lvl-row"><span class="st-lvl-tag">Nivel 1</span><div class="st-bar-track"><div class="st-bar-fill" id="st-v-lvl-fill-1" style="width:0%;background:var(--st-win)"></div></div><span class="st-lvl-stat" id="st-v-lvl-stat-1">—</span></div>
+            <div class="st-lvl-row"><span class="st-lvl-tag">Nivel 2</span><div class="st-bar-track"><div class="st-bar-fill" id="st-v-lvl-fill-2" style="width:0%;background:var(--st-win)"></div></div><span class="st-lvl-stat" id="st-v-lvl-stat-2">—</span></div>
+            <div class="st-lvl-row"><span class="st-lvl-tag">Nivel 3</span><div class="st-bar-track"><div class="st-bar-fill" id="st-v-lvl-fill-3" style="width:0%;background:var(--st-win)"></div></div><span class="st-lvl-stat" id="st-v-lvl-stat-3">—</span></div>
+            <div class="st-lvl-row"><span class="st-lvl-tag">Nivel 4</span><div class="st-bar-track"><div class="st-bar-fill" id="st-v-lvl-fill-4" style="width:0%;background:var(--st-win)"></div></div><span class="st-lvl-stat" id="st-v-lvl-stat-4">—</span></div>
+            <div class="st-lvl-row"><span class="st-lvl-tag">Nivel 5</span><div class="st-bar-track"><div class="st-bar-fill" id="st-v-lvl-fill-5" style="width:0%;background:var(--st-win)"></div></div><span class="st-lvl-stat" id="st-v-lvl-stat-5">—</span></div>
           </div>
         </div>
 
@@ -1202,40 +1183,27 @@
           <div class="st-sec-label">◈ Presencia en resultado</div>
           <div style="display:flex;flex-direction:column;flex:1;min-height:0">
             <div class="st-sk" style="color:var(--st-sec);margin-bottom:4px">↑ En victoria</div>
-            <div class="st-proto-row"><div class="st-p-dot" style="background:#f97316"></div><span class="st-p-name">Fuego</span><div class="st-p-track"><div class="st-p-fill" style="width:87%;background:#f97316"></div></div><span class="st-p-count">26</span><span class="st-p-pct">87%</span></div>
-            <div class="st-proto-row"><div class="st-p-dot" style="background:#06b6d4"></div><span class="st-p-name">Velocidad</span><div class="st-p-track"><div class="st-p-fill" style="width:73%;background:#06b6d4"></div></div><span class="st-p-count">22</span><span class="st-p-pct">73%</span></div>
-            <div class="st-proto-row"><div class="st-p-dot" style="background:#3b82f6"></div><span class="st-p-name">Agua</span><div class="st-p-track"><div class="st-p-fill" style="width:67%;background:#3b82f6"></div></div><span class="st-p-count">20</span><span class="st-p-pct">67%</span></div>
+            <div id="st-v-presence-win"></div>
             <div class="st-inner-div" style="margin:6px 0"></div>
             <div class="st-sk" style="color:var(--st-sec);margin-bottom:4px">↓ En derrota</div>
-            <div class="st-proto-row"><div class="st-p-dot" style="background:#b91c1c"></div><span class="st-p-name">Odio</span><div class="st-p-track"><div class="st-p-fill" style="width:100%;background:#b91c1c"></div></div><span class="st-p-count">2</span><span class="st-p-pct" style="color:var(--st-loss)">100%</span></div>
-            <div class="st-proto-row"><div class="st-p-dot" style="background:#6b7280"></div><span class="st-p-name">Apatía</span><div class="st-p-track"><div class="st-p-fill" style="width:67%;background:#6b7280"></div></div><span class="st-p-count">2</span><span class="st-p-pct" style="color:var(--st-loss)">67%</span></div>
-            <div class="st-proto-row"><div class="st-p-dot" style="background:#ec4899"></div><span class="st-p-name">Psique</span><div class="st-p-track"><div class="st-p-fill" style="width:55%;background:#ec4899"></div></div><span class="st-p-count">11</span><span class="st-p-pct" style="color:var(--st-loss)">55%</span></div>
+            <div id="st-v-presence-loss"></div>
           </div>
         </div>
 
         <div class="st-top-col" style="flex:0.55">
           <div class="st-sec-label">◈ Última partida</div>
           <div class="st-top-col-body">
-            <div class="st-stat-row"><span class="st-sk">Fecha</span><span class="st-sv">28/04/2026</span></div>
-            <div class="st-stat-row"><span class="st-sk">Resultado</span><span class="st-sv win">VICTORIA</span></div>
-            <div class="st-stat-row"><span class="st-sk">Nivel IA</span><span class="st-sv">3</span></div>
-            <div class="st-stat-row"><span class="st-sk">Turnos</span><span class="st-sv">14</span></div>
-            <div class="st-stat-row"><span class="st-sk">Actualizaciones</span><span class="st-sv">3</span></div>
+            <div class="st-stat-row"><span class="st-sk">Fecha</span><span class="st-sv" id="st-v-ult-fecha">—</span></div>
+            <div class="st-stat-row"><span class="st-sk">Resultado</span><span class="st-sv" id="st-v-ult-resultado">—</span></div>
+            <div class="st-stat-row"><span class="st-sk">Nivel IA</span><span class="st-sv" id="st-v-ult-nivel">—</span></div>
+            <div class="st-stat-row"><span class="st-sk">Turnos</span><span class="st-sv" id="st-v-ult-turnos">—</span></div>
             <div style="padding:5px 0;border-bottom:1px solid #0a1a28">
               <div class="st-sk" style="margin-bottom:6px;color:var(--st-win)">Protocolos jugador</div>
-              <div class="st-chips" style="margin:0">
-                <span class="st-chip" style="color:#4338ca;border-color:#4338ca50;background:#4338ca12">Asimilación</span>
-                <span class="st-chip" style="color:#16a34a;border-color:#16a34a50;background:#16a34a12">Corrupción</span>
-                <span class="st-chip" style="color:#0d9488;border-color:#0d948850;background:#0d948812">Diversidad</span>
-              </div>
+              <div class="st-chips" id="st-v-ult-protos-player" style="margin:0"></div>
             </div>
             <div style="padding:5px 0">
               <div class="st-sk" style="margin-bottom:6px;color:var(--st-loss)">Protocolos IA</div>
-              <div class="st-chips" style="margin:0">
-                <span class="st-chip" style="color:#4338ca;border-color:#4338ca50;background:#4338ca12">Asimilación</span>
-                <span class="st-chip" style="color:#16a34a;border-color:#16a34a50;background:#16a34a12">Corrupción</span>
-                <span class="st-chip" style="color:#0d9488;border-color:#0d948850;background:#0d948812">Diversidad</span>
-              </div>
+              <div class="st-chips" id="st-v-ult-protos-ai" style="margin:0"></div>
             </div>
           </div>
         </div>
@@ -1248,36 +1216,12 @@
 
           <div class="st-proto-box">
             <div class="st-sec-label-sm" style="color:var(--st-win);text-transform:none;margin-bottom:8px">Protocolos jugador</div>
-            <div class="st-proto-rows">
-              <div class="st-proto-row"><div class="st-p-dot" style="background:#f97316"></div><span class="st-p-name">Fuego</span><div class="st-p-track"><div class="st-p-fill" style="width:85%;background:#f97316"></div></div><span class="st-p-count">32</span><span class="st-p-pct">71%</span></div>
-              <div class="st-proto-row"><div class="st-p-dot" style="background:#ef4444"></div><span class="st-p-name">Muerte</span><div class="st-p-track"><div class="st-p-fill" style="width:74%;background:#ef4444"></div></div><span class="st-p-count">28</span><span class="st-p-pct">64%</span></div>
-              <div class="st-proto-row"><div class="st-p-dot" style="background:#3b82f6"></div><span class="st-p-name">Agua</span><div class="st-p-track"><div class="st-p-fill" style="width:63%;background:#3b82f6"></div></div><span class="st-p-count">24</span><span class="st-p-pct">67%</span></div>
-              <div class="st-proto-row"><div class="st-p-dot" style="background:#ec4899"></div><span class="st-p-name">Psique</span><div class="st-p-track"><div class="st-p-fill" style="width:53%;background:#ec4899"></div></div><span class="st-p-count">20</span><span class="st-p-pct">55%</span></div>
-              <div class="st-proto-row"><div class="st-p-dot" style="background:#06b6d4"></div><span class="st-p-name">Velocidad</span><div class="st-p-track"><div class="st-p-fill" style="width:47%;background:#06b6d4"></div></div><span class="st-p-count">18</span><span class="st-p-pct">67%</span></div>
-              <div class="st-inner-div"></div>
-              <div class="st-proto-row"><div class="st-p-dot" style="background:#8b5cf6;opacity:.5"></div><span class="st-p-name" style="color:var(--st-muted)">Espíritu</span><div class="st-p-track"><div class="st-p-fill" style="width:16%;background:#8b5cf6"></div></div><span class="st-p-count" style="color:var(--st-muted)">6</span><span class="st-p-pct">50%</span></div>
-              <div class="st-proto-row"><div class="st-p-dot" style="background:#94a3b8;opacity:.5"></div><span class="st-p-name" style="color:var(--st-muted)">Metal</span><div class="st-p-track"><div class="st-p-fill" style="width:11%;background:#94a3b8"></div></div><span class="st-p-count" style="color:var(--st-muted)">4</span><span class="st-p-pct">50%</span></div>
-              <div class="st-proto-row"><div class="st-p-dot" style="background:#10b981;opacity:.5"></div><span class="st-p-name" style="color:var(--st-muted)">Vida</span><div class="st-p-track"><div class="st-p-fill" style="width:8%;background:#10b981"></div></div><span class="st-p-count" style="color:var(--st-muted)">3</span><span class="st-p-pct" style="color:var(--st-loss)">33%</span></div>
-              <div class="st-proto-row"><div class="st-p-dot" style="background:#6b7280;opacity:.5"></div><span class="st-p-name" style="color:var(--st-muted)">Apatía</span><div class="st-p-track"><div class="st-p-fill" style="width:8%;background:#6b7280"></div></div><span class="st-p-count" style="color:var(--st-muted)">3</span><span class="st-p-pct" style="color:var(--st-loss)">33%</span></div>
-              <div class="st-proto-row"><div class="st-p-dot" style="background:#b91c1c;opacity:.5"></div><span class="st-p-name" style="color:var(--st-muted)">Odio</span><div class="st-p-track"><div class="st-p-fill" style="width:5%;background:#b91c1c"></div></div><span class="st-p-count" style="color:var(--st-muted)">2</span><span class="st-p-pct" style="color:var(--st-loss)">0%</span></div>
-            </div>
+            <div class="st-proto-rows" id="st-v-protos-player"></div>
           </div>
 
           <div class="st-proto-box">
             <div class="st-sec-label-sm" style="color:var(--st-loss);text-transform:none;margin-bottom:8px">Protocolos IA</div>
-            <div class="st-proto-rows">
-              <div class="st-proto-row"><div class="st-p-dot" style="background:#94a3b8"></div><span class="st-p-name">Metal</span><div class="st-p-track"><div class="st-p-fill" style="width:74%;background:#94a3b8"></div></div><span class="st-p-count">28</span><span class="st-p-pct" style="color:var(--st-loss)">45%</span></div>
-              <div class="st-proto-row"><div class="st-p-dot" style="background:#facc15"></div><span class="st-p-name">Luz</span><div class="st-p-track"><div class="st-p-fill" style="width:63%;background:#facc15"></div></div><span class="st-p-count">24</span><span class="st-p-pct" style="color:var(--st-loss)">42%</span></div>
-              <div class="st-proto-row"><div class="st-p-dot" style="background:#64748b"></div><span class="st-p-name">Oscuridad</span><div class="st-p-track"><div class="st-p-fill" style="width:55%;background:#64748b"></div></div><span class="st-p-count">21</span><span class="st-p-pct">52%</span></div>
-              <div class="st-proto-row"><div class="st-p-dot" style="background:#a855f7"></div><span class="st-p-name">Plaga</span><div class="st-p-track"><div class="st-p-fill" style="width:47%;background:#a855f7"></div></div><span class="st-p-count">18</span><span class="st-p-pct">56%</span></div>
-              <div class="st-proto-row"><div class="st-p-dot" style="background:#6366f1"></div><span class="st-p-name">Gravedad</span><div class="st-p-track"><div class="st-p-fill" style="width:39%;background:#6366f1"></div></div><span class="st-p-count">15</span><span class="st-p-pct">60%</span></div>
-              <div class="st-inner-div"></div>
-              <div class="st-proto-row"><div class="st-p-dot" style="background:#10b981;opacity:.5"></div><span class="st-p-name" style="color:var(--st-muted)">Vida</span><div class="st-p-track"><div class="st-p-fill" style="width:13%;background:#10b981"></div></div><span class="st-p-count" style="color:var(--st-muted)">5</span><span class="st-p-pct">60%</span></div>
-              <div class="st-proto-row"><div class="st-p-dot" style="background:#8b5cf6;opacity:.5"></div><span class="st-p-name" style="color:var(--st-muted)">Espíritu</span><div class="st-p-track"><div class="st-p-fill" style="width:10%;background:#8b5cf6"></div></div><span class="st-p-count" style="color:var(--st-muted)">4</span><span class="st-p-pct">75%</span></div>
-              <div class="st-proto-row"><div class="st-p-dot" style="background:#f97316;opacity:.5"></div><span class="st-p-name" style="color:var(--st-muted)">Fuego</span><div class="st-p-track"><div class="st-p-fill" style="width:8%;background:#f97316"></div></div><span class="st-p-count" style="color:var(--st-muted)">3</span><span class="st-p-pct">33%</span></div>
-              <div class="st-proto-row"><div class="st-p-dot" style="background:#06b6d4;opacity:.5"></div><span class="st-p-name" style="color:var(--st-muted)">Velocidad</span><div class="st-p-track"><div class="st-p-fill" style="width:5%;background:#06b6d4"></div></div><span class="st-p-count" style="color:var(--st-muted)">2</span><span class="st-p-pct">50%</span></div>
-              <div class="st-proto-row"><div class="st-p-dot" style="background:#ec4899;opacity:.5"></div><span class="st-p-name" style="color:var(--st-muted)">Psique</span><div class="st-p-track"><div class="st-p-fill" style="width:3%;background:#ec4899"></div></div><span class="st-p-count" style="color:var(--st-muted)">1</span><span class="st-p-pct" style="color:var(--st-loss)">0%</span></div>
-            </div>
+            <div class="st-proto-rows" id="st-v-protos-ai"></div>
           </div>
 
         </div>
@@ -1287,7 +1231,7 @@
   </div>
 
   <div class="st-footer">
-    <span class="st-footer-txt">Datos almacenados localmente — 47 registros — Última actualización: hace 2 días</span>
+    <span class="st-footer-txt" id="st-v-footer">Sin registros — completa una partida para empezar</span>
   </div>
 
 </div>
@@ -1584,8 +1528,188 @@ window.homeModule = {
 </script>
 <script>
 // ── Stats overlay ────────────────────────────────────────────────────────
+
+var _PROTO_COLORS = {
+    'Fuego':'#f97316','Muerte':'#ef4444','Agua':'#3b82f6','Psique':'#ec4899',
+    'Velocidad':'#06b6d4','Espíritu':'#8b5cf6','Metal':'#94a3b8','Vida':'#10b981',
+    'Apatía':'#6b7280','Odio':'#b91c1c','Luz':'#facc15','Oscuridad':'#64748b',
+    'Plaga':'#a855f7','Gravedad':'#6366f1','Amor':'#f43f5e'
+};
+
+function _protoChip(name) {
+    var c = _PROTO_COLORS[name] || '#6a8a9a';
+    return '<span class="st-chip" style="color:'+c+';border-color:'+c+'50;background:'+c+'12">'+name+'</span>';
+}
+
+function _protoRow(name, count, maxCount, wr, muted, lossColor) {
+    var c = _PROTO_COLORS[name] || '#6a8a9a';
+    var barW = maxCount > 0 ? Math.round(count / maxCount * 100) : 0;
+    var pctColor = lossColor ? 'var(--st-loss)' : 'var(--st-cyan)';
+    var dot = '<div class="st-p-dot" style="background:'+c+(muted?';opacity:.5':'')+'"></div>';
+    var nm  = '<span class="st-p-name"'+(muted?' style="color:var(--st-muted)"':'')+'>'+name+'</span>';
+    var bar = '<div class="st-p-track"><div class="st-p-fill" style="width:'+barW+'%;background:'+c+'"></div></div>';
+    var cnt = '<span class="st-p-count"'+(muted?' style="color:var(--st-muted)"':'')+'>'+count+'</span>';
+    var pct = '<span class="st-p-pct" style="color:'+pctColor+'">'+wr+'%</span>';
+    return '<div class="st-proto-row">'+dot+nm+bar+cnt+pct+'</div>';
+}
+
+function renderStatsOverlay() {
+    var history = [];
+    try { history = JSON.parse(localStorage.getItem('compile_match_history') || '[]'); } catch(e) {}
+    var total  = history.length;
+    var wins   = history.filter(function(r){ return r.ganador==='player'; }).length;
+    var losses = total - wins;
+
+    function $t(id, v) { var el=document.getElementById(id); if(el) el.textContent=String(v); }
+    function $h(id, v) { var el=document.getElementById(id); if(el) el.innerHTML=v; }
+
+    // Rendimiento global
+    var winPct = total > 0 ? Math.round(wins/total*100) : 0;
+    $t('st-v-total', total);
+    $t('st-v-winpct', winPct+'%');
+    var bar = document.getElementById('st-v-bar'); if(bar) bar.style.width = winPct+'%';
+    $t('st-v-ww', '▲ '+wins+' victorias');
+    $t('st-v-wl', '▼ '+losses+' derrotas');
+
+    // Tendencia
+    var last10 = history.slice(-10);
+    var rest   = history.slice(0, Math.max(0, total-10));
+    var l10w   = last10.filter(function(r){ return r.ganador==='player'; }).length;
+    var l10pct = last10.length > 0 ? Math.round(l10w/last10.length*100) : null;
+    var rw     = rest.filter(function(r){ return r.ganador==='player'; }).length;
+    var rpct   = rest.length  > 0 ? Math.round(rw/rest.length*100) : null;
+    $h('st-v-dots', last10.map(function(r,i){
+        var w=r.ganador==='player', cur=i===last10.length-1;
+        return '<div class="st-dot '+(w?'v':'d')+(cur?' cur':'')+'">'+(w?'V':'D')+'</div>';
+    }).join(''));
+    $t('st-v-last10', l10pct!==null ? l10pct+'%' : '—');
+    $t('st-v-rest',   rpct!==null   ? rpct+'%'   : '—');
+    var tEl = document.getElementById('st-v-trend');
+    if(tEl) {
+        if(l10pct!==null && rpct!==null) {
+            var d=l10pct-rpct;
+            tEl.textContent = d>=0 ? '↑ +'+d+'%' : '↓ '+d+'%';
+            tEl.className   = 'st-trend '+(d>=0?'up':'down');
+        } else { tEl.textContent='—'; tEl.className='st-trend'; }
+    }
+
+    // Racha
+    var bestW=0,worstL=0,tw=0,tl=0;
+    history.forEach(function(r){ var w=r.ganador==='player'; tw=w?tw+1:0; tl=w?0:tl+1; if(tw>bestW)bestW=tw; if(tl>worstL)worstL=tl; });
+    if(total>0){
+        var li=history[total-1].ganador==='player', cs=0;
+        for(var i=total-1;i>=0;i--){ if((history[i].ganador==='player')===li) cs++; else break; }
+        $t('st-v-racha-actual',(li?'▲ ':'▼ ')+cs+(li?' victorias':' derrotas'));
+    } else $t('st-v-racha-actual','—');
+    $t('st-v-racha-mejor', total>0 ? bestW+' victorias' : '—');
+    $t('st-v-racha-peor',  total>0 ? worstL+' derrotas' : '—');
+
+    // Turnos
+    function avg(arr){ return arr.length>0?(arr.reduce(function(a,b){return a+b;},0)/arr.length).toFixed(1):'—'; }
+    $t('st-v-t-media', avg(history.map(function(r){return r.turnos;})));
+    $t('st-v-t-win',   avg(history.filter(function(r){return r.ganador==='player';}).map(function(r){return r.turnos;})));
+    $t('st-v-t-loss',  avg(history.filter(function(r){return r.ganador==='ai';}).map(function(r){return r.turnos;})));
+    function pctGt(n){ return total>0?Math.round(history.filter(function(r){return r.turnos>n;}).length/total*100)+'%':'—'; }
+    $t('st-v-gt20',pctGt(20)); $t('st-v-gt30',pctGt(30)); $t('st-v-gt40',pctGt(40));
+
+    // Combinaciones draft
+    var cmap={};
+    history.forEach(function(r){
+        var ps=(r.protocolos_jugador||[]).slice().sort(), k=ps.join('|');
+        if(!k) return;
+        if(!cmap[k]) cmap[k]={protos:r.protocolos_jugador,wins:0,total:0};
+        cmap[k].total++; if(r.ganador==='player') cmap[k].wins++;
+    });
+    var combos=Object.values(cmap).sort(function(a,b){return(b.wins/b.total)-(a.wins/a.total);});
+    function renderCombo(id, combo, label) {
+        var el=document.getElementById(id); if(!el) return;
+        if(!combo){ el.innerHTML='<div class="st-sec-label-sm" style="margin-bottom:4px;text-transform:none">'+label+'</div><div class="st-sk" style="color:var(--st-muted)">Sin datos</div>'; return; }
+        var wr=Math.round(combo.wins/combo.total*100);
+        el.innerHTML='<div class="st-sec-label-sm" style="margin-bottom:10px;text-transform:none">'+label+'</div>'+
+            '<div class="st-chips" style="margin-top:0;margin-bottom:10px">'+(combo.protos||[]).map(_protoChip).join('')+'</div>'+
+            '<div class="st-stat-row" style="padding:8px 0"><span class="st-sk">Partidas</span><span class="st-sv">'+combo.total+'</span></div>'+
+            '<div class="st-stat-row" style="padding:8px 0;border-bottom:none"><span class="st-sk">Win rate</span><span class="st-sv">'+wr+'%</span></div>';
+    }
+    renderCombo('st-v-combo-win',  combos.length>0 ? combos[0] : null, '↑ Más ganadora');
+    renderCombo('st-v-combo-loss', combos.length>1 ? combos[combos.length-1] : null, '↓ Más perdedora');
+
+    // Victorias por nivel
+    [1,2,3,4,5].forEach(function(lvl){
+        var g=history.filter(function(r){return r.nivel_ia===lvl;}), lw=g.filter(function(r){return r.ganador==='player';}).length;
+        var p=g.length>0?Math.round(lw/g.length*100):0;
+        var f=document.getElementById('st-v-lvl-fill-'+lvl), s=document.getElementById('st-v-lvl-stat-'+lvl);
+        if(f) f.style.width=p+'%';
+        if(s) s.textContent=g.length>0?p+'% — '+lw+'/'+g.length:'—';
+    });
+
+    // Presencia en resultado
+    function presenceRows(records, allWins, isLoss) {
+        if(!records.length) return '<div class="st-sk" style="color:var(--st-muted)">Sin datos</div>';
+        var counts={};
+        records.forEach(function(r){ (r.protocolos_jugador||[]).forEach(function(p){ counts[p]=(counts[p]||0)+1; }); });
+        var top=Object.entries(counts).sort(function(a,b){return b[1]-a[1];}).slice(0,3);
+        var maxC=top.length>0?top[0][1]:1;
+        return top.map(function(e){
+            var name=e[0],cnt=e[1],pct=allWins>0?Math.round(cnt/allWins*100):0;
+            return _protoRow(name,cnt,maxC,pct,false,isLoss);
+        }).join('');
+    }
+    var wRec=history.filter(function(r){return r.ganador==='player';}), lRec=history.filter(function(r){return r.ganador==='ai';});
+    $h('st-v-presence-win',  presenceRows(wRec, wRec.length, false));
+    $h('st-v-presence-loss', presenceRows(lRec, lRec.length, true));
+
+    // Última partida
+    if(total>0){
+        var la=history[total-1], lw2=la.ganador==='player';
+        $t('st-v-ult-fecha', la.fecha||'—');
+        var rEl=document.getElementById('st-v-ult-resultado');
+        if(rEl){ rEl.textContent=lw2?'VICTORIA':'DERROTA'; rEl.className='st-sv '+(lw2?'win':'loss'); }
+        $t('st-v-ult-nivel',  la.nombre_nivel||la.nivel_ia||'—');
+        $t('st-v-ult-turnos', la.turnos||'—');
+        $h('st-v-ult-protos-player', (la.protocolos_jugador||[]).map(_protoChip).join(''));
+        $h('st-v-ult-protos-ai',     (la.protocolos_ia||[]).map(_protoChip).join(''));
+    } else {
+        ['st-v-ult-fecha','st-v-ult-resultado','st-v-ult-nivel','st-v-ult-turnos'].forEach(function(id){$t(id,'—');});
+        $h('st-v-ult-protos-player',''); $h('st-v-ult-protos-ai','');
+    }
+
+    // Uso de protocolos (player + AI)
+    function renderProtoUsage(containerId, side) {
+        var el=document.getElementById(containerId); if(!el) return;
+        var counts={},winCounts={};
+        history.forEach(function(r){
+            var ps=side==='player'?(r.protocolos_jugador||[]):(r.protocolos_ia||[]);
+            var sw=side==='player'?r.ganador==='player':r.ganador==='ai';
+            ps.forEach(function(p){ counts[p]=(counts[p]||0)+1; if(sw) winCounts[p]=(winCounts[p]||0)+1; });
+        });
+        var sorted=Object.entries(counts).sort(function(a,b){return b[1]-a[1];});
+        if(!sorted.length){ el.innerHTML='<div class="st-sk" style="color:var(--st-muted)">Sin datos</div>'; return; }
+        var maxC=sorted[0][1], top5=sorted.slice(0,5), bot=sorted.slice(5);
+        var html=top5.map(function(e){
+            var n=e[0],c=e[1],wr=Math.round(((winCounts[n]||0)/c)*100);
+            return _protoRow(n,c,maxC,wr,false,false);
+        }).join('');
+        if(bot.length){
+            html+='<div class="st-inner-div"></div>';
+            html+=bot.slice(0,5).map(function(e){
+                var n=e[0],c=e[1],wr=Math.round(((winCounts[n]||0)/c)*100);
+                return _protoRow(n,c,maxC,wr,true,false);
+            }).join('');
+        }
+        el.innerHTML=html;
+    }
+    renderProtoUsage('st-v-protos-player','player');
+    renderProtoUsage('st-v-protos-ai','ai');
+
+    // Footer
+    $t('st-v-footer', total===0
+        ? 'Sin registros — completa una partida para empezar'
+        : 'Datos almacenados localmente — '+total+' registros — Última partida: '+history[total-1].fecha);
+}
+
 function openStatsOverlay() {
     window._glitchThen(function () {
+        renderStatsOverlay();
         document.getElementById('stats-overlay').classList.remove('hidden');
         _triggerStatsScramble();
     });
