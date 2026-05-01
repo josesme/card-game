@@ -1209,7 +1209,7 @@ function renderStack(line, target) {
 // Turn Cycle Functions
 function startTurn(who) {
     if (gameState.phase === 'game_over') return;
-    gameState.turnCount++;
+    if (who === 'player') gameState.turnCount++;
     gameState.turn = who;
     gameState.phase = 'start';
     gameState.ignoreEffectsLines = {};
