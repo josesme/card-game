@@ -4408,7 +4408,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       gameState[targetPlayer].trash.push(topCard);
       const targetVal = topCard.valor;
       logEvent(`Suerte 4: ${topCard.nombre} (Valor ${targetVal}) → elimina carta con Valor ${targetVal}`, { isAI: targetPlayer === 'ai' });
-      const hasMatch = LINES.some(l => ['player', 'ai'].some(p => gameState.field[l][p].some(c => c.card.valor === targetVal)));
+      const hasMatch = LINES.some(l => ['player', 'ai'].some(p => gameState.field[l][p].some(c => (c.faceDown ? 2 : c.card.valor) === targetVal)));
       if (hasMatch) {
         if (targetPlayer === 'player') {
           // filter exactValue + targetAll: permite seleccionar cubierta o descubierta
@@ -4416,7 +4416,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         } else {
           let found = null;
           for (const l of LINES) {
-            const idx = gameState.field[l].player.findIndex(c => c.card.valor === targetVal);
+            const idx = gameState.field[l].player.findIndex(c => (c.faceDown ? 2 : c.card.valor) === targetVal);
             if (idx >= 0) { found = { line: l, idx, cardObj: gameState.field[l].player[idx] }; break; }
           }
           if (found) {

@@ -1894,7 +1894,7 @@ function cardMatchesFilter(cardObj, ctx) {
     if (ctx.filter === 'faceUp') return !cardObj.faceDown;
     if (ctx.filter === 'maxValue') return !cardObj.faceDown && cardObj.card.valor <= (ctx.maxVal ?? 99);
     if (ctx.filter === 'minValue') return !cardObj.faceDown && cardObj.card.valor >= (ctx.minVal ?? 0);
-    if (ctx.filter === 'exactValue') return cardObj.card.valor === ctx.exactVal; // cubierta o descubierta
+    if (ctx.filter === 'exactValue') { const ev = cardObj.faceDown ? 2 : cardObj.card.valor; return ev === ctx.exactVal; }
     return true;
 }
 
