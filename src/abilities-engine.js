@@ -2978,7 +2978,8 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           const l = validLines.sort((a, b) => calculateScore(gameState, b, opponent) - calculateScore(gameState, a, opponent))[0];
           const stack = gameState.field[l][opponent];
           const cardObj = stack[stack.length - 1];
-          gameState.lastFlippedCard = { cardObj, line: l };
+          const wasFaceDown = cardObj.faceDown; // capturar ANTES de voltear
+          gameState.lastFlippedCard = { cardObj, line: l, target: opponent, wasFaceDown };
           flipAndTrigger(cardObj, l, opponent);
         }
         processAbilityEffect();
@@ -3005,7 +3006,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             triggerFlipFaceUp(cardObj, destLine, owner);
           }
           // Descubrir la carta que quedó expuesta en la línea origen.
-          if (typeof triggerUncovered === 'function') {
+          if (owner && typeof triggerUncovered === 'function') {
             triggerUncovered(srcLine, owner);
           }
         }
