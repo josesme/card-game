@@ -2918,11 +2918,14 @@ function discard(target, count) {
 function _triggerEffect(card, trigger, targetPlayer) {
     const ctx = gameState.effectContext;
     if (ctx && ctx.type !== 'animating') {
-        console.warn(
-            `⚠️ [EFFECT SYSTEM] _triggerEffect(${card.nombre}, ${trigger}, ${targetPlayer})` +
-            ` llamado con effectContext activo: type=${ctx.type}` +
-            ` — posible race condition`
-        );
+        // Diferir: no ejecutar mientras hay un efecto interactivo activo.
+        // El procesador de cola lo ejecutará cuando finishEffect libere el contexto.
+        gameState.effectQueue.push({
+            effect: { action: '__deferredTrigger', card, trigger },
+            targetPlayer,
+            cardName: card.nombre
+        });
+        return;
     }
     triggerCardEffect(card, trigger, targetPlayer);
 }

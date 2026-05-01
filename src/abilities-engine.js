@@ -1251,6 +1251,7 @@ function _routeAfterEffects() {
   }
 }
 window._routeAfterEffects = _routeAfterEffects;
+window.processAbilityEffect = processAbilityEffect;
 
 /**
  * Procesa el siguiente efecto en la cola
@@ -1343,6 +1344,13 @@ function resolveAbilityAction(actionDef, targetPlayer) {
 
   // Ejecutar acción principal
   switch (action) {
+    case '__deferredTrigger': {
+      // Trigger diferido: fue encolado mientras un effectContext estaba activo.
+      // Ahora el contexto está libre, ejecutar el trigger original.
+      triggerCardEffect(actionDef.card, actionDef.trigger, targetPlayer);
+      break;
+    }
+
     case 'draw': {
       if (actionDef.condition === 'opponentDiscardedLastTurn') {
         const opp = targetPlayer === 'player' ? 'ai' : 'player';
