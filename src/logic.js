@@ -1615,70 +1615,6 @@ function executeEffect(card, targetPlayer) {
     executeNewEffect(card, targetPlayer);
 }
 
-function processNextEffect() {
-    if (gameState.effectQueue.length === 0) {
-        updateUI();
-        return;
-    }
-
-    const effect = gameState.effectQueue.shift();
-    const { text, targetPlayer } = effect;
-    const opponent = targetPlayer === 'player' ? 'ai' : 'player';
-
-    // Check for "puedes" (optional)
-    if (text.includes("puedes") && targetPlayer === 'player') {
-        showConfirmDialog(
-            `¿Quieres usar este efecto? "${text}"`,
-            () => resolveSentence(text, targetPlayer, opponent),  // onYes
-            () => processNextEffect(),  // onNo
-            'SÍ',
-            'NO'
-        );
-        return;
-    }
-
-    // Default: resolve immediately (IA or mandatory)
-    resolveSentence(text, targetPlayer, opponent);
-}
-
-function resolveSentence(text, targetPlayer, opponent) {
-    let waitNeeded = false;
-
-    // Dispatch commands
-    if (text.includes("roba")) {
-        const count = parseInt(text.match(/roba (\d+)/)?.[1]) || (text.includes("tantas cartas como") ? 0 : 1);
-        // Note: Special "tantas cartas como" logic would go here if needed
-        draw(targetPlayer, count || 1);
-    }
-    
-    if (text.includes("descarta")) {
-        const count = parseInt(text.match(/descarta (\d+)/)?.[1]) || 1;
-        const target = text.includes("tu oponente") ? opponent : targetPlayer;
-        startEffect('discard', target, count);
-        waitNeeded = true;
-    } else if (text.includes("elimina")) {
-        const count = parseInt(text.match(/elimina (\d+)/)?.[1]) || 1;
-        const target = text.includes("tu oponente") ? opponent : targetPlayer;
-        startEffect('eliminate', target, count);
-        waitNeeded = true;
-    } else if (text.includes("voltea")) {
-        startEffect('flip', 'any', 1);
-        waitNeeded = true;
-    } else if (text.includes("mueve") || text.includes("desplaza")) {
-        startEffect('shift', targetPlayer, 1);
-        waitNeeded = true;
-    } else if (text.includes("devuelve") || text.includes("devolver")) {
-        startEffect('return', targetPlayer, 1);
-        waitNeeded = true;
-    } else if (text.includes("reorganiza") || text.includes("intercambia 2 de tus protocolos")) {
-        startEffect('rearrange', 'any', 1);
-        waitNeeded = true;
-    }
-
-    if (!waitNeeded) {
-        processNextEffect();
-    }
-}
 
 function startEffect(type, target, count, opts = {}) {
     // Determine if this should be interactive or automatic
@@ -2512,13 +2448,10 @@ function finishEffect() {
         return;
     }
 
-    // Route to ability engine if queue items are in new format
-    if (gameState.effectQueue.length > 0 && gameState.effectQueue[0].effect !== undefined) {
+    if (gameState.effectQueue.length > 0) {
         processAbilityEffect();
-    } else if (gameState.effectQueue.length === 0) {
-        if (typeof _routeAfterEffects === 'function') _routeAfterEffects();
     } else {
-        processNextEffect(); // old-format queue items
+        if (typeof _routeAfterEffects === 'function') _routeAfterEffects();
     }
 }
 
