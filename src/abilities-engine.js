@@ -4547,13 +4547,19 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       const topCard = gameState[targetPlayer].deck.pop();
       const cardObj = { card: topCard, faceDown: true };
       gameState.field[line][targetPlayer].push(cardObj);
+      // Bloquear processAbilityEffect durante la animación — sin esto, effectContext
+      // es null y cualquier trigger externo podría procesar la cola antes de que la
+      // carta se revele. _after en lugar de setTimeout para que se cancele en nueva partida.
+      gameState.effectContext = { type: 'animating' };
       updateUI();
-      setTimeout(() => {
+      _after(400, () => {
         cardObj.faceDown = false;
+        cardObj._animateFlip = true;
         logEvent(`Suerte 1: ${topCard.nombre} revelada (sin comandos centrales)`, { isAI: targetPlayer === 'ai' });
+        gameState.effectContext = null;
         updateUI();
         processAbilityEffect();
-      }, 400);
+      });
       break;
     }
 
