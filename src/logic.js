@@ -1147,7 +1147,7 @@ function renderStack(line, target) {
             if (mods.preventFlip || mods.preventShift || mods.preventEliminate) {
                 const badge = document.createElement('span');
                 badge.className = 'immune-badge';
-                badge.textContent = 'IMN';
+                badge.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 12" fill="currentColor"><path d="M5 0L0 2.2v4.2C0 9.5 2.5 12 5 12s5-2.5 5-5.6V2.2L5 0z"/></svg>`;
                 domCard.appendChild(badge);
             }
         }
