@@ -205,19 +205,15 @@ body.in-game::before {
 
 /* === IMMUNE BADGE === */
 .immune-badge {
-    position: absolute;
-    top: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 16px;
-    height: 19px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 16px;
     color: var(--ui-cyan, #00d4ff);
     filter: drop-shadow(0 0 4px var(--ui-cyan, #00d4ff));
     pointer-events: none;
-    z-index: 10;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-shrink: 0;
 }
 .immune-badge svg {
     width: 100%;

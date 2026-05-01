@@ -643,7 +643,6 @@ body::before {
     transition: box-shadow 0.2s, transform 0.15s;
     white-space: nowrap;
     color: #e0e0e0;
-    position: relative;
 }
 
 
