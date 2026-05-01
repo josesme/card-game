@@ -3139,10 +3139,14 @@ function finalizePlay(targetLine, isFaceDown) {
     checkDeleteOnCover(targetLine, targetSide);
     window._animPendingField = { line: targetLine, target: targetSide };
     if (typeof AudioManager !== 'undefined') AudioManager.playSound('card-play');
-    updateUI(); // Sincronizar DOM antes de disparar efectos — animación de entrada empieza aquí
+    // Bloquear cola durante animación de entrada (320ms) — sin esto effectContext
+    // es null y un trigger externo podría procesar efectos antes de que onPlay arranque.
+    gameState.effectContext = { type: 'animating' };
+    updateUI(); // Sincronizar DOM — animación de entrada empieza aquí
 
-    // Delay para que la animación de entrada sea visible antes de que aparezca el modal
-    _after(1000, () => {
+    // Delay UX: animación dura 320ms, 400ms da margen visual antes del modal de efecto
+    _after(400, () => {
+        gameState.effectContext = null;
         console.log(`✅ Card played: ${card.nombre} on ${targetLine} (${isFaceDown ? 'face-down' : 'face-up'})`);
         logEvent(`${isFaceDown ? 'Bocabajo' : card.nombre} en ${targetLine}`, { isAI: false });
 
@@ -3180,7 +3184,7 @@ function finalizePlay(targetLine, isFaceDown) {
 
         console.log(`⏱️ Ending player turn...`);
         endTurn('player');
-    }, 1000);
+    }, 400);
 }
 
 const btnStopDiscard = document.getElementById('btn-stop-discard');
@@ -3452,6 +3456,9 @@ function executeAIMove(move) {
     checkDeleteOnCover(move.line, landSide);
     window._animPendingField = { line: move.line, target: landSide };
     if (typeof AudioManager !== 'undefined') AudioManager.playSound('card-play');
+    // Bloquear cola durante animación de entrada — sin esto effectContext es null
+    // y un trigger externo podría procesar efectos antes de que onPlay arranque.
+    gameState.effectContext = { type: 'animating' };
     updateUI();
 
     const sideText = landSide !== 'ai' ? ' (lado rival)' : '';
@@ -3459,9 +3466,9 @@ function executeAIMove(move) {
         ? `${movedCard.nombre} en ${move.line}${sideText}`
         : `Bocabajo en ${move.line}${sideText}`;
     logEvent(logMsg, { isAI: true });
-    
-    // Delay para que la animación de entrada sea visible antes de ejecutar efectos
+
     _after(600, () => {
+        gameState.effectContext = null;
         if (move.faceUp) {
             gameState.currentEffectLine = move.line;
             executeEffect(movedCard, 'ai');
