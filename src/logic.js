@@ -283,7 +283,7 @@ function initLineListeners() {
                 gameState.field[line].player.push({ card, faceDown: ctx.faceDown });
                 clearSelectionHighlights();
                 updateUI();
-                if (!ctx.faceDown) triggerCardEffect(card, 'onPlay', 'player');
+                if (!ctx.faceDown) _triggerEffect(card, 'onPlay', 'player');
                 if (typeof processAbilityEffect === 'function') processAbilityEffect();
             } else if (gameState.effectContext && gameState.effectContext.type === 'playHandCard_valor1_lineSelect') {
                 // Claridad 2: jugador elige línea para jugar carta bocabajo
@@ -936,9 +936,9 @@ function updateUI() {
                 logEvent(`Juegas ${played.nombre} bocarriba en ${ctx.line} (Diversidad 0)`);
                 window._animPendingField = { line: ctx.line, target: 'player' };
                 updateUI();
-                if (typeof triggerCardEffect === 'function') {
+                if (typeof _triggerEffect === 'function') {
                     gameState.currentEffectLine = ctx.line;
-                    triggerCardEffect(played, 'onPlay', 'player');
+                    _triggerEffect(played, 'onPlay', 'player');
                 }
                 if (typeof processAbilityEffect === 'function') processAbilityEffect();
             } else if (gameState.effectContext) {
@@ -1615,70 +1615,6 @@ function executeEffect(card, targetPlayer) {
     executeNewEffect(card, targetPlayer);
 }
 
-function processNextEffect() {
-    if (gameState.effectQueue.length === 0) {
-        updateUI();
-        return;
-    }
-
-    const effect = gameState.effectQueue.shift();
-    const { text, targetPlayer } = effect;
-    const opponent = targetPlayer === 'player' ? 'ai' : 'player';
-
-    // Check for "puedes" (optional)
-    if (text.includes("puedes") && targetPlayer === 'player') {
-        showConfirmDialog(
-            `¿Quieres usar este efecto? "${text}"`,
-            () => resolveSentence(text, targetPlayer, opponent),  // onYes
-            () => processNextEffect(),  // onNo
-            'SÍ',
-            'NO'
-        );
-        return;
-    }
-
-    // Default: resolve immediately (IA or mandatory)
-    resolveSentence(text, targetPlayer, opponent);
-}
-
-function resolveSentence(text, targetPlayer, opponent) {
-    let waitNeeded = false;
-
-    // Dispatch commands
-    if (text.includes("roba")) {
-        const count = parseInt(text.match(/roba (\d+)/)?.[1]) || (text.includes("tantas cartas como") ? 0 : 1);
-        // Note: Special "tantas cartas como" logic would go here if needed
-        draw(targetPlayer, count || 1);
-    }
-    
-    if (text.includes("descarta")) {
-        const count = parseInt(text.match(/descarta (\d+)/)?.[1]) || 1;
-        const target = text.includes("tu oponente") ? opponent : targetPlayer;
-        startEffect('discard', target, count);
-        waitNeeded = true;
-    } else if (text.includes("elimina")) {
-        const count = parseInt(text.match(/elimina (\d+)/)?.[1]) || 1;
-        const target = text.includes("tu oponente") ? opponent : targetPlayer;
-        startEffect('eliminate', target, count);
-        waitNeeded = true;
-    } else if (text.includes("voltea")) {
-        startEffect('flip', 'any', 1);
-        waitNeeded = true;
-    } else if (text.includes("mueve") || text.includes("desplaza")) {
-        startEffect('shift', targetPlayer, 1);
-        waitNeeded = true;
-    } else if (text.includes("devuelve") || text.includes("devolver")) {
-        startEffect('return', targetPlayer, 1);
-        waitNeeded = true;
-    } else if (text.includes("reorganiza") || text.includes("intercambia 2 de tus protocolos")) {
-        startEffect('rearrange', 'any', 1);
-        waitNeeded = true;
-    }
-
-    if (!waitNeeded) {
-        processNextEffect();
-    }
-}
 
 function startEffect(type, target, count, opts = {}) {
     // Determine if this should be interactive or automatic
@@ -2354,7 +2290,7 @@ function handleFieldCardClick(line, target, cardIdx) {
         updateUI();
         const prevLine = gameState.currentEffectLine;
         gameState.currentEffectLine = copyLine;
-        triggerCardEffect(cardObj.card, 'onPlay', 'player');
+        _triggerEffect(cardObj.card, 'onPlay', 'player');
         gameState.currentEffectLine = prevLine;
         if (typeof processAbilityEffect === 'function') processAbilityEffect();
         return;
@@ -2512,13 +2448,10 @@ function finishEffect() {
         return;
     }
 
-    // Route to ability engine if queue items are in new format
-    if (gameState.effectQueue.length > 0 && gameState.effectQueue[0].effect !== undefined) {
+    if (gameState.effectQueue.length > 0) {
         processAbilityEffect();
-    } else if (gameState.effectQueue.length === 0) {
-        if (typeof _routeAfterEffects === 'function') _routeAfterEffects();
     } else {
-        processNextEffect(); // old-format queue items
+        if (typeof _routeAfterEffects === 'function') _routeAfterEffects();
     }
 }
 
@@ -2910,16 +2843,36 @@ function discard(target, count) {
     // El llamador es responsable de continuar la cadena (processAbilityEffect o finishEffect)
 }
 
+/**
+ * Único punto de entrada para disparar efectos de carta desde logic.js.
+ * Detecta llamadas en momento indebido (effectContext activo != animating)
+ * que son síntoma de race condition. En Fase 3 esto encolará en lugar de ejecutar.
+ */
+function _triggerEffect(card, trigger, targetPlayer) {
+    const ctx = gameState.effectContext;
+    if (ctx && ctx.type !== 'animating') {
+        // Diferir: no ejecutar mientras hay un efecto interactivo activo.
+        // El procesador de cola lo ejecutará cuando finishEffect libere el contexto.
+        gameState.effectQueue.push({
+            effect: { action: '__deferredTrigger', card, trigger },
+            targetPlayer,
+            cardName: card.nombre
+        });
+        return;
+    }
+    triggerCardEffect(card, trigger, targetPlayer);
+}
+
 function triggerUncovered(line, owner) {
     const stack = gameState.field[line][owner];
     if (stack.length === 0) return;
     const top = stack[stack.length - 1];
-    if (!top.faceDown && typeof triggerCardEffect === 'function') {
+    if (!top.faceDown) {
         const cardId = top.card.id;
         if (gameState.uncoveredThisTurn.has(cardId)) return;
         gameState.uncoveredThisTurn.add(cardId);
         gameState.currentEffectLine = line;
-        triggerCardEffect(top.card, 'onPlay', owner);
+        _triggerEffect(top.card, 'onPlay', owner);
     }
 }
 
@@ -2932,12 +2885,11 @@ function triggerFlipFaceUp(cardObj, line, owner) {
     const stack = gameState.field[line][owner];
     if (stack.length === 0) return;
     if (stack[stack.length - 1] !== cardObj) return; // solo top (descubierta)
-    if (typeof triggerCardEffect !== 'function') return;
     const cardId = cardObj.card.id;
     if (gameState.uncoveredThisTurn.has(cardId)) return;
     gameState.uncoveredThisTurn.add(cardId);
     gameState.currentEffectLine = line;
-    triggerCardEffect(cardObj.card, 'onPlay', owner);
+    _triggerEffect(cardObj.card, 'onPlay', owner);
 }
 
 function flipCardInField(cardId) {
@@ -3146,7 +3098,7 @@ function finalizePlay(targetLine, isFaceDown) {
         gameState.pendingLanding = { line: targetLine, cardObj: playedCard, owner: targetSide, isFaceDown };
         gameState.currentEffectLine = targetLine;
         gameState.coveringCard = card; // carta que va a cubrir
-        triggerCardEffect(topCardBeforePush.card, 'onCover', targetSide);
+        _triggerEffect(topCardBeforePush.card, 'onCover', targetSide);
         // onCover no-interactivo: landPendingCard ya se ejecutó sincrónicamente y fijó pendingTurnEnd.
         // onCover interactivo: pendingLanding sigue activo; finishEffect → landPendingCard lo resolverá.
         // Solo limpiar pendingTurnEnd si pendingLanding AÚN está activo (landPendingCard no corrió).
@@ -3160,7 +3112,7 @@ function finalizePlay(targetLine, isFaceDown) {
     if (topCardBeforePush) {
         gameState.currentEffectLine = targetLine;
         gameState.coveringCard = card; // carta que va a cubrir
-        triggerCardEffect(topCardBeforePush.card, 'onCover', targetSide);
+        _triggerEffect(topCardBeforePush.card, 'onCover', targetSide);
         gameState.coveringCard = null;
     }
     insertCardIntoStack(gameState.field[targetLine][targetSide], playedCard);
@@ -3472,7 +3424,7 @@ function executeAIMove(move) {
         if (!topCard.faceDown) {
             gameState.currentEffectLine = move.line;
             gameState.coveringCard = movedCard; // carta que va a cubrir
-            triggerCardEffect(topCard.card, 'onCover', landSide);
+            _triggerEffect(topCard.card, 'onCover', landSide);
             gameState.coveringCard = null;
         }
     }
