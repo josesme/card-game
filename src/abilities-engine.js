@@ -1475,10 +1475,10 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           break;
         }
         _confirmDialog('optionalDiscard', () => {
-            if (ifThenAction) {
-              gameState.effectQueue.unshift({ effect: { action: ifThenAction, target: ifThenTarget, count: ifThenCount }, targetPlayer });
-            }
             startEffect('discard', 'player', count || 1);
+            if (gameState.effectContext && ifThenAction) {
+              gameState.effectContext._ifThenEffect = { effect: { action: ifThenAction, target: ifThenTarget, count: ifThenCount }, targetPlayer };
+            }
           },
           () => processAbilityEffect()
         );
