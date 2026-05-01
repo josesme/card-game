@@ -3679,8 +3679,22 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             const advanB = (calculateScore(gameState, best, 'ai') + bestCard.valor) - calculateScore(gameState, best, 'player');
             return advanL > advanB ? l : best;
           }, LINES[0]);
-          gameState.field[bestLine].ai.push({ card: bestCard, faceDown: false });
+          // Trigger onCover para la carta que quedará cubierta (igual que executeAIMove)
+          const aiStack = gameState.field[bestLine].ai;
+          if (aiStack.length > 0 && !aiStack[aiStack.length - 1].faceDown) {
+            gameState.currentEffectLine = bestLine;
+            gameState.coveringCard = bestCard;
+            triggerCardEffect(aiStack[aiStack.length - 1].card, 'onCover', 'ai');
+            gameState.coveringCard = null;
+          }
+          insertCardIntoStack(gameState.field[bestLine].ai, { card: bestCard, faceDown: false });
+          if (typeof checkDeleteOnCover === 'function') checkDeleteOnCover(bestLine, 'ai');
+          gameState.currentEffectLine = bestLine;
+          window._animPendingField = { line: bestLine, target: 'ai' };
           updateUI();
+          logEvent(`${bestCard.nombre} en ${bestLine} (Claridad 2)`, { isAI: true });
+          executeEffect(bestCard, 'ai');
+          if (typeof onOpponentPlayInLineEffects === 'function') onOpponentPlayInLineEffects('ai', bestLine);
           processAbilityEffect();
         }
       };
@@ -4267,11 +4281,24 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         const idx = hand.indexOf(c);
         if (idx !== -1) {
           hand.splice(idx, 1);
-          gameState.field[line][targetPlayer].push({ card: c, faceDown: false });
+          const stack = gameState.field[line][targetPlayer];
+          if (stack.length > 0 && !stack[stack.length - 1].faceDown) {
+            gameState.coveringCard = c;
+            triggerCardEffect(stack[stack.length - 1].card, 'onCover', targetPlayer);
+            gameState.coveringCard = null;
+          }
+          insertCardIntoStack(stack, { card: c, faceDown: false });
+          if (typeof checkDeleteOnCover === 'function') checkDeleteOnCover(line, targetPlayer);
         }
       });
+      gameState.currentEffectLine = line;
+      window._animPendingField = { line, target: targetPlayer };
       logEvent(`${triggerCardName}: ${unidadCards.length} carta(s) Unidad jugada(s) bocarriba en ${line}`, { isAI: targetPlayer === 'ai' });
       updateUI();
+      // Encolar onPlay de cada carta en orden (solo la top carta es descubierta, las demás quedan cubiertas)
+      const topCard = gameState.field[line][targetPlayer].at(-1);
+      if (topCard && !topCard.faceDown) triggerUncovered(line, targetPlayer);
+      if (typeof onOpponentPlayInLineEffects === 'function') onOpponentPlayInLineEffects(targetPlayer, line);
       processAbilityEffect();
       break;
     }
@@ -4536,10 +4563,20 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             const isOwn = gameState.ai.protocols && gameState.ai.protocols.includes(pickedCard.protocol);
             const bestLine = LINES.reduce((best, l) =>
               calculateScore(gameState, l, 'ai') >= calculateScore(gameState, best, 'ai') ? l : best, LINES[0]);
-            gameState.field[bestLine].ai.push({ card: pickedCard, faceDown: !isOwn });
+            const suerte0Stack = gameState.field[bestLine].ai;
+            if (suerte0Stack.length > 0 && !suerte0Stack[suerte0Stack.length - 1].faceDown) {
+              gameState.currentEffectLine = bestLine;
+              gameState.coveringCard = pickedCard;
+              triggerCardEffect(suerte0Stack[suerte0Stack.length - 1].card, 'onCover', 'ai');
+              gameState.coveringCard = null;
+            }
+            insertCardIntoStack(gameState.field[bestLine].ai, { card: pickedCard, faceDown: !isOwn });
+            if (typeof checkDeleteOnCover === 'function') checkDeleteOnCover(bestLine, 'ai');
             gameState.currentEffectLine = bestLine;
+            window._animPendingField = { line: bestLine, target: 'ai' };
             logEvent(`IA — ${triggerCardName}: acierta con valor ${aiDeclaredVal}! Juega ${isOwn ? pickedCard.nombre : '1 carta'}`, { isAI: true });
             if (isOwn) triggerCardEffect(pickedCard, 'onPlay', 'ai');
+            if (typeof onOpponentPlayInLineEffects === 'function') onOpponentPlayInLineEffects('ai', bestLine);
             updateUI();
           } else {
             logEvent(`IA — ${triggerCardName}: no coincide (declaró ${aiDeclaredVal})`, { isAI: true });

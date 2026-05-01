@@ -46,3 +46,6 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 - Pendiente de validar posible error al compilar en misma línea donde rival juega Guerra 2
 
 - Llegado un punto, dejan de pintarse las anotaciones de jugada en panel de mano
+
+- **Luz 3 — no hace nada al jugarse:** Jugada en fila derecha, el efecto no se ejecutó. Pendiente: (1) reproducir el caso, (2) leer el texto literal en `GLOBAL_CARDS`, (3) buscar en CODEX y rules questions si hay aclaraciones sobre su comando (el texto genera dudas de interpretación). Investigar antes de tocar código.
+
