@@ -1439,12 +1439,13 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       console.log(`🔥 discardThen: targetPlayer=${targetPlayer}, resolvedTarget=${resolvedTarget}, handSize=${handSize}, effectContext=${gameState.effectContext ? gameState.effectContext.type : 'null'}`);
       if (resolvedTarget === 'player' || resolvedTarget === 'any') {
         if (handSize > 0) {
-          if (ifThenAction) {
-            gameState.effectQueue.unshift({ effect: { action: ifThenAction, target: ifThenTarget, count: ifThenCount }, targetPlayer });
-          }
-          console.log(`🔥 discardThen: llamando startEffect('discard','player',${count || 1})`);
           startEffect('discard', 'player', count || 1);
-          console.log(`🔥 discardThen: tras startEffect, effectContext=${gameState.effectContext ? gameState.effectContext.type : 'null'}`);
+          // Guardar el efecto condicional en el contexto del descarte, no en la cola.
+          // finishEffect lo encola solo cuando el descarte se confirma (evita que
+          // 'return' se encole y dispare si el descarte no llega a completarse).
+          if (gameState.effectContext && ifThenAction) {
+            gameState.effectContext._ifThenEffect = { effect: { action: ifThenAction, target: ifThenTarget, count: ifThenCount }, targetPlayer };
+          }
         } else {
           console.log(`⏭️ Descarte omitido — mano vacía para discardThen`);
           processAbilityEffect();

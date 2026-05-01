@@ -2448,7 +2448,13 @@ function hideRearrangeDoneButton() {
 
 function finishEffect() {
     hideRearrangeDoneButton();
+    // Capturar efecto condicional antes de limpiar el contexto (patrón discardThen).
+    // Solo se encola aquí, después de que el descarte se confirmó.
+    const pendingIfThen = gameState.effectContext && gameState.effectContext._ifThenEffect;
     gameState.effectContext = null;
+    if (pendingIfThen) {
+        gameState.effectQueue.unshift(pendingIfThen);
+    }
     clearEffectHighlights();
     updateUI();
 
