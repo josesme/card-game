@@ -1823,8 +1823,8 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       const val = actionDef.value;
       if (targetPlayer === 'player') {
         const linesWithCards = LINES.filter(l =>
-          gameState.field[l].player.some(c => c.card.valor === val) ||
-          gameState.field[l].ai.some(c => c.card.valor === val)
+          gameState.field[l].player.some(c => (c.faceDown ? 2 : c.card.valor) === val) ||
+          gameState.field[l].ai.some(c => (c.faceDown ? 2 : c.card.valor) === val)
         );
 
         if (linesWithCards.length === 0) {
@@ -1839,15 +1839,16 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         // AI: pick the line with the most matching cards (both players)
         let bestLine = null, bestCount = 0;
         LINES.forEach(l => {
-          const count = gameState.field[l].player.filter(c => c.card.valor === val).length +
-                        gameState.field[l].ai.filter(c => c.card.valor === val).length;
+          const count = gameState.field[l].player.filter(c => (c.faceDown ? 2 : c.card.valor) === val).length +
+                        gameState.field[l].ai.filter(c => (c.faceDown ? 2 : c.card.valor) === val).length;
           if (count > bestCount) { bestCount = count; bestLine = l; }
         });
         if (bestLine) {
           ['player', 'ai'].forEach(p => {
             const remaining = [];
             gameState.field[bestLine][p].forEach(c => {
-              if (c.card.valor === val) {
+              const effectiveValue = c.faceDown ? 2 : c.card.valor;
+              if (effectiveValue === val) {
                 gameState[p].hand.push(c.card);
               } else {
                 remaining.push(c);
