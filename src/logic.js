@@ -1141,6 +1141,17 @@ function renderStack(line, target) {
 
         const domCard = cEl.firstElementChild;
 
+        // Immune badge: visible on face-up cards with any preventX modifier
+        if (!cardObj.faceDown && typeof getPersistentModifiers === 'function') {
+            const mods = getPersistentModifiers(cardObj);
+            if (mods.preventFlip || mods.preventShift || mods.preventEliminate) {
+                const badge = document.createElement('span');
+                badge.className = 'immune-badge';
+                badge.textContent = 'IMN';
+                domCard.appendChild(badge);
+            }
+        }
+
         // Preview: click abre, mouseleave cierra. Solo cartas visibles (no bocabajo rival).
         const canPreview = !cardObj.faceDown || target === 'player';
         if (canPreview) {
@@ -1959,6 +1970,22 @@ function _fieldTooltipOnOver(e) {
         if (!label) return;
         _fieldTooltipShow(tip, e, label, wrapper.dataset.line + wrapper.dataset.target + wrapper.dataset.idx);
         return;
+    }
+
+    // Non-target wrapper during field-targeting: show immune hint if applicable
+    const greyWrapper = e.target.closest('.card-field-wrapper');
+    if (greyWrapper && gameState.effectContext && document.getElementById('game-container')?.classList.contains('field-targeting')) {
+        const line = greyWrapper.dataset.line;
+        const tgt  = greyWrapper.dataset.target;
+        const idx  = parseInt(greyWrapper.dataset.idx);
+        const cardObj = gameState.field[line]?.[tgt]?.[idx];
+        if (cardObj && !cardObj.faceDown && typeof getPersistentModifiers === 'function') {
+            const mods = getPersistentModifiers(cardObj);
+            if (mods.preventFlip || mods.preventShift || mods.preventEliminate) {
+                _fieldTooltipShow(tip, e, 'Inmune a efectos externos', line + tgt + idx);
+                return;
+            }
+        }
     }
 
     const col = e.target.closest('.battle-column.rearrange-active');
