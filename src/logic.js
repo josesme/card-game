@@ -3739,13 +3739,14 @@ function _updateUnifiedLog() {
 
     const currentTurn = log[log.length - 1].turn;
 
-    // Agrupar entradas por turno
+    // Agrupar entradas por turno + lado (isAI) — ambos pueden coincidir en el mismo turnCount
     const groups = [];
-    let lastTurn = null;
+    let lastTurn = null, lastIsAI = null;
     for (const e of log) {
-        if (e.turn !== lastTurn) {
+        if (e.turn !== lastTurn || e.isAI !== lastIsAI) {
             groups.push({ turn: e.turn, isAI: e.isAI, entries: [] });
             lastTurn = e.turn;
+            lastIsAI = e.isAI;
         }
         groups[groups.length - 1].entries.push(e);
     }
@@ -3753,9 +3754,9 @@ function _updateUnifiedLog() {
     entriesEl.innerHTML = groups.map(g => {
         const color    = g.isAI ? 'rgba(155,89,182,0.9)' : 'rgba(255,217,61,0.9)';
         const dimColor = g.isAI ? 'rgba(155,89,182,0.45)' : 'rgba(255,217,61,0.45)';
-        const who      = g.isAI ? 'IA' : 'JUGADOR';
         const isCurrent = g.turn === currentTurn;
-        const header = `<div class="hs-log-turn-header" data-turn="${g.turn}" style="color:${dimColor};">■ T${g.turn} ${who}</div>`;
+        const headerLabel = g.isAI ? 'IA' : `TURNO ${g.turn}`;
+        const header = `<div class="hs-log-turn-header" data-turn="${g.turn}" style="color:${dimColor};">■ ${headerLabel}</div>`;
         const entries = g.entries.map((e, i) => {
             const isLatest = isCurrent && i === g.entries.length - 1;
             return `<div class="hs-log-entry${isLatest ? ' hs-log-latest' : ''}" data-turn="${g.turn}" style="border-left-color:${color};color:${color};">
