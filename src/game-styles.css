@@ -206,11 +206,11 @@ body.in-game::before {
 /* === IMMUNE BADGE === */
 .immune-badge {
     position: absolute;
-    right: 6px;
-    top: 50%;
+    right: -17px;
+    top: 7%;
     transform: translateY(-50%);
-    width: 13px;
-    height: 15px;
+    width: 91px;
+    height: 27px;
     color: var(--ui-cyan, #00d4ff);
     filter: drop-shadow(0 0 4px var(--ui-cyan, #00d4ff));
     pointer-events: none;
