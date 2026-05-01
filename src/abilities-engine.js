@@ -4115,7 +4115,14 @@ function resolveAbilityAction(actionDef, targetPlayer) {
 
     case 'mayFlipOrDrawIfUnityOnField': {
       // Unidad 0: si hay otra carta Unidad bocarriba en el campo, voltea 1 o roba 1
-      const hasOtherUnity = LINES.some(l =>
+      // pendingLanding: la carta que cubre aún no está en el campo (commit queue),
+      // pero debe contarse si es Unidad bocarriba.
+      const _pendingIsUnity = gameState.pendingLanding &&
+        gameState.pendingLanding.cardObj &&
+        !gameState.pendingLanding.cardObj.faceDown &&
+        gameState.pendingLanding.cardObj.card.nombre !== triggerCardName &&
+        gameState.pendingLanding.cardObj.card.nombre.startsWith('Unidad');
+      const hasOtherUnity = _pendingIsUnity || LINES.some(l =>
         ['player', 'ai'].some(p =>
           gameState.field[l][p].some(c => !c.faceDown && c.card.nombre !== triggerCardName && c.card.nombre.startsWith('Unidad'))
         )
@@ -4152,7 +4159,12 @@ function resolveAbilityAction(actionDef, targetPlayer) {
 
     case 'mayFlipIfUnityOnField': {
       // Unidad 3: si hay otra Unidad bocarriba en el campo, voltea 1 carta bocarriba → bocabajo
-      const hasOtherUnity = LINES.some(l =>
+      const _pendingIsUnity3 = gameState.pendingLanding &&
+        gameState.pendingLanding.cardObj &&
+        !gameState.pendingLanding.cardObj.faceDown &&
+        gameState.pendingLanding.cardObj.card.nombre !== triggerCardName &&
+        gameState.pendingLanding.cardObj.card.nombre.startsWith('Unidad');
+      const hasOtherUnity = _pendingIsUnity3 || LINES.some(l =>
         ['player', 'ai'].some(p =>
           gameState.field[l][p].some(c => !c.faceDown && c.card.nombre !== triggerCardName && c.card.nombre.startsWith('Unidad'))
         )
