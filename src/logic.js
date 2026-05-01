@@ -3755,8 +3755,7 @@ function _updateUnifiedLog() {
         const color    = g.isAI ? 'rgba(155,89,182,0.9)' : 'rgba(255,217,61,0.9)';
         const dimColor = g.isAI ? 'rgba(155,89,182,0.45)' : 'rgba(255,217,61,0.45)';
         const isCurrent = g.turn === currentTurn;
-        const headerLabel = g.isAI ? 'IA' : `TURNO ${g.turn}`;
-        const header = `<div class="hs-log-turn-header" data-turn="${g.turn}" style="color:${dimColor};">■ ${headerLabel}</div>`;
+        const header = g.isAI ? '' : `<div class="hs-log-turn-header" data-turn="${g.turn}" style="color:${dimColor};">■ TURNO ${g.turn}</div>`;
         const entries = g.entries.map((e, i) => {
             const isLatest = isCurrent && i === g.entries.length - 1;
             return `<div class="hs-log-entry${isLatest ? ' hs-log-latest' : ''}" data-turn="${g.turn}" style="border-left-color:${color};color:${color};">
