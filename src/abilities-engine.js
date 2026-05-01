@@ -2987,7 +2987,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
 
     case '_shiftLastFlippedToLine': {
       if (gameState.lastFlippedCard) {
-        const { cardObj, line: srcLine } = gameState.lastFlippedCard;
+        const { cardObj, line: srcLine, target: owner, wasFaceDown } = gameState.lastFlippedCard;
         const destLine = actionDef.destLine || gameState.currentEffectLine;
         if (srcLine && destLine && srcLine !== destLine) {
           const srcStack = gameState.field[srcLine];
@@ -2998,6 +2998,15 @@ function resolveAbilityAction(actionDef, targetPlayer) {
               gameState.field[destLine][p].push(cardObj);
             }
           });
+          // Disparar comando de la carta volteada en su nueva línea.
+          // uncoveredThisTurn bloquea el segundo disparo del timer en logic.js.
+          if (wasFaceDown && !cardObj.faceDown && typeof triggerFlipFaceUp === 'function') {
+            triggerFlipFaceUp(cardObj, destLine, owner);
+          }
+          // Descubrir la carta que quedó expuesta en la línea origen.
+          if (typeof triggerUncovered === 'function') {
+            triggerUncovered(srcLine, owner);
+          }
         }
       }
       processAbilityEffect();

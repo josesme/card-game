@@ -2180,20 +2180,20 @@ function handleFieldCardClick(line, target, cardIdx) {
         if (typeof AudioManager !== 'undefined') AudioManager.playSound('card-flip');
         const wasFaceDown = cardObj.faceDown;
         cardObj.faceDown = !cardObj.faceDown;
-        gameState.lastFlippedCard = { cardObj, line, target };
+        gameState.lastFlippedCard = { cardObj, line, target, wasFaceDown };
         cardObj._animateFlip = true;
         updateUI(); // inicia animación — finishEffect debe esperar
         const _isTop = cardIdx === gameState.field[line][target].length - 1;
         _after(700, () => {
+            // Encolar trigger ANTES de finishEffect: garantiza que el efecto de la carta
+            // quede en la cola antes de que _shiftLastFlippedToLine (u otro item) la procese.
+            // uncoveredThisTurn evita doble disparo si _shiftLastFlippedToLine ya lo encoló.
+            if (wasFaceDown && _isTop) triggerFlipFaceUp(cardObj, line, target);
             ctx.selected.push(cardObj);
             if (ctx.selected.length >= ctx.count) {
                 finishEffect();
             } else {
                 updateUI();
-            }
-            // Disparar onPlay de la carta volteada DESPUÉS de cerrar el efecto actual
-            if (wasFaceDown && _isTop) {
-                triggerFlipFaceUp(cardObj, line, target);
             }
         });
         return;
