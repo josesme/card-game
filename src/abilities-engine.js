@@ -2579,7 +2579,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           calculateScore(gameState, b, resolvedTarget) - calculateScore(gameState, a, resolvedTarget)
         )[0];
         const covered = gameState.field[srcLine][resolvedTarget].slice(0, -1);
-        const coveredIdx = covered.reduce((best, c, i) => c.card.valor > covered[best].card.valor ? i : best, 0);
+        const coveredIdx = covered.reduce((best, c, i) => (c.faceDown ? 2 : c.card.valor) > (covered[best].faceDown ? 2 : covered[best].card.valor) ? i : best, 0);
         const [cardObj] = gameState.field[srcLine][resolvedTarget].splice(coveredIdx, 1);
         const destCandidates = LINES.filter(x => x !== srcLine);
         const dest = destCandidates.sort((a, b) =>
@@ -2609,7 +2609,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         // si no tiene, voltea la cubierta rival de mayor valor (boca arriba→abajo = pierde puntos)
         if (hasCoveredOwn) {
           const covered = gameState.field[line].ai.slice(0, -1);
-          const bestIdx = covered.reduce((b, c, i) => c.card.valor > covered[b].card.valor ? i : b, 0);
+          const bestIdx = covered.reduce((b, c, i) => (c.faceDown ? 2 : c.card.valor) > (covered[b].faceDown ? 2 : covered[b].card.valor) ? i : b, 0);
           flipAndTrigger(gameState.field[line].ai[bestIdx], line, 'ai');
         } else if (hasCoveredOpp) {
           const coveredOpp = gameState.field[line].player.slice(0, -1);
@@ -3908,9 +3908,9 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         LINES.forEach(l => {
           const st = gameState.field[l].ai;
           for (let i = 0; i < st.length - 1; i++) {
-            if (!bestSrc || st[i].card.valor < bestSrc.card.valor) {
-              bestSrc = st[i]; bestLine = l; bestIdx = i;
-            }
+            const ev = st[i].faceDown ? 2 : st[i].card.valor;
+            const bestEv = bestSrc ? (bestSrc.faceDown ? 2 : bestSrc.card.valor) : Infinity;
+            if (!bestSrc || ev < bestEv) { bestSrc = st[i]; bestLine = l; bestIdx = i; }
           }
         });
         if (bestSrc) {
