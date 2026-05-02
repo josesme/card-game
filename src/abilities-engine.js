@@ -1616,7 +1616,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           if (cardIdx !== undefined && cardIdx !== -1) {
             const dest = aiPickDestLine([line], resolvedTarget) || LINES.filter(l => l !== line)[0];
             gameState.field[line][resolvedTarget].splice(cardIdx, 1);
-            gameState.field[dest][resolvedTarget].push(cardObj);
+            insertCardIntoStack(gameState.field[dest][resolvedTarget], cardObj);
           }
         }
         processAbilityEffect();
@@ -1664,7 +1664,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           const idx = stack.findIndex(c => c.card.nombre === triggerCardName);
           if (idx !== -1) {
             const [cardObj] = stack.splice(idx, 1);
-            gameState.field[dest][targetPlayer].push(cardObj);
+            insertCardIntoStack(gameState.field[dest][targetPlayer], cardObj);
           }
         }
         processAbilityEffect();
@@ -1702,7 +1702,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           const currentIdx = gameState.field[flippedLine][targetPlayer].indexOf(flippedCard);
           if (currentIdx !== -1) {
             gameState.field[flippedLine][targetPlayer].splice(currentIdx, 1);
-            gameState.field[dest][targetPlayer].push(flippedCard);
+            insertCardIntoStack(gameState.field[dest][targetPlayer], flippedCard);
             updateUI();
           }
         }
@@ -1923,7 +1923,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           if (validLines.length > 0) {
             const line = aiPickDestLine([], 'ai') || validLines[0];
             const movedCard = gameState.ai.hand.splice(cardIdx, 1)[0];
-            gameState.field[line].ai.push({ card: movedCard, faceDown: false });
+            insertCardIntoStack(gameState.field[line].ai, { card: movedCard, faceDown: false });
             gameState.currentEffectLine = line;
             if (typeof executeNewEffect === 'function') executeNewEffect(movedCard, 'ai');
           }
@@ -1939,7 +1939,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       const faceUp = actionDef.faceUp !== false;
       if (line && gameState[targetPlayer].deck.length > 0) {
         const topCard = gameState[targetPlayer].deck.pop();
-        gameState.field[line][targetPlayer].push({ card: topCard, faceDown: !faceUp });
+        insertCardIntoStack(gameState.field[line][targetPlayer], { card: topCard, faceDown: !faceUp });
         if (faceUp && typeof executeNewEffect === 'function') {
           executeNewEffect(topCard, targetPlayer);
         } else {
@@ -1958,7 +1958,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       otherLines.forEach(l => {
         if (gameState[targetPlayer].deck.length > 0) {
           const topCard = gameState[targetPlayer].deck.pop();
-          gameState.field[l][targetPlayer].push({ card: topCard, faceDown: true });
+          insertCardIntoStack(gameState.field[l][targetPlayer], { card: topCard, faceDown: true });
         }
       });
       processAbilityEffect();
@@ -1978,7 +1978,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         const others = LINES.filter(l => l !== sourceLine);
         const dest = aiPickDestLine([sourceLine]) || others[0];
         const topCard = gameState[targetPlayer].deck.pop();
-        gameState.field[dest][targetPlayer].push({ card: topCard, faceDown: true });
+        insertCardIntoStack(gameState.field[dest][targetPlayer], { card: topCard, faceDown: true });
         processAbilityEffect();
       }
       break;
@@ -2127,7 +2127,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         const dest = aiPickDestLine([sourceLine]) || others[0];
         const toMove = gameState.field[sourceLine].ai.filter(c => c.faceDown);
         gameState.field[sourceLine].ai = gameState.field[sourceLine].ai.filter(c => !c.faceDown);
-        toMove.forEach(c => gameState.field[dest].ai.push(c));
+        toMove.forEach(c => insertCardIntoStack(gameState.field[dest].ai, c));
         processAbilityEffect();
       }
       break;
@@ -2203,7 +2203,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             const destLine = LINES.find(l => l !== bestLine && gameState.field[l].ai.length < gameState.field[bestLine].ai.length);
             if (destLine) {
               const cardObj = gameState.field[bestLine].ai.pop();
-              gameState.field[destLine].ai.push(cardObj); // sigue bocabajo
+              insertCardIntoStack(gameState.field[destLine].ai, cardObj); // sigue bocabajo
               triggerUncovered(bestLine, 'ai');
               _log(`IA mueve ${best.card.nombre} (bocabajo)`, { isAI: true });
             }
@@ -2466,7 +2466,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       LINES.forEach(l => {
         if (gameState.field[l][targetPlayer].length > 0 && gameState[targetPlayer].deck.length > 0) {
           const top = gameState[targetPlayer].deck.pop();
-          gameState.field[l][targetPlayer].push({ card: top, faceDown });
+          insertCardIntoStack(gameState.field[l][targetPlayer], { card: top, faceDown });
         }
       });
       processAbilityEffect();
@@ -2593,7 +2593,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         const dest = destCandidates.sort((a, b) =>
           calculateScore(gameState, a, resolvedTarget) - calculateScore(gameState, b, resolvedTarget)
         )[0] || destCandidates[0];
-        gameState.field[dest][resolvedTarget].push(cardObj);
+        insertCardIntoStack(gameState.field[dest][resolvedTarget], cardObj);
         processAbilityEffect();
       }
       break;
@@ -2744,7 +2744,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             .sort((a, b) => calculateScore(gameState, b, 'ai') - calculateScore(gameState, a, 'ai'))[0] || allowedLines[0];
           if (dest) {
             const movedCard = gameState.ai.hand.splice(cardIdx, 1)[0];
-            gameState.field[dest].ai.push({ card: movedCard, faceDown: true });
+            insertCardIntoStack(gameState.field[dest].ai, { card: movedCard, faceDown: true });
           }
         }
         processAbilityEffect();
@@ -3006,7 +3006,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             const idx = srcStack[p].indexOf(cardObj);
             if (idx >= 0) {
               srcStack[p].splice(idx, 1);
-              gameState.field[destLine][p].push(cardObj);
+              insertCardIntoStack(gameState.field[destLine][p], cardObj);
             }
           });
           // Disparar comando de la carta volteada en su nueva línea.
@@ -3042,7 +3042,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           const fdIdx = gameState.field[l].ai.findIndex(c => c.faceDown);
           if (fdIdx >= 0 && destLine) {
             const [moved] = gameState.field[l].ai.splice(fdIdx, 1);
-            gameState.field[destLine].ai.push(moved);
+            insertCardIntoStack(gameState.field[destLine].ai, moved);
           }
         }
         processAbilityEffect();
@@ -3055,7 +3055,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       const destLine = gameState.currentEffectLine;
       if (destLine && gameState[opponent].deck.length > 0) {
         const top = gameState[opponent].deck.pop();
-        gameState.field[destLine][opponent].push({ card: top, faceDown: true });
+        insertCardIntoStack(gameState.field[destLine][opponent], { card: top, faceDown: true });
       }
       processAbilityEffect();
       break;
@@ -3351,7 +3351,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         const hasFaceDown = gameState.field[l][targetPlayer].some(c => c.faceDown)
                          || gameState.field[l][opponent0].some(c => c.faceDown);
         if (hasFaceDown && gameState[targetPlayer].deck.length > 0) {
-          gameState.field[l][targetPlayer].push({ card: gameState[targetPlayer].deck.pop(), faceDown: true });
+          insertCardIntoStack(gameState.field[l][targetPlayer], { card: gameState[targetPlayer].deck.pop(), faceDown: true });
         }
       });
       updateUI();
@@ -3416,7 +3416,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       const line = gameState.currentEffectLine;
       if (line && gameState[opponent].deck.length > 0) {
         const top = gameState[opponent].deck.pop();
-        gameState.field[line][targetPlayer].push({ card: top, faceDown: true });
+        insertCardIntoStack(gameState.field[line][targetPlayer], { card: top, faceDown: true });
         updateUI();
       }
       processAbilityEffect();
@@ -3439,7 +3439,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           return advL > advB ? l : best;
         }, LINES[0]);
         const top = gameState.ai.deck.pop();
-        gameState.field[bestLine].player.push({ card: top, faceDown: true });
+        insertCardIntoStack(gameState.field[bestLine].player, { card: top, faceDown: true });
         updateUI();
         processAbilityEffect();
       }
@@ -3827,7 +3827,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             const srcStack = gameState.field[curLine][targetPlayer];
             if (srcStack.length > 0) {
               const cardObj = srcStack.pop();
-              gameState.field[bestLine][targetPlayer].push(cardObj);
+              insertCardIntoStack(gameState.field[bestLine][targetPlayer], cardObj);
               gameState.currentEffectLine = bestLine;
               updateUI();
             }
@@ -3839,7 +3839,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       } else {
         if (calculateScore(gameState, bestLine, 'player') > calculateScore(gameState, curLine, 'player')) {
           const srcStack = gameState.field[curLine].ai;
-          if (srcStack.length > 0) { gameState.field[bestLine].ai.push(srcStack.pop()); updateUI(); }
+          if (srcStack.length > 0) { insertCardIntoStack(gameState.field[bestLine].ai, srcStack.pop()); updateUI(); }
         }
         processAbilityEffect();
       }
@@ -3939,7 +3939,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           const destLine = LINES.filter(l => l !== bestLine)
             .reduce((b, l) => calculateScore(gameState, l, 'ai') > calculateScore(gameState, b, 'ai') ? l : b, LINES.filter(l => l !== bestLine)[0]);
           gameState.field[bestLine].ai.splice(bestIdx, 1);
-          gameState.field[destLine].ai.push(bestSrc);
+          insertCardIntoStack(gameState.field[destLine].ai, bestSrc);
           updateUI();
         }
         processAbilityEffect();
@@ -4330,7 +4330,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           .reduce((b, l) => calculateScore(gameState, l, 'ai') > calculateScore(gameState, b, 'ai') ? l : b, LINES.filter(l => l !== line)[0] || line);
         if (destLine && destLine !== line) {
           st.splice(selfIdx, 1);
-          gameState.field[destLine].ai.push(cardObj);
+          insertCardIntoStack(gameState.field[destLine].ai, cardObj);
           updateUI();
         }
         processAbilityEffect();
@@ -4593,7 +4593,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       if (!line || gameState[targetPlayer].deck.length === 0) { processAbilityEffect(); break; }
       const topCard = gameState[targetPlayer].deck.pop();
       const cardObj = { card: topCard, faceDown: true };
-      gameState.field[line][targetPlayer].push(cardObj);
+      insertCardIntoStack(gameState.field[line][targetPlayer], cardObj);
       // Bloquear processAbilityEffect durante la animación — sin esto, effectContext
       // es null y cualquier trigger externo podría procesar la cola antes de que la
       // carta se revele. _after en lugar de setTimeout para que se cancele en nueva partida.
@@ -4693,7 +4693,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
                 gameState.player.trash.splice(selectedIdx, 1);
                 const protoIdx = (gameState.player.protocols || []).indexOf(chosenCard.protocol);
                 const targetLine = protoIdx >= 0 ? LINES[protoIdx] : (gameState.currentEffectLine || LINES[0]);
-                gameState.field[targetLine].player.push({ card: chosenCard, faceDown: false });
+                insertCardIntoStack(gameState.field[targetLine].player, { card: chosenCard, faceDown: false });
                 if (gameState.player.trash.length > 0) shuffleDiscardIntoDeck('player');
                 updateUI();
                 logEvent(`${chosenCard.nombre} en ${targetLine} (desde descarte)`, { isAI: false });
@@ -4725,7 +4725,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         const bestIdx = gameState.ai.trash.reduce((b, c, i) => c.valor > gameState.ai.trash[b].valor ? i : b, 0);
         const [card] = gameState.ai.trash.splice(bestIdx, 1);
         const line = gameState.currentEffectLine || LINES[0];
-        gameState.field[line].ai.push({ card, faceDown: false });
+        insertCardIntoStack(gameState.field[line].ai, { card, faceDown: false });
         // Barajar el resto
         if (gameState.ai.trash.length > 0) {
           shuffleDiscardIntoDeck('ai');
@@ -4804,7 +4804,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           // Fallback sin modal: auto-jugar la primera carta en otra línea
           const [card] = gameState.player.trash.splice(0, 1);
           const destLine = LINES.filter(l => l !== gameState.currentEffectLine)[0] || LINES[0];
-          gameState.field[destLine].player.push({ card, faceDown: true });
+          insertCardIntoStack(gameState.field[destLine].player, { card, faceDown: true });
           updateUI();
           processAbilityEffect();
         }
@@ -4813,7 +4813,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         const [card] = gameState.ai.trash.splice(bestIdx, 1);
         const curLine = gameState.currentEffectLine;
         const destLine = LINES.filter(l => l !== curLine)[0] || LINES[0];
-        gameState.field[destLine].ai.push({ card, faceDown: true });
+        insertCardIntoStack(gameState.field[destLine].ai, { card, faceDown: true });
         updateUI();
         processAbilityEffect();
       }
@@ -4923,7 +4923,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         const idx = gameState.ai.hand.indexOf(best);
         const [card] = gameState.ai.hand.splice(idx, 1);
         const cardObj = { card, faceDown: false };
-        gameState.field[effectLine].ai.push(cardObj);
+        insertCardIntoStack(gameState.field[effectLine].ai, cardObj);
         logEvent(`IA juega ${card.nombre} bocarriba en ${effectLine} (Diversidad 0)`, { isAI: true });
         updateUI();
         // Disparar onPlay de la carta jugada
@@ -4993,7 +4993,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           const dest = LINES.filter(l => l !== bestLine)[0] || bestLine;
           gameState.field[bestLine].ai.splice(bestIdx, 1);
           bestSrc.faceDown = true;
-          gameState.field[dest].ai.push(bestSrc);
+          insertCardIntoStack(gameState.field[dest].ai, bestSrc);
           updateUI();
         }
         processAbilityEffect();

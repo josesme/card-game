@@ -66,6 +66,10 @@ function getEngine() {
     }
     if (discarded > 0) GS[target].discardedSinceLastCheck = true;
   });
+  global.insertCardIntoStack = (stack, cardObj) => {
+    const g0Idx = stack.findIndex(c => !c.faceDown && c.card.nombre === 'Gravedad 0');
+    if (g0Idx >= 0) stack.splice(g0Idx, 0, cardObj); else stack.push(cardObj);
+  };
   global.startEffect = jest.fn();
   global.highlightSelectableLines = jest.fn();
   global.aiLowestValueCardIdx = jest.fn(() => 0);

@@ -67,6 +67,10 @@ function getEngine() {
   global.startEffect = jest.fn();
   global.highlightSelectableLines = jest.fn();
   global.highlightEffectTargets = jest.fn();
+  global.insertCardIntoStack = (stack, cardObj) => {
+    const g0Idx = stack.findIndex(c => !c.faceDown && c.card.nombre === 'Gravedad 0');
+    if (g0Idx >= 0) stack.splice(g0Idx, 0, cardObj); else stack.push(cardObj);
+  };
   global.aiLowestValueCardIdx = jest.fn(() => 0);
   global.aiPickDestLine = jest.fn(() => LINES_MOCK[1]);
   global.executeNewEffect = jest.fn();

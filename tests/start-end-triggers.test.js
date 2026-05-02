@@ -92,6 +92,10 @@ function getEngine() {
   global.animCardEliminate = jest.fn();
   global.createCardHTML = jest.fn(() => '');
   global.triggerUncovered = jest.fn();
+  global.insertCardIntoStack = (stack, cardObj) => {
+    const g0Idx = stack.findIndex(c => !c.faceDown && c.card.nombre === 'Gravedad 0');
+    if (g0Idx >= 0) stack.splice(g0Idx, 0, cardObj); else stack.push(cardObj);
+  };
   global.clearEffectHighlights = jest.fn();
   global.highlightEffectTargets = jest.fn();
   global.finishEffect = jest.fn();
