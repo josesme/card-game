@@ -1537,7 +1537,7 @@ function _protoChip(name) {
     return '<span class="st-chip" style="color:'+c+';border-color:'+c+'50;background:'+c+'12">'+name+'</span>';
 }
 
-function _protoRow(name, count, maxCount, wr, muted, lossColor) {
+function _protoRow(name, count, maxCount, wr, muted, lossColor, statStr) {
     var c = _PROTO_COLORS[name] || '#6a8a9a';
     var barW = maxCount > 0 ? Math.round(count / maxCount * 100) : 0;
     var pctColor = lossColor ? 'var(--st-loss)' : 'var(--st-cyan)';
@@ -1545,7 +1545,8 @@ function _protoRow(name, count, maxCount, wr, muted, lossColor) {
     var nm  = '<span class="st-p-name"'+(muted?' style="color:var(--st-muted)"':'')+'>'+name+'</span>';
     var bar = '<div class="st-p-track"><div class="st-p-fill" style="width:'+barW+'%;background:'+c+'"></div></div>';
     var cnt = '<span class="st-p-count"'+(muted?' style="color:var(--st-muted)"':'')+'>'+count+'</span>';
-    var pct = '<span class="st-p-pct" style="color:'+pctColor+'">'+wr+'%</span>';
+    var stat = statStr !== undefined ? statStr : wr+'%';
+    var pct = '<span class="st-p-pct" style="color:'+pctColor+'">'+stat+'</span>';
     return '<div class="st-proto-row">'+dot+nm+bar+cnt+pct+'</div>';
 }
 
@@ -1682,14 +1683,14 @@ function renderStatsOverlay() {
         if(!sorted.length){ el.innerHTML='<div class="st-sk" style="color:var(--st-muted)">Sin datos</div>'; return; }
         var maxC=sorted[0][1], top5=sorted.slice(0,5), bot=sorted.slice(5);
         var html=top5.map(function(e){
-            var n=e[0],c=e[1],wr=Math.round(((winCounts[n]||0)/c)*100);
-            return _protoRow(n,c,maxC,wr,false,false);
+            var n=e[0],c=e[1],w=winCounts[n]||0;
+            return _protoRow(n,c,maxC,null,false,false,w+'/'+(c-w));
         }).join('');
         if(bot.length){
             html+='<div class="st-inner-div"></div>';
             html+=bot.slice(0,5).map(function(e){
-                var n=e[0],c=e[1],wr=Math.round(((winCounts[n]||0)/c)*100);
-                return _protoRow(n,c,maxC,wr,true,false);
+                var n=e[0],c=e[1],w=winCounts[n]||0;
+                return _protoRow(n,c,maxC,null,true,false,w+'/'+(c-w));
             }).join('');
         }
         el.innerHTML=html;
