@@ -485,8 +485,6 @@
         #stats-overlay .st-chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
         #stats-overlay .st-chip  { font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 2px; border: 1px solid; letter-spacing: .5px; }
 
-        #stats-overlay .st-footer { height: 28px; background: var(--st-panel); border-top: 1px solid var(--st-div); display: flex; align-items: center; padding: 0 20px; flex-shrink: 0; }
-        #stats-overlay .st-footer-txt { font-size: 14px; font-weight: 600; color: var(--st-sec); letter-spacing: 1px; text-transform: uppercase; }
 
         /* ── CSS: vista Draft ─────────────────────────────────── */
         #draft-viewport {
@@ -1231,9 +1229,6 @@
     </div>
   </div>
 
-  <div class="st-footer">
-    <span class="st-footer-txt" id="st-v-footer">Sin registros — completa una partida para empezar</span>
-  </div>
 
 </div>
 
@@ -1702,10 +1697,6 @@ function renderStatsOverlay() {
     renderProtoUsage('st-v-protos-player','player');
     renderProtoUsage('st-v-protos-ai','ai');
 
-    // Footer
-    $t('st-v-footer', total===0
-        ? 'Sin registros — completa una partida para empezar'
-        : 'Datos almacenados localmente — '+total+' registros — Última partida: '+history[total-1].fecha);
 }
 
 function openStatsOverlay() {
@@ -1745,7 +1736,6 @@ function _triggerStatsScramble() {
     anim('.st-p-name',                           0.8, 'upperCase');
     anim('.st-p-count, .st-p-pct',               0.7, '0123456789%');
     anim('.st-sec-label-sm',                     0.8, 'upperCase');
-    anim('.st-footer-txt',                       1.0, 'upperCase');
 }
 </script>
 
