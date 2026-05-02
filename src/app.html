@@ -1679,21 +1679,26 @@ function renderStatsOverlay() {
             var sw=side==='player'?r.ganador==='player':r.ganador==='ai';
             ps.forEach(function(p){ counts[p]=(counts[p]||0)+1; if(sw) winCounts[p]=(winCounts[p]||0)+1; });
         });
-        var sorted=Object.entries(counts).sort(function(a,b){return b[1]-a[1];});
-        if(!sorted.length){ el.innerHTML='<div class="st-sk" style="color:var(--st-muted)">Sin datos</div>'; return; }
-        var maxC=sorted[0][1], top5=sorted.slice(0,5), bot=sorted.slice(5);
-        var html=top5.map(function(e){
+        // Incluir todos los protocolos, con 0 para los nunca elegidos
+        var allProtos=Object.keys(_PROTO_COLORS);
+        allProtos.forEach(function(p){ if(!counts[p]) counts[p]=0; });
+        var sorted=Object.entries(counts).sort(function(a,b){
+            return b[1]-a[1] || a[0].localeCompare(b[0]);
+        });
+        var maxC=sorted[0][1]||1;
+        var used=sorted.filter(function(e){return e[1]>0;}),
+            unused=sorted.filter(function(e){return e[1]===0;});
+        var html=used.map(function(e){
             var n=e[0],c=e[1],w=winCounts[n]||0;
             return _protoRow(n,c,maxC,null,false,false,w+'/'+(c-w));
         }).join('');
-        if(bot.length){
-            html+='<div class="st-inner-div"></div>';
-            html+=bot.slice(0,5).map(function(e){
-                var n=e[0],c=e[1],w=winCounts[n]||0;
-                return _protoRow(n,c,maxC,null,true,false,w+'/'+(c-w));
+        if(unused.length){
+            if(used.length) html+='<div class="st-inner-div"></div>';
+            html+=unused.map(function(e){
+                return _protoRow(e[0],0,maxC,null,true,false,'—');
             }).join('');
         }
-        el.innerHTML=html;
+        el.innerHTML=html||'<div class="st-sk" style="color:var(--st-muted)">Sin datos</div>';
     }
     renderProtoUsage('st-v-protos-player','player');
     renderProtoUsage('st-v-protos-ai','ai');
