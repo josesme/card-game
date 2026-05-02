@@ -3178,13 +3178,28 @@ if (btnStopDiscard) btnStopDiscard.onclick = () => {
 };
 
 
+// ── AI Engine selection ──────────────────────────────────────────────────────
+// Set USE_ISMCTS = true to use ISMCTS, false to use the legacy Minimax engine.
+const USE_ISMCTS = true;
+
 // ── AI Worker singleton ──────────────────────────────────────────────────────
 let _aiWorker = null;
 
 function _ensureAIWorker(diffDepth) {
     if (_aiWorker) return _aiWorker;
 
-    // Pick a random personality profile for this game and extract its weights
+    if (USE_ISMCTS) {
+        _aiWorker = new Worker('ismcts-worker.js');
+        _aiWorker.onerror = (e) => console.error('❌ ISMCTS Worker error:', e.message);
+        _aiWorker.postMessage({
+            type:        'init',
+            cardEffects: window.CARD_EFFECTS,
+            globalCards: GLOBAL_CARDS,
+        });
+        return _aiWorker;
+    }
+
+    // Legacy Minimax path — pick a random personality profile
     let profileWeights = null;
     if (typeof getRandomProfileForLevel === 'function') {
         const profile = getRandomProfileForLevel(diffDepth);
@@ -3211,7 +3226,7 @@ function playAITurn() {
     const diffDepth = parseInt(sessionStorage.getItem('aiDifficultyDepth') || '3');
     const diffName  = sessionStorage.getItem('aiDifficultyName') || 'NÚCLEO';
 
-    console.log(`🤖 IA Turno iniciado (Dificultad: ${diffName}, Profundidad: ${diffDepth})`);
+    console.log(`🤖 IA Turno iniciado (${USE_ISMCTS ? 'ISMCTS' : 'Minimax'} · ${diffName} · depth ${diffDepth})`);
 
     if (gameState.ai.hand.length === 0) {
         while(gameState.ai.hand.length < 5) drawCard('ai');
