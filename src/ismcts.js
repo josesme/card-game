@@ -341,8 +341,8 @@ class ISMCTS {
                 const evaluator = new AIEvaluator(state);
                 evaluator.diffDepth = 5; // use full evaluation depth
                 const { total } = evaluator.evaluateBoard(state);
-                // total range: [-320, +320] based on weight sum
-                return Math.max(0, Math.min(1, (total + 320) / 640));
+                // total range: [-410, +410] based on max late-game weight sum
+                return Math.max(0, Math.min(1, (total + 410) / 820));
             } catch (e) {
                 // fall through to basic heuristic
             }

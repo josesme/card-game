@@ -35,8 +35,6 @@ class AIEvaluator {
     const faceDownBalance   = this.evaluateFaceDownBalance(state);
 
     // AI-03: Niveles 1-2 limitan la defensa activa.
-    // Nivel 1: ignora amenazas del rival por completo.
-    // Nivel 2: solo reacciona si el jugador está a 1 carta de compilar una línea (score >= 9).
     let effectiveOpponentThreat = opponentThreat;
     if (this.diffDepth <= 1) {
       effectiveOpponentThreat = 0;
@@ -48,20 +46,60 @@ class AIEvaluator {
       if (!immediateThreat) effectiveOpponentThreat = 0;
     }
 
+    // AI-E2: pesos dinámicos según fase de juego
+    const w = this._phaseWeights(state);
+
     const total =
-      compilationThreat          * this.weights.compilationThreat +
-      lineStrength               * this.weights.lineValue +
-      handQuality                * this.weights.cardAdvantage +
-      (-effectiveOpponentThreat) * this.weights.defensiveNeed +
-      opportunities              * this.weights.opportunities +
-      protocolCoverage           * this.weights.protocolCoverage +
-      faceDownBalance            * this.weights.faceDownBalance;
+      compilationThreat          * w.compilationThreat +
+      lineStrength               * w.lineValue +
+      handQuality                * w.cardAdvantage +
+      (-effectiveOpponentThreat) * w.defensiveNeed +
+      opportunities              * w.opportunities +
+      protocolCoverage           * w.protocolCoverage +
+      faceDownBalance            * w.faceDownBalance;
 
     return {
       total,
       details: { compilationThreat, lineStrength, handQuality, opponentThreat, opportunities, protocolCoverage, faceDownBalance },
       recommendation: this.getRecommendation(compilationThreat, lineStrength),
     };
+  }
+
+  // ─────────────────────────────────────────────
+  // GAME PHASE
+  // early: 0-1 compiles total — develop freely
+  // mid:   2-3 compiles total — balance attack/defense
+  // late:  either player has 2 compiles — close it out
+  // ─────────────────────────────────────────────
+
+  _getGamePhase(state) {
+    const aiCompiled = (state.ai.compiled || []).length;
+    const plCompiled = (state.player.compiled || []).length;
+    if (aiCompiled >= 2 || plCompiled >= 2) return 'late';
+    if (aiCompiled + plCompiled >= 2)       return 'mid';
+    return 'early';
+  }
+
+  _phaseWeights(state) {
+    const phase = this._getGamePhase(state);
+    const w = Object.assign({}, this.weights);
+    if (phase === 'mid') {
+      w.compilationThreat = 120;
+      w.defensiveNeed     =  95;
+      w.opportunities     =  35;
+      w.lineValue         =  45;
+      w.cardAdvantage     =  20;
+    } else if (phase === 'late') {
+      // Late: compile or be compiled — everything else is noise
+      w.compilationThreat = 180;
+      w.defensiveNeed     = 130;
+      w.opportunities     =  50;
+      w.lineValue         =  25;
+      w.cardAdvantage     =  10;
+      w.protocolCoverage  =  10;
+      w.faceDownBalance   =   5;
+    }
+    return w;
   }
 
   // ─────────────────────────────────────────────
