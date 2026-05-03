@@ -4,9 +4,48 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 
 ---
 
+## Mejora de IA — Evaluador estratégico
+
+Plan iterativo para mejorar la calidad de decisiones de ISMCTS conectando y enriqueciendo `AIEvaluator`. Cada historia es independiente y aporta valor incremental. Fuente: `docs/compile-estrategy-es.md`.
+
+### Alto valor, bajo coste
+- **AI-E3 — Bocabajo con criterio:** Mejorar `evaluateFaceDownBalance()`: penalización dura si bocabajo va en línea perdida estructuralmente. Bonus si la IA tiene Life/Water/Smoke/Darkness/Apathy en sus protocolos. Penalización leve si ninguna condición estratégica aplica.
+
+- **AI-E8 — Presión multi-línea refinada:** Refinar el bonus de amenazar compile en 2+ líneas simultáneamente. Actualmente existe pero infraponderado. Hacerlo dependiente de la fase: en late game es casi decisivo.
+
+- **AI-E6 — Amenaza del rival basada en protocolos públicos:** Mejorar `evaluateOpponentThreat()`: protocolos del rival son públicos desde el draft. Gravity+Death con tablero lleno, Speed 3 visible en campo, Psychic 1 activo — cada uno tiene una ponderación específica de peligro.
+
+### Alto valor, medio coste
+- **AI-E5 — Sinergias entre protocolos:** Añadir `evaluateProtocolSynergies()`: detectar combinaciones conocidas (Life+Water, Gravity+Death, Speed+Fire, Spirit+X, Darkness+bocabajo) y aplicar bonus cuando las condiciones en mesa las activan.
+
+- **AI-E12 — Contraestrategia activa:** Detectar setups peligrosos del rival visibles en campo: Psychic 1 face-up y cubierto, Speed 3 activo, Gravity 0 jugado con tablero lleno. Cuando se detectan, priorizar interrumpir sobre cualquier desarrollo propio.
+
+- **AI-E14 — Comportamiento específico por protocolo:** Speed 0 no debe jugarse sin Speed 3 en mano o campo; Spirit 3 debe protegerse; Gravity 0 maximiza valor con retriggers; Death en mano con tablero rival vacío vale menos.
+
+### Medio valor, medio coste
+- **AI-E4 — Refresh timing:** Añadir `evaluateHandPlayability()`: si la mano tiene mayoría de cartas situacionales (valor 4 con texto situacional, 5s) y el mazo tiene cartas, valorar positivamente el acceso a refrescar en lugar de jugar mal.
+
+- **AI-E9 — Interacción vs desarrollo:** Si la amenaza del rival supera un umbral, inclinar la evaluación hacia interacción (eliminate, discard, flip) aunque el desarrollo propio sea subóptimo.
+
+- **AI-E13 — Meta-reglas:** (1) si la jugada no mejora el estado en ninguna dimensión, penalizarla; (2) si rompe una sinergia propia activa, penalizarla; (3) priorizar opciones futuras sobre valor inmediato cuando la diferencia de score es pequeña.
+
+### Medio valor, alto coste
+- **AI-E7 — Valor real de cartas por protocolo:** Cartas débiles situacionales (Speed 2/4, Apathy 0/2) y cartas fuertes (Fire 4, Water 3, Speed 3) deben distinguirse en la evaluación de mano.
+
+- **AI-E10 — Tempo:** `evaluateTempo()`: opciones propias vs opciones del rival. Penalizar jugadas que reducen opciones futuras, bonus a jugadas que las amplían.
+
+- **AI-E11 — Future potential:** Bonus a jugadas que abren combos conocidos. Penalizar jugadas que cierran líneas propias o eliminan piezas de combo propias.
+
+### Pendiente (sin Control component activo)
+- **AI-E2 — Fase de juego como modificador global:** ✅ Completado.
+
+---
+
 ## Arquitectura / Plataforma
 
 > Decisiones pendientes de validar con experiencia de juego real antes de comprometer trabajo.
+
+- **Modo entrenador** — Añadir un check en la pantalla de inicio que active el modo entrenador. Cuando está activo: botón "ver mano IA" visible en partida. Cuando está inactivo: botón oculto para juego normal. Actualmente el botón está siempre visible.
 
 ---
 

@@ -964,6 +964,7 @@
             <span id="ai-deck-count" class="stat-value" style="color: var(--ui-pink);">0</span>
             <span class="stat-label">Desc.</span>
             <span id="ai-trash-count" class="stat-value" style="color: var(--ui-pink);">0</span>
+            <button id="btn-peek-ai-hand" title="Ver mano IA" style="background:none;border:1px solid var(--ui-pink);color:var(--ui-pink);border-radius:4px;padding:2px 6px;cursor:pointer;font-size:11px;line-height:1;flex-shrink:0;">🖐</button>
         </div>
         <span id="hand-count-badge" style="display:none;"></span>
       </div>
@@ -1130,7 +1131,6 @@
         <div class="st-sec-label">◈ Tendencia — últimas 10</div>
         <div class="st-streak" id="st-v-dots" style="margin-bottom:12px"></div>
         <div class="st-stat-row"><span class="st-sk">Últimas 10 partidas</span><span class="st-sv" id="st-v-last10">—</span></div>
-        <div class="st-stat-row"><span class="st-sk">Resto del historial</span><span class="st-sv" id="st-v-rest">—</span></div>
         <div class="st-stat-row"><span class="st-sk">Tendencia</span><span class="st-trend" id="st-v-trend">—</span></div>
       </div>
 
@@ -1148,9 +1148,10 @@
           <div class="st-r-cell"><span class="st-r-val win" id="st-v-t-win">—</span><span class="st-r-sub">VICTORIA</span></div>
           <div class="st-r-cell"><span class="st-r-val loss" id="st-v-t-loss">—</span><span class="st-r-sub">DERROTA</span></div>
         </div>
-        <div class="st-stat-row" style="padding:10px 0"><span class="st-sk">Partidas &gt;20 turnos</span><span class="st-sv" id="st-v-gt20" style="font-size:13px">—</span></div>
-        <div class="st-stat-row" style="padding:10px 0"><span class="st-sk">Partidas &gt;30 turnos</span><span class="st-sv" id="st-v-gt30" style="font-size:13px">—</span></div>
-        <div class="st-stat-row" style="padding:10px 0"><span class="st-sk">Partidas &gt;40 turnos</span><span class="st-sv" id="st-v-gt40" style="font-size:13px">—</span></div>
+        <div class="st-stat-row" style="padding:6px 0"><span class="st-sk">Partidas 0-10 turnos</span><span class="st-sv" id="st-v-tr-0" style="font-size:13px">—</span></div>
+        <div class="st-stat-row" style="padding:6px 0"><span class="st-sk">Partidas 11-20 turnos</span><span class="st-sv" id="st-v-tr-1" style="font-size:13px">—</span></div>
+        <div class="st-stat-row" style="padding:6px 0"><span class="st-sk">Partidas 21-30 turnos</span><span class="st-sv" id="st-v-tr-2" style="font-size:13px">—</span></div>
+        <div class="st-stat-row" style="padding:6px 0"><span class="st-sk">Partidas 31+ turnos</span><span class="st-sv" id="st-v-tr-3" style="font-size:13px">—</span></div>
       </div>
 
       <div class="st-sec" style="flex:3.6">
@@ -1301,6 +1302,27 @@
             document.getElementById('audio-icon-on').style.display  = 'none';
             document.getElementById('audio-icon-off').style.display = '';
         }
+
+        document.getElementById('btn-peek-ai-hand').addEventListener('click', () => {
+            if (typeof gameState === 'undefined' || !gameState.ai) return;
+            const hand = [...gameState.ai.hand];
+            const modal     = document.getElementById('reveal-modal');
+            const container = document.getElementById('reveal-cards-container');
+            const closeBtn  = document.getElementById('btn-reveal-close');
+            const titleEl   = document.getElementById('reveal-title');
+            const subtitleEl = document.getElementById('reveal-subtitle');
+            const sourceEl  = document.getElementById('reveal-source');
+            if (!modal || !container || !closeBtn) return;
+            titleEl.textContent    = 'MANO IA';
+            subtitleEl.textContent = hand.length + ' carta' + (hand.length !== 1 ? 's' : '');
+            sourceEl.textContent   = '';
+            container.innerHTML    = hand.length > 0
+                ? hand.map(c => typeof createCardHTML === 'function' ? createCardHTML(c, { faceUp: true }) : `<span>${c.nombre}</span>`).join('')
+                : '<span style="color:var(--ui-dim);font-family:var(--ui-font);font-size:12px;">Mano vacía</span>';
+            const close = () => modal.classList.add('hidden');
+            closeBtn.onclick = close;
+            modal.classList.remove('hidden');
+        });
     });
 </script>
 <script src="router.js"></script>
@@ -1580,7 +1602,6 @@ function renderStatsOverlay() {
         return '<div class="st-dot '+(w?'v':'d')+(cur?' cur':'')+'">'+(w?'V':'D')+'</div>';
     }).join(''));
     $t('st-v-last10', l10pct!==null ? l10pct+'%' : '—');
-    $t('st-v-rest',   rpct!==null   ? rpct+'%'   : '—');
     var tEl = document.getElementById('st-v-trend');
     if(tEl) {
         if(l10pct!==null && rpct!==null) {
@@ -1606,8 +1627,11 @@ function renderStatsOverlay() {
     $t('st-v-t-media', avg(history.map(function(r){return r.turnos;})));
     $t('st-v-t-win',   avg(history.filter(function(r){return r.ganador==='player';}).map(function(r){return r.turnos;})));
     $t('st-v-t-loss',  avg(history.filter(function(r){return r.ganador==='ai';}).map(function(r){return r.turnos;})));
-    function pctGt(n){ return total>0?Math.round(history.filter(function(r){return r.turnos>n;}).length/total*100)+'%':'—'; }
-    $t('st-v-gt20',pctGt(20)); $t('st-v-gt30',pctGt(30)); $t('st-v-gt40',pctGt(40));
+    var ranges=[[0,10],[11,20],[21,30],[31,Infinity]];
+    ranges.forEach(function(r,i){
+        var n=history.filter(function(g){return g.turnos>=r[0]&&g.turnos<=r[1];}).length;
+        $t('st-v-tr-'+i, total>0 ? (n>0?Math.round(n/total*100)+'%':'—') : '—');
+    });
 
     // Combinaciones draft
     var cmap={};
@@ -1627,15 +1651,17 @@ function renderStatsOverlay() {
             '<div class="st-stat-row" style="padding:8px 0"><span class="st-sk">Partidas</span><span class="st-sv">'+combo.total+'</span></div>'+
             '<div class="st-stat-row" style="padding:8px 0;border-bottom:none"><span class="st-sk">Win rate</span><span class="st-sv">'+wr+'%</span></div>';
     }
-    renderCombo('st-v-combo-win',  combos.length>0 ? combos[0] : null, '↑ Más ganadora');
-    renderCombo('st-v-combo-loss', combos.length>1 ? combos[combos.length-1] : null, '↓ Más perdedora');
+    var bestCombo  = combos.find(function(c){return c.wins>0;}) || null;
+    var worstCombo = combos.slice().reverse().find(function(c){return c.wins<c.total;}) || null;
+    renderCombo('st-v-combo-win',  bestCombo,  '↑ Más ganadora');
+    renderCombo('st-v-combo-loss', worstCombo, '↓ Más perdedora');
 
     // Victorias por nivel
     [1,2,3,4,5].forEach(function(lvl){
         var g=history.filter(function(r){return r.nivel_ia===lvl;}), lw=g.filter(function(r){return r.ganador==='player';}).length;
         var p=g.length>0?Math.round(lw/g.length*100):0;
         var f=document.getElementById('st-v-lvl-fill-'+lvl), s=document.getElementById('st-v-lvl-stat-'+lvl);
-        if(f) f.style.width=p+'%';
+        if(f){ f.style.width=g.length>0?p+'%':'0%'; f.style.background=g.length>0?'var(--st-win)':'transparent'; if(f.parentElement) f.parentElement.style.background=g.length>0?'':'transparent'; }
         if(s) s.textContent=g.length>0?p+'% — '+lw+'/'+g.length:'—';
     });
 
@@ -1679,25 +1705,25 @@ function renderStatsOverlay() {
             var sw=side==='player'?r.ganador==='player':r.ganador==='ai';
             ps.forEach(function(p){ counts[p]=(counts[p]||0)+1; if(sw) winCounts[p]=(winCounts[p]||0)+1; });
         });
-        // Incluir todos los protocolos, con 0 para los nunca elegidos
-        var allProtos=Object.keys(_PROTO_COLORS);
+        // Los 30 protocolos reales (no _PROTO_COLORS que solo tiene 15 familias)
+        var allProtos=Object.keys((window.CARDS_DATA&&CARDS_DATA._protocolMeta)||_PROTO_COLORS);
         allProtos.forEach(function(p){ if(!counts[p]) counts[p]=0; });
         var sorted=Object.entries(counts).sort(function(a,b){
             return b[1]-a[1] || a[0].localeCompare(b[0]);
         });
-        var maxC=sorted[0][1]||1;
-        var used=sorted.filter(function(e){return e[1]>0;}),
-            unused=sorted.filter(function(e){return e[1]===0;});
-        var html=used.map(function(e){
+        var maxC=sorted[0]?sorted[0][1]||1:1;
+        var top7=sorted.slice(0,7);
+        var bot7=sorted.slice(-7);
+        var html=top7.map(function(e){
             var n=e[0],c=e[1],w=winCounts[n]||0;
-            return _protoRow(n,c,maxC,null,false,false,w+'/'+(c-w));
+            return _protoRow(n,c,maxC,null,false,false,c>0?w+'/'+(c-w):'—');
         }).join('');
-        if(unused.length){
-            if(used.length) html+='<div class="st-inner-div"></div>';
-            html+=unused.map(function(e){
-                return _protoRow(e[0],0,maxC,null,true,false,'—');
-            }).join('');
-        }
+        html+='<div class="st-inner-div"></div>';
+        html+=bot7.map(function(e){
+            var n=e[0],c=e[1],w=winCounts[n]||0;
+            var muted=c===0;
+            return _protoRow(n,c,maxC,null,muted,false,c>0?w+'/'+(c-w):'—');
+        }).join('');
         el.innerHTML=html||'<div class="st-sk" style="color:var(--st-muted)">Sin datos</div>';
     }
     renderProtoUsage('st-v-protos-player','player');
