@@ -3357,6 +3357,25 @@ function generateAIPossibleMoves() {
     const moves = [];
     const aiForcedDown = typeof hasForceOpponentFaceDown === 'function' && hasForceOpponentFaceDown('ai');
 
+    // Agua 4: "Devuelve 1 de tus cartas" — solo vale si hay cartas propias bocarriba de valor bajo
+    // en mesa, o si jugarla compila la línea de Agua. Sin esas condiciones es perder un turno.
+    const agua4LineIndex = gameState.ai.protocols.indexOf('Agua');
+    const agua4Line = agua4LineIndex !== -1 ? LINES[agua4LineIndex] : null;
+    const isAgua4Playable = (() => {
+        // Condición 1: hay al menos 1 carta bocarriba propia en mesa con valor <= 2
+        const hasLowValueFaceUp = LINES.some(l =>
+            (gameState.field[l].ai || []).some(c => !c.faceDown && c.card.valor <= 2)
+        );
+        if (hasLowValueFaceUp) return true;
+        // Condición 2: jugarla en la línea de Agua compila
+        if (agua4Line && !gameState.field[agua4Line].compiledBy) {
+            const currentScore = calculateScore(gameState, agua4Line, 'ai');
+            const oppScore     = calculateScore(gameState, agua4Line, 'player');
+            if (currentScore + 4 >= 10 && currentScore + 4 > oppScore) return true;
+        }
+        return false;
+    })();
+
     // Pre-compute which cards have at least one valid face-up line
     const cardHasFaceUpOption = new Map();
     gameState.ai.hand.forEach((card, cardIndex) => {
@@ -3387,6 +3406,9 @@ function generateAIPossibleMoves() {
                 const aiUnityLine = typeof getUnityPlayLine === 'function' ? getUnityPlayLine('ai') : null;
                 const unityMatch = aiUnityLine === line && card.nombre.startsWith('Unidad');
                 const cardPlaysAnywhere = typeof canPlayAnywhere === 'function' && canPlayAnywhere(card);
+
+                // Agua 4 solo se ofrece si tiene sentido estratégico
+                if (card.nombre === 'Agua 4' && !isAgua4Playable) return;
 
                 if ((lineMatchesProtocol || unityMatch || cardPlaysAnywhere) && !aiForcedDown) {
                     moves.push({
