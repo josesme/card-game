@@ -3772,8 +3772,12 @@ function showDiscardModal(side) {
     const title     = document.getElementById('reveal-title');
     const subtitle  = document.getElementById('reveal-subtitle');
     const container = document.getElementById('reveal-cards-container');
-    const closeBtn  = document.getElementById('btn-reveal-close');
-    if (!modal || !container) return;
+    const actionsEl = document.getElementById('reveal-actions');
+    if (!modal || !container || !actionsEl) return;
+
+    // Restore close button — other modal uses may have replaced actionsEl.innerHTML
+    actionsEl.innerHTML = '<button class="ui-btn" id="btn-reveal-close">CERRAR</button>';
+    const closeBtn = document.getElementById('btn-reveal-close');
 
     title.textContent    = side === 'player' ? 'CEMENTERIO — JUGADOR' : 'CEMENTERIO — IA';
     subtitle.textContent = `${trash.length} carta${trash.length !== 1 ? 's' : ''} descartadas`;
@@ -3781,7 +3785,6 @@ function showDiscardModal(side) {
         ? `<div style="color:var(--ui-dim);padding:20px;font-family:'JetBrains Mono',monospace;font-size:12px;">Vacío</div>`
         : [...trash].reverse().map(c => `<div class="reveal-card-select no-select">${createCardHTML(c)}</div>`).join('');
 
-    closeBtn.textContent = 'CERRAR';
     closeBtn.onclick = () => modal.classList.add('hidden');
     modal.classList.remove('hidden');
 }

@@ -1312,12 +1312,11 @@
             const turnNum = gameState.turnCount || 0;
             const modal      = document.getElementById('reveal-modal');
             const container  = document.getElementById('reveal-cards-container');
-            const closeBtn   = document.getElementById('btn-reveal-close');
+            const actionsEl  = document.getElementById('reveal-actions');
             const titleEl    = document.getElementById('reveal-title');
             const subtitleEl = document.getElementById('reveal-subtitle');
             const sourceEl   = document.getElementById('reveal-source');
-            const actionsEl  = document.getElementById('reveal-actions');
-            if (!modal || !container || !closeBtn) return;
+            if (!modal || !container || !actionsEl) return;
 
             titleEl.textContent    = 'MANO IA';
             subtitleEl.textContent = 'Turno ' + turnNum + ' · ' + hand.length + ' carta' + (hand.length !== 1 ? 's' : '');
@@ -1330,19 +1329,17 @@
                   }).join('')
                 : '<span style="color:var(--ui-dim);font-family:var(--ui-font);font-size:12px;">Mano vacía</span>';
 
-            // Textarea para comentario — insertar antes del botón existente, no reemplazarlo
-            let ta = document.getElementById('trainer-comment');
-            if (!ta) {
-                ta = document.createElement('textarea');
-                ta.id = 'trainer-comment';
-                ta.placeholder = 'Comentario (opcional)…';
-                ta.style.cssText = 'width:100%;box-sizing:border-box;background:#0a0e27;color:var(--ui-cyan);border:1px solid var(--ui-dim);border-radius:4px;padding:8px;font-family:var(--ui-font);font-size:11px;resize:vertical;min-height:60px;margin-bottom:8px;display:block;';
-                actionsEl.insertBefore(ta, closeBtn);
-            }
+            // Restaurar actionsEl con textarea + botón (otro uso pudo haber reemplazado innerHTML)
+            actionsEl.innerHTML = '<button class="ui-btn" id="btn-reveal-close">CONTINUAR</button>';
+            const closeBtn = document.getElementById('btn-reveal-close');
+            const ta = document.createElement('textarea');
+            ta.id = 'trainer-comment';
+            ta.placeholder = 'Comentario (opcional)…';
+            ta.style.cssText = 'width:100%;box-sizing:border-box;background:#0a0e27;color:var(--ui-cyan);border:1px solid var(--ui-dim);border-radius:4px;padding:8px;font-family:var(--ui-font);font-size:11px;resize:vertical;min-height:60px;margin-bottom:8px;display:block;';
+            actionsEl.insertBefore(ta, closeBtn);
             const existing = trainerLog.find(e => e.turn === turnNum);
             ta.value = existing ? existing.comment : '';
 
-            closeBtn.textContent = 'CONTINUAR';
             closeBtn.onclick = () => {
                 const comment = (document.getElementById('trainer-comment')?.value || '').trim();
                 if (comment) {
@@ -1350,7 +1347,6 @@
                     if (idx >= 0) trainerLog[idx].comment = comment;
                     else trainerLog.push({ turn: turnNum, comment });
                 }
-                ta.remove();
                 modal.classList.add('hidden');
             };
 
