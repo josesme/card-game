@@ -1304,7 +1304,41 @@
         }
 
         // ── Trainer: peek AI hand ───────────────────────────────
-        const trainerLog = []; // { turn, comment } — only entries with a comment
+        const trainerLog = []; // { turn, snapshot, comment }
+
+        function trainerSnapshot() {
+            const gs = gameState;
+            const lines = ['izquierda', 'centro', 'derecha'];
+            const cardName = c => c ? `${c.nombre}(${c.valor})` : '?';
+
+            const fieldLines = lines.map(l => {
+                const f = gs.field[l];
+                const compiled = f.compiledBy ? ` [COMPILADA por ${f.compiledBy}]` : '';
+                const aiStack  = (f.ai  || []).map(c => c.faceDown ? `[bocabajo]` : cardName(c.card)).join(', ') || '—';
+                const plStack  = (f.player || []).map(c => c.faceDown ? `[bocabajo]` : cardName(c.card)).join(', ') || '—';
+                const aiScore  = typeof calculateScore === 'function' ? calculateScore(gs, l, 'ai') : '?';
+                const plScore  = typeof calculateScore === 'function' ? calculateScore(gs, l, 'player') : '?';
+                return `  ${l.toUpperCase()}${compiled}\n    IA     (${aiScore}pts): ${aiStack}\n    Jugador(${plScore}pts): ${plStack}`;
+            }).join('\n');
+
+            const aiHand   = (gs.ai.hand   || []).map(cardName).join(', ') || '—';
+            const plHand   = (gs.player.hand || []).map(cardName).join(', ') || '—';
+            const aiProto  = (gs.ai.protocols   || []).join(', ') || '—';
+            const plProto  = (gs.player.protocols || []).join(', ') || '—';
+            const aiComp   = (gs.ai.compiled   || []).join(', ') || 'ninguna';
+            const plComp   = (gs.player.compiled || []).join(', ') || 'ninguna';
+
+            return [
+                `Turno: ${gs.turnCount || 0} | Turno de: ${gs.turn}`,
+                `Compiladas — IA: ${aiComp} | Jugador: ${plComp}`,
+                `Protocolos — IA: ${aiProto} | Jugador: ${plProto}`,
+                `Mano IA (${(gs.ai.hand||[]).length}): ${aiHand}`,
+                `Mazo IA: ${(gs.ai.deck||[]).length} | Descartes IA: ${(gs.ai.trash||[]).length}`,
+                `Mano Jugador (${(gs.player.hand||[]).length}): ${plHand}`,
+                `Mazo Jugador: ${(gs.player.deck||[]).length} | Descartes Jugador: ${(gs.player.trash||[]).length}`,
+                `Campo:\n${fieldLines}`,
+            ].join('\n');
+        }
 
         document.getElementById('btn-peek-ai-hand').addEventListener('click', () => {
             if (typeof gameState === 'undefined' || !gameState.ai) return;
@@ -1340,12 +1374,14 @@
             const existing = trainerLog.find(e => e.turn === turnNum);
             ta.value = existing ? existing.comment : '';
 
+            const snapshot = trainerSnapshot();
+
             closeBtn.onclick = () => {
                 const comment = (document.getElementById('trainer-comment')?.value || '').trim();
                 if (comment) {
                     const idx = trainerLog.findIndex(e => e.turn === turnNum);
-                    if (idx >= 0) trainerLog[idx].comment = comment;
-                    else trainerLog.push({ turn: turnNum, comment });
+                    if (idx >= 0) { trainerLog[idx].comment = comment; trainerLog[idx].snapshot = snapshot; }
+                    else trainerLog.push({ turn: turnNum, snapshot, comment });
                 }
                 modal.classList.add('hidden');
             };
@@ -1356,8 +1392,11 @@
         // ── Trainer: export log on game over ────────────────────
         document.addEventListener('compile:gameOver', () => {
             if (trainerLog.length === 0) return;
-            const lines = trainerLog.map(e => `[Turno ${e.turn}] ${e.comment}`).join('\n\n');
-            const blob  = new Blob([lines], { type: 'text/plain' });
+            const sep   = '─'.repeat(60);
+            const lines = trainerLog.map(e =>
+                `${sep}\n[Turno ${e.turn}]\n\n${e.snapshot}\n\nCOMENTARIO: ${e.comment}`
+            ).join('\n\n');
+            const blob  = new Blob([lines + '\n'], { type: 'text/plain' });
             const a     = document.createElement('a');
             a.href      = URL.createObjectURL(blob);
             a.download  = 'trainer-' + new Date().toISOString().slice(0, 10) + '.txt';
