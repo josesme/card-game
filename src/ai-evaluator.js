@@ -377,13 +377,20 @@ class AIEvaluator {
   }
 
   // ─────────────────────────────────────────────
-  // FACE-DOWN BALANCE
-  // Tener algunos bocabajos es flexible; demasiados = sin efectos activos.
-  // Los bocabajos rivales son amenaza oculta.
+  // FACE-DOWN BALANCE (AI-E3)
+  // Bocabajo tiene valor estratégico solo con un plan:
+  // - Protocolos con sinergia de bocabajo (Life/Water/Smoke/Darkness/Apathy)
+  // - Línea donde la IA puede ganar (no línea perdida)
+  // - Cubrir carta con bottom command
+  // Sin plan = pérdida de tempo — penalizar.
   // ─────────────────────────────────────────────
 
   evaluateFaceDownBalance(state) {
     const LINES = ['izquierda', 'centro', 'derecha'];
+    const FACEDOWN_SYNERGY_PROTOCOLS = ['Vida', 'Agua', 'Humo', 'Oscuridad', 'Apatía'];
+    const aiProtocols = state.ai.protocols || [];
+    const hasFaceDownSynergy = aiProtocols.some(p => FACEDOWN_SYNERGY_PROTOCOLS.includes(p));
+
     let score = 0;
 
     LINES.forEach(line => {
@@ -393,21 +400,34 @@ class AIEvaluator {
       const aiTotal     = aiCards.length;
 
       if (aiTotal > 0) {
-        const aiFaceDown      = aiCards.filter(c =>  c.faceDown).length;
-        const aiFaceUp        = aiCards.filter(c => !c.faceDown).length;
-        const faceDownRatio   = aiFaceDown / aiTotal;
+        const aiFaceDown = aiCards.filter(c =>  c.faceDown).length;
+        const aiFaceUp   = aiCards.filter(c => !c.faceDown).length;
+        const lineLost   = this.isDeadLine(state, line, 'ai');
+
+        // Bocabajo en línea perdida = contribuir al rival directamente
+        if (aiFaceDown > 0 && lineLost) {
+          score -= 0.4 * aiFaceDown;
+        } else if (aiFaceDown > 0) {
+          if (hasFaceDownSynergy) {
+            // Bocabajo con sinergia activa = herramienta táctica válida
+            score += 0.15 * aiFaceDown;
+          } else {
+            // Bocabajo sin sinergia = pérdida de tempo leve
+            score -= 0.1 * aiFaceDown;
+          }
+        }
 
         // Tener al menos 1 boca arriba = efectos accesibles
         if (aiFaceUp >= 1) score += 0.15;
 
-        // Demasiados bocabajos sin ninguno activo = sin efectos = penalizar
-        if (faceDownRatio > 0.75 && aiFaceUp === 0) score -= 0.35;
+        // Mezcla equilibrada con sinergia = posición flexible
+        if (aiFaceDown >= 1 && aiFaceUp >= 1 && hasFaceDownSynergy) score += 0.1;
 
-        // Mezcla equilibrada = flexibilidad táctica
-        if (aiFaceDown >= 1 && aiFaceUp >= 1) score += 0.1;
+        // Solo bocabajos sin ninguno activo = sin efectos
+        if (aiFaceDown > 0 && aiFaceUp === 0 && !hasFaceDownSynergy) score -= 0.25;
       }
 
-      // Bocabajos del rival = potencial oculto que no podemos evaluar bien
+      // Bocabajos del rival = potencial oculto
       const playerFaceDown = playerCards.filter(c => c.faceDown).length;
       score -= playerFaceDown * 0.06;
     });
