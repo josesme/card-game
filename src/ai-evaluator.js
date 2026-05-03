@@ -317,7 +317,9 @@ class AIEvaluator {
   }
 
   // ─────────────────────────────────────────────
-  // OPPONENT THREAT (resources + compile potential + hidden bocabajos)
+  // OPPONENT THREAT (AI-E6)
+  // Resources + compile potential + hidden bocabajos + protocol-based danger.
+  // Player protocols are public info from draft — use them.
   // positive = player is dangerous (caller subtracts this)
   // ─────────────────────────────────────────────
 
@@ -332,14 +334,53 @@ class AIEvaluator {
     let hiddenThreat = 0;
     LINES.forEach(line => {
       if (state.field[line].compiledBy) return;
-      const playerScore  = this._score(state, line, 'player');
+      const playerScore   = this._score(state, line, 'player');
       const faceDownCount = (state.field[line].player || []).filter(c => c.faceDown).length;
-      // Si el rival está cerca y tiene bocabajos = riesgo de activar de golpe
       if (playerScore >= 5 && faceDownCount > 0) hiddenThreat += faceDownCount * 0.1;
       else hiddenThreat += faceDownCount * 0.04;
     });
 
-    return Math.min(1, (cardsAvailable / 10 + compilationPotential / 4) / 2 + hiddenThreat);
+    // Protocol-based danger: protocolos del rival son públicos desde el draft
+    let protocolDanger = 0;
+    const playerProtocols = state.player.protocols || [];
+
+    // Gravity+Death: combo más peligroso de Main 1 con tablero lleno
+    const hasGravity = playerProtocols.includes('Gravedad');
+    const hasDeath   = playerProtocols.includes('Muerte');
+    const totalPlayerCards = LINES.reduce((n, l) => n + (state.field[l].player || []).length, 0);
+    if (hasGravity && hasDeath && totalPlayerCards >= 3) protocolDanger += 0.25;
+    else if (hasGravity && hasDeath) protocolDanger += 0.12;
+
+    // Speed: Speed 3 visible en campo = motor activo muy peligroso
+    const hasSpeed = playerProtocols.includes('Velocidad');
+    if (hasSpeed) {
+      const speed3OnField = LINES.some(l =>
+        (state.field[l].player || []).some(c => !c.faceDown && c.card && c.card.nombre === 'Velocidad 3')
+      );
+      protocolDanger += speed3OnField ? 0.30 : 0.08;
+    }
+
+    // Psychic 1 activo y cubierto = lockout casi total del rival
+    const hasPsychic = playerProtocols.includes('Psique');
+    if (hasPsychic) {
+      const psychic1Locked = LINES.some(l => {
+        const stack = state.field[l].player || [];
+        const p1idx = stack.findIndex(c => !c.faceDown && c.card && c.card.nombre === 'Psique 1');
+        return p1idx !== -1 && p1idx < stack.length - 1; // cubierta por otra carta
+      });
+      protocolDanger += psychic1Locked ? 0.35 : 0.06;
+    }
+
+    // Life+Water: combo de desarrollo más consistente, especialmente con bocabajos
+    const hasLife  = playerProtocols.includes('Vida');
+    const hasWater = playerProtocols.includes('Agua');
+    if (hasLife && hasWater) protocolDanger += 0.10;
+
+    // Plague: discard sostenido debilita la mano de la IA
+    const hasPlague = playerProtocols.includes('Plaga');
+    if (hasPlague) protocolDanger += 0.08;
+
+    return Math.min(1, (cardsAvailable / 10 + compilationPotential / 4) / 2 + hiddenThreat + protocolDanger);
   }
 
   // ─────────────────────────────────────────────
