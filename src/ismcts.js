@@ -268,6 +268,23 @@ class ISMCTS {
     _rolloutPolicy(state, moves, player) {
         const opponent = player === 'ai' ? 'player' : 'ai';
 
+        // Returns true if a line is structurally unwinnable for `who`
+        const isDeadLine = (line, who) => {
+            if (state.field[line].compiledBy) return true;
+            const opp = who === 'ai' ? 'player' : 'ai';
+            const myS  = calculateScore(state, line, who);
+            const oppS = calculateScore(state, line, opp);
+            // Count cards still playable (face-down cards this player could flip or remaining hand)
+            const myField   = (state.field[line][who] || []);
+            const faceDownN = myField.filter(c => c.faceDown).length;
+            // Max potential: current score + remaining hand (assume best case ~5 per card) + face-down flips (~3 avg)
+            const handSize  = (state[who].hand || []).length;
+            const maxAdd    = handSize * 5 + faceDownN * 3;
+            if (myS + maxAdd < 10) return true;       // can't reach 10
+            if (myS + maxAdd <= oppS) return true;    // can't beat opponent even at max
+            return false;
+        };
+
         // 1. Compile
         const compile = moves.find(m => {
             if (!m.line || !m.card) return false;
@@ -288,18 +305,30 @@ class ISMCTS {
             if (block) return block;
         }
 
-        // 3. Best face-up play
+        // 3. Best face-up play — prefer winnable lines, score by: line advantage + card value
         const faceUpMoves = moves.filter(m => m.line && m.faceUp && m.card);
         if (faceUpMoves.length > 0) {
-            return faceUpMoves.reduce((best, m) =>
-                (m.card.valor || 0) > (best.card.valor || 0) ? m : best
-            );
+            // Separate moves by whether the line is winnable for the current player
+            const winnableFU = faceUpMoves.filter(m => !isDeadLine(m.line, player));
+            const pool = winnableFU.length > 0 ? winnableFU : faceUpMoves;
+            return pool.reduce((best, m) => {
+                const myS   = calculateScore(state, m.line, player);
+                const oppS  = calculateScore(state, m.line, opponent);
+                const lineA = myS - oppS; // advantage on this line
+                const scoreM    = lineA + (m.card.valor || 0);
+                const scoreBest = (calculateScore(state, best.line, player) - calculateScore(state, best.line, opponent)) + (best.card.valor || 0);
+                return scoreM > scoreBest ? m : best;
+            });
         }
 
-        // 4. Best face-down play
+        // 4. Best face-down play — only in winnable lines when playing as AI
         const faceDownMoves = moves.filter(m => m.line && !m.faceUp && m.card);
         if (faceDownMoves.length > 0) {
-            return faceDownMoves.reduce((best, m) =>
+            const winnableFD = player === 'ai'
+                ? faceDownMoves.filter(m => !isDeadLine(m.line, player))
+                : faceDownMoves;
+            const pool = winnableFD.length > 0 ? winnableFD : faceDownMoves;
+            return pool.reduce((best, m) =>
                 (m.card.valor || 0) > (best.card.valor || 0) ? m : best
             );
         }
