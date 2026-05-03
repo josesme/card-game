@@ -3411,10 +3411,13 @@ function generateAIPossibleMoves() {
                     });
                 }
 
-                // Bocabajo solo si la carta no tiene opción face-up válida en ninguna línea.
-                // Cartas con protocolo propio siempre deben jugarse bocarriba en su línea.
+                // Bocabajo solo si la carta no tiene opción face-up válida en ninguna línea,
+                // o si su línea natural ya está compilada (jugar en otra línea para hinchar).
                 const hasFaceUp = cardHasFaceUpOption.get(cardIndex);
-                if (!hasFaceUp && !(typeof isPlayBlockedByPersistent === 'function' && isPlayBlockedByPersistent(line, 'ai', true))) {
+                const naturalLineIndex = gameState.ai.protocols.indexOf(card.protocol);
+                const naturalLine = naturalLineIndex !== -1 ? LINES[naturalLineIndex] : null;
+                const naturalLineCompiled = naturalLine && !!gameState.field[naturalLine].compiledBy;
+                if ((!hasFaceUp || naturalLineCompiled) && !(typeof isPlayBlockedByPersistent === 'function' && isPlayBlockedByPersistent(line, 'ai', true))) {
                     moves.push({
                         cardIndex,
                         line,

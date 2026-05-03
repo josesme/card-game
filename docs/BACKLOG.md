@@ -9,6 +9,9 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 Plan iterativo para mejorar la calidad de decisiones de ISMCTS conectando y enriqueciendo `AIEvaluator`. Cada historia es independiente y aporta valor incremental. Fuente: `docs/compile-estrategy-es.md`.
 
 ### Alto valor, bajo coste
+- **AI-E15 — Bocabajo defensivo como bloqueo:** Cuando el rival está cerca de compilar una línea, permitir a la IA jugar una carta bocabajo en esa línea aunque tenga opción face-up en otro sitio. Requiere definir umbral de amenaza, qué cartas son sacrificables, y si aplica solo en late game. Muchas casuísticas — definir antes de implementar.
+
+
 - **AI-E3 — Bocabajo con criterio:** Mejorar `evaluateFaceDownBalance()`: penalización dura si bocabajo va en línea perdida estructuralmente. Bonus si la IA tiene Life/Water/Smoke/Darkness/Apathy en sus protocolos. Penalización leve si ninguna condición estratégica aplica.
 
 - **AI-E8 — Presión multi-línea refinada:** Refinar el bonus de amenazar compile en 2+ líneas simultáneamente. Actualmente existe pero infraponderado. Hacerlo dependiente de la fase: en late game es casi decisivo.
