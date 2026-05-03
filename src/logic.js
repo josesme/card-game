@@ -2100,6 +2100,7 @@ function handleFieldCardClick(line, target, cardIdx) {
         if (ctx.forceLine && line !== ctx.forceLine) return;
         if (ctx.allowedLines && !ctx.allowedLines.includes(line)) return;
         const cardObj = gameState.field[line][target][cardIdx];
+        if (!cardObj) return; // DOM stale: card was removed from state but wrapper still visible
         if (!cardMatchesFilter(cardObj, ctx)) return;
         // preventEliminate: Muerte 1 no puede ser eliminada por efectos externos (solo bocarriba)
         if (typeof getPersistentModifiers === 'function' && getPersistentModifiers(cardObj).preventEliminate) {
@@ -2131,6 +2132,7 @@ function handleFieldCardClick(line, target, cardIdx) {
         return;
     } else if (ctx.type === 'flip') {
         const cardObj = gameState.field[line][target][cardIdx];
+        if (!cardObj) return; // DOM stale: card was removed from state but wrapper still visible
         if (ctx.forceLine && line !== ctx.forceLine) return;
         if (ctx.excludeLine && line === ctx.excludeLine) return;
         if (ctx.excludeCardName && cardObj.card.nombre === ctx.excludeCardName) return;
@@ -2163,6 +2165,7 @@ function handleFieldCardClick(line, target, cardIdx) {
         return;
     } else if (ctx.type === 'shift') {
         const cardObj = gameState.field[line][target][cardIdx];
+        if (!cardObj) return; // DOM stale
         // Bloquear línea excluida (ej. Gravedad 4: fuente no puede ser la propia línea)
         if (ctx.excludeLine && line === ctx.excludeLine) return;
         // Oscuridad 0: solo cartas cubiertas (no la top)
@@ -2189,6 +2192,7 @@ function handleFieldCardClick(line, target, cardIdx) {
     } else if (ctx.type === 'revealField') {
         // Revelar: mostrar la identidad de la carta bocabajo sin cambiar su estado
         const cardObj = gameState.field[line][target][cardIdx];
+        if (!cardObj) return; // DOM stale
         if (!cardObj.faceDown) return; // solo bocabajo
         // NO establecer effectContext = null aquí - Luz 2 aún no ha terminado
         clearEffectHighlights();
@@ -2200,6 +2204,7 @@ function handleFieldCardClick(line, target, cardIdx) {
     } else if (ctx.type === 'return') {
         // Filter: si hay filtro faceDown con targetAll, validar que la carta clicada sea bocabajo
         const cardObj = gameState.field[line][target][cardIdx];
+        if (!cardObj) return; // DOM stale
         if (ctx.filter === 'faceDown' && !cardObj.faceDown) return;
         const _doReturn = () => {
             gameState.field[line][target].splice(cardIdx, 1);
@@ -2560,6 +2565,7 @@ function resolveEffectAI(type, target, count, opts = {}) {
                 gameState.field[line][actualTarget].pop();
                 gameState[actualTarget].trash.push(cardObj.card);
                 gameState[gameState.turn].eliminatedSinceLastCheck = true;
+                updateUI(); // sync DOM before triggerUncovered may set up interactive effects
                 triggerUncovered(line, actualTarget);
             }
         }
