@@ -469,6 +469,13 @@ class ISMCTS {
         if (fx.returnOpponent) {
             this._simReturnHighest(state, 'player');
         }
+        if (fx.returnSelf) {
+            const stack = state.field[line] && state.field[line].ai;
+            if (stack && stack.length > 0) {
+                const returned = stack.pop();
+                if (returned) state.ai.hand.push(returned.card);
+            }
+        }
         if (fx.preventCompile) {
             state.player.cannotCompile = true;
         }

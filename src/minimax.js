@@ -126,7 +126,7 @@ const CARD_SIM_EFFECTS = {
   // ── Return opponent cards ─────────────────────────────
   'Corrupción 1': { returnOpponent: 1 },
   'Miedo 2':      { returnOpponent: 1 },
-  'Agua 4':       { returnOpponent: 1 },  // devuelve carta propia (ai) al ser AI — equivalente en sim
+  'Agua 4':       { returnSelf: true },    // onPlay devuelve esta carta a la mano — no deja score
   'Hielo 2':      { returnOpponent: 1 },  // shift any ≈ devuelve carta de mayor valor del oponente
 
   // ── Prevent compile / restrict opponent ───────────────
