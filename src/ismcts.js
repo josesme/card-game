@@ -327,7 +327,7 @@ class ISMCTS {
 
     /**
      * Evaluate a non-terminal leaf. Returns [0,1] from AI perspective.
-     * Uses compile count + normalized line scores.
+     * Uses AIEvaluator when available; falls back to score-based heuristic.
      */
     _evaluate(state) {
         const aiCompiled = (state.ai.compiled || []).length;
@@ -336,9 +336,21 @@ class ISMCTS {
         if (aiCompiled >= 3) return 1.0;
         if (plCompiled >= 3) return 0.0;
 
+        if (typeof AIEvaluator !== 'undefined') {
+            try {
+                const evaluator = new AIEvaluator(state);
+                evaluator.diffDepth = 5; // use full evaluation depth
+                const { total } = evaluator.evaluateBoard(state);
+                // total range: [-320, +320] based on weight sum
+                return Math.max(0, Math.min(1, (total + 320) / 640));
+            } catch (e) {
+                // fall through to basic heuristic
+            }
+        }
+
+        // Fallback: compile count + normalized line scores
         let aiScore = aiCompiled * 4;
         let plScore = plCompiled * 4;
-
         ISMCTS_LINES.forEach(line => {
             if (state.field[line].compiledBy === 'ai')     { aiScore += 2; return; }
             if (state.field[line].compiledBy === 'player') { plScore += 2; return; }
@@ -347,7 +359,6 @@ class ISMCTS {
             aiScore += aS / 10;
             plScore += pS / 10;
         });
-
         const total = aiScore + plScore;
         return total > 0 ? aiScore / total : 0.5;
     }
