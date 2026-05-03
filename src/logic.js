@@ -3824,6 +3824,7 @@ function showGameOver(playerWon) {
     const screen = document.getElementById('victory-screen');
     if (!screen) return;
     saveMatchRecord(playerWon);
+    document.dispatchEvent(new CustomEvent('compile:gameOver', { detail: { playerWon } }));
     if (typeof AudioManager !== 'undefined') {
         AudioManager.stopBGM?.();
         AudioManager.playSound(playerWon ? 'victory' : 'defeat');

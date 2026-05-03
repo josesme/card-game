@@ -1303,25 +1303,64 @@
             document.getElementById('audio-icon-off').style.display = '';
         }
 
+        // ── Trainer: peek AI hand ───────────────────────────────
+        const trainerLog = []; // { turn, comment } — only entries with a comment
+
         document.getElementById('btn-peek-ai-hand').addEventListener('click', () => {
             if (typeof gameState === 'undefined' || !gameState.ai) return;
-            const hand = [...gameState.ai.hand];
-            const modal     = document.getElementById('reveal-modal');
-            const container = document.getElementById('reveal-cards-container');
-            const closeBtn  = document.getElementById('btn-reveal-close');
-            const titleEl   = document.getElementById('reveal-title');
+            const hand    = [...gameState.ai.hand];
+            const turnNum = gameState.turnCount || 0;
+            const modal      = document.getElementById('reveal-modal');
+            const container  = document.getElementById('reveal-cards-container');
+            const closeBtn   = document.getElementById('btn-reveal-close');
+            const titleEl    = document.getElementById('reveal-title');
             const subtitleEl = document.getElementById('reveal-subtitle');
-            const sourceEl  = document.getElementById('reveal-source');
+            const sourceEl   = document.getElementById('reveal-source');
+            const actionsEl  = document.getElementById('reveal-actions');
             if (!modal || !container || !closeBtn) return;
+
             titleEl.textContent    = 'MANO IA';
-            subtitleEl.textContent = hand.length + ' carta' + (hand.length !== 1 ? 's' : '');
+            subtitleEl.textContent = 'Turno ' + turnNum + ' · ' + hand.length + ' carta' + (hand.length !== 1 ? 's' : '');
             sourceEl.textContent   = '';
-            container.innerHTML    = hand.length > 0
-                ? hand.map(c => typeof createCardHTML === 'function' ? createCardHTML(c, { faceUp: true }) : `<span>${c.nombre}</span>`).join('')
+
+            container.innerHTML = hand.length > 0
+                ? hand.map(c => {
+                    const faceUp = Object.assign({}, c, { faceDown: false });
+                    return `<div style="transform:scale(0.8);transform-origin:top center;">${typeof createCardHTML === 'function' ? createCardHTML(faceUp) : `<span>${c.nombre}</span>`}</div>`;
+                  }).join('')
                 : '<span style="color:var(--ui-dim);font-family:var(--ui-font);font-size:12px;">Mano vacía</span>';
-            const close = () => modal.classList.add('hidden');
-            closeBtn.onclick = close;
+
+            // Textarea para comentario — reutiliza valor previo del mismo turno si existe
+            const existing = trainerLog.find(e => e.turn === turnNum);
+            actionsEl.innerHTML = `
+                <textarea id="trainer-comment" placeholder="Comentario (opcional)…"
+                    style="width:100%;box-sizing:border-box;background:#0a0e27;color:var(--ui-cyan);border:1px solid var(--ui-dim);border-radius:4px;padding:8px;font-family:var(--ui-font);font-size:11px;resize:vertical;min-height:60px;margin-bottom:8px;"
+                >${existing ? existing.comment : ''}</textarea>
+                <button class="ui-btn" id="btn-reveal-close">CONTINUAR</button>
+            `;
+
+            document.getElementById('btn-reveal-close').onclick = () => {
+                const comment = (document.getElementById('trainer-comment')?.value || '').trim();
+                if (comment) {
+                    const idx = trainerLog.findIndex(e => e.turn === turnNum);
+                    if (idx >= 0) trainerLog[idx].comment = comment;
+                    else trainerLog.push({ turn: turnNum, comment });
+                }
+                modal.classList.add('hidden');
+            };
+
             modal.classList.remove('hidden');
+        });
+
+        // ── Trainer: export log on game over ────────────────────
+        document.addEventListener('compile:gameOver', () => {
+            if (trainerLog.length === 0) return;
+            const lines = trainerLog.map(e => `[Turno ${e.turn}] ${e.comment}`).join('\n\n');
+            const blob  = new Blob([lines], { type: 'text/plain' });
+            const a     = document.createElement('a');
+            a.href      = URL.createObjectURL(blob);
+            a.download  = 'trainer-' + new Date().toISOString().slice(0, 10) + '.txt';
+            a.click();
         });
     });
 </script>
