@@ -61,7 +61,7 @@ const CARD_SIM_EFFECTS = {
 
   // ── Conditional (discard to activate) ────────────────
   'Fuego 1':    { selfDiscard: 1, eliminate: { strategy: 'highest' } },
-  'Fuego 2':    { selfDiscard: 1, returnOpponent: 1 },
+  'Fuego 2':    { selfDiscard: 1, returnSelf: true },  // descarta 1 y devuelve 1 carta propia — coste neto
   // Fuego 3: onTurnEnd — optionally discard to flip 1 opponent card; modeled without cost (optional trigger)
   'Fuego 3':    { flipOpponent: 1 },
 
@@ -111,13 +111,13 @@ const CARD_SIM_EFFECTS = {
 
   // ── Positional ───────────────────────────────────────
   'Gravedad 6': { opponentPlayFromDeck: true },
-  'Agua 3':     { returnOpponentByValue: 2 },
+  'Agua 3':     { flipOpponent: 1 },  // devuelve todas las cartas valor 2 de 1 línea (ambos jugadores) — efecto situacional, aproximamos como disruption
   'Velocidad 0':{ extraPlay: 1 },
   'Oscuridad 3':{ extraPlay: 1 },
   // Oscuridad 2: onPlay — may flip 1 covered card in this line; modeled as opponent flip
   'Oscuridad 2':{ flipOpponent: 1 },
-  // Oscuridad 4: onPlay — shifts 1 facedown card (any); modeled as opponent field disruption
-  'Oscuridad 4':{ returnOpponent: 1 },
+  // Oscuridad 4: onPlay — mueve 1 bocabajo de cualquier jugador; reposición propia o rival
+  'Oscuridad 4':{ flipOpponent: 1 },  // aproximamos como disruption leve
 
   // ── Opponent gains (bad for AI) ───────────────────────
   'Amor 6':     { opponentDraw: 2 },
@@ -161,8 +161,8 @@ const CARD_SIM_EFFECTS = {
   // ── Main 1 — huecos cubiertos ────────────────────────
   // Muerte 1: Start trigger — roba 1, elimina otra carta, se auto-elimina
   'Muerte 1':   { draw: 1, eliminate: { strategy: 'highest' } },
-  // Luz 3: cambia TODAS las bocabajo de esta línea a otra → disruption de campo rival
-  'Luz 3':      { returnOpponent: 1 },
+  // Luz 3: mueve TODAS las bocabajo propias de esta línea a otra — reposición propia, no afecta rival
+  'Luz 3':      { draw: 1 },  // aproximamos como ganancia de flexibilidad táctica
   // Amor 3: toma 1 carta aleatoria de la mano rival, da 1 propia → ganancia neta de calidad
   'Amor 3':     { draw: 1 },
   // Espíritu 3: reactivo (tras robar); Espíritu 4: reorganiza protocolos — sin efecto directo en sim
@@ -203,8 +203,8 @@ const CARD_SIM_EFFECTS = {
   'Corrupción 3': { flipOpponent: 1 },
   'Corrupción 5': { selfDiscard: 1 },
   // Corrupción 6: condicional auto-eliminar en turno final — sin efecto directo
-  // Diversidad 1: cambia 1 carta + roba tantas como protocolos distintos en línea (~2 en midgame)
-  'Diversidad 1': { returnOpponent: 1, draw: 2 },
+  // Diversidad 1: cambia 1 carta (any) + roba por protocolos distintos en línea (~2 en midgame)
+  'Diversidad 1': { draw: 2 },  // shift es neutro/propio; conservamos solo el draw
   // Diversidad 3/6: modificador persistente de score / auto-eliminar condicional
   // Diversidad 4: voltea carta con valor < número de protocolos distintos en campo
   'Diversidad 4': { flipOpponent: 1 },

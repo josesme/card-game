@@ -89,13 +89,11 @@ describe('simulateCardEffect — new entries (Block 3 Part A)', () => {
     expect(state.field.centro.player[0].faceDown).toBe(true);
   });
 
-  test('Oscuridad 4: returns 1 opponent card from field to hand', () => {
+  test('Oscuridad 4: flips 1 opponent face-up card to facedown (shift disruption)', () => {
     const state = makeState();
     state.field.izquierda.player.push(fieldCard('B', 4, false));
     mm.simulateCardEffect(state, card('Oscuridad 4', 4), 'derecha');
-    expect(state.player.hand.length).toBe(1);
-    expect(state.player.hand[0].nombre).toBe('B');
-    expect(state.field.izquierda.player.length).toBe(0);
+    expect(state.field.izquierda.player[0].faceDown).toBe(true);
   });
 
 });
