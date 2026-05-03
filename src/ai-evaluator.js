@@ -325,6 +325,18 @@ class AIEvaluator {
 
   evaluateOpponentThreat(state) {
     const LINES = ['izquierda', 'centro', 'derecha'];
+
+    // Amenaza de match point: jugador a 2 compiles con una línea a 1 jugada de cerrar.
+    // En ese caso la amenaza es máxima — no hay matices, bloquear es lo único que importa.
+    const playerCompiled = (state.player.compiled || []).length;
+    if (playerCompiled >= 2) {
+      const closeToCompile = LINES.some(line => {
+        if (state.field[line].compiledBy) return false;
+        return this._score(state, line, 'player') >= 7;
+      });
+      if (closeToCompile) return 1.0;
+    }
+
     const hand  = state.player.hand  || [];
     const deck  = state.player.deck  || [];
     const cardsAvailable       = hand.length + Math.min(deck.length, 3);
