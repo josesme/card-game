@@ -2565,7 +2565,6 @@ function resolveEffectAI(type, target, count, opts = {}) {
                 gameState.field[line][actualTarget].pop();
                 gameState[actualTarget].trash.push(cardObj.card);
                 gameState[gameState.turn].eliminatedSinceLastCheck = true;
-                updateUI(); // sync DOM before triggerUncovered may set up interactive effects
                 triggerUncovered(line, actualTarget);
             }
         }
