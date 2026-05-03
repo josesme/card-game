@@ -1330,22 +1330,27 @@
                   }).join('')
                 : '<span style="color:var(--ui-dim);font-family:var(--ui-font);font-size:12px;">Mano vacía</span>';
 
-            // Textarea para comentario — reutiliza valor previo del mismo turno si existe
+            // Textarea para comentario — insertar antes del botón existente, no reemplazarlo
+            let ta = document.getElementById('trainer-comment');
+            if (!ta) {
+                ta = document.createElement('textarea');
+                ta.id = 'trainer-comment';
+                ta.placeholder = 'Comentario (opcional)…';
+                ta.style.cssText = 'width:100%;box-sizing:border-box;background:#0a0e27;color:var(--ui-cyan);border:1px solid var(--ui-dim);border-radius:4px;padding:8px;font-family:var(--ui-font);font-size:11px;resize:vertical;min-height:60px;margin-bottom:8px;display:block;';
+                actionsEl.insertBefore(ta, closeBtn);
+            }
             const existing = trainerLog.find(e => e.turn === turnNum);
-            actionsEl.innerHTML = `
-                <textarea id="trainer-comment" placeholder="Comentario (opcional)…"
-                    style="width:100%;box-sizing:border-box;background:#0a0e27;color:var(--ui-cyan);border:1px solid var(--ui-dim);border-radius:4px;padding:8px;font-family:var(--ui-font);font-size:11px;resize:vertical;min-height:60px;margin-bottom:8px;"
-                >${existing ? existing.comment : ''}</textarea>
-                <button class="ui-btn" id="btn-reveal-close">CONTINUAR</button>
-            `;
+            ta.value = existing ? existing.comment : '';
 
-            document.getElementById('btn-reveal-close').onclick = () => {
+            closeBtn.textContent = 'CONTINUAR';
+            closeBtn.onclick = () => {
                 const comment = (document.getElementById('trainer-comment')?.value || '').trim();
                 if (comment) {
                     const idx = trainerLog.findIndex(e => e.turn === turnNum);
                     if (idx >= 0) trainerLog[idx].comment = comment;
                     else trainerLog.push({ turn: turnNum, comment });
                 }
+                ta.remove();
                 modal.classList.add('hidden');
             };
 
