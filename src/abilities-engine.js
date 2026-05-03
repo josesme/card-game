@@ -3791,7 +3791,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       });
       if (winLines.length === 0) { processAbilityEffect(); break; }
       if (targetPlayer === 'player') {
-        startEffect('eliminate', 'ai', 1, { allowedLines: winLines });
+        startEffect('eliminate', 'ai', 1, { allowedLines: winLines, owner: 'player' });
       } else {
         const best = winLines.sort((a, b) => calculateScore(gameState, b, 'player') - calculateScore(gameState, a, 'player'))[0];
         const removed = gameState.field[best].player[gameState.field[best].player.length - 1];

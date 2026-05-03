@@ -566,7 +566,7 @@ describe('Acciones directas Main 2', () => {
     GS.field['alpha'].ai = [{ card: makeCard('AIStrong', 5), faceDown: false }];
     GS.field['alpha'].player = [{ card: makeCard('Weak', 1), faceDown: false }];
     runAction({ action: 'deleteInWinningOpponentLine' }, 'player');
-    expect(global.startEffect).toHaveBeenCalledWith('eliminate', 'ai', 1, { allowedLines: ['alpha'] });
+    expect(global.startEffect).toHaveBeenCalledWith('eliminate', 'ai', 1, { allowedLines: ['alpha'], owner: 'player' });
   });
 });
 

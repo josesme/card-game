@@ -2534,6 +2534,8 @@ function aiPickFlipLine(target) {
 
 function resolveEffectAI(type, target, count, opts = {}) {
     const actualTarget = (target === 'any') ? (type === 'discard' ? 'ai' : 'player') : target;
+    // Capture at entry: triggerUncovered may fire synchronous chains that overwrite currentTriggerCard
+    const myTriggerCard = gameState.currentTriggerCard;
     let eliminatedNames = [];
 
     if (type === 'discard') {
@@ -2787,7 +2789,7 @@ function resolveEffectAI(type, target, count, opts = {}) {
     }
 
     const typeLabels = { discard: 'descartó', eliminate: 'eliminó', flip: 'volteó', shift: 'cambió de línea', return: 'devolvió a mano' };
-    const triggerLabel = gameState.currentTriggerCard ? ` [${gameState.currentTriggerCard}]` : '';
+    const triggerLabel = myTriggerCard ? ` [${myTriggerCard}]` : '';
     if (type === 'eliminate') {
         if (eliminatedNames.length > 0) {
             logEvent(`IA eliminó ${eliminatedNames.join(', ')}${triggerLabel}`, { isAI: true });
