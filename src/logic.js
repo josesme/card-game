@@ -3355,7 +3355,24 @@ function playAITurnRandom() {
  */
 function generateAIPossibleMoves() {
     const moves = [];
-    
+    const aiForcedDown = typeof hasForceOpponentFaceDown === 'function' && hasForceOpponentFaceDown('ai');
+
+    // Pre-compute which cards have at least one valid face-up line
+    const cardHasFaceUpOption = new Map();
+    gameState.ai.hand.forEach((card, cardIndex) => {
+        const lineIndex = gameState.ai.protocols.indexOf(card.protocol);
+        const aiUnityLine = typeof getUnityPlayLine === 'function' ? getUnityPlayLine('ai') : null;
+        const cardPlaysAnywhere = typeof canPlayAnywhere === 'function' && canPlayAnywhere(card);
+        const cardOnAnySide = typeof canPlayOnAnySide === 'function' && canPlayOnAnySide(card);
+        const hasFaceUp = !aiForcedDown && (
+            lineIndex !== -1 ||
+            (aiUnityLine && card.nombre.startsWith('Unidad')) ||
+            cardPlaysAnywhere ||
+            cardOnAnySide
+        );
+        cardHasFaceUpOption.set(cardIndex, hasFaceUp);
+    });
+
     gameState.ai.hand.forEach((card, cardIndex) => {
         LINES.forEach(line => {
             // Saltar líneas bloqueadas por Plaga 0 del jugador
@@ -3371,7 +3388,6 @@ function generateAIPossibleMoves() {
                 const unityMatch = aiUnityLine === line && card.nombre.startsWith('Unidad');
                 const cardPlaysAnywhere = typeof canPlayAnywhere === 'function' && canPlayAnywhere(card);
 
-                const aiForcedDown = typeof hasForceOpponentFaceDown === 'function' && hasForceOpponentFaceDown('ai');
                 if ((lineMatchesProtocol || unityMatch || cardPlaysAnywhere) && !aiForcedDown) {
                     moves.push({
                         cardIndex,
@@ -3395,15 +3411,17 @@ function generateAIPossibleMoves() {
                     });
                 }
 
-                // Movimiento bocabajo (si Metal 2 del jugador no lo bloquea)
-                if (!(typeof isPlayBlockedByPersistent === 'function' && isPlayBlockedByPersistent(line, 'ai', true))) {
-                  moves.push({
-                    cardIndex,
-                    line,
-                    faceUp: false,
-                    card,
-                    type: 'face-down',
-                  });
+                // Bocabajo solo si la carta no tiene opción face-up válida en ninguna línea.
+                // Cartas con protocolo propio siempre deben jugarse bocarriba en su línea.
+                const hasFaceUp = cardHasFaceUpOption.get(cardIndex);
+                if (!hasFaceUp && !(typeof isPlayBlockedByPersistent === 'function' && isPlayBlockedByPersistent(line, 'ai', true))) {
+                    moves.push({
+                        cardIndex,
+                        line,
+                        faceUp: false,
+                        card,
+                        type: 'face-down',
+                    });
                 }
             }
         });
