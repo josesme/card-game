@@ -7,8 +7,9 @@ importScripts('score-utils.js', 'ai-evaluator.js', 'minimax.js', 'ismcts.js', 'a
 
 self.onmessage = function({ data: msg }) {
     if (msg.type === 'init') {
-        self.CARD_SIM_EFFECTS = msg.cardEffects;
-        self.GLOBAL_CARDS     = msg.globalCards;
+        // CARD_SIM_EFFECTS ya viene definido por minimax.js — no sobreescribir.
+        // GLOBAL_CARDS es necesario para la determinización del ISMCTS interno.
+        self.GLOBAL_CARDS = msg.globalCards;
         self.postMessage({ type: 'ready' });
         return;
     }

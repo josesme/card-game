@@ -3174,8 +3174,8 @@ function _ensureAIWorker(diffDepth) {
     if (_aiWorker) return _aiWorker;
 
     if (USE_ISMCTS) {
-        _aiWorker = new Worker('ismcts-worker.js');
-        _aiWorker.onerror = (e) => console.error('❌ ISMCTS Worker error:', e.message);
+        _aiWorker = new Worker('ai-worker.js');
+        _aiWorker.onerror = (e) => console.error('❌ AIBrain Worker error:', e.message);
         _aiWorker.postMessage({
             type:        'init',
             cardEffects: window.CARD_EFFECTS,
@@ -3211,7 +3211,7 @@ function playAITurn() {
     const diffDepth = parseInt(sessionStorage.getItem('aiDifficultyDepth') || '3');
     const diffName  = sessionStorage.getItem('aiDifficultyName') || 'NÚCLEO';
 
-    console.log(`🤖 IA Turno iniciado (${USE_ISMCTS ? 'ISMCTS' : 'Minimax'} · ${diffName} · depth ${diffDepth})`);
+    console.log(`🤖 IA Turno iniciado (${USE_ISMCTS ? 'AIBrain' : 'Minimax'} · ${diffName} · nivel ${diffDepth})`);
 
     if (gameState.ai.hand.length === 0) {
         while(gameState.ai.hand.length < 5) drawCard('ai');
@@ -3250,11 +3250,6 @@ function playAITurn() {
         return;
     }
 
-    // Depth: level 5 looks one step further
-    const actualDepth = diffDepth === 5 ? 6 : diffDepth;
-    const TIME_BUDGETS = { 1: 500, 2: 500, 3: 1500, 4: 3000, 5: 5000 };
-    const timeBudgetMs = TIME_BUDGETS[diffDepth] ?? 1500;
-
     const worker = _ensureAIWorker(diffDepth);
 
     function onWorkerMessage({ data: msg }) {
@@ -3268,12 +3263,12 @@ function playAITurn() {
             move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
         } else {
             move = bestMoveResult.bestMove;
-            console.log(`🤖 IA Decision (depth=${bestMoveResult.depthReached}):`, {
+            console.log(`🤖 IA Decision (${bestMoveResult.depthReached}):`, {
                 action: move.action || 'play',
                 line: move.line,
                 cardName: move.card?.nombre,
                 faceUp: move.faceUp,
-                score: Math.round(bestMoveResult.score),
+                score: bestMoveResult.score,
             });
         }
 
@@ -3285,9 +3280,7 @@ function playAITurn() {
         type:         'findBestMove',
         gameState:    stateForAI,
         possibleMoves,
-        diffDepth,
-        maxDepth:     actualDepth,
-        timeBudgetMs,
+        nivel:        diffDepth,
     });
 }
 
