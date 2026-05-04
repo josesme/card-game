@@ -117,6 +117,16 @@ Durante la fase "Verificar Compilación": si tienes **valor ≥ 10** en una lín
 
 ## 📋 Reglas Generales
 
+### Restricciones por tipo de acción
+
+- **Eliminar**: solo la carta descubierta. Excepción: si el efecto dice "todas" → penetra cubiertas. (Ejemplo: Muerte 2 — "todas las cartas con Valor 1 o 2 de una línea" penetra por el "todas", no por el valor concreto.)
+- **Voltear**: solo la carta descubierta. Sin excepciones generales. (Nota Gravedad 2: la excepción de su aclaración es sobre mover una carta que quedó cubierta por efectos intermedios entre sus dos comandos, no sobre el volteo en sí.)
+- **Robar**: del propio mazo salvo que el efecto diga explícitamente "rival" u "oponente".
+- **Cambiar/Desplazar**: mueve una carta a otra línea en el mismo lado. La carta aterriza descubierta en destino. Excepción Gravedad 2: puede mover una carta que fue cubierta por efectos intermedios entre sus dos comandos.
+- **Devolver**: mueve una carta del campo a la mano de su propietario. No cuenta como robo.
+
+---
+
 ### Pilas y Cobertura
 - Las cartas jugadas en líneas que ya tienen cartas las **cubren**.
 - La carta **descubierta** (uncovered) es la que está en el extremo de la pila, más alejada del protocolo — es la **única que puede ser manipulada** en esa línea, salvo que un efecto especifique "cartas cubiertas" o "todas las cartas".
