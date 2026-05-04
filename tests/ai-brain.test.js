@@ -24,6 +24,9 @@ const {
     elegirJugada,
     _puntuarJugada,
     _puntuarBocabajo,
+    _puntuarRefresh,
+    _bonusContraestrategia,
+    _bonusProtocoloEspecifico,
     _lineaMuerta,
 } = require('../src/ai-brain.js');
 
@@ -216,5 +219,145 @@ describe('elegirJugada', () => {
         const jugadas = [makeJugada('A', 1, 'izquierda'), makeJugada('B', 2, 'centro')];
         expect(elegirJugada(null,              jugadas)).toBe(jugadas[0]);
         expect(elegirJugada({ bestMove: null }, jugadas)).toBe(jugadas[0]);
+    });
+});
+
+// ─── _bonusContraestrategia (AI-E12) ─────────────────────────────────────────
+
+describe('_bonusContraestrategia (AI-E12)', () => {
+    test('Velocidad 3 activa del rival → carta de interacción recibe bonus alto', () => {
+        const estado = makeEstado({ player: { protocols: ['Velocidad', 'Fuego', 'Vida'] } });
+        estado.field.izquierda.player.push({ card: makeCard('Velocidad 3', 3, 'Velocidad'), faceDown: false });
+        const jugadaInteraccion = makeJugada('Muerte 3', 3, 'centro', true);
+        jugadaInteraccion.card.h_accion = 'Voltea 1 carta del rival';
+        expect(_bonusContraestrategia(jugadaInteraccion, estado)).toBeGreaterThan(30);
+    });
+
+    test('Velocidad 3 activa → jugada no-interacción penalizada', () => {
+        const estado = makeEstado({ player: { protocols: ['Velocidad', 'Fuego', 'Vida'] } });
+        estado.field.izquierda.player.push({ card: makeCard('Velocidad 3', 3, 'Velocidad'), faceDown: false });
+        const jugadaNormal = makeJugada('Muerte 3', 3, 'centro', true);
+        expect(_bonusContraestrategia(jugadaNormal, estado)).toBeLessThan(0);
+    });
+
+    test('Psique 1 bloqueada → carta de interacción recibe bonus', () => {
+        const estado = makeEstado({ player: { protocols: ['Psique', 'Fuego', 'Vida'] } });
+        // Psique 1 en índice 0 (no es la cima) → bloqueada
+        estado.field.izquierda.player.push({ card: makeCard('Psique 1', 1, 'Psique'), faceDown: false });
+        estado.field.izquierda.player.push({ card: makeCard('Psique 3', 3, 'Psique'), faceDown: false });
+        const jugadaElimina = makeJugada('Muerte 3', 3, 'centro', true);
+        jugadaElimina.card.h_accion = 'Elimina 1 carta del rival';
+        expect(_bonusContraestrategia(jugadaElimina, estado)).toBeGreaterThan(30);
+    });
+
+    test('sin setups peligrosos → devuelve 0', () => {
+        const estado = makeEstado();
+        const jugada = makeJugada('Muerte 3', 3, 'izquierda', true);
+        expect(_bonusContraestrategia(jugada, estado)).toBe(0);
+    });
+});
+
+// ─── _bonusProtocoloEspecifico (AI-E14) ───────────────────────────────────────
+
+describe('_bonusProtocoloEspecifico (AI-E14)', () => {
+    test('Velocidad 0 sin Velocidad 3 → penalización', () => {
+        const estado = makeEstado({ ai: { protocols: ['Velocidad', 'Fuego', 'Vida'] } });
+        const jugada = makeJugada('Velocidad 0', 0, 'izquierda', true);
+        jugada.card.protocol = 'Velocidad';
+        expect(_bonusProtocoloEspecifico(jugada, estado)).toBeLessThan(0);
+    });
+
+    test('Velocidad 0 con Velocidad 3 en mano → sin penalización', () => {
+        const estado = makeEstado({ ai: {
+            protocols: ['Velocidad', 'Fuego', 'Vida'],
+            hand: [makeCard('Velocidad 3', 3, 'Velocidad')],
+        } });
+        const jugada = makeJugada('Velocidad 0', 0, 'izquierda', true);
+        jugada.card.protocol = 'Velocidad';
+        expect(_bonusProtocoloEspecifico(jugada, estado)).toBe(0);
+    });
+
+    test('Espíritu 3 recibe bonus por ser carta muy valiosa', () => {
+        const estado = makeEstado();
+        const jugada = makeJugada('Espíritu 3', 3, 'izquierda', true);
+        jugada.card.protocol = 'Espíritu';
+        expect(_bonusProtocoloEspecifico(jugada, estado)).toBeGreaterThan(0);
+    });
+
+    test('Gravedad 0 con tablero lleno → bonus alto', () => {
+        const estado = makeEstado();
+        ['izquierda', 'centro', 'derecha'].forEach(l => {
+            estado.field[l].ai.push({ card: makeCard('X', 2), faceDown: false });
+            estado.field[l].ai.push({ card: makeCard('Y', 2), faceDown: false });
+        });
+        const jugada = makeJugada('Gravedad 0', 0, 'izquierda', true);
+        jugada.card.protocol = 'Gravedad';
+        expect(_bonusProtocoloEspecifico(jugada, estado)).toBeGreaterThan(30);
+    });
+
+    test('Muerte 5 con tablero rival vacío → penalización', () => {
+        const estado = makeEstado();
+        const jugada = makeJugada('Muerte 5', 5, 'izquierda', true);
+        jugada.card.protocol = 'Muerte';
+        expect(_bonusProtocoloEspecifico(jugada, estado)).toBeLessThan(0);
+    });
+});
+
+// ─── _puntuarRefresh (AI-E4) ──────────────────────────────────────────────────
+
+describe('_puntuarRefresh (AI-E4)', () => {
+    test('mazo vacío → puntuación muy negativa', () => {
+        const estado = makeEstado({ ai: { hand: [makeCard('A', 2)], deck: [] } });
+        expect(_puntuarRefresh(estado)).toBeLessThan(-10);
+    });
+
+    test('mano de 1 carta → puntúa alto', () => {
+        const estado = makeEstado({ ai: { hand: [makeCard('A', 2)], deck: [makeCard('B', 3)] } });
+        expect(_puntuarRefresh(estado)).toBeGreaterThan(20);
+    });
+
+    test('mano con mayoría situacional → vale la pena refrescar', () => {
+        // Cartas sin protocolo propio = situacionales
+        const estado = makeEstado({ ai: {
+            protocols: ['Muerte', 'Fuego', 'Vida'],
+            hand: [
+                makeCard('Humo 1', 1, 'Humo'),
+                makeCard('Agua 2', 2, 'Agua'),
+                makeCard('Metal 3', 3, 'Metal'),
+            ],
+            deck: [makeCard('Muerte 3', 3, 'Muerte')],
+        } });
+        expect(_puntuarRefresh(estado)).toBeGreaterThanOrEqual(0);
+    });
+
+    test('mano con mayoría jugable → no refrescar', () => {
+        const estado = makeEstado({ ai: {
+            protocols: ['Muerte', 'Fuego', 'Vida'],
+            hand: [
+                makeCard('Muerte 3', 3, 'Muerte'),
+                makeCard('Fuego 4', 4, 'Fuego'),
+                makeCard('Vida 2', 2, 'Vida'),
+            ],
+            deck: [makeCard('X', 1)],
+        } });
+        expect(_puntuarRefresh(estado)).toBeLessThan(0);
+    });
+});
+
+// ─── _puntuarBocabajo nuevas tácticas ─────────────────────────────────────────
+
+describe('_puntuarBocabajo — rival amenaza otra línea', () => {
+    test('bocabajo cuando rival amenaza OTRA línea → bonus', () => {
+        const estado = makeEstado();
+        // Rival amenaza centro con 8 puntos
+        estado.field.centro.player.push({ card: makeCard('Fuego 4', 4), faceDown: false });
+        estado.field.centro.player.push({ card: makeCard('Fuego 4', 4), faceDown: false });
+        // IA juega bocabajo en izquierda (no donde amenaza)
+        const jugada = makeJugada('Muerte 1', 1, 'izquierda', false);
+        // Sin amenaza en izquierda para comparar
+        const estadoLimpio = makeEstado();
+        const puntosConAmenaza = _puntuarBocabajo(jugada, estado, 5);
+        const puntosSinAmenaza = _puntuarBocabajo(jugada, estadoLimpio, 5);
+        expect(puntosConAmenaza).toBeGreaterThan(puntosSinAmenaza);
     });
 });

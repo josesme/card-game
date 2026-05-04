@@ -8,28 +8,7 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 
 Plan iterativo para mejorar la calidad de decisiones de ISMCTS conectando y enriqueciendo `AIEvaluator`. Cada historia es independiente y aporta valor incremental. Fuente: `docs/compile-estrategy-es.md`.
 
-### Alto valor, bajo coste
-- **AI-E15 — Bocabajo defensivo como bloqueo:** Cuando el rival está cerca de compilar una línea, permitir a la IA jugar una carta bocabajo en esa línea aunque tenga opción face-up en otro sitio. Requiere definir umbral de amenaza, qué cartas son sacrificables, y si aplica solo en late game. Muchas casuísticas — definir antes de implementar.
-
-### Alto valor, medio coste
-- **AI-E5 — Sinergias entre protocolos:** Añadir `evaluateProtocolSynergies()`: detectar combinaciones conocidas (Life+Water, Gravity+Death, Speed+Fire, Spirit+X, Darkness+bocabajo) y aplicar bonus cuando las condiciones en mesa las activan.
-
-- **AI-E12 — Contraestrategia activa:** Detectar setups peligrosos del rival visibles en campo: Psychic 1 face-up y cubierto, Speed 3 activo, Gravity 0 jugado con tablero lleno. Cuando se detectan, priorizar interrumpir sobre cualquier desarrollo propio.
-
-- **AI-E14 — Comportamiento específico por protocolo:** Speed 0 no debe jugarse sin Speed 3 en mano o campo; Spirit 3 debe protegerse; Gravity 0 maximiza valor con retriggers; Death en mano con tablero rival vacío vale menos.
-
-### Medio valor, medio coste
-- **AI-E4 — Refresh timing:** Añadir `evaluateHandPlayability()`: si la mano tiene mayoría de cartas situacionales (valor 4 con texto situacional, 5s) y el mazo tiene cartas, valorar positivamente el acceso a refrescar en lugar de jugar mal.
-
-- **AI-E9 — Interacción vs desarrollo:** Si la amenaza del rival supera un umbral, inclinar la evaluación hacia interacción (eliminate, discard, flip) aunque el desarrollo propio sea subóptimo.
-
-- **AI-E13 — Meta-reglas:** (1) si la jugada no mejora el estado en ninguna dimensión, penalizarla; (2) si rompe una sinergia propia activa, penalizarla; (3) priorizar opciones futuras sobre valor inmediato cuando la diferencia de score es pequeña.
-
 ### Medio valor, alto coste
-- **AI-E7 — Valor real de cartas por protocolo:** Cartas débiles situacionales (Speed 2/4, Apathy 0/2) y cartas fuertes (Fire 4, Water 3, Speed 3) deben distinguirse en la evaluación de mano.
-
-- **AI-E10 — Tempo:** `evaluateTempo()`: opciones propias vs opciones del rival. Penalizar jugadas que reducen opciones futuras, bonus a jugadas que las amplían.
-
 - **AI-E11 — Future potential:** Bonus a jugadas que abren combos conocidos. Penalizar jugadas que cierran líneas propias o eliminan piezas de combo propias.
 
 ---

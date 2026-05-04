@@ -97,10 +97,15 @@ function _puntuarJugada(jugada, estado, nivel) {
     if (rivalCompilados >= 2 && rivalPuntos >= 6) s += 180;
     else if (rivalPuntos >= 7) s += 50;
 
+    // AI-E12: contraestrategia activa — detectar setups peligrosos del rival
+    s += _bonusContraestrategia(jugada, estado);
+
     // Bocarriba es mejor que bocabajo por defecto
     if (faceUp) {
         s += 25;
         if (card.h_accion || card.h_inicio || card.h_final) s += 20; // tiene efecto
+        // AI-E14: comportamiento específico por protocolo propio
+        s += _bonusProtocoloEspecifico(jugada, estado);
     } else {
         s += _puntuarBocabajo(jugada, estado, nivel);
     }
@@ -109,6 +114,93 @@ function _puntuarJugada(jugada, estado, nivel) {
     s += valor * 5;
 
     return s;
+}
+
+/**
+ * AI-E12 — Contraestrategia activa.
+ * Detecta setups peligrosos del rival en campo y bonifica cartas de interacción
+ * que los interrumpan, priorizando sobre el desarrollo propio.
+ */
+function _bonusContraestrategia(jugada, estado) {
+    const { card, faceUp } = jugada;
+    if (!faceUp || !card) return 0;
+
+    const pp = estado.player.protocols || [];
+    const texto = ((card.h_accion || '') + (card.h_inicio || '') + (card.h_final || '')).toLowerCase();
+    const esInteraccion = ['elimina', 'descarta', 'voltea', 'devuelve'].some(p => texto.includes(p));
+    let bonus = 0;
+
+    // Setup peligroso 1: Psique 1 bloqueada (cubierta = intocable hasta que salga)
+    const psique1Bloqueada = pp.includes('Psique') && LINEAS.some(l => {
+        const stack = estado.field[l].player || [];
+        const idx   = stack.findIndex(c => !c.faceDown && c.card && c.card.nombre === 'Psique 1');
+        return idx !== -1 && idx < stack.length - 1;
+    });
+    if (psique1Bloqueada && esInteraccion) bonus += 60;
+
+    // Setup peligroso 2: Velocidad 3 activa (da segundo turno — extremadamente fuerte)
+    const vel3Activa = pp.includes('Velocidad') && LINEAS.some(l =>
+        (estado.field[l].player || []).some(c => !c.faceDown && c.card && c.card.nombre === 'Velocidad 3'));
+    if (vel3Activa && esInteraccion) bonus += 70;
+    if (vel3Activa && !esInteraccion) bonus -= 15; // cualquier jugada no-interacción pierde valor si hay Vel3 activa
+
+    // Setup peligroso 3: Gravedad 0 jugado con tablero lleno del rival (retriggering)
+    const grav0Activa = pp.includes('Gravedad') && LINEAS.some(l =>
+        (estado.field[l].player || []).some(c => !c.faceDown && c.card && c.card.nombre === 'Gravedad 0'));
+    const tableroRivalLleno = LINEAS.reduce((n, l) =>
+        n + (estado.field[l].player || []).length, 0) >= 4;
+    if (grav0Activa && tableroRivalLleno && esInteraccion) bonus += 55;
+
+    return bonus;
+}
+
+/**
+ * AI-E14 — Comportamiento específico por protocolo propio.
+ * Aplica bonificaciones o penalizaciones según condiciones del estado
+ * para cartas que necesitan contexto para ser fuertes.
+ */
+function _bonusProtocoloEspecifico(jugada, estado) {
+    const { card } = jugada;
+    if (!card) return 0;
+
+    const mano = estado.ai.hand || [];
+    const pp   = estado.ai.protocols || [];
+    let bonus  = 0;
+
+    // Velocidad 0: no debe jugarse si no hay Velocidad 3 en mano o campo
+    if (card.nombre === 'Velocidad 0') {
+        const vel3EnMano  = mano.some(c => c.nombre === 'Velocidad 3');
+        const vel3EnCampo = LINEAS.some(l =>
+            (estado.field[l].ai || []).some(c => !c.faceDown && c.card && c.card.nombre === 'Velocidad 3'));
+        if (!vel3EnMano && !vel3EnCampo) bonus -= 40;
+    }
+
+    // Espíritu 3: vale mucho — protegerlo (prefiero no jugarlo bocabajo; bonificar bocarriba)
+    if (card.nombre === 'Espíritu 3') bonus += 30;
+
+    // Gravedad 0: máximo valor con tablero propio lleno (retriggering)
+    if (card.nombre === 'Gravedad 0') {
+        const cartasAI = LINEAS.reduce((n, l) => n + (estado.field[l].ai || []).length, 0);
+        if (cartasAI >= 4) bonus += 50;
+        else if (cartasAI >= 2) bonus += 20;
+    }
+
+    // Muerte 5 en mano con tablero rival vacío: vale mucho menos (no hay objetivos)
+    if (card.nombre === 'Muerte 5' && card.protocol === 'Muerte') {
+        const cartasRival = LINEAS.reduce((n, l) => n + (estado.field[l].player || []).length, 0);
+        if (cartasRival === 0) bonus -= 25;
+    }
+
+    // Psique 1: altísimo valor si puede quedar bloqueada
+    if (card.nombre === 'Psique 1') {
+        const linea = pp.indexOf('Psique') !== -1 ? LINEAS[pp.indexOf('Psique')] : null;
+        if (linea) {
+            const stack = estado.field[linea].ai || [];
+            if (stack.length >= 1) bonus += 35; // hay cartas que la cubrirán
+        }
+    }
+
+    return bonus;
 }
 
 /**
@@ -144,8 +236,27 @@ function _puntuarBocabajo(jugada, estado, nivel) {
     // Acumulación silenciosa en línea temprana (ambos con pocos puntos)
     if (miPuntos <= 3 && rivalPuntos <= 3) s += 18;
 
+    // Rival amenaza compilar OTRA línea → bocabajo en ESTA línea = bloqueo urgente
+    const rivalAmenazaOtraLinea = LINEAS.some(l => {
+        if (l === line || estado.field[l].compiledBy) return false;
+        return _puntos(estado, l, 'player') >= 7;
+    });
+    if (rivalAmenazaOtraLinea) s += 12;
+
     // Bocabajo con mano pequeña = preservar tempo
     if (mano.length <= 2) s += 10;
+
+    // Combo bocabajo + voltear posterior: carta de valor alto + hay carta de volteo en mano
+    if ((card.valor || 0) >= 4) {
+        const tieneVolteo = mano.some(c => {
+            if (!c.h_accion || c === card) return false;
+            const txt = c.h_accion.toLowerCase();
+            if (!txt.includes('voltea')) return false;
+            const flipProtoIdx = protocolos.indexOf(c.protocol);
+            return flipProtoIdx !== -1 && LINEAS[flipProtoIdx] !== line;
+        });
+        if (tieneVolteo) s += 22;
+    }
 
     // Penalización: bocabajo de carta de protocolo propio activo (desperdicia efecto)
     if (protocolos.includes(card.protocol)) {
@@ -155,11 +266,30 @@ function _puntuarBocabajo(jugada, estado, nivel) {
     return s;
 }
 
+// AI-E4 — Refresh timing: evalúa jugabilidad de la mano, no solo tamaño
 function _puntuarRefresh(estado) {
-    const mano = (estado.ai.hand || []).length;
-    if (mano <= 1) return 40;
-    if (mano === 2) return 15;
-    return -20; // con 3+ cartas, no actualizar
+    const mano = estado.ai.hand || [];
+    const mazo = estado.ai.deck || [];
+    if (mazo.length === 0) return -50; // mazo vacío: refresh no da nada útil
+
+    const n = mano.length;
+    if (n <= 1) return 40;
+    if (n === 2) return 15;
+
+    // Con 3+ cartas: solo vale la pena si la mano tiene mayoría de cartas difíciles de jugar
+    if (n >= 3) {
+        const pp = estado.ai.protocols || [];
+        // Contar cartas situacionales: valor 4, sin protocolo propio, o en CARTAS_DEBILES
+        const situacionales = mano.filter(c =>
+            !pp.includes(c.protocol) ||
+            CARTAS_DEBILES.has(c.nombre) ||
+            (c.valor === 4 && !c.h_accion && !c.h_inicio && !c.h_final)
+        ).length;
+        if (situacionales >= Math.ceil(n * 0.6)) return 10; // mayoría situacional → refresh puede valer
+        return -20; // mano jugable: no desperdiciar tempo en refresh
+    }
+
+    return -20;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -644,6 +774,9 @@ if (typeof module !== 'undefined' && module.exports) {
         elegirJugada,
         _puntuarJugada,
         _puntuarBocabajo,
+        _puntuarRefresh,
+        _bonusContraestrategia,
+        _bonusProtocoloEspecifico,
         _lineaMuerta,
         _evaluarAmenazaCompilacion,
         _evaluarFuerzaLineas,
