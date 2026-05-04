@@ -2330,23 +2330,11 @@ function checkDeleteOnCover(line, owner) {
     }
 }
 
-/**
- * Inserts a card into a stack respecting Gravedad 0's rule:
- * if Gravedad 0 is face-up anywhere in the stack, new cards land just below it.
- */
-function insertCardIntoStack(stack, cardObj) {
-    const g0Idx = stack.findIndex(c => !c.faceDown && c.card.nombre === 'Gravedad 0');
-    if (g0Idx >= 0) {
-        stack.splice(g0Idx, 0, cardObj);
-    } else {
-        stack.push(cardObj);
-    }
-}
 
 function landPendingCard() {
     const { line, cardObj, owner, isFaceDown } = gameState.pendingLanding;
     gameState.pendingLanding = null;
-    insertCardIntoStack(gameState.field[line][owner], cardObj);
+    gameState.field[line][owner].push(cardObj);
     checkDeleteOnCover(line, owner);
     window._animPendingField = { line, target: owner };
     updateUI();
@@ -3034,7 +3022,7 @@ function clearSelectionHighlights() {
 function _claridad2PlaySecond(handIndex, targetLine, isFaceDown) {
     const card = gameState.player.hand.splice(handIndex, 1)[0];
     if (!card) return;
-    insertCardIntoStack(gameState.field[targetLine].player, { card, faceDown: isFaceDown });
+    gameState.field[targetLine].player.push({ card, faceDown: isFaceDown });
     clearSelectionHighlights();
     clearEffectHighlights();
     gameState.currentEffectLine = targetLine;
@@ -3122,7 +3110,7 @@ function finalizePlay(targetLine, isFaceDown) {
         _triggerEffect(topCardBeforePush.card, 'onCover', targetSide);
         gameState.coveringCard = null;
     }
-    insertCardIntoStack(gameState.field[targetLine][targetSide], playedCard);
+    gameState.field[targetLine][targetSide].push(playedCard);
     checkDeleteOnCover(targetLine, targetSide);
     window._animPendingField = { line: targetLine, target: targetSide };
     if (typeof AudioManager !== 'undefined') AudioManager.playSound('card-play');
@@ -3494,7 +3482,7 @@ function executeAIMove(move) {
         }
     }
 
-    insertCardIntoStack(gameState.field[move.line][landSide], {
+    gameState.field[move.line][landSide].push({
         card: movedCard,
         faceDown: !move.faceUp
     });
