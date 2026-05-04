@@ -141,20 +141,23 @@ describe('Asimilación 6 — onTurnEnd: playOwnTopDeckOpponentSide', () => {
     expect(GS.pendingEndTriggers.length).toBe(0);
   });
 
-  test('processNextEndTrigger activa el efecto y establece effectContext interactivo cuando hay mazo', () => {
+  test('processNextEndTrigger coloca la carta bocabajo automáticamente en el lado rival de la misma línea', () => {
     const asim6 = makeCard('Asimilación 6', 6);
+    const topCard = makeCard('SomeCard', 3);
     GS.field.centro.player.push({ card: asim6, faceDown: false });
-    GS.player.deck = [makeCard('SomeCard', 3)];
+    GS.player.deck = [topCard];
     GS.currentEffectLine = 'centro';
+    GS.pendingEndTurnWho = 'player';
 
     ENGINE.onTurnEndEffects('player');
     ENGINE.processNextEndTrigger('player');
 
-    expect(GS.effectContext).not.toBeNull();
-    expect(GS.effectContext.type).toBe('playTopDeckFaceDownOpponentChooseLine');
-    expect(GS.effectContext.owner).toBe('player');
-    expect(GS.effectContext.opponent).toBe('ai');
-    expect(GS.effectContext.waitingForLine).toBe(true);
+    // La carta se coloca bocabajo en el lado rival de la misma línea, sin pedir elección
+    expect(GS.effectContext).toBeNull();
+    expect(GS.player.deck.length).toBe(0);
+    expect(GS.field.centro.ai.length).toBe(1);
+    expect(GS.field.centro.ai[0].card.nombre).toBe('SomeCard');
+    expect(GS.field.centro.ai[0].faceDown).toBe(true);
   });
 
   test('con mazo vacío el efecto avanza directamente sin establecer effectContext', () => {
