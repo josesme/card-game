@@ -707,22 +707,476 @@ function _evaluarBasico(estado) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PASO 3 — SIMULAR
+// PASO 3 — SIMULAR (ISMCTS propio)
 // "¿Qué pasa si juego esto, y luego el rival juega aquello...?"
 //
-// Usa ISMCTS si está disponible. En Fase 4 este algoritmo vivirá aquí
-// directamente. Por ahora delega para no romper nada.
+// Information Set MCTS: en cada iteración se "determiniza" la mano oculta del
+// jugador muestreando cartas plausibles, luego se corre MCTS normal sobre ese
+// mundo determinado. Los nodos acumulan estadísticas de todas las
+// determinizaciones en que son alcanzables.
+//
+// Mejoras sobre el ISMCTS heredado:
+//   1. Rival simulado con misma heurística que la IA (no random)
+//   2. _evaluarHoja usa evaluarPosicion() del cerebro en vez de AIEvaluator
+//   3. Rollout depth 6 para niveles 4-5 (más lectura de partida)
 // ─────────────────────────────────────────────────────────────────────────────
 
-function simular(estado, candidatas, tiempoMs) {
-    // Durante la migración (Fases 1-3), ISMCTS sigue siendo el motor.
-    // En Fase 4 este bloque se reemplaza con la implementación propia.
-    if (typeof ISMCTS !== 'undefined') {
-        const motor = new ISMCTS(tiempoMs);
-        return motor.findBestMove(estado, candidatas);
+const UCB_C        = 0.7;
+const ROLLOUT_BASE = 4; // plies por defecto; escala con nivel en simular()
+
+// ── Nodo MCTS ────────────────────────────────────────────────────────────────
+
+function _crearNodo(movimiento, padre, jugador) {
+    return {
+        movimiento, padre, jugador,
+        hijos:          [],
+        visitas:        0,
+        ganancias:      0.0,
+        disponibilidades: 0,
+    };
+}
+
+function _ucb(nodo, disponibilidadPadre) {
+    if (nodo.visitas === 0) return Infinity;
+    return nodo.ganancias / nodo.visitas +
+           UCB_C * Math.sqrt(Math.log(disponibilidadPadre || 1) / nodo.visitas);
+}
+
+function _hijoParaMovimiento(nodo, mov) {
+    return nodo.hijos.find(h => _movimientosIguales(h.movimiento, mov)) || null;
+}
+
+function _movimientosIguales(a, b) {
+    if (!a || !b) return false;
+    if (a.action && b.action) return a.action === b.action;
+    if (!a.card || !b.card)   return false;
+    return a.line === b.line && a.faceUp === b.faceUp &&
+           a.card.nombre === b.card.nombre;
+}
+
+// ── Entrada pública del motor ────────────────────────────────────────────────
+
+function simular(estado, candidatas, tiempoMs, nivel) {
+    if (!candidatas || candidatas.length === 0) return null;
+    if (candidatas.length === 1) return { bestMove: candidatas[0] };
+
+    const deadline     = Date.now() + tiempoMs;
+    const rolloutDepth = (nivel >= 4) ? 6 : ROLLOUT_BASE;
+    const raiz         = _crearNodo(null, null, null);
+    let iteraciones    = 0;
+
+    while (Date.now() < deadline) {
+        // 1. Determinizar: mano oculta del jugador → muestra plausible
+        const det = _determinizar(estado);
+
+        // 2-5. Selección → Expansión → Rollout → Backprop
+        const { nodo, estadoNodo } = _seleccionar(raiz, det, candidatas);
+        const resultado = _rollout(estadoNodo, 'player', rolloutDepth);
+        _backpropagar(nodo, resultado);
+        iteraciones++;
     }
-    // Fallback: devolver null para que elegirJugada use la primera candidata
-    return null;
+
+    if (raiz.hijos.length === 0) return { bestMove: candidatas[0] };
+
+    // Hijo robusto: el más visitado (más estable que mayor win rate)
+    const mejor = raiz.hijos.reduce((a, b) => a.visitas > b.visitas ? a : b);
+    return {
+        bestMove:   mejor.movimiento,
+        score:      Math.round((mejor.visitas > 0 ? mejor.ganancias / mejor.visitas : 0.5) * 100),
+        iteraciones,
+    };
+}
+
+// ── Determinización ──────────────────────────────────────────────────────────
+
+function _determinizar(estado) {
+    const pool = _construirPool(estado);
+    // Fisher-Yates shuffle
+    for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    const tamMano    = (estado.player.hand || []).length;
+    const det        = _clonarEstado(estado);
+    det.player.hand  = pool.slice(0, tamMano);
+    det.player.deck  = pool.slice(tamMano);
+    return det;
+}
+
+function _construirPool(estado) {
+    const pool      = [];
+    const protocolos = estado.player.protocols || [];
+    protocolos.forEach(proto => {
+        const cartas = (typeof GLOBAL_CARDS !== 'undefined' && GLOBAL_CARDS[proto]) || [];
+        cartas.forEach(c => pool.push({ ...c }));
+    });
+    // Quitar cartas ya visibles en campo
+    LINEAS.forEach(linea => {
+        (estado.field[linea].player || []).forEach(obj => {
+            if (!obj.faceDown) {
+                const idx = pool.findIndex(c => c.nombre === obj.card.nombre);
+                if (idx !== -1) pool.splice(idx, 1);
+            }
+        });
+    });
+    // Quitar descartes (público)
+    (estado.player.trash || []).forEach(c => {
+        const idx = pool.findIndex(p => p.nombre === c.nombre);
+        if (idx !== -1) pool.splice(idx, 1);
+    });
+    // Quitar cartas reveladas (ej: Luz 4)
+    (estado.revealedPlayerCards || []).forEach(c => {
+        const idx = pool.findIndex(p => p.nombre === (c.nombre || c.name));
+        if (idx !== -1) pool.splice(idx, 1);
+    });
+    return pool;
+}
+
+// ── Selección + Expansión ────────────────────────────────────────────────────
+
+function _seleccionar(raiz, det, movimientosRaiz) {
+    let nodo  = raiz;
+    let estadoNodo = det;
+    let jugador    = 'ai';
+    let movimientosLegales = movimientosRaiz;
+
+    while (true) {
+        if (_esTerminal(estadoNodo)) return { nodo, estadoNodo };
+
+        movimientosLegales.forEach(m => {
+            const hijo = _hijoParaMovimiento(nodo, m);
+            if (hijo) hijo.disponibilidades++;
+        });
+
+        const sinExpandir = movimientosLegales.filter(m => !_hijoParaMovimiento(nodo, m));
+
+        if (sinExpandir.length > 0) {
+            const mov    = sinExpandir[Math.floor(Math.random() * sinExpandir.length)];
+            const hijo   = _crearNodo(mov, nodo, jugador);
+            hijo.disponibilidades = 1;
+            nodo.hijos.push(hijo);
+            return { nodo: hijo, estadoNodo: _aplicarMovimiento(estadoNodo, mov, jugador) };
+        }
+
+        // Todos expandidos → elegir por UCB
+        const disponibles = nodo.hijos.filter(h =>
+            movimientosLegales.some(m => _movimientosIguales(h.movimiento, m))
+        );
+        if (disponibles.length === 0) return { nodo, estadoNodo };
+
+        const mejor = disponibles.reduce((a, b) => {
+            const ua = a.ganancias / (a.visitas || 1) +
+                       UCB_C * Math.sqrt(Math.log(a.disponibilidades || 1) / (a.visitas || 1));
+            const ub = b.ganancias / (b.visitas || 1) +
+                       UCB_C * Math.sqrt(Math.log(b.disponibilidades || 1) / (b.visitas || 1));
+            return ua > ub ? a : b;
+        });
+
+        estadoNodo = _aplicarMovimiento(estadoNodo, mejor.movimiento, jugador);
+        nodo       = mejor;
+        jugador    = jugador === 'ai' ? 'player' : 'ai';
+        movimientosLegales = _generarMovimientos(estadoNodo, jugador);
+    }
+}
+
+// ── Rollout ───────────────────────────────────────────────────────────────────
+
+function _rollout(estadoInicial, jugadorActual, profundidad) {
+    let s       = _clonarEstado(estadoInicial);
+    let jugador = jugadorActual;
+    let depth   = 0;
+
+    while (!_esTerminal(s) && depth < profundidad) {
+        const movs = _generarMovimientos(s, jugador);
+        if (movs.length === 0) break;
+        // FIX 1: ambos jugadores usan heurística (no random)
+        const mov = _politicaRollout(s, movs, jugador);
+        s       = _aplicarMovimiento(s, mov, jugador);
+        jugador = jugador === 'ai' ? 'player' : 'ai';
+        depth++;
+    }
+
+    return _evaluarHoja(s);
+}
+
+// Heurística de rollout: compile > bloquear > mejor carta bocarriba > bocabajo
+// Se aplica igual para IA Y jugador (elimina asimetría anterior)
+function _politicaRollout(estado, movimientos, jugador) {
+    const oponente = jugador === 'ai' ? 'player' : 'ai';
+
+    // 1. Compilar si es posible
+    const compila = movimientos.find(m => {
+        if (!m.line || !m.card) return false;
+        if (estado.field[m.line].compiledBy) return false;
+        const mio  = _puntos(estado, m.line, jugador);
+        const ellos = _puntos(estado, m.line, oponente);
+        const val  = m.faceUp ? (m.card.valor || 0) : 2;
+        return mio + val >= 10 && mio + val > ellos;
+    });
+    if (compila) return compila;
+
+    // 2. Bloquear compilación inminente del oponente
+    const bloquea = movimientos.find(m => {
+        if (!m.line || !m.card) return false;
+        if (estado.field[m.line].compiledBy) return false;
+        return _puntos(estado, m.line, oponente) >= 7;
+    });
+    if (bloquea) return bloquea;
+
+    // 3. Mejor carta bocarriba en línea ganadora (no muerta)
+    const bocarriba = movimientos.filter(m => m.line && m.faceUp && m.card &&
+        !estado.field[m.line].compiledBy && !_lineaMuerta(estado, m.line, jugador));
+    if (bocarriba.length > 0) {
+        return bocarriba.reduce((mejor, m) => {
+            const ventajaMejor = _puntos(estado, mejor.line, jugador) - _puntos(estado, mejor.line, oponente);
+            const ventajaM     = _puntos(estado, m.line, jugador) - _puntos(estado, m.line, oponente);
+            const puntosMejor  = ventajaMejor + (mejor.card.valor || 0);
+            const puntosM      = ventajaM     + (m.card.valor || 0);
+            return puntosM > puntosMejor ? m : mejor;
+        });
+    }
+
+    // 4. Bocabajo en cualquier línea no muerta
+    const bocabajo = movimientos.filter(m => m.line && !m.faceUp && m.card &&
+        !estado.field[m.line].compiledBy && !_lineaMuerta(estado, m.line, jugador));
+    if (bocabajo.length > 0) {
+        return bocabajo.reduce((a, b) => (b.card.valor || 0) > (a.card.valor || 0) ? b : a);
+    }
+
+    return movimientos[0];
+}
+
+// ── Evaluación de hoja (FIX 2) ───────────────────────────────────────────────
+
+function _evaluarHoja(estado) {
+    const aiComp = (estado.ai.compiled     || []).length;
+    const plComp = (estado.player.compiled || []).length;
+    if (aiComp >= 3) return 1.0;
+    if (plComp >= 3) return 0.0;
+
+    // FIX 2: usar evaluarPosicion() del cerebro en vez de AIEvaluator
+    // evaluarPosicion devuelve [-1, 1]; normalizamos a [0, 1]
+    try {
+        const v = evaluarPosicion(estado);
+        return (v + 1) / 2;
+    } catch (e) {
+        // Fallback mínimo si algo falla
+        let ai = aiComp * 4, pl = plComp * 4;
+        LINEAS.forEach(l => {
+            ai += _puntos(estado, l, 'ai')    / 10;
+            pl += _puntos(estado, l, 'player') / 10;
+        });
+        const total = ai + pl;
+        return total > 0 ? ai / total : 0.5;
+    }
+}
+
+// ── Backpropagación ───────────────────────────────────────────────────────────
+
+function _backpropagar(nodo, resultado) {
+    let n = nodo;
+    while (n !== null) {
+        n.visitas++;
+        n.ganancias += resultado; // siempre desde perspectiva de la IA
+        n = n.padre;
+    }
+}
+
+// ── Terminación ───────────────────────────────────────────────────────────────
+
+function _esTerminal(estado) {
+    return (estado.ai.compiled     || []).length >= 3 ||
+           (estado.player.compiled || []).length >= 3;
+}
+
+// ── Generación de movimientos (dentro del árbol) ──────────────────────────────
+
+function _generarMovimientos(estado, jugador) {
+    const movimientos  = [];
+    const mano         = estado[jugador].hand      || [];
+    const protocolos   = estado[jugador].protocols || [];
+
+    mano.forEach((carta, i) => {
+        LINEAS.forEach(linea => {
+            if (estado.field[linea].compiledBy) return;
+            const lineaIdx = protocolos.indexOf(carta.protocol);
+            if (lineaIdx !== -1 && LINEAS[lineaIdx] === linea) {
+                movimientos.push({ cardIndex: i, line: linea, faceUp: true, card: carta });
+            }
+            movimientos.push({ cardIndex: i, line: linea, faceUp: false, card: carta });
+        });
+    });
+
+    if (estado[jugador].deck.length > 0 && mano.length < 5) {
+        movimientos.push({ action: 'refresh' });
+    }
+    return movimientos;
+}
+
+// ── Aplicar movimiento ────────────────────────────────────────────────────────
+
+function _aplicarMovimiento(estado, movimiento, jugador) {
+    const s  = _clonarEstado(estado);
+    const ps = s[jugador];
+
+    if (movimiento.action === 'refresh') {
+        while (ps.hand.length < 5 && ps.deck.length > 0) ps.hand.push(ps.deck.pop());
+        return s;
+    }
+    if (!movimiento.line) return s;
+
+    // Sacar carta de mano
+    let carta;
+    if (movimiento.cardIndex !== undefined &&
+        movimiento.cardIndex < ps.hand.length &&
+        ps.hand[movimiento.cardIndex] &&
+        ps.hand[movimiento.cardIndex].nombre === movimiento.card.nombre) {
+        carta = ps.hand.splice(movimiento.cardIndex, 1)[0];
+    } else {
+        const idx = ps.hand.findIndex(c => c.nombre === movimiento.card.nombre);
+        carta = idx !== -1 ? ps.hand.splice(idx, 1)[0] : ps.hand.pop();
+    }
+    if (!carta) return s;
+
+    // Colocar en campo
+    s.field[movimiento.line][jugador].push({ card: carta, faceDown: !movimiento.faceUp });
+
+    // Simular efectos solo para IA bocarriba
+    if (jugador === 'ai' && movimiento.faceUp && carta.nombre !== '??') {
+        _simularEfecto(s, carta, movimiento.line);
+    }
+
+    // Compilar automáticamente si puntúa 10+ y gana la línea
+    if (movimiento.faceUp) {
+        const oponente = jugador === 'ai' ? 'player' : 'ai';
+        const miScore  = _puntos(s, movimiento.line, jugador);
+        const suScore  = _puntos(s, movimiento.line, oponente);
+        if (miScore >= 10 && miScore > suScore && !s.field[movimiento.line].compiledBy) {
+            s.field[movimiento.line].compiledBy = jugador;
+            s[jugador].compiled.push(movimiento.line);
+        }
+    }
+
+    return s;
+}
+
+function _simularEfecto(estado, carta, linea) {
+    const fx = (typeof CARD_SIM_EFFECTS !== 'undefined') ? CARD_SIM_EFFECTS[carta.nombre] : null;
+    if (!fx) return;
+
+    if (fx.draw) {
+        const n = Math.min(fx.draw, estado.ai.deck.length);
+        for (let i = 0; i < n; i++) estado.ai.hand.push(estado.ai.deck.pop());
+    }
+    if (fx.selfDiscard) {
+        const n = Math.min(fx.selfDiscard, estado.ai.hand.length);
+        for (let i = 0; i < n; i++) {
+            const c = estado.ai.hand.pop();
+            if (c) estado.ai.trash.push(c);
+        }
+    }
+    if (fx.opponentDiscard && estado.player.hand.length > 0) {
+        const minIdx = estado.player.hand.reduce(
+            (mi, c, j, arr) => c.valor < arr[mi].valor ? j : mi, 0
+        );
+        const [c] = estado.player.hand.splice(minIdx, 1);
+        if (c) estado.player.trash.push(c);
+    }
+    if (fx.eliminate)      _simEliminar(estado, fx.eliminate, linea);
+    if (fx.playFromDeck)   _simJugarDesMazo(estado, fx.playFromDeck, linea);
+    if (fx.returnOpponent) _simDevolverMayor(estado, 'player');
+    if (fx.returnSelf) {
+        const stack = estado.field[linea] && estado.field[linea].ai;
+        if (stack && stack.length > 0) {
+            const devuelta = stack.pop();
+            if (devuelta) estado.ai.hand.push(devuelta.card);
+        }
+    }
+    if (fx.preventCompile) estado.player.cannotCompile = true;
+    if (fx.flipOpponent)   _simVoltearOponente(estado, fx.flipOpponent);
+}
+
+function _simEliminar(estado, elim, linea) {
+    const { strategy, count = 1, maxVal } = elim;
+    LINEAS.forEach(l => {
+        const stack = estado.field[l].player;
+        if (!stack || stack.length === 0) return;
+        if (strategy === 'highest') {
+            const visible = stack.filter(c => !c.faceDown);
+            if (visible.length > 0) {
+                const top = visible.reduce((a, b) => (b.card.valor || 0) > (a.card.valor || 0) ? b : a);
+                const idx = stack.indexOf(top);
+                if (idx !== -1) stack.splice(idx, 1);
+            }
+        } else if (strategy === 'faceDown') {
+            const fdIdx = stack.findIndex(c => c.faceDown);
+            if (fdIdx !== -1) stack.splice(fdIdx, 1);
+        } else if (strategy === 'maxVal' && maxVal !== undefined) {
+            for (let i = stack.length - 1; i >= 0; i--) {
+                if (!stack[i].faceDown && (stack[i].card.valor || 0) <= maxVal) stack.splice(i, 1);
+            }
+        }
+    });
+}
+
+function _simJugarDesMazo(estado, fx, linea) {
+    const n = Math.min(fx.count || 1, estado.ai.deck.length);
+    const objetivo = LINEAS.filter(l => {
+        if (estado.field[l].compiledBy) return false;
+        if (fx.target === 'occupiedLines') return estado.field[l].ai.length > 0;
+        if (fx.target === 'otherLines')   return l !== linea;
+        return true;
+    });
+    objetivo.slice(0, n).forEach(l => {
+        const c = estado.ai.deck.pop();
+        if (c) estado.field[l].ai.push({ card: c, faceDown: true });
+    });
+}
+
+function _simDevolverMayor(estado, jugador) {
+    let mejorLinea = null, mejorVal = -1, mejorIdx = -1;
+    LINEAS.forEach(l => {
+        (estado.field[l][jugador] || []).forEach((obj, i) => {
+            if (!obj.faceDown && (obj.card.valor || 0) > mejorVal) {
+                mejorVal = obj.card.valor || 0;
+                mejorLinea = l;
+                mejorIdx = i;
+            }
+        });
+    });
+    if (mejorLinea !== null && mejorIdx !== -1) {
+        const [obj] = estado.field[mejorLinea][jugador].splice(mejorIdx, 1);
+        estado[jugador].hand.push(obj.card);
+    }
+}
+
+function _simVoltearOponente(estado, count) {
+    let volteadas = 0;
+    LINEAS.forEach(l => {
+        if (volteadas >= count) return;
+        const stack = estado.field[l].player;
+        const idx = stack.findIndex(c => !c.faceDown);
+        if (idx !== -1) { stack[idx] = { ...stack[idx], faceDown: true }; volteadas++; }
+    });
+}
+
+// ── Clonar estado (rápido, solo partes mutables) ──────────────────────────────
+
+function _clonarEstado(s) {
+    const clonarStack = arr => arr.map(o => ({ card: o.card, faceDown: o.faceDown }));
+    const clonarLinea = l  => ({ ...l, player: clonarStack(l.player), ai: clonarStack(l.ai) });
+    return {
+        ...s,
+        player: { ...s.player, hand: [...s.player.hand], deck: [...s.player.deck],
+                  trash: [...s.player.trash], compiled: [...s.player.compiled] },
+        ai:     { ...s.ai,     hand: [...s.ai.hand],     deck: [...s.ai.deck],
+                  trash: [...s.ai.trash],     compiled: [...s.ai.compiled] },
+        field: {
+            izquierda: clonarLinea(s.field.izquierda),
+            centro:    clonarLinea(s.field.centro),
+            derecha:   clonarLinea(s.field.derecha),
+        },
+    };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -772,6 +1226,7 @@ if (typeof module !== 'undefined' && module.exports) {
         filtrarYOrdenar,
         evaluarPosicion,
         elegirJugada,
+        simular,
         _puntuarJugada,
         _puntuarBocabajo,
         _puntuarRefresh,
@@ -788,5 +1243,11 @@ if (typeof module !== 'undefined' && module.exports) {
         _evaluarTempo,
         _evaluarMetaReglas,
         _faseDeJuego,
+        // Fase 4: ISMCTS interno
+        _politicaRollout,
+        _evaluarHoja,
+        _generarMovimientos,
+        _aplicarMovimiento,
+        _clonarEstado,
     };
 }
