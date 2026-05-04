@@ -325,7 +325,7 @@ function handleShiftTargetLine(destinationLine) {
         // Asimilación 6: juega bocabajo tu carta top en el lado del rival, en la línea elegida
         if (gameState[ctx.owner].deck.length > 0) {
             const topCard = gameState[ctx.owner].deck.pop();
-            insertCardIntoStack(gameState.field[destinationLine][ctx.opponent], { card: topCard, faceDown: true });
+            gameState.field[destinationLine][ctx.opponent].push({ card: topCard, faceDown: true });
             updateUI();
         }
         finishEffect();
@@ -425,10 +425,8 @@ function initProtocolDisplay() {
             if (nameEl) nameEl.style.color = pColor;
             const statusEl = pCard.querySelector('.proto-card-status');
             if (statusEl) statusEl.textContent = '';
-            if (!pCard.classList.contains('compiled')) {
-                pCard.style.borderColor = pColor;
-                pCard.style.boxShadow = `0 0 18px ${pColor}44`;
-            }
+            pCard.style.borderColor = pColor;
+            pCard.style.boxShadow = `0 0 18px ${pColor}44`;
             if (_isV2Layout) {
                 const imgUrl = getCardImageUrl(pProto, 1);
                 if (imgUrl) pCard.classList.add('proto-img');
@@ -462,10 +460,8 @@ function initProtocolDisplay() {
             if (nameEl) nameEl.style.color = aColor;
             const statusEl = aCard.querySelector('.proto-card-status');
             if (statusEl) statusEl.textContent = '';
-            if (!aCard.classList.contains('compiled')) {
-                aCard.style.borderColor = aColor;
-                aCard.style.boxShadow = `0 0 18px ${aColor}44`;
-            }
+            aCard.style.borderColor = aColor;
+            aCard.style.boxShadow = `0 0 18px ${aColor}44`;
             if (_isV2Layout) {
                 const imgUrl = getCardImageUrl(aProto, 1);
                 if (imgUrl) aCard.classList.add('proto-img');
@@ -983,12 +979,7 @@ function updateUI() {
             }
         }
 
-    });
-
-    initProtocolDisplay();
-
-    // Mark compiled protocols — after initProtocolDisplay so compiled styles aren't overwritten
-    LINES.forEach(line => {
+        // Mark compiled protocols — reset first so stale classes from prior swaps don't linger
         const pCard = document.getElementById(`proto-${line}-player`);
         const aCard = document.getElementById(`proto-${line}-ai`);
         [pCard, aCard].forEach(el => { if (el) el.classList.remove('compiled', 'compiled-player', 'compiled-ai'); });
@@ -1001,6 +992,8 @@ function updateUI() {
             }
         }
     });
+
+    initProtocolDisplay();
 
     // Apply scramble effect to card text zones (slot-title-text and card-img-zone-text)
     // ⚠️ COOLDOWN GLOBAL: Evitar re-animar si updateUI() se llamó recientemente
@@ -3062,7 +3055,6 @@ function finalizePlay(targetLine, isFaceDown) {
     // Psique 1: jugador forzado a jugar bocabajo
     if (!isFaceDown && typeof hasForceOpponentFaceDown === 'function' && hasForceOpponentFaceDown('player')) {
         updateStatus('Psique 1 activa — solo puedes jugar bocabajo');
-        gameState.isProcessing = false;
         return;
     }
 
@@ -3070,7 +3062,6 @@ function finalizePlay(targetLine, isFaceDown) {
     if (typeof isPlayBlockedByPersistent === 'function' && isPlayBlockedByPersistent(targetLine, 'player', isFaceDown)) {
         const reason = isFaceDown ? 'La IA tiene Metal 2 en esa línea — no puedes jugar bocabajo ahí' : 'La IA tiene Plaga 0 en esa línea — no puedes jugar ahí';
         updateStatus(reason);
-        gameState.isProcessing = false;
         return;
     }
 
@@ -3186,12 +3177,6 @@ if (btnStopDiscard) btnStopDiscard.onclick = () => {
 // Set USE_ISMCTS = true to use ISMCTS, false to use the legacy Minimax engine.
 const USE_ISMCTS = true;
 
-// Set USE_LLM = true to use Ollama (localhost:11434) for AI decisions (level 4-5 only).
-// Falls back to ISMCTS if Ollama is unavailable or returns an invalid move.
-const USE_LLM = true;
-const LLM_MODEL = 'qwen2.5:7b';
-const LLM_URL   = 'http://localhost:11434/api/generate';
-
 // ── AI Worker singleton ──────────────────────────────────────────────────────
 let _aiWorker = null;
 
@@ -3230,130 +3215,6 @@ function _ensureAIWorker(diffDepth) {
         profileWeights,
     });
     return _aiWorker;
-}
-
-function _buildLLMPrompt(possibleMoves) {
-    const protocols = gameState.ai.protocols;
-    const playerProtocols = gameState.player.protocols;
-
-    const lineDescriptions = LINES.map((line, i) => {
-        const aiProto     = protocols[i]      || '?';
-        const playerProto = playerProtocols[i] || '?';
-        const compiledBy  = gameState.field[line].compiledBy;
-        const compiledStr = compiledBy ? ` [COMPILADA por ${compiledBy === 'ai' ? 'IA' : 'Jugador'}]` : '';
-
-        const aiStack = (gameState.field[line].ai || []).map(c =>
-            c.faceDown ? `bocabajo(2pts)` : `${c.card.nombre}(${c.card.valor}pts)`
-        ).join(', ') || 'vacío';
-        const playerStack = (gameState.field[line].player || []).map(c =>
-            c.faceDown ? `bocabajo(2pts)` : `${c.card.nombre}(${c.card.valor}pts)`
-        ).join(', ') || 'vacío';
-
-        const aiScore     = calculateScore(gameState, line, 'ai');
-        const playerScore = calculateScore(gameState, line, 'player');
-
-        return `Línea ${i} (${playerProto}|${aiProto})${compiledStr}:\n  Jugador: [${playerStack}] = ${playerScore}pts\n  IA:      [${aiStack}] = ${aiScore}pts`;
-    }).join('\n');
-
-    const handDesc = gameState.ai.hand.map((card, i) => {
-        const effect = card.h_accion || card.h_inicio || card.h_final || '(sin efecto)';
-        const fase   = card.fase || '';
-        const validLines = possibleMoves
-            .filter(m => m.cardIndex === i && m.faceUp)
-            .map(m => `L${LINES.indexOf(m.line)}`);
-        const canFaceUp  = validLines.length > 0;
-        const faceUpStr  = canFaceUp ? `bocarriba en ${validLines.join('/')}` : 'no puede ir bocarriba';
-        return `[${i}] ${card.nombre} (valor:${card.valor}, fase:${fase}) — "${effect}" — ${faceUpStr} / bocabajo en cualquier línea`;
-    }).join('\n');
-
-    const aiCompiled     = (gameState.ai.compiled     || []).length;
-    const playerCompiled = (gameState.player.compiled || []).length;
-    const canRefresh     = possibleMoves.some(m => m.action === 'refresh');
-
-    return `Eres un experto jugador del juego de cartas COMPILE. Elige la mejor jugada para la IA.
-
-## REGLAS BASE
-- Objetivo: compilar 3 líneas. Gana el primero.
-- Compilar: puntuación ≥10 Y mayor que el oponente en esa línea. Obligatorio si puedes.
-- Puntuación: bocarriba = valor impreso. Bocabajo = SIEMPRE 2, sin excepción.
-- Turno: Inicio → Compilar si puedes → Acción (1 carta O actualizar) → Caché → Fin.
-- NO se roba al inicio del turno automáticamente.
-- Bocarriba: solo en línea cuyo protocolo coincida. Activa el efecto.
-- Bocabajo: en cualquier línea. Suma 2. Sin efecto.
-- Cobertura: solo la carta descubierta (top) puede ser objetivo de efectos, salvo que diga "todas".
-- Actualizar: roba hasta tener 5 cartas. Solo si tienes menos de 5.
-
-## ESTADO
-Compiles — IA: ${aiCompiled}/3 | Jugador: ${playerCompiled}/3
-Mano IA: ${gameState.ai.hand.length} cartas | Mazo IA: ${gameState.ai.deck.length}
-Mano Jugador: ${gameState.player.hand.length} cartas | Mazo Jugador: ${gameState.player.deck.length}
-
-## CAMPO
-${lineDescriptions}
-
-## MANO DE LA IA (índice, nombre, efecto, dónde puede ir bocarriba)
-${handDesc}
-${canRefresh ? '\n[R] ACTUALIZAR — roba hasta tener 5 cartas' : ''}
-
-## INSTRUCCIÓN
-Responde SOLO con JSON válido, sin texto adicional, en este formato exacto:
-{"action":"play","cardIndex":N,"line":L,"faceUp":true}
-o
-{"action":"refresh"}
-
-Donde N es el índice de la carta (0-${gameState.ai.hand.length - 1}) y L es el número de línea (${LINES.map((l,i) => i).join('/')}).
-Elige la jugada más estratégica considerando puntuaciones, efectos y situación de compiles.`;
-}
-
-async function _callLLM(prompt) {
-    const body = JSON.stringify({
-        model: LLM_MODEL,
-        prompt,
-        stream: false,
-        options: { temperature: 0.2, num_predict: 80 }
-    });
-    const res  = await fetch(LLM_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body,
-        signal: AbortSignal.timeout(15000)
-    });
-    const json = await res.json();
-    return json.response?.trim() || '';
-}
-
-async function playAITurnLLM(possibleMoves, fallback) {
-    try {
-        const prompt   = _buildLLMPrompt(possibleMoves);
-        const raw      = await _callLLM(prompt);
-        console.log('🧠 LLM raw response:', raw);
-
-        // Extrae el primer objeto JSON de la respuesta
-        const match = raw.match(/\{[\s\S]*?\}/);
-        if (!match) throw new Error('No JSON found');
-        const parsed = JSON.parse(match[0]);
-
-        if (parsed.action === 'refresh') {
-            const refreshMove = possibleMoves.find(m => m.action === 'refresh');
-            if (refreshMove) { executeAIMove(refreshMove); return; }
-            throw new Error('refresh not available');
-        }
-
-        const { cardIndex, line, faceUp } = parsed;
-        const lineKey = LINES[line];
-        const move = possibleMoves.find(m =>
-            m.cardIndex === cardIndex &&
-            m.line      === lineKey  &&
-            m.faceUp    === faceUp
-        );
-        if (!move) throw new Error(`Move not in possibleMoves: ${JSON.stringify(parsed)}`);
-
-        console.log(`🧠 LLM Decision: ${move.card?.nombre} ${faceUp ? 'bocarriba' : 'bocabajo'} en L${line}`);
-        executeAIMove(move);
-    } catch (err) {
-        console.warn('🧠 LLM fallback al ISMCTS:', err.message);
-        fallback();
-    }
 }
 
 function playAITurn() {
@@ -3399,22 +3260,10 @@ function playAITurn() {
         return;
     }
 
-    // LLM: niveles 4-5 si USE_LLM está activo
-    if (USE_LLM && diffDepth >= 4) {
-        const ismctsFallback = () => _runISMCTSWorker(possibleMoves, stateForAI, diffDepth);
-        playAITurnLLM(possibleMoves, ismctsFallback);
-        return;
-    }
-
     // Depth: level 5 looks one step further
     const actualDepth = diffDepth === 5 ? 6 : diffDepth;
-    _runISMCTSWorker(possibleMoves, stateForAI, diffDepth, actualDepth);
-}
-
-function _runISMCTSWorker(possibleMoves, stateForAI, diffDepth, actualDepth) {
     const TIME_BUDGETS = { 1: 500, 2: 500, 3: 1500, 4: 3000, 5: 5000 };
     const timeBudgetMs = TIME_BUDGETS[diffDepth] ?? 1500;
-    if (actualDepth === undefined) actualDepth = diffDepth === 5 ? 6 : diffDepth;
 
     const worker = _ensureAIWorker(diffDepth);
 
@@ -3496,9 +3345,8 @@ function generateAIPossibleMoves() {
     const moves = [];
     const aiForcedDown = typeof hasForceOpponentFaceDown === 'function' && hasForceOpponentFaceDown('ai');
 
-    // Agua 4: "Devuelve 1 de tus cartas" — elige cualquier carta propia del campo.
-    // Solo tiene sentido si hay cartas propias bocarriba de valor bajo que valga recuperar,
-    // o si jugarla compila la línea de Agua.
+    // Agua 4: "Devuelve 1 de tus cartas" — solo vale si hay cartas propias bocarriba de valor bajo
+    // en mesa, o si jugarla compila la línea de Agua. Sin esas condiciones es perder un turno.
     const agua4LineIndex = gameState.ai.protocols.indexOf('Agua');
     const agua4Line = agua4LineIndex !== -1 ? LINES[agua4LineIndex] : null;
     const isAgua4Playable = (() => {
