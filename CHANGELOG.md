@@ -6,6 +6,43 @@ Historial de cambios y evolución del proyecto. Formato resumido con secciones e
 
 ## 🎯 Versión Actual
 
+**v2.4.0** — AI Brain
+
+<details>
+<summary><strong>Ver detalles de v2.4.0</strong></summary>
+
+### v2.4.0 — AI Brain: motor de decisión unificado
+
+**Fecha:** Mayo 2026
+
+#### Cambios Implementados
+
+- ✅ **ai-brain.js** — motor central único, reemplaza los 7 archivos fragmentados del sistema anterior
+- ✅ **Evaluador de posición** — 9 componentes con pesos por fase (early/mid/late): amenaza de compilación, fuerza de líneas, calidad de mano, amenaza del rival, sinergias, bocabajos, interacción, tempo, meta-reglas
+- ✅ **AI-E5** — Sinergias entre protocolos (Vida+Agua, Gravedad+Muerte, Velocidad+Fuego, Espíritu, Oscuridad+bocabajos)
+- ✅ **AI-E7** — Distinción cartas fuertes vs débiles (Velocidad 3, Espíritu 3, Gravedad 0 vs Velocidad 2/4, Apatía 0/2)
+- ✅ **AI-E9** — Interacción vs desarrollo según amenaza del rival
+- ✅ **AI-E10** — Tempo: penaliza posiciones sin opciones futuras, bonus a presencia multi-línea
+- ✅ **AI-E12** — Contraestrategia activa: detecta Velocidad 3, Psique 1 bloqueada, Gravedad 0 con tablero lleno
+- ✅ **AI-E13** — Meta-reglas: equilibrio de recursos, penalización por desarrollo nulo
+- ✅ **AI-E14** — Comportamiento por protocolo: Velocidad 0 sin Velocidad 3, Espíritu 3, Gravedad 0, Muerte 5
+- ✅ **AI-E15** — Bocabajo defensivo: sacrificio de cartas en líneas amenazadas con criterios de sacrificabilidad
+- ✅ **AI-E4** — Refresh timing por jugabilidad real de la mano, no solo tamaño
+- ✅ **ISMCTS integrado** — rival simulado con misma heurística que la IA (no random), evaluación de hoja unificada, profundidad 6 en niveles 4-5
+- ✅ **556 tests** — cobertura completa del cerebro: evaluador, simulación, política de rollout
+
+#### Archivos Clave
+
+- `src/ai-brain.js` — motor central (único punto de entrada: `decidir()`)
+- `src/ai-worker.js` — Web Worker que expone ai-brain al juego
+- `tests/ai-brain.test.js` — tests de interfaz pública y filtrado
+- `tests/ai-brain-evaluator.test.js` — tests del evaluador por componente
+- `tests/ai-brain-simulation.test.js` — tests del motor ISMCTS interno
+
+</details>
+
+---
+
 **v2.3.0** — SPA
 
 <details>

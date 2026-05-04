@@ -396,6 +396,31 @@
             box-shadow: 0 0 12px rgba(0,245,255,0.33), 0 0 2px rgba(0,245,255,0.55);
         }
         #stats-overlay .st-btn-close:hover { background: var(--st-cyan); color: var(--st-bg); box-shadow: none; }
+        #stats-overlay .st-btn-reset {
+            font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
+            letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all 0.25s;
+            display: inline-flex; align-items: center; justify-content: center;
+            padding: 0 20px; height: 36px;
+            color: var(--ui-pink); background: var(--st-bg);
+            border: 1px solid rgba(255,0,128,0.4);
+        }
+        #stats-overlay .st-btn-reset:hover { background: var(--ui-pink); color: var(--st-bg); }
+        #reset-confirm-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 9999;
+        }
+        #reset-confirm-overlay.hidden { display: none; }
+        #reset-confirm-box {
+            background: var(--st-bg); border: 1px solid var(--ui-pink);
+            padding: 32px 40px; text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            box-shadow: 0 0 24px rgba(255,0,128,0.3);
+            display: flex; flex-direction: column; gap: 20px;
+        }
+        #reset-confirm-box p { color: var(--st-sec); font-size: 13px; letter-spacing: 1px; margin: 0; }
+        #reset-confirm-box strong { color: var(--ui-pink); }
+        #reset-confirm-box .confirm-btns { display: flex; gap: 12px; justify-content: center; }
 
         #stats-overlay .st-body { display: flex; flex: 1; min-height: 0; }
 
@@ -807,7 +832,7 @@
             <button id="btn-play" disabled>IR AL DRAFT</button>
         </div>
 
-        <div class="home-version" id="home-version">v2.2.0 — 2026</div>
+        <div class="home-version" id="home-version">v2.4.0 — 2026</div>
     </div>
 </div>
 
@@ -964,7 +989,7 @@
             <span id="ai-deck-count" class="stat-value" style="color: var(--ui-pink);">0</span>
             <span class="stat-label">Desc.</span>
             <span id="ai-trash-count" class="stat-value" style="color: var(--ui-pink);">0</span>
-            <button id="btn-peek-ai-hand" title="Ver mano IA" style="background:none;border:1px solid var(--ui-pink);color:var(--ui-pink);border-radius:4px;padding:2px 6px;cursor:pointer;font-size:11px;line-height:1;flex-shrink:0;">🖐</button>
+            <button id="btn-peek-ai-hand" title="Ver mano IA" style="display:none;background:none;border:1px solid var(--ui-pink);color:var(--ui-pink);border-radius:4px;padding:2px 6px;cursor:pointer;font-size:11px;line-height:1;flex-shrink:0;">🖐</button>
         </div>
         <span id="hand-count-badge" style="display:none;"></span>
       </div>
@@ -1104,7 +1129,10 @@
       <div class="st-hdr-sep"></div>
       <span class="st-hdr-title">◈ Estadísticas del sistema</span>
     </div>
-    <button class="st-btn-close" onclick="closeStatsOverlay()">Cerrar ×</button>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <button class="st-btn-reset" onclick="showResetConfirm()">Reiniciar ⟳</button>
+      <button class="st-btn-close" onclick="closeStatsOverlay()">Cerrar ×</button>
+    </div>
   </div>
 
   <div class="st-body">
@@ -1304,6 +1332,7 @@
         }
 
         // ── Trainer: peek AI hand ───────────────────────────────
+        const TRAINER_ENABLED = false; // cambiar a true para reactivar
         const trainerLog = []; // { turn, snapshot, comment }
 
         function trainerSnapshot() {
@@ -1341,6 +1370,7 @@
         }
 
         document.getElementById('btn-peek-ai-hand').addEventListener('click', () => {
+            if (!TRAINER_ENABLED) return;
             if (typeof gameState === 'undefined' || !gameState.ai) return;
             const hand    = [...gameState.ai.hand];
             const turnNum = gameState.turnCount || 0;
@@ -1391,7 +1421,7 @@
 
         // ── Trainer: export log on game over ────────────────────
         document.addEventListener('compile:gameOver', () => {
-            if (trainerLog.length === 0) return;
+            if (!TRAINER_ENABLED || trainerLog.length === 0) return;
             const sep   = '─'.repeat(60);
             const lines = trainerLog.map(e =>
                 `${sep}\n[Turno ${e.turn}]\n\n${e.snapshot}\n\nCOMENTARIO: ${e.comment}`
@@ -1515,7 +1545,7 @@ window.homeModule = {
             applyHomeScramble();
             if (window.scrTxt) {
                 window.scrTxt('home-tagline', 'Juego de cartas · IA adaptativa', { duration: 1.0, chars: 'upperAndLowerCase' });
-                window.scrTxt('home-version', 'v2.2.0 — 2026', { duration: 1.0, chars: '0123456789' });
+                window.scrTxt('home-version', 'v2.4.0 — 2026', { duration: 1.0, chars: '0123456789' });
             }
         }, 500);
     }
@@ -1824,6 +1854,20 @@ function closeStatsOverlay() {
     });
 }
 
+function showResetConfirm() {
+    document.getElementById('reset-confirm-overlay').classList.remove('hidden');
+}
+
+function hideResetConfirm() {
+    document.getElementById('reset-confirm-overlay').classList.add('hidden');
+}
+
+function confirmResetStats() {
+    localStorage.removeItem('compile_match_history');
+    hideResetConfirm();
+    closeStatsOverlay();
+}
+
 function _triggerStatsScramble() {
     var overlay = document.getElementById('stats-overlay');
     // Reset cache so scramble replays on every open
@@ -1850,5 +1894,14 @@ function _triggerStatsScramble() {
 }
 </script>
 
+<div id="reset-confirm-overlay" class="hidden">
+  <div id="reset-confirm-box">
+    <p>¿Reiniciar todas las estadísticas?<br><strong>Esta acción no se puede deshacer.</strong></p>
+    <div class="confirm-btns">
+      <button class="st-btn-reset" onclick="confirmResetStats()">Confirmar</button>
+      <button class="st-btn-close" onclick="hideResetConfirm()">Cancelar</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
