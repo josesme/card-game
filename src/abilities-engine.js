@@ -1,13 +1,87 @@
 /**
+ * openRevealModal({ title, subtitle, source, cards, actions, onOpen })
+ * Helper centralizado para el modal de revelación de cartas.
+ * Siempre reconstruye actionsEl para evitar herencia de botones de usos anteriores.
+ *
+ * actions: array de { label, cls, id, onclick } — cls y id son opcionales.
+ * onOpen: callback opcional tras mostrar el modal (ej: scramble effects).
+ * Devuelve false si el modal no está disponible.
+ */
+function openRevealModal({ title, subtitle, source, cards, actions, onOpen } = {}) {
+    const modal      = document.getElementById('reveal-modal');
+    const container  = document.getElementById('reveal-cards-container');
+    const actionsEl  = document.getElementById('reveal-actions');
+    const titleEl    = document.getElementById('reveal-title');
+    const subtitleEl = document.getElementById('reveal-subtitle');
+    const sourceEl   = document.getElementById('reveal-source');
+    if (!modal || !container || !actionsEl) return false;
+
+    if (titleEl)    titleEl.textContent    = title    || '';
+    if (subtitleEl) subtitleEl.textContent = subtitle || '';
+    if (sourceEl)   sourceEl.textContent   = source   || '';
+
+    if (typeof createCardHTML === 'function' && cards && cards.length > 0) {
+        container.innerHTML = cards.map(c =>
+            `<div style="transform:scale(0.85);transform-origin:top center">${createCardHTML(c)}</div>`
+        ).join('');
+    } else if (cards !== undefined) {
+        container.innerHTML = '<p style="color:var(--ui-dim);font-family:var(--ui-font);font-size:12px;">Sin cartas</p>';
+    }
+
+    actionsEl.innerHTML = (actions || []).map(a =>
+        `<button class="ui-btn${a.cls ? ' ' + a.cls : ''}"${a.id ? ` id="${a.id}"` : ''}>${a.label}</button>`
+    ).join('');
+    (actions || []).forEach(a => {
+        if (a.id) {
+            const btn = document.getElementById(a.id);
+            if (btn) btn.onclick = a.onclick;
+        }
+    });
+
+    modal.classList.remove('hidden');
+
+    if (onOpen) onOpen(container);
+
+    // Scramble card texts
+    setTimeout(() => {
+        if (window.scrTxt) {
+            container.querySelectorAll('.slot-title-text, .card-img-zone-text').forEach(el => {
+                const text = el.textContent.trim();
+                if (text) window.scrTxt(el, text, {
+                    duration: 1.0,
+                    chars: el.classList.contains('slot-title-text') ? 'upperCase' : 'upperAndLowerCase'
+                });
+            });
+        }
+    }, 50);
+
+    return true;
+}
+
+/**
  * ============================================================================
  * MOTOR DE HABILIDADES - COMPILE
  * ============================================================================
- * 
+ *
  * Sistema completo de efectos de cartas basado en:
  * - Hooks (onPlay, onFlip, onUncovered, onTurnStart, onTurnEnd)
  * - Actions (Draw, Discard, Delete, Flip, Shift, Return, etc.)
  * - Target resolution (player/ai/any/line-specific)
- * 
+ *
+ * insertCardIntoStack: usado por efectos de desplazamiento (shift/change).
+ * Las cartas desplazadas deben aterrizar debajo de Gravedad 0 si está presente.
+ * NO usar para plays manuales (esos siempre van encima con .push()).
+ */
+function insertCardIntoStack(stack, cardObj) {
+    const g0Idx = stack.findIndex(c => !c.faceDown && c.card.nombre === 'Gravedad 0');
+    if (g0Idx >= 0) {
+        stack.splice(g0Idx, 0, cardObj);
+    } else {
+        stack.push(cardObj);
+    }
+}
+
+/**
  * Este archivo reemplaza y expande la lógica de efectos básica en logic.js
  */
 
@@ -479,7 +553,7 @@ const CARD_EFFECTS = {
 
   'Agua 4': {
     onPlay: [
-      { action: 'return', target: 'self', count: 1 }
+      { action: 'return', target: 'player', count: 1 }
     ]
   },
 
@@ -1348,6 +1422,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       // Trigger diferido: fue encolado mientras un effectContext estaba activo.
       // Ahora el contexto está libre, ejecutar el trigger original.
       triggerCardEffect(actionDef.card, actionDef.trigger, targetPlayer);
+      processAbilityEffect();
       break;
     }
 
@@ -1989,31 +2064,20 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       if (targetPlayer === 'player') {
         updateUI(); // sincronizar contador antes de mostrar modal
         const hand = [...gameState.ai.hand]; // snapshot — copia para que efectos deferred no alteren el modal
-        const modal = document.getElementById('reveal-modal');
-        const container = document.getElementById('reveal-cards-container');
-        const closeBtn = document.getElementById('btn-reveal-close');
-        const titleEl = document.getElementById('reveal-title');
-        const subtitleEl = document.getElementById('reveal-subtitle');
-        const sourceEl = document.getElementById('reveal-source');
-        if (modal && container && closeBtn && typeof createCardHTML === 'function') {
-          // Bloquear cola de efectos mientras el modal está abierto
-          gameState.effectContext = { type: 'revealHand' };
-          if (titleEl) titleEl.textContent = 'MANO DEL RIVAL';
-          if (subtitleEl) subtitleEl.textContent = `${hand.length} cartas en mano`;
-          if (sourceEl) sourceEl.textContent = triggerCardName || '';
-          console.log(`[reveal] Mano IA real: ${hand.length} cartas — ${hand.map(c => c.nombre).join(', ')}`);
-          container.innerHTML = hand.length > 0
-            ? hand.map(c => `<div style="transform: scale(0.8); transform-origin: top center;">${createCardHTML(c)}</div>`).join('')
-            : '<p style="color:var(--ui-text-muted);">La mano del oponente está vacía.</p>';
-          modal.classList.remove('hidden');
-          closeBtn.onclick = () => {
-            modal.classList.add('hidden');
-            gameState.effectContext = null; // desbloquear cola
+        console.log(`[reveal] Mano IA real: ${hand.length} cartas — ${hand.map(c => c.nombre).join(', ')}`);
+        gameState.effectContext = { type: 'revealHand' };
+        const ok = openRevealModal({
+          title: 'MANO DEL RIVAL',
+          subtitle: `${hand.length} cartas en mano`,
+          source: triggerCardName || '',
+          cards: hand,
+          actions: [{ label: 'CONTINUAR', id: 'btn-reveal-close', onclick: () => {
+            document.getElementById('reveal-modal').classList.add('hidden');
+            gameState.effectContext = null;
             processAbilityEffect();
-          };
-        } else {
-          processAbilityEffect();
-        }
+          }}]
+        });
+        if (!ok) { gameState.effectContext = null; processAbilityEffect(); }
       } else {
         processAbilityEffect();
       }
@@ -2979,9 +3043,9 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       const destLine = gameState.currentEffectLine;
       gameState.effectQueue.unshift({ effect: { action: '_shiftLastFlippedToLine', destLine }, targetPlayer });
       if (targetPlayer === 'player') {
-        startEffect('flip', resolvedTarget === 'any' ? 'any' : resolvedTarget, count || 1, { excludeLine: destLine });
+        startEffect('flip', resolvedTarget === 'any' ? 'any' : resolvedTarget, count || 1);
       } else {
-        const validLines = LINES.filter(l => l !== destLine && gameState.field[l][opponent].length > 0);
+        const validLines = LINES.filter(l => gameState.field[l][opponent].length > 0);
         if (validLines.length > 0) {
           // Voltear carta de la línea de mayor ventaja del rival
           const l = validLines.sort((a, b) => calculateScore(gameState, b, opponent) - calculateScore(gameState, a, opponent))[0];
@@ -3208,38 +3272,17 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     case '_showRevealedCards': {
       // Amor 4: mostrar las cartas seleccionadas en el modal de revelación
       const cards = actionDef.cards || [];
-      const modal = document.getElementById('reveal-modal');
-      const container = document.getElementById('reveal-cards-container');
-      const closeBtn = document.getElementById('btn-reveal-close');
-      const titleEl = document.getElementById('reveal-title');
-      const subtitleEl = document.getElementById('reveal-subtitle');
-      const sourceEl = document.getElementById('reveal-source');
-      if (modal && container && closeBtn && typeof createCardHTML === 'function') {
-        if (titleEl) titleEl.textContent = 'CARTAS REVELADAS';
-        if (subtitleEl) subtitleEl.textContent = `${cards.length} carta${cards.length !== 1 ? 's' : ''}`;
-        if (sourceEl) sourceEl.textContent = triggerCardName || '';
-        container.innerHTML = cards.map(c => `<div style="transform: scale(0.85); transform-origin: top center;">${createCardHTML(c)}</div>`).join('');
-        modal.classList.remove('hidden');
-        
-        // Apply scramble effect to card texts in reveal modal
-        setTimeout(function() {
-            if (window.scrTxt) {
-                container.querySelectorAll('.slot-title-text, .card-img-zone-text').forEach(function(el) {
-                    const text = el.textContent.trim();
-                    if (text) {
-                        window.scrTxt(el, text, { duration: 1.0, chars: el.classList.contains('slot-title-text') ? 'upperCase' : 'upperAndLowerCase' });
-                    }
-                });
-            }
-        }, 50);
-        
-        closeBtn.onclick = () => {
-          modal.classList.add('hidden');
+      const ok = openRevealModal({
+        title: 'CARTAS REVELADAS',
+        subtitle: `${cards.length} carta${cards.length !== 1 ? 's' : ''}`,
+        source: triggerCardName || '',
+        cards,
+        actions: [{ label: 'CONTINUAR', id: 'btn-reveal-close', onclick: () => {
+          document.getElementById('reveal-modal').classList.add('hidden');
           processAbilityEffect();
-        };
-      } else {
-        processAbilityEffect();
-      }
+        }}]
+      });
+      if (!ok) processAbilityEffect();
       break;
     }
 
@@ -3477,46 +3520,26 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       if (gameState[targetPlayer].deck.length === 0) { processAbilityEffect(); break; }
       const topCard = gameState[targetPlayer].deck[gameState[targetPlayer].deck.length - 1];
       if (targetPlayer === 'player') {
-        const modal     = document.getElementById('reveal-modal');
-        const container = document.getElementById('reveal-cards-container');
-        const closeBtn  = document.getElementById('btn-reveal-close');
-        const titleEl   = document.getElementById('reveal-title');
-        const subtitleEl = document.getElementById('reveal-subtitle');
-        const sourceEl  = document.getElementById('reveal-source');
-        const actionsEl = document.getElementById('reveal-actions');
-        if (modal && container && closeBtn && typeof createCardHTML === 'function') {
-          if (titleEl) titleEl.textContent = 'TOPE DEL MAZO';
-          if (subtitleEl) subtitleEl.textContent = 'Puedes descartar esta carta';
-          if (sourceEl) sourceEl.textContent = triggerCardName || '';
-          container.innerHTML = `<div style="transform:scale(0.85);transform-origin:top center">${createCardHTML(topCard)}</div>`;
-          actionsEl.innerHTML = `
-            <button class="ui-btn ui-btn--danger" id="btn-reveal-discard">DESCARTAR</button>
-            <button class="ui-btn" id="btn-reveal-close">MANTENER</button>
-          `;
-          modal.classList.remove('hidden');
-          
-          // Apply scramble effect to card texts in reveal modal
-          setTimeout(function() {
-              if (window.scrTxt) {
-                  container.querySelectorAll('.slot-title-text, .card-img-zone-text').forEach(function(el) {
-                      const text = el.textContent.trim();
-                      if (text) {
-                          window.scrTxt(el, text, { duration: 1.0, chars: el.classList.contains('slot-title-text') ? 'upperCase' : 'upperAndLowerCase' });
-                      }
-                  });
-              }
-          }, 50);
-          
-          const cleanup = () => { modal.classList.add('hidden'); };
-          document.getElementById('btn-reveal-close').onclick = () => { cleanup(); processAbilityEffect(); };
-          document.getElementById('btn-reveal-discard').onclick = () => {
-            cleanup();
-            gameState.player.deck.pop();
-            gameState.player.trash.push(topCard);
-            updateUI();
-            processAbilityEffect();
-          };
-        } else { processAbilityEffect(); }
+        const ok = openRevealModal({
+          title: 'TOPE DEL MAZO',
+          subtitle: 'Puedes descartar esta carta',
+          source: triggerCardName || '',
+          cards: [topCard],
+          actions: [
+            { label: 'DESCARTAR', cls: 'ui-btn--danger', id: 'btn-reveal-discard', onclick: () => {
+              document.getElementById('reveal-modal').classList.add('hidden');
+              gameState.player.deck.pop();
+              gameState.player.trash.push(topCard);
+              updateUI();
+              processAbilityEffect();
+            }},
+            { label: 'MANTENER', id: 'btn-reveal-close', onclick: () => {
+              document.getElementById('reveal-modal').classList.add('hidden');
+              processAbilityEffect();
+            }}
+          ]
+        });
+        if (!ok) processAbilityEffect();
       } else {
         if (topCard.valor <= 1) { gameState.ai.deck.pop(); gameState.ai.trash.push(topCard); }
         processAbilityEffect();
@@ -3568,76 +3591,40 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         matchCards.unshift(deckRef.splice(matchIdx[i], 1)[0]);
       }
       
-      const modal = document.getElementById('reveal-modal');
-      const container = document.getElementById('reveal-cards-container');
-      const titleEl = document.getElementById('reveal-title');
-      const subtitleEl = document.getElementById('reveal-subtitle');
-      const sourceEl = document.getElementById('reveal-source');
-      const actionsEl = document.getElementById('reveal-actions');
-      
-      if (modal && container && typeof createCardHTML === 'function') {
-        gameState.effectContext = { 
-          type: 'pickDeckCard_valor5', 
-          matchCards,
-          targetValue,
-          selectedIdx: null 
-        };
-        
-        if (titleEl) titleEl.textContent = `ELIGE 1 CARTA (Valor ${targetValue})`;
-        if (subtitleEl) subtitleEl.textContent = 'Roba esta carta, baraja el resto en tu mazo';
-        if (sourceEl) sourceEl.textContent = triggerCardName || '';
-        
-        container.innerHTML = matchCards.map((c, idx) =>
-          `<div class="effect-card selectable" data-idx="${idx}">
-            ${createCardHTML(c)}
-          </div>`
-        ).join('');
-
-        actionsEl.innerHTML = '<button class="ui-btn" id="btn-reveal-continue">ROBAR</button>';
-        modal.classList.remove('hidden');
-
-        // Apply scramble effect to card texts in reveal modal
-        setTimeout(function() {
-            if (window.scrTxt) {
-                container.querySelectorAll('.slot-title-text, .card-img-zone-text').forEach(function(el) {
-                    const text = el.textContent.trim();
-                    if (text) {
-                        window.scrTxt(el, text, { duration: 1.0, chars: el.classList.contains('slot-title-text') ? 'upperCase' : 'upperAndLowerCase' });
-                    }
-                });
-            }
-        }, 50);
-
-        let selectedIdx = null;
-        container.querySelectorAll('.effect-card.selectable').forEach(el => {
-          el.onclick = () => {
-            const wasSelected = el.classList.contains('selected');
-            container.querySelectorAll('.effect-card.selectable').forEach(x => x.classList.remove('selected'));
-            if (!wasSelected) {
-              el.classList.add('selected');
-              selectedIdx = parseInt(el.dataset.idx);
-              gameState.effectContext.selectedIdx = selectedIdx;
-            } else {
-              selectedIdx = null;
-              gameState.effectContext.selectedIdx = null;
-            }
-          };
-        });
-
-        document.getElementById('btn-reveal-continue').onclick = () => {
+      gameState.effectContext = { type: 'pickDeckCard_valor5', matchCards, targetValue, selectedIdx: null };
+      let selectedIdx = null;
+      const ok = openRevealModal({
+        title: `ELIGE 1 CARTA (Valor ${targetValue})`,
+        subtitle: 'Roba esta carta, baraja el resto en tu mazo',
+        source: triggerCardName || '',
+        actions: [{ label: 'ROBAR', id: 'btn-reveal-continue', onclick: () => {
           if (selectedIdx === null) { updateStatus('Claridad 3: elige una carta primero'); return; }
           const chosenCard = matchCards[selectedIdx];
           matchCards.forEach((c, i) => { if (i !== selectedIdx) gameState.player.deck.push(c); });
           gameState.player.hand.push(chosenCard);
           shuffleDeck();
-          modal.classList.add('hidden');
-          container.innerHTML = '';
+          document.getElementById('reveal-modal').classList.add('hidden');
+          document.getElementById('reveal-cards-container').innerHTML = '';
           gameState.effectContext = null;
           logEvent(`Robas ${chosenCard.nombre} (Valor ${targetValue}) del mazo`);
           updateUI();
           processAbilityEffect();
-        };
-      } else {
+        }}],
+        onOpen: (container) => {
+          container.innerHTML = matchCards.map((c, idx) =>
+            `<div class="effect-card selectable" data-idx="${idx}">${createCardHTML(c)}</div>`
+          ).join('');
+          container.querySelectorAll('.effect-card.selectable').forEach(el => {
+            el.onclick = () => {
+              const wasSelected = el.classList.contains('selected');
+              container.querySelectorAll('.effect-card.selectable').forEach(x => x.classList.remove('selected'));
+              if (!wasSelected) { el.classList.add('selected'); selectedIdx = parseInt(el.dataset.idx); gameState.effectContext.selectedIdx = selectedIdx; }
+              else              { selectedIdx = null; gameState.effectContext.selectedIdx = null; }
+            };
+          });
+        }
+      });
+      if (!ok) {
         // Fallback sin modal: auto-robar la primera
         const drawn = matchCards[0];
         matchCards.slice(1).forEach(c => gameState.player.deck.push(c));
@@ -3645,6 +3632,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         shuffleDeck();
         logEvent(`Robas ${drawn.nombre} (Valor ${targetValue}) del mazo`);
         updateUI();
+        gameState.effectContext = null;
         processAbilityEffect();
       }
       break;
@@ -3722,46 +3710,15 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       for (let i = v1Indices.length - 1; i >= 0; i--) {
         revealedCards.unshift(deckRef.splice(v1Indices[i], 1)[0]);
       }
-      const modal = document.getElementById('reveal-modal');
-      const container = document.getElementById('reveal-cards-container');
-      const titleEl = document.getElementById('reveal-title');
-      const subtitleEl = document.getElementById('reveal-subtitle');
-      const sourceEl = document.getElementById('reveal-source');
-      const actionsEl = document.getElementById('reveal-actions');
-      if (modal && container) {
-        if (titleEl) titleEl.textContent = 'ELIGE 1 CARTA';
-        if (subtitleEl) subtitleEl.textContent = 'Roba 1 carta con Valor 1, baraja el mazo y juega una carta Valor 1';
-        if (sourceEl) sourceEl.textContent = triggerCardName || '';
-        container.innerHTML = revealedCards.map((c, idx) =>
-          `<div class="effect-card selectable" data-idx="${idx}">${createCardHTML(c)}</div>`
-        ).join('');
-        actionsEl.innerHTML = '<button class="ui-btn" id="btn-reveal-continue">ROBAR</button>';
-        modal.classList.remove('hidden');
-
-        setTimeout(function() {
-            if (window.scrTxt) {
-                container.querySelectorAll('.slot-title-text, .card-img-zone-text').forEach(function(el) {
-                    const text = el.textContent.trim();
-                    if (text) {
-                        window.scrTxt(el, text, { duration: 1.0, chars: el.classList.contains('slot-title-text') ? 'upperCase' : 'upperAndLowerCase' });
-                    }
-                });
-            }
-        }, 50);
-
-        let selectedIdx = null;
-        container.querySelectorAll('.effect-card.selectable').forEach(el => {
-          el.onclick = () => {
-            const wasSelected = el.classList.contains('selected');
-            container.querySelectorAll('.effect-card.selectable').forEach(x => x.classList.remove('selected'));
-            if (!wasSelected) { el.classList.add('selected'); selectedIdx = parseInt(el.dataset.idx); }
-            else              { selectedIdx = null; }
-          };
-        });
-        document.getElementById('btn-reveal-continue').onclick = () => {
+      let selectedIdx = null;
+      const ok2 = openRevealModal({
+        title: 'ELIGE 1 CARTA',
+        subtitle: 'Roba 1 carta con Valor 1, baraja el mazo y juega una carta Valor 1',
+        source: triggerCardName || '',
+        actions: [{ label: 'ROBAR', id: 'btn-reveal-continue', onclick: () => {
           if (selectedIdx === null) { updateStatus('Claridad 2: elige una carta primero'); return; }
-          modal.classList.add('hidden');
-          container.innerHTML = '';
+          document.getElementById('reveal-modal').classList.add('hidden');
+          document.getElementById('reveal-cards-container').innerHTML = '';
           const chosen = revealedCards[selectedIdx];
           revealedCards.forEach((c, i) => { if (i !== selectedIdx) deckRef.push(c); });
           gameState.player.hand.push(chosen);
@@ -3770,11 +3727,24 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             [deckRef[i], deckRef[j]] = [deckRef[j], deckRef[i]];
           }
           logEvent(`Robas ${chosen.nombre} (Valor 1) del mazo`);
-          gameState.effectContext = null; // liberar bloqueo antes de que shuffleThenPlayStep lo reestablezca
+          gameState.effectContext = null;
           shuffleThenPlayStep();
-        };
-      } else {
-        // Fallback sin modal: auto-robar la primera
+        }}],
+        onOpen: (container) => {
+          container.innerHTML = revealedCards.map((c, idx) =>
+            `<div class="effect-card selectable" data-idx="${idx}">${createCardHTML(c)}</div>`
+          ).join('');
+          container.querySelectorAll('.effect-card.selectable').forEach(el => {
+            el.onclick = () => {
+              const wasSelected = el.classList.contains('selected');
+              container.querySelectorAll('.effect-card.selectable').forEach(x => x.classList.remove('selected'));
+              if (!wasSelected) { el.classList.add('selected'); selectedIdx = parseInt(el.dataset.idx); }
+              else              { selectedIdx = null; }
+            };
+          });
+        }
+      });
+      if (!ok2) {
         const [drawn] = deckRef.splice(v1Indices[0], 1);
         gameState[targetPlayer].hand.push(drawn);
         gameState.effectContext = null;
@@ -4627,69 +4597,21 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       if (gameState[targetPlayer].trash.length === 0) { processAbilityEffect(); break; }
       
       if (targetPlayer === 'player') {
-        const trashCount = gameState.player.trash.length;
-        const modal = document.getElementById('reveal-modal');
-        const container = document.getElementById('reveal-cards-container');
-        const titleEl = document.getElementById('reveal-title');
-        const subtitleEl = document.getElementById('reveal-subtitle');
-        const sourceEl = document.getElementById('reveal-source');
-        const actionsEl = document.getElementById('reveal-actions');
-        
-        if (modal && container && typeof createCardHTML === 'function') {
-          // Guardar referencia al descarte para restaurar si se cancela
-          gameState.effectContext = { 
-            type: 'pickFromDiscardToPlay', 
-            trashBackup: [...gameState.player.trash],
-            selectedIdx: null 
-          };
-          
-          if (titleEl) titleEl.textContent = 'ELIGE 1 CARTA';
-          if (subtitleEl) subtitleEl.textContent = 'Juega esta carta, baraja el resto en tu mazo';
-          if (sourceEl) sourceEl.textContent = triggerCardName || '';
-          
-          // Mostrar cartas del descarte con click para seleccionar
-          container.innerHTML = gameState.player.trash.map((c, idx) =>
-            `<div class="effect-card selectable" data-idx="${idx}">${createCardHTML(c)}</div>`
-          ).join('');
-
-          actionsEl.innerHTML = '<button class="ui-btn" id="btn-reveal-continue">JUGAR</button>';
-          modal.classList.remove('hidden');
-
-          setTimeout(function() {
-              if (window.scrTxt) {
-                  container.querySelectorAll('.slot-title-text, .card-img-zone-text').forEach(function(el) {
-                      const text = el.textContent.trim();
-                      if (text) {
-                          window.scrTxt(el, text, { duration: 1.0, chars: el.classList.contains('slot-title-text') ? 'upperCase' : 'upperAndLowerCase' });
-                      }
-                  });
-              }
-          }, 50);
-
-          let selectedIdx = null;
-          container.querySelectorAll('.effect-card.selectable').forEach(el => {
-            el.onclick = () => {
-              const wasSelected = el.classList.contains('selected');
-              container.querySelectorAll('.effect-card.selectable').forEach(x => x.classList.remove('selected'));
-              if (!wasSelected) { el.classList.add('selected'); selectedIdx = parseInt(el.dataset.idx); gameState.effectContext.selectedIdx = selectedIdx; }
-              else              { selectedIdx = null; gameState.effectContext.selectedIdx = null; }
-            };
-          });
-          
-          document.getElementById('btn-reveal-continue').onclick = () => {
-            if (selectedIdx === null) {
-              alert('Selecciona una carta primero');
-              return;
-            }
+        gameState.effectContext = { type: 'pickFromDiscardToPlay', trashBackup: [...gameState.player.trash], selectedIdx: null };
+        let selectedIdx = null;
+        const trashSnapshot = [...gameState.player.trash];
+        const ok = openRevealModal({
+          title: 'ELIGE 1 CARTA',
+          subtitle: 'Juega esta carta, baraja el resto en tu mazo',
+          source: triggerCardName || '',
+          actions: [{ label: 'JUGAR', id: 'btn-reveal-continue', onclick: () => {
+            if (selectedIdx === null) { updateStatus('Tiempo 0: elige una carta primero'); return; }
             const chosenCard = gameState.player.trash[selectedIdx];
-            modal.classList.add('hidden');
-            container.innerHTML = '';
+            document.getElementById('reveal-modal').classList.add('hidden');
+            document.getElementById('reveal-cards-container').innerHTML = '';
             gameState.effectContext = null;
-
-            // Preguntar bocarriba / bocabajo
             _confirmDialog('playFromDiscard',
               () => {
-                // BOCARRIBA: jugar en la línea del protocolo de la carta
                 gameState.player.trash.splice(selectedIdx, 1);
                 const protoIdx = (gameState.player.protocols || []).indexOf(chosenCard.protocol);
                 const targetLine = protoIdx >= 0 ? LINES[protoIdx] : (gameState.currentEffectLine || LINES[0]);
@@ -4701,9 +4623,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
                 if (typeof processAbilityEffect === 'function') processAbilityEffect();
               },
               () => {
-                // BOCABAJO: jugador elige línea
                 gameState.player.trash.splice(selectedIdx, 1);
-                // shuffleDiscard ocurrirá tras elegir línea (ctx.pendingShuffleDiscard)
                 gameState.effectContext = {
                   type: 'pickFromDiscardFaceDown_lineSelect',
                   chosenCard,
@@ -4716,10 +4636,22 @@ function resolveAbilityAction(actionDef, targetPlayer) {
               },
               { name: chosenCard.nombre }
             );
-          };
-        } else {
-          processAbilityEffect();
-        }
+          }}],
+          onOpen: (container) => {
+            container.innerHTML = trashSnapshot.map((c, idx) =>
+              `<div class="effect-card selectable" data-idx="${idx}">${createCardHTML(c)}</div>`
+            ).join('');
+            container.querySelectorAll('.effect-card.selectable').forEach(el => {
+              el.onclick = () => {
+                const wasSelected = el.classList.contains('selected');
+                container.querySelectorAll('.effect-card.selectable').forEach(x => x.classList.remove('selected'));
+                if (!wasSelected) { el.classList.add('selected'); selectedIdx = parseInt(el.dataset.idx); gameState.effectContext.selectedIdx = selectedIdx; }
+                else              { selectedIdx = null; gameState.effectContext.selectedIdx = null; }
+              };
+            });
+          }
+        });
+        if (!ok) { gameState.effectContext = null; processAbilityEffect(); }
       } else {
         // IA: elige la carta de mayor valor
         const bestIdx = gameState.ai.trash.reduce((b, c, i) => c.valor > gameState.ai.trash[b].valor ? i : b, 0);
@@ -4748,63 +4680,43 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       if (targetPlayer === 'player') {
         const trashSnapshot = [...gameState.player.trash];
         const excludeLine = gameState.currentEffectLine;
-        const modal = document.getElementById('reveal-modal');
-        const container = document.getElementById('reveal-cards-container');
-        const titleEl = document.getElementById('reveal-title');
-        const subtitleEl = document.getElementById('reveal-subtitle');
-        const sourceEl = document.getElementById('reveal-source');
-        const actionsEl = document.getElementById('reveal-actions');
-        if (modal && container) {
-          // Marcar interacción activa ANTES de abrir modal para que playSelectedCard
-          // no dispare endTurn() al ver effectContext=null tras executeEffect()
-          gameState.effectContext = { type: 'pickFromDiscardFaceDown_modal' };
-          if (titleEl) titleEl.textContent = 'ELIGE 1 CARTA';
-          if (subtitleEl) subtitleEl.textContent = 'Se jugará bocabajo en otra línea';
-          if (sourceEl) sourceEl.textContent = triggerCardName || '';
-          container.innerHTML = trashSnapshot.map((c, idx) =>
-            `<div class="effect-card selectable" data-idx="${idx}">${createCardHTML(c)}</div>`
-          ).join('');
-          actionsEl.innerHTML = '<button class="ui-btn" id="btn-reveal-continue">ELEGIR LÍNEA</button>';
-          modal.classList.remove('hidden');
-
-          setTimeout(function() {
-              if (window.scrTxt) {
-                  container.querySelectorAll('.slot-title-text, .card-img-zone-text').forEach(function(el) {
-                      const text = el.textContent.trim();
-                      if (text) {
-                          window.scrTxt(el, text, { duration: 1.0, chars: el.classList.contains('slot-title-text') ? 'upperCase' : 'upperAndLowerCase' });
-                      }
-                  });
-              }
-          }, 50);
-
-          let selectedIdx = null;
-          container.querySelectorAll('.effect-card.selectable').forEach(el => {
-            el.onclick = () => {
-              const wasSelected = el.classList.contains('selected');
-              container.querySelectorAll('.effect-card.selectable').forEach(x => x.classList.remove('selected'));
-              if (!wasSelected) { el.classList.add('selected'); selectedIdx = parseInt(el.dataset.idx); }
-              else              { selectedIdx = null; }
-            };
-          });
-          document.getElementById('btn-reveal-continue').onclick = () => {
+        gameState.effectContext = { type: 'pickFromDiscardFaceDown_modal' };
+        let selectedIdx = null;
+        const ok = openRevealModal({
+          title: 'ELIGE 1 CARTA',
+          subtitle: 'Se jugará bocabajo en otra línea',
+          source: triggerCardName || '',
+          actions: [{ label: 'ELEGIR LÍNEA', id: 'btn-reveal-continue', onclick: () => {
             if (selectedIdx === null) { updateStatus('Tiempo 3: elige una carta primero'); return; }
-            modal.classList.add('hidden');
-            container.innerHTML = '';
+            document.getElementById('reveal-modal').classList.add('hidden');
+            document.getElementById('reveal-cards-container').innerHTML = '';
             const chosenCard = trashSnapshot[selectedIdx];
-            // Quitar la carta elegida del descarte real; el resto permanece en descarte
             const realIdx = gameState.player.trash.findIndex(c => c === chosenCard);
             if (realIdx >= 0) gameState.player.trash.splice(realIdx, 1);
             gameState.effectContext = { type: 'pickFromDiscardFaceDown_lineSelect', chosenCard, excludeLine };
             highlightSelectableLines(excludeLine, 'player');
             updateStatus('Tiempo 3: elige la línea donde jugar bocabajo (no la línea actual)');
             updateUI();
-          };
-        } else {
-          // Fallback sin modal: auto-jugar la primera carta en otra línea
+          }}],
+          onOpen: (container) => {
+            container.innerHTML = trashSnapshot.map((c, idx) =>
+              `<div class="effect-card selectable" data-idx="${idx}">${createCardHTML(c)}</div>`
+            ).join('');
+            container.querySelectorAll('.effect-card.selectable').forEach(el => {
+              el.onclick = () => {
+                const wasSelected = el.classList.contains('selected');
+                container.querySelectorAll('.effect-card.selectable').forEach(x => x.classList.remove('selected'));
+                if (!wasSelected) { el.classList.add('selected'); selectedIdx = parseInt(el.dataset.idx); }
+                else              { selectedIdx = null; }
+              };
+            });
+          }
+        });
+        if (!ok) {
           const [card] = gameState.player.trash.splice(0, 1);
           const destLine = LINES.filter(l => l !== gameState.currentEffectLine)[0] || LINES[0];
           insertCardIntoStack(gameState.field[destLine].player, { card, faceDown: true });
+          gameState.effectContext = null;
           updateUI();
           processAbilityEffect();
         }
