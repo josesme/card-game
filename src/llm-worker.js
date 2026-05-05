@@ -68,31 +68,33 @@ self.onmessage = async function({ data: msg }) {
 // ─── Llamada a Ollama ─────────────────────────────────────────────────────────
 
 async function _consultarOllama(prompt, nivel) {
-    // Temperatura baja para respuestas consistentes; 0.1 evita aleatoriedad innecesaria
     const temperatura = nivel >= 4 ? 0.05 : 0.15;
 
     const body = JSON.stringify({
         model:  MODEL,
-        prompt: prompt + ' /no_think',
+        messages: [
+            { role: 'system', content: '/no_think' },
+            { role: 'user',   content: prompt },
+        ],
         stream: false,
         options: {
-            temperature:  temperatura,
-            top_p:        0.9,
-            num_predict:  16,
-            stop:         ['\n', ' ', '.', ','],
+            temperature: temperatura,
+            top_p:       0.9,
+            num_predict: 16,
+            stop:        ['\n', ' ', '.', ','],
         },
     });
 
-    const res = await fetch(`${OLLAMA_URL}/api/generate`, {
+    const res = await fetch(`${OLLAMA_URL}/api/chat`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body,
     });
 
-    if (!res.ok) throw new Error(`Ollama HTTP ${res.status} — URL: ${OLLAMA_URL}/api/generate — model: ${MODEL}`);
+    if (!res.ok) throw new Error(`Ollama HTTP ${res.status} — model: ${MODEL}`);
 
     const data = await res.json();
-    return (data.response || '').trim();
+    return (data.message?.content || '').trim();
 }
 
 // ─── Parseo de respuesta ──────────────────────────────────────────────────────
