@@ -2505,9 +2505,16 @@ function aiPickFlipLine(target) {
         return LINES
             .filter(l => {
                 const s = gameState.field[l].player;
-                return s.length > 0 && !s[s.length - 1].faceDown;
+                return s.length > 0;
             })
-            .sort((a, b) => calculateScore(gameState, b, 'player') - calculateScore(gameState, a, 'player'))[0] || null;
+            .sort((a, b) => {
+                // Priorizar voltear bocarriba (reduce puntos) sobre bocabajo (los sube)
+                const topA = gameState.field[a].player[gameState.field[a].player.length - 1];
+                const topB = gameState.field[b].player[gameState.field[b].player.length - 1];
+                const benefitA = topA.faceDown ? -(topA.card.valor - 2) : (topA.card.valor - 2);
+                const benefitB = topB.faceDown ? -(topB.card.valor - 2) : (topB.card.valor - 2);
+                return benefitB - benefitA;
+            })[0] || null;
     } else {
         return LINES
             .filter(l => gameState.field[l].ai.some(c => c.faceDown))
