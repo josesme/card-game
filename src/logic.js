@@ -3167,6 +3167,30 @@ if (btnStopDiscard) btnStopDiscard.onclick = () => {
 // Set USE_ISMCTS = true to use ISMCTS, false to use the legacy Minimax engine.
 const USE_ISMCTS = true;
 
+// LLM: tiempo máximo de espera (ms) antes de caer a ai-brain
+const LLM_TIMEOUT_MS = 4000;
+
+// LLM worker singleton (solo en localhost)
+let _llmWorker     = null;
+let _llmDisabled   = false; // se pone a true si Ollama falla para no reintentar
+
+function _usarLLM() {
+    return !_llmDisabled &&
+           typeof location !== 'undefined' &&
+           (location.hostname === 'localhost' || location.hostname === '127.0.0.1');
+}
+
+function _ensureLLMWorker() {
+    if (_llmWorker) return _llmWorker;
+    _llmWorker = new Worker('llm-worker.js');
+    _llmWorker.onerror = (e) => {
+        console.warn('⚠️ LLM Worker error, deshabilitando LLM:', e.message);
+        _llmDisabled = true;
+    };
+    _llmWorker.postMessage({ type: 'init', ollamaUrl: 'http://localhost:11434', model: 'qwen2.5:7b' });
+    return _llmWorker;
+}
+
 // ── AI Worker singleton ──────────────────────────────────────────────────────
 let _aiWorker = null;
 
@@ -3250,6 +3274,68 @@ function playAITurn() {
         return;
     }
 
+    // LLM path: intentar Ollama si estamos en localhost y no hay cadena de efectos
+    if (_usarLLM() && !gameState.effectContext) {
+        _playWithLLM(stateForAI, possibleMoves, diffDepth);
+        return;
+    }
+
+    _playWithAIBrain(stateForAI, possibleMoves, diffDepth);
+}
+
+// ── LLM path: Ollama con timeout, fallback a AIBrain ─────────────────────────
+
+function _playWithLLM(stateForAI, possibleMoves, diffDepth) {
+    const worker = _ensureLLMWorker();
+    let respondido = false;
+
+    const timeout = setTimeout(() => {
+        if (respondido) return;
+        respondido = true;
+        worker.removeEventListener('message', onLLMMessage);
+        console.warn(`⏱️ LLM timeout (${LLM_TIMEOUT_MS}ms), usando AIBrain`);
+        _playWithAIBrain(stateForAI, possibleMoves, diffDepth);
+    }, LLM_TIMEOUT_MS);
+
+    function onLLMMessage({ data: msg }) {
+        if (respondido) return;
+
+        if (msg.type === 'result') {
+            respondido = true;
+            clearTimeout(timeout);
+            worker.removeEventListener('message', onLLMMessage);
+            const move = msg.result.bestMove;
+            console.log(`🧠 LLM Decision (${msg.result.depthReached}):`, {
+                action: move.action || 'play',
+                line: move.line,
+                cardName: move.card?.nombre,
+                faceUp: move.faceUp,
+            });
+            executeAIMove(move);
+            return;
+        }
+
+        if (msg.type === 'error') {
+            respondido = true;
+            clearTimeout(timeout);
+            worker.removeEventListener('message', onLLMMessage);
+            console.warn(`⚠️ LLM error: ${msg.message} — usando AIBrain`);
+            _playWithAIBrain(stateForAI, possibleMoves, diffDepth);
+        }
+    }
+
+    worker.addEventListener('message', onLLMMessage);
+    worker.postMessage({
+        type:         'findBestMove',
+        gameState:    stateForAI,
+        possibleMoves,
+        nivel:        diffDepth,
+    });
+}
+
+// ── AIBrain path (siempre disponible como fallback) ───────────────────────────
+
+function _playWithAIBrain(stateForAI, possibleMoves, diffDepth) {
     const worker = _ensureAIWorker(diffDepth);
 
     function onWorkerMessage({ data: msg }) {
@@ -3259,11 +3345,11 @@ function playAITurn() {
         const bestMoveResult = msg.result;
         let move;
         if (!bestMoveResult || !bestMoveResult.bestMove) {
-            console.error('❌ Worker sin resultado, fallback aleatorio');
+            console.error('❌ AIBrain sin resultado, fallback aleatorio');
             move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
         } else {
             move = bestMoveResult.bestMove;
-            console.log(`🤖 IA Decision (${bestMoveResult.depthReached}):`, {
+            console.log(`🤖 AIBrain Decision (${bestMoveResult.depthReached}):`, {
                 action: move.action || 'play',
                 line: move.line,
                 cardName: move.card?.nombre,
