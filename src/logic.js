@@ -3102,7 +3102,7 @@ function _ensureLLMWorker() {
         console.warn('⚠️ LLM Worker error, deshabilitando LLM:', e.message);
         _llmDisabled = true;
     };
-    _llmWorker.postMessage({ type: 'init', ollamaUrl: 'http://localhost:11434', model: 'qwen2.5:7b' });
+    _llmWorker.postMessage({ type: 'init', ollamaUrl: 'http://localhost:11434', model: 'qwen3:8b' });
     return _llmWorker;
 }
 
