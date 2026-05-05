@@ -2949,6 +2949,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             if (idx >= 0) gameState.field[line][owner].splice(idx, 1);
             gameState[owner].trash.push(cardObj.card);
             _log(`${triggerCardName}: elimina ${cardObj.card.nombre}`, { isAI: true });
+            triggerUncovered(line, owner);
           });
           updateUI();
           processAbilityEffect();
@@ -2997,6 +2998,8 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             const playerElim = toElim.filter(e => e.owner === 'player').map(e => e.cardObj.card.nombre);
             toElim.forEach(({ owner, cardObj }) => gameState[owner].trash.push(cardObj.card));
             if (playerElim.length > 0) _log(`${triggerCardName}: elimina ${playerElim.join(', ')}`, { isAI: true });
+            // Disparar triggerUncovered por cada lado de la línea afectada
+            ['player', 'ai'].forEach(p => triggerUncovered(bestLine, p));
             updateUI();
             processAbilityEffect();
           };
