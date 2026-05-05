@@ -118,10 +118,12 @@
             draftState.round++;
         }
 
+        // Iniciar animación laser ANTES de reconstruir el grid (updateDraftDisplay lo destruiría)
         const cardEl = document.querySelector(`.protocol-card[data-proto="${protocol}"]`);
+        if (cardEl) cardEl.onclick = null;
         if (typeof AudioManager !== 'undefined') AudioManager.playSound?.('card-eliminated');
-        updateDraftDisplay();
         _animPickProtocol(cardEl, () => {
+            updateDraftDisplay();
             if (roundDone) setTimeout(() => startRound(), 200);
         });
     }
