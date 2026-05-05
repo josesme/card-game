@@ -81,6 +81,26 @@ function insertCardIntoStack(stack, cardObj) {
     }
 }
 
+// Elimina una carta del campo al descarte y dispara triggerUncovered en esa línea/lado.
+function removeCardFromField(line, side, cardObj) {
+    const stack = gameState.field[line][side];
+    const idx = stack.indexOf(cardObj);
+    if (idx < 0) return;
+    stack.splice(idx, 1);
+    gameState[side].trash.push(cardObj.card);
+    triggerUncovered(line, side);
+}
+
+// Devuelve una carta del campo a la mano y dispara triggerUncovered en esa línea/lado.
+function returnCardToHand(line, side, cardObj) {
+    const stack = gameState.field[line][side];
+    const idx = stack.indexOf(cardObj);
+    if (idx < 0) return;
+    stack.splice(idx, 1);
+    gameState[side].hand.push(cardObj.card);
+    triggerUncovered(line, side);
+}
+
 /**
  * Este archivo reemplaza y expande la lógica de efectos básica en logic.js
  */
@@ -1824,33 +1844,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       break;
     }
 
-    case 'mayReturnIfMoreCards': {
-      // If opponent has more cards in current line, may return 1 opponent card
-      const line = gameState.currentEffectLine;
-      if (line) {
-        const myCount = gameState.field[line][targetPlayer].length;
-        const oppCount = gameState.field[line][resolvedTarget].length;
-        if (oppCount > myCount) {
-          if (targetPlayer === 'player') {
-            startEffect('return', resolvedTarget, count || 1, { owner: targetPlayer });
-          } else {
-            // AI auto-returns
-            if (gameState.field[line][resolvedTarget].length > 0) {
-              const cardObj = gameState.field[line][resolvedTarget].pop();
-              gameState[resolvedTarget].hand.push(cardObj.card);
-              processAbilityEffect();
-            } else {
-              processAbilityEffect();
-            }
-          }
-        } else {
-          processAbilityEffect();
-        }
-      } else {
-        processAbilityEffect();
-      }
-      break;
-    }
+
 
     case 'returnCardsWithValue': {
       // Return all cards with the given value from ALL lines (legacy/fallback)
@@ -2190,6 +2184,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         const toMove = gameState.field[sourceLine].ai.filter(c => c.faceDown);
         gameState.field[sourceLine].ai = gameState.field[sourceLine].ai.filter(c => !c.faceDown);
         toMove.forEach(c => insertCardIntoStack(gameState.field[dest].ai, c));
+        triggerUncovered(sourceLine, 'ai');
         processAbilityEffect();
       }
       break;
@@ -2301,8 +2296,8 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         // IA: si hay cartas del oponente en campo, devuelve una y se voltea
         const l = gameState.currentEffectLine || LINES.find(l => gameState.field[l][resolvedTarget].length > 0);
         if (l && gameState.field[l][resolvedTarget].length > 0) {
-          const cardObj = gameState.field[l][resolvedTarget].pop();
-          gameState[resolvedTarget].hand.push(cardObj.card);
+          const cardObj = gameState.field[l][resolvedTarget][gameState.field[l][resolvedTarget].length - 1];
+          returnCardToHand(l, resolvedTarget, cardObj);
           // Voltear Psique 4
           LINES.forEach(line => {
             const stack = gameState.field[line][targetPlayer];
@@ -2890,8 +2885,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             const removed = gameState.field[l].ai[fdIdx];
             const doElim = () => {
               gameState.effectContext = null;
-              gameState.field[l].ai.splice(fdIdx, 1);
-              gameState.ai.trash.push(removed.card);
+              removeCardFromField(l, 'ai', removed);
               updateUI();
               processAbilityEffect();
             };
