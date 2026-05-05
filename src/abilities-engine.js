@@ -1959,6 +1959,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           if (faceDownIdx >= 0) {
             const cardObj = gameState.field[l][resolvedTarget].splice(faceDownIdx, 1)[0];
             gameState[resolvedTarget].hand.push(cardObj.card);
+            gameState.effectQueue.unshift({ effect: { action: '_showRevealedCards', cards: [cardObj.card] }, targetPlayer });
           }
         }
         processAbilityEffect();
@@ -2089,13 +2090,10 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       if (gameState[targetPlayer].deck.length === 0) { processAbilityEffect(); break; }
       const topCard = gameState[targetPlayer].deck[gameState[targetPlayer].deck.length - 1];
       if (actionDef.ifMatchProtocol && gameState[targetPlayer].protocols.includes(topCard.protocol)) {
-        // Draw it
         gameState[targetPlayer].deck.pop();
         gameState[targetPlayer].hand.push(topCard);
-        logEvent(`Carta del mazo revelada: ${topCard.nombre} — añadida a mano`, { isAI: targetPlayer === 'ai' });
-      } else {
-        logEvent(`Carta del mazo revelada: ${topCard.nombre} — devuelta al mazo`, { isAI: targetPlayer === 'ai' });
       }
+      gameState.effectQueue.unshift({ effect: { action: '_showRevealedCards', cards: [topCard] }, targetPlayer });
       processAbilityEffect();
       break;
     }
