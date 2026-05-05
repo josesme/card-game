@@ -73,12 +73,12 @@ async function _consultarOllama(prompt, nivel) {
 
     const body = JSON.stringify({
         model:  MODEL,
-        prompt,
+        prompt: prompt + ' /no_think',
         stream: false,
         options: {
             temperature:  temperatura,
             top_p:        0.9,
-            num_predict:  8,   // solo necesitamos 1-2 dígitos
+            num_predict:  16,
             stop:         ['\n', ' ', '.', ','],
         },
     });
@@ -89,7 +89,7 @@ async function _consultarOllama(prompt, nivel) {
         body,
     });
 
-    if (!res.ok) throw new Error(`Ollama HTTP ${res.status}`);
+    if (!res.ok) throw new Error(`Ollama HTTP ${res.status} — URL: ${OLLAMA_URL}/api/generate — model: ${MODEL}`);
 
     const data = await res.json();
     return (data.response || '').trim();
