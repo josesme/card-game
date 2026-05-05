@@ -33,9 +33,9 @@ REGLAS DE COMPILE (resumen):
 
 const STRATEGY_CONTEXT = `
 GESTIÓN DE MANO Y REFRESH:
-- Refrescar con 1 o 2 cartas es frecuente y correcto. Hacer jugadas mediocres para vaciar la mano suele ser peor que un refresh anticipado.
-- Refrescar con 3 cartas en mano generalmente es demasiado pronto, salvo que las cartas restantes sean muy situacionales o fuercen una línea frágil.
-- Cuando tus últimas cartas solo permiten líneas predecibles o débiles, refresca antes de agotar la mano.
+- Con 3 o más cartas en mano, NO hagas refresh. Juega siempre una carta.
+- Refresh solo es correcto con 1-2 cartas, o si todas tus cartas requieren un objetivo específico que no existe en el campo actual.
+- Hacer jugadas mediocres para vaciar la mano suele ser peor que un refresh anticipado con 1-2 cartas.
 - Las cartas 5 reducen en 1 los turnos antes de tener que refrescar. Si tienes pocas cartas y consideras refrescar pronto, un 5 simplifica la decisión.
 
 CARTAS BOCA ABAJO:
