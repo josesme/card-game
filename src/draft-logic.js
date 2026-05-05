@@ -107,20 +107,22 @@
         if (draftState.selectionsNeeded <= 0) return;
         if (!draftState.available.includes(protocol)) return;
 
-        const cardEl = document.querySelector(`.protocol-card[data-proto="${protocol}"]`);
-        if (cardEl) cardEl.onclick = null;
+        // Bloquear inmediatamente — evita dobles clicks durante la animación (850ms)
+        draftState.playerSelected.push(protocol);
+        draftState.available.splice(draftState.available.indexOf(protocol), 1);
+        draftState.selectionsNeeded--;
 
+        const roundDone = draftState.selectionsNeeded === 0;
+        if (roundDone) {
+            draftState.isPlayerTurn = false;
+            draftState.round++;
+        }
+
+        const cardEl = document.querySelector(`.protocol-card[data-proto="${protocol}"]`);
         if (typeof AudioManager !== 'undefined') AudioManager.playSound?.('card-eliminated');
+        updateDraftDisplay();
         _animPickProtocol(cardEl, () => {
-            draftState.playerSelected.push(protocol);
-            draftState.available.splice(draftState.available.indexOf(protocol), 1);
-            draftState.selectionsNeeded--;
-            updateDraftDisplay();
-            if (draftState.selectionsNeeded === 0) {
-                draftState.isPlayerTurn = false;
-                draftState.round++;
-                setTimeout(() => startRound(), 500);
-            }
+            if (roundDone) setTimeout(() => startRound(), 200);
         });
     }
 
