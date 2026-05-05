@@ -3509,8 +3509,8 @@ function generateAIPossibleMoves() {
         });
     });
 
-    // Opción: Recargar si mazo tiene cartas
-    if (gameState.ai.deck.length > 0) {
+    // Opción: Recargar si mazo tiene cartas y mano < 5 (regla: no se puede actualizar con 5+ cartas)
+    if (gameState.ai.deck.length > 0 && gameState.ai.hand.length < 5) {
         moves.push({
             action: 'refresh',
             type: 'refresh',
