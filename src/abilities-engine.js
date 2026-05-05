@@ -1479,7 +1479,13 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       if (actionDef.filter) deleteOpts.filter = actionDef.filter;
       if (actionDef.maxVal !== undefined) deleteOpts.maxVal = actionDef.maxVal;
       if (actionDef.minVal !== undefined) deleteOpts.minVal = actionDef.minVal;
-      startEffect('eliminate', resolvedTarget, count || 1, deleteOpts);
+      // Encolar eliminaciones de 1 en 1 para que los efectos encadenados
+      // (onPlay de cartas descubiertas) se resuelvan entre cada eliminación.
+      const total = count || 1;
+      for (let i = 1; i < total; i++) {
+        gameState.effectQueue.unshift({ effect: { ...actionDef, count: 1 }, targetPlayer, cardName: triggerCardName });
+      }
+      startEffect('eliminate', resolvedTarget, 1, deleteOpts);
       break;
     }
 
