@@ -71,17 +71,14 @@ async function _consultarOllama(prompt, nivel) {
     const temperatura = nivel >= 4 ? 0.05 : 0.15;
 
     const body = JSON.stringify({
-        model:  MODEL,
-        messages: [
-            { role: 'system', content: '/no_think' },
-            { role: 'user',   content: prompt },
-        ],
-        stream: false,
+        model:    MODEL,
+        messages: [{ role: 'user', content: prompt }],
+        stream:   false,
+        think:    false,
         options: {
             temperature: temperatura,
             top_p:       0.9,
-            num_predict: 16,
-            stop:        ['\n', ' ', '.', ','],
+            num_predict: 4,
         },
     });
 
