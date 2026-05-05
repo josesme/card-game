@@ -2483,7 +2483,10 @@ function aiLowestValueCardIdx(owner) {
  */
 function aiPickEliminateLine(target, opts = {}) {
     const filterCtx = { filter: opts.filter, maxVal: opts.maxVal, minVal: opts.minVal };
-    const lines = (opts.forceLine ? [opts.forceLine] : LINES)
+    let lines = opts.forceLine ? [opts.forceLine] : LINES;
+    if (opts.allowedLines) lines = lines.filter(l => opts.allowedLines.includes(l));
+    if (opts.excludeLine)  lines = lines.filter(l => l !== opts.excludeLine);
+    return lines
         .filter(l => {
             const stack = gameState.field[l][target];
             if (!stack.length) return false;
@@ -2491,8 +2494,7 @@ function aiPickEliminateLine(target, opts = {}) {
             if (typeof getPersistentModifiers === 'function' && getPersistentModifiers(topCard).preventEliminate) return false;
             return cardMatchesFilter(topCard, filterCtx);
         })
-        .sort((a, b) => calculateScore(gameState, b, target) - calculateScore(gameState, a, target));
-    return lines[0] || null;
+        .sort((a, b) => calculateScore(gameState, b, target) - calculateScore(gameState, a, target))[0] || null;
 }
 
 /**
@@ -2500,15 +2502,14 @@ function aiPickEliminateLine(target, opts = {}) {
  * target='player': flip opponent's highest-score line top (face-up→down reduces their score).
  * target='ai':     flip own face-down card in line closest to compile.
  */
-function aiPickFlipLine(target) {
+function aiPickFlipLine(target, opts = {}) {
+    let lines = opts.forceLine ? [opts.forceLine] : LINES;
+    if (opts.allowedLines) lines = lines.filter(l => opts.allowedLines.includes(l));
+    if (opts.excludeLine)  lines = lines.filter(l => l !== opts.excludeLine);
     if (target === 'player') {
-        return LINES
-            .filter(l => {
-                const s = gameState.field[l].player;
-                return s.length > 0;
-            })
+        return lines
+            .filter(l => gameState.field[l].player.length > 0)
             .sort((a, b) => {
-                // Priorizar voltear bocarriba (reduce puntos) sobre bocabajo (los sube)
                 const topA = gameState.field[a].player[gameState.field[a].player.length - 1];
                 const topB = gameState.field[b].player[gameState.field[b].player.length - 1];
                 const benefitA = topA.faceDown ? -(topA.card.valor - 2) : (topA.card.valor - 2);
@@ -2516,7 +2517,7 @@ function aiPickFlipLine(target) {
                 return benefitB - benefitA;
             })[0] || null;
     } else {
-        return LINES
+        return lines
             .filter(l => gameState.field[l].ai.some(c => c.faceDown))
             .sort((a, b) => calculateScore(gameState, b, 'ai') - calculateScore(gameState, a, 'ai'))[0] || null;
     }
@@ -2559,37 +2560,31 @@ function resolveEffectAI(type, target, count, opts = {}) {
         let lastFlippedSide = actualTarget; // para el log: qué lado se volteó realmente
         for (let i = 0; i < count; i++) {
             if (opts.filter === 'faceDown') {
-                // Solo puede voltear cartas bocabajo → bocarriba.
+                // Solo voltea la carta descubierta (top) si está bocabajo.
                 // Preferir propias (activa valor/efecto); fallback al rival si target:'any'.
                 const ownLine = LINES
-                    .filter(l => gameState.field[l].ai.some(c => c.faceDown))
+                    .filter(l => { const s = gameState.field[l].ai; return s.length > 0 && s[s.length - 1].faceDown; })
                     .sort((a, b) => calculateScore(gameState, b, 'ai') - calculateScore(gameState, a, 'ai'))[0] || null;
                 if (ownLine !== null) {
                     const stack = gameState.field[ownLine].ai;
-                    const fdIdx = [...stack].reverse().findIndex(c => c.faceDown);
-                    if (fdIdx >= 0) {
-                        const flipped = stack[stack.length - 1 - fdIdx];
-                        flipped.faceDown = false;
-                        flippedCount++;
-                        lastFlippedSide = 'ai';
-                        if (fdIdx === 0) flipped._animateFlip = true;
-                        triggerFlipFaceUp(flipped, ownLine, 'ai');
-                    }
+                    const topCard = stack[stack.length - 1];
+                    topCard.faceDown = false;
+                    flippedCount++;
+                    lastFlippedSide = 'ai';
+                    topCard._animateFlip = true;
+                    triggerFlipFaceUp(topCard, ownLine, 'ai');
                 } else if (target === 'any') {
                     const pLine = LINES
-                        .filter(l => gameState.field[l].player.some(c => c.faceDown))
+                        .filter(l => { const s = gameState.field[l].player; return s.length > 0 && s[s.length - 1].faceDown; })
                         .sort((a, b) => calculateScore(gameState, b, 'player') - calculateScore(gameState, a, 'player'))[0] || null;
                     if (pLine !== null) {
                         const stack = gameState.field[pLine].player;
-                        const fdIdx = [...stack].reverse().findIndex(c => c.faceDown);
-                        if (fdIdx >= 0) {
-                            const flipped = stack[stack.length - 1 - fdIdx];
-                            flipped.faceDown = false;
-                            flippedCount++;
-                            lastFlippedSide = 'player';
-                            if (fdIdx === 0) flipped._animateFlip = true;
-                            triggerFlipFaceUp(flipped, pLine, 'player');
-                        }
+                        const topCard = stack[stack.length - 1];
+                        topCard.faceDown = false;
+                        flippedCount++;
+                        lastFlippedSide = 'player';
+                        topCard._animateFlip = true;
+                        triggerFlipFaceUp(topCard, pLine, 'player');
                     }
                 }
             } else if (target === 'any') {
@@ -2633,7 +2628,7 @@ function resolveEffectAI(type, target, count, opts = {}) {
                 }
             } else {
                 // Sin filtro + target específico: usar lógica existente (aiPickFlipLine).
-                const line = aiPickFlipLine(actualTarget);
+                const line = aiPickFlipLine(actualTarget, opts);
                 if (line !== null) {
                     const stack = gameState.field[line][actualTarget];
                     if (actualTarget === 'player') {
@@ -2687,20 +2682,23 @@ function resolveEffectAI(type, target, count, opts = {}) {
         for (let i = 0; i < count; i++) {
             const dest = opts.beneficiary || actualTarget;
             if (opts.filter === 'faceDown') {
-                // Buscar cualquier carta bocabajo del target (cubierta o no)
-                let best = null, bestLine = null, bestIdx = -1;
+                // Solo la carta descubierta (top) puede ser devuelta si está bocabajo.
+                let bestLine = null;
                 LINES.forEach(l => {
-                    gameState.field[l][actualTarget].forEach((c, idx) => {
-                        if (c.faceDown && (!best || c.card.valor > best.card.valor)) {
-                            best = c; bestLine = l; bestIdx = idx;
+                    const s = gameState.field[l][actualTarget];
+                    if (s.length > 0 && s[s.length - 1].faceDown) {
+                        if (!bestLine || s[s.length - 1].card.valor > gameState.field[bestLine][actualTarget][gameState.field[bestLine][actualTarget].length - 1].card.valor) {
+                            bestLine = l;
                         }
-                    });
+                    }
                 });
-                if (best) {
-                    if (window.animCardEliminate) window.animCardEliminate(best.card.id, null);
-                    gameState.field[bestLine][actualTarget].splice(bestIdx, 1);
-                    if (typeof applyReturnToHand === 'function') applyReturnToHand(dest, best.card);
-                    else gameState[dest].hand.push(best.card);
+                if (bestLine !== null) {
+                    const stack = gameState.field[bestLine][actualTarget];
+                    const cardObj = stack[stack.length - 1];
+                    if (window.animCardEliminate) window.animCardEliminate(cardObj.card.id, null);
+                    stack.pop();
+                    if (typeof applyReturnToHand === 'function') applyReturnToHand(dest, cardObj.card);
+                    else gameState[dest].hand.push(cardObj.card);
                     triggerUncovered(bestLine, actualTarget);
                 }
             } else {
