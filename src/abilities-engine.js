@@ -4717,7 +4717,22 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         const destLine = LINES.filter(l => l !== curLine)[0] || LINES[0];
         insertCardIntoStack(gameState.field[destLine].ai, { card, faceDown: true });
         updateUI();
-        processAbilityEffect();
+        gameState.effectContext = { type: 'revealAIDiscard' };
+        const ok = openRevealModal({
+          title: 'CARTA JUGADA POR LA IA',
+          subtitle: `Jugada bocabajo en línea ${destLine}`,
+          source: triggerCardName || '',
+          cards: [card],
+          actions: [{ label: 'CONTINUAR', id: 'btn-reveal-close', onclick: () => {
+            document.getElementById('reveal-modal').classList.add('hidden');
+            gameState.effectContext = null;
+            processAbilityEffect();
+          }}],
+        });
+        if (!ok) {
+          gameState.effectContext = null;
+          processAbilityEffect();
+        }
       }
       break;
     }
