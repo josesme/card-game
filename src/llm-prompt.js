@@ -23,6 +23,10 @@ REGLAS DE COMPILE (resumen):
 - Refresh: solo si tienes <5 cartas en mano. Roba del mazo hasta 5.
 - Compilación es obligatoria si puedes hacerla.
 - Recompilar línea propia ya compilada: roba carta superior del mazo rival.
+- Efecto "al jugar" (h_accion): se resuelve una sola vez cuando se juega la carta.
+- Efecto "inicio de turno" (h_inicio): se activa CADA inicio de turno mientras la carta esté visible en campo. Es permanente y muy valioso — perder una carta con este efecto es una pérdida de ventaja recurrente.
+- Efecto "fin de turno" (h_final): igual que inicio pero al final del turno. También permanente.
+- Las cartas del rival con efectos de inicio/fin también se activan cada turno — son amenazas permanentes que conviene eliminar.
 `.trim();
 
 // ─── Tips por protocolo (extraídos de compile-estrategy-es.md) ───────────────
@@ -123,20 +127,29 @@ ESTRATEGIA GENERAL:
 
 // ─── Serialización del estado ─────────────────────────────────────────────────
 
+function _serializarCarta(obj) {
+    if (obj.faceDown) return '[?:2pts]';
+    const c = obj.card;
+    const efectos = [
+        c.h_inicio ? `INICIO:${c.h_inicio}` : '',
+        c.h_final  ? `FIN:${c.h_final}`     : '',
+    ].filter(Boolean).join(', ');
+    // h_accion solo aparece cuando se juega, no en campo — no se incluye aquí
+    return efectos
+        ? `${c.nombre}(${c.valor})[${efectos}]`
+        : `${c.nombre}(${c.valor})`;
+}
+
 function _serializarCampo(field, calcularPuntos) {
     const lineas = ['izquierda', 'centro', 'derecha'];
     const nombres = { izquierda: 'Izquierda', centro: 'Centro', derecha: 'Derecha' };
     return lineas.map(l => {
         const compiladoPor = field[l].compiledBy;
         if (compiladoPor) return `  ${nombres[l]}: COMPILADA por ${compiladoPor === 'ai' ? 'IA' : 'Jugador'}`;
-        const aiPts  = calcularPuntos(l, 'ai');
-        const plPts  = calcularPuntos(l, 'player');
-        const aiCartas = (field[l].ai || []).map(c =>
-            c.faceDown ? `[?:2pts]` : `${c.card.nombre}(${c.card.valor})`
-        ).join(', ') || '—';
-        const plCartas = (field[l].player || []).map(c =>
-            c.faceDown ? `[?:2pts]` : `${c.card.nombre}(${c.card.valor})`
-        ).join(', ') || '—';
+        const aiPts   = calcularPuntos(l, 'ai');
+        const plPts   = calcularPuntos(l, 'player');
+        const aiCartas = (field[l].ai     || []).map(_serializarCarta).join(', ') || '—';
+        const plCartas = (field[l].player || []).map(_serializarCarta).join(', ') || '—';
         return `  ${nombres[l]}: IA ${aiPts}pts [${aiCartas}] | Rival ${plPts}pts [${plCartas}]`;
     }).join('\n');
 }
@@ -166,10 +179,15 @@ function _serializarJugadas(jugadas) {
     return jugadas.map((j, i) => {
         if (j.action === 'refresh') return `${i}: REFRESH (actualizar mano)`;
         const modo = j.faceUp ? 'BOCARRIBA' : 'BOCABAJO(val:2,sin efecto)';
-        const efecto = j.faceUp && (j.card.h_accion || j.card.h_inicio || j.card.h_final)
-            ? ` | Efecto: ${[j.card.h_accion, j.card.h_inicio, j.card.h_final].filter(Boolean).join(' / ')}`
-            : '';
-        return `${i}: ${j.card.nombre}(val:${j.card.valor}) en línea ${j.line} ${modo}${efecto}`;
+        let efectoTxt = '';
+        if (j.faceUp) {
+            const partes = [];
+            if (j.card.h_accion) partes.push(`al jugar: ${j.card.h_accion}`);
+            if (j.card.h_inicio) partes.push(`inicio de turno (permanente): ${j.card.h_inicio}`);
+            if (j.card.h_final)  partes.push(`fin de turno (permanente): ${j.card.h_final}`);
+            if (partes.length) efectoTxt = ` | ${partes.join(' / ')}`;
+        }
+        return `${i}: ${j.card.nombre}(val:${j.card.valor}) en línea ${j.line} ${modo}${efectoTxt}`;
     }).join('\n');
 }
 

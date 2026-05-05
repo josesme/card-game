@@ -59,10 +59,27 @@ describe('_serializarJugadas', () => {
         expect(txt).toContain('sin efecto');
     });
 
-    test('jugada con efecto lo incluye en la descripción', () => {
+    test('efecto h_accion se etiqueta como "al jugar"', () => {
         const jugada = makeJugada('Muerte 3', 3, 'izquierda', true, 'Muerte', 'Elimina 1 carta del rival');
         const txt = _serializarJugadas([jugada]);
+        expect(txt).toContain('al jugar');
         expect(txt).toContain('Elimina 1 carta del rival');
+    });
+
+    test('efecto h_inicio se etiqueta como permanente', () => {
+        const jugada = makeJugada('Muerte 1', 1, 'izquierda', true, 'Muerte');
+        jugada.card.h_inicio = 'Roba 1 carta y elimina 1 carta';
+        const txt = _serializarJugadas([jugada]);
+        expect(txt).toContain('inicio de turno (permanente)');
+        expect(txt).toContain('Roba 1 carta y elimina 1 carta');
+    });
+
+    test('efecto h_final se etiqueta como permanente', () => {
+        const jugada = makeJugada('Velocidad 3', 3, 'izquierda', true, 'Velocidad');
+        jugada.card.h_final = 'Desplaza esta carta a otra línea';
+        const txt = _serializarJugadas([jugada]);
+        expect(txt).toContain('fin de turno (permanente)');
+        expect(txt).toContain('Desplaza esta carta a otra línea');
     });
 
     test('numera las jugadas desde 0', () => {
@@ -129,6 +146,34 @@ describe('construirPrompt', () => {
         const jugadas = [makeJugada('A', 1, 'izquierda')];
         const prompt = construirPrompt(e, jugadas, calculateScore);
         expect(prompt).toContain('[?:2pts]');
+    });
+
+    test('carta en campo con h_inicio muestra el efecto en el campo', () => {
+        const e = makeEstado();
+        const cartaConEfecto = makeCard('Muerte 1', 1, 'Muerte');
+        cartaConEfecto.h_inicio = 'Roba 1 carta y elimina 1 carta';
+        e.field.izquierda.player.push({ card: cartaConEfecto, faceDown: false });
+        const jugadas = [makeJugada('A', 1, 'centro')];
+        const prompt = construirPrompt(e, jugadas, calculateScore);
+        expect(prompt).toContain('INICIO:Roba 1 carta y elimina 1 carta');
+    });
+
+    test('carta en campo sin efectos no añade corchetes de efecto', () => {
+        const e = makeEstado();
+        const cartaSinEfecto = makeCard('Muerte 5', 5, 'Muerte');
+        e.field.izquierda.ai.push({ card: cartaSinEfecto, faceDown: false });
+        const jugadas = [makeJugada('A', 1, 'centro')];
+        const prompt = construirPrompt(e, jugadas, calculateScore);
+        expect(prompt).toContain('Muerte 5(5)');
+        expect(prompt).not.toContain('Muerte 5(5)[');
+    });
+
+    test('el prompt incluye explicación de efectos permanentes en reglas', () => {
+        const e = makeEstado();
+        const jugadas = [makeJugada('A', 1, 'izquierda')];
+        const prompt = construirPrompt(e, jugadas, calculateScore);
+        expect(prompt).toContain('inicio de turno');
+        expect(prompt).toContain('permanente');
     });
 
     test('muestra cartas boca arriba con nombre y valor', () => {
