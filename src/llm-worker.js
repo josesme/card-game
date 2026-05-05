@@ -15,7 +15,7 @@ self.window = self; // compatibilidad con scripts que referencian window
 importScripts('score-utils.js', 'llm-prompt.js');
 
 let OLLAMA_URL = 'http://localhost:11434';
-let MODEL      = 'qwen2.5:7b';
+let MODEL      = 'qwen3:8b';
 
 self.onmessage = async function({ data: msg }) {
     if (msg.type === 'init') {
