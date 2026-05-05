@@ -29,100 +29,20 @@ REGLAS DE COMPILE (resumen):
 - Las cartas del rival con efectos de inicio/fin también se activan cada turno — son amenazas permanentes que conviene eliminar.
 `.trim();
 
-// ─── Tips por protocolo (extraídos de compile-estrategy-es.md) ───────────────
+// ─── Conocimiento estratégico (secciones 3 y 4 de compile-estrategy-es.md) ────
 
-const STRATEGY_TIPS = {
-    'Gravedad': `
-GRAVEDAD: Gravity 0 puede valer 4-14pts según retriggers. Gravity 1 y 2 son el núcleo del protocolo.
-Funciona mejor con Muerte y Velocidad. Counters: Muerte 2, Agua 3.
-`.trim(),
+const STRATEGY_CONTEXT = `
+GESTIÓN DE MANO Y REFRESH:
+- Refrescar con 1 o 2 cartas es frecuente y correcto. Hacer jugadas mediocres para vaciar la mano suele ser peor que un refresh anticipado.
+- Refrescar con 3 cartas en mano generalmente es demasiado pronto, salvo que las cartas restantes sean muy situacionales o fuercen una línea frágil.
+- Cuando tus últimas cartas solo permiten líneas predecibles o débiles, refresca antes de agotar la mano.
+- Las cartas 5 reducen en 1 los turnos antes de tener que refrescar. Si tienes pocas cartas y consideras refrescar pronto, un 5 simplifica la decisión.
 
-    'Muerte': `
-MUERTE: Control reactivo. Flojo en tablero vacío, devastador con objetivos. Muerte 2 es una de las mejores cartas del juego (especialmente contra Gravedad 0).
-Ideal con Gravedad. También bueno con Fuego y Espíritu.
-`.trim(),
-
-    'Velocidad': `
-VELOCIDAD: Velocidad 3 posiblemente la mejor carta del juego (End command da turno extra).
-Velocidad 0: juégalo ANTES de activarlo — cúbrelo con otra carta para protegerlo.
-Cartas débiles: Velocidad 2 y Velocidad 4. Mejor con Gravedad o Fuego.
-Combo clave: Velocidad 0 + Velocidad 3 en End step activa Velocidad 0 → juegas carta extra.
-`.trim(),
-
-    'Vida': `
-VIDA: Sólido y versátil. Vida 0 muy fuerte (hasta 6pts distribuidos + denegar control).
-Sinergiza fuerte con Agua (combo de desarrollo más citado). Vida 3 y 4 quieren estar en posiciones concretas de la pila.
-`.trim(),
-
-    'Fuego': `
-FUEGO: Muy bueno e infravalorado. Fuego 3 es uno de los mejores 3s del juego.
-Fuego 0: 2 flips + draw, fiable. Fuego 4: excelente (+1 carta Y descarta cartas malas).
-Fuego 2 y 5 son más débiles. Excelente para ciclar cartas malas. Soporta Velocidad y Espíritu.
-`.trim(),
-
-    'Agua': `
-AGUA: Agua 3 considerada de las mejores cartas del juego. Agua 1 y 3 son la razón principal para pickear Agua.
-Agua 4 devuelve Fuego 0 → Fuego 0 reactiva (combo de draw masivo).
-Combo Life+Water: el combo de desarrollo más citado. Muy difícil de agotar.
-`.trim(),
-
-    'Oscuridad': `
-OSCURIDAD: Oscuridad 2 cambia el valor de cartas boca abajo a 4 (en vez de 2). Muy flexible.
-No es solo Oscuridad 2: D0, D1, D4 dan control de oponente. D3 da soporte.
-Combina bien con Vida, cartas boca abajo valiosas.
-`.trim(),
-
-    'Espíritu': `
-ESPÍRITU: Espíritu 3 es la pieza clave — permite mover cartas entre líneas, ignorar restricciones de protocolo.
-Espíritu 1 permite jugar cualquier carta en la línea de Velocidad 0 / Gravedad 0.
-Combina con Fuego 0 (draw controlado) y Gravedad (potencia masiva).
-`.trim(),
-
-    'Luz': `
-LUZ: Protocolo de información y draw. Luz 4 revela mano rival — información muy valiosa para anticipar jugadas.
-Luz 3 da draw consistente. Bueno con protocolos reactivos que necesitan saber qué hay en campo.
-`.trim(),
-
-    'Metal': `
-METAL: Metal 3 hace un board nuke (borra múltiples cartas). Necesita estar en la línea correcta — Espíritu 1 ayuda a posicionarlo.
-Sinergiza con Vida + Espíritu para borrado masivo. Metal 0 y Metal 2 dan control de cartas rivales.
-`.trim(),
-
-    'Psique': `
-PSIQUE: Psique 1 cubierta es una bomba — cuando se activa puede ser determinante.
-El combo Psique 1 bloqueado bajo otras cartas es el setup más peligroso del juego.
-Psique 5 es fuerte (el protocolo ya tiene mucho draw). Psique 4 muy situacional.
-`.trim(),
-
-    'Apatía': `
-APATÍA: Protocolo de disrupción y control de tempo. Apatía 0 y 2 son situacionales.
-Apatía 3 y 4 dan control de turno. Funciona como soporte defensivo cuando el rival está cerca de compilar.
-`.trim(),
-
-    'Plaga': `
-PLAGA: Motor de descarte forzado al rival. Muy efectivo con Corrupción.
-Con Miedo o Tiempo como tercer protocolo puede agotar recursos del rival consistentemente.
-`.trim(),
-
-    'Odio': `
-ODIO: Odio 3 tiene Top command permanente: "al borrar una carta, roba 1".
-Con protocolos que borran mucho (Muerte, Metal, Gravedad) genera ventaja de mano sostenida.
-`.trim(),
-
-    'Amor': `
-AMOR: Protocolo de puntos altos y soporte. Amor 4 y 5 dan puntos masivos con condiciones.
-Necesita un tablero estable para brillar. Bueno para cerrar líneas rápido en late game.
-`.trim(),
-};
-
-// Secciones generales siempre incluidas (condensadas)
-const STRATEGY_GENERAL = `
-ESTRATEGIA GENERAL:
-- Early: monta combos y prepara late game. Mid: lucha por el Control si puedes. Late: Control es el objetivo principal.
-- Una carta boca abajo vale ~2.5pts de media (vs 4-4.5 de media bocarriba). La falta de efecto importa más que el punto menos.
-- Refresh es válido cuando tienes mano llena de cartas reactivas/situacionales. No refresques con mano jugable.
-- Cuando la IA tiene 2 compiles y el rival también: compilar el tercero es la prioridad absoluta — no hay tiempo para desarrollo.
-- Bloquear una línea rival cerca de compilar (≥7pts) es urgente aunque cueste tempo.
+CARTAS BOCA ABAJO:
+- Son herramientas válidas pero no la base de una estrategia competitiva. Son más flexibles (cualquier línea) pero el texto de las cartas face-up es importante.
+- No juegues boca abajo sin un plan: cubrirte para activar efectos, stall, forzar un compile del rival, o proteger cartas valiosas.
+- Cuándo jugar boca abajo: para alcanzar umbral de compilación, cubrir una carta con bottom command importante, "pasar" el turno sin buenas opciones, o preparar efectos que se activan con cartas boca abajo.
+- Una carta boca abajo vale 2.5pts de media. La falta de texto importa más que el impacto en puntos.
 `.trim();
 
 // ─── Serialización del estado ─────────────────────────────────────────────────
@@ -164,15 +84,6 @@ function _serializarDescarte(trash, limite = 5) {
     return trash.slice(-limite).map(c => `${c.nombre}`).join(', ');
 }
 
-function _tipsProtocolos(protocolosIA, protocolosRival) {
-    const todos = new Set([...protocolosIA, ...protocolosRival]);
-    const tips = [];
-    todos.forEach(p => {
-        if (STRATEGY_TIPS[p]) tips.push(STRATEGY_TIPS[p]);
-    });
-    return tips.join('\n\n');
-}
-
 // ─── Serialización de jugadas ─────────────────────────────────────────────────
 
 function _serializarJugadas(jugadas) {
@@ -212,7 +123,6 @@ function construirPrompt(estado, jugadas, calcScore) {
     const mano      = _serializarMano(estado.ai.hand);
     const descarte  = _serializarDescarte(estado.player.trash);
     const jugadasTx = _serializarJugadas(jugadas);
-    const tips      = _tipsProtocolos(aiProts, plProts);
 
     return `Eres la IA de un juego de cartas llamado COMPILE. Debes elegir la mejor jugada.
 
@@ -234,10 +144,8 @@ JUGADAS POSIBLES (elige UNA por su número):
 ${jugadasTx}
 
 ---
-CONOCIMIENTO ESTRATÉGICO RELEVANTE:
-${STRATEGY_GENERAL}
-
-${tips}
+CONOCIMIENTO ESTRATÉGICO:
+${STRATEGY_CONTEXT}
 
 ---
 INSTRUCCIÓN: Responde ÚNICAMENTE con el número de la jugada elegida (0, 1, 2...). Nada más. Sin explicación.

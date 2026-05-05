@@ -123,13 +123,12 @@ describe('construirPrompt', () => {
         expect(prompt).toContain('2');
     });
 
-    test('incluye tips relevantes a los protocolos de la partida', () => {
-        const e = makeEstado(); // IA tiene Velocidad, Gravedad, Agua
+    test('incluye conocimiento estratégico de mano y boca abajo', () => {
+        const e = makeEstado();
         const jugadas = [makeJugada('A', 1, 'izquierda')];
         const prompt = construirPrompt(e, jugadas, calculateScore);
-        expect(prompt).toContain('VELOCIDAD');
-        expect(prompt).toContain('GRAVEDAD');
-        expect(prompt).toContain('AGUA');
+        expect(prompt).toContain('GESTIÓN DE MANO Y REFRESH');
+        expect(prompt).toContain('CARTAS BOCA ABAJO');
     });
 
     test('muestra línea compilada cuando corresponde', () => {
