@@ -37,12 +37,14 @@ function applyPersistentValueModifiers(state, line, player) {
   let totalBonus = 0;
   const CARD_EFF = typeof CARD_EFFECTS !== 'undefined' ? CARD_EFFECTS : {};
 
+  // Iterate entire opponent stack: persistent modifiers apply even when the card is covered
+  // (CODEX: "El valor y el comando superior son siempre visibles aunque la carta esté cubierta").
+  // getPersistentModifiers already returns {} for faceDown cards.
   const oppStack = state.field[line][opponent];
-  if (oppStack.length > 0) {
-    const topCardObj = oppStack[oppStack.length - 1];
-    const modifiers = getPersistentModifiers(topCardObj);
+  oppStack.forEach(cardObj => {
+    const modifiers = getPersistentModifiers(cardObj);
     if (modifiers.valueReduction) totalReduction += modifiers.valueReduction;
-  }
+  });
 
   const selfStack = state.field[line][player];
   const faceDownCount =

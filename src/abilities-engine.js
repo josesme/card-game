@@ -5002,18 +5002,14 @@ function applyPersistentValueModifiers(state, line, player) {
   let totalReduction = 0;
   let totalBonus = 0;
 
-  // Reducciones: cartas bocarriba del oponente en esta línea (ej: Metal 0)
-  // DEBEN estar descubiertas (ser la última de la pila)
+  // Reducciones: toda la pila del oponente bocarriba (ej: Metal 0)
+  // Aplica aunque la carta esté cubierta (CODEX: el comando superior es visible aunque cubierta).
+  // getPersistentModifiers devuelve {} para cartas bocabajo.
   const oppStack = state.field[line][opponent];
-  if (oppStack.length > 0) {
-    const topCardObj = oppStack[oppStack.length - 1];
-    {
-      const modifiers = getPersistentModifiers(topCardObj);
-      if (modifiers.valueReduction) {
-        totalReduction += modifiers.valueReduction;
-      }
-    }
-  }
+  oppStack.forEach(cardObj => {
+    const modifiers = getPersistentModifiers(cardObj);
+    if (modifiers.valueReduction) totalReduction += modifiers.valueReduction;
+  });
 
   // Bonos: cartas propias bocaarriba en esta línea (fase Start activa aunque estén cubiertas)
   const selfStack = state.field[line][player];

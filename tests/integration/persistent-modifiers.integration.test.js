@@ -96,3 +96,54 @@ describe('getPersistentModifiers — faceDown desactiva protecciones', () => {
     expect(mods.preventFlip).toBeFalsy();
   });
 });
+
+// ─── Metal 0: valueReduction aplica aunque esté cubierta ─────────────────────
+
+describe('Metal 0 — valueReduction persiste aunque esté cubierta', () => {
+  const metal0 = makeCard('Metal 0', 0);
+  const someCard = makeCard('Fuego 3', 3);
+  const coverCard = makeCard('Fuego 1', 1);
+
+  // Load score-utils to get calculateScore as a pure function independent of logic.js
+  let calcScore;
+  beforeAll(() => {
+    const scoreUtilsCode = fs.readFileSync(
+      path.join(__dirname, '../../src/score-utils.js'), 'utf8'
+    );
+    const selfMock = {};
+    new Function('self', 'CARD_EFFECTS', scoreUtilsCode)(selfMock, global.window.CARD_EFFECTS);
+    calcScore = selfMock.calculateScore;
+  });
+
+  function makeState(aiStack, playerStack) {
+    const field = {};
+    LINES_MOCK.forEach(l => { field[l] = { player: [], ai: [] }; });
+    field['alpha'].ai = aiStack;
+    field['alpha'].player = playerStack;
+    return { player: { hand: [] }, ai: { hand: [] }, field };
+  }
+
+  test('Metal 0 bocarriba descubierta: reduce score del oponente en 2', () => {
+    const state = makeState(
+      [{ card: metal0, faceDown: false }],
+      [{ card: someCard, faceDown: false }]
+    );
+    expect(calcScore(state, 'alpha', 'player')).toBe(1); // 3 - 2
+  });
+
+  test('Metal 0 bocarriba cubierta: sigue reduciendo score del oponente en 2', () => {
+    const state = makeState(
+      [{ card: metal0, faceDown: false }, { card: coverCard, faceDown: false }],
+      [{ card: someCard, faceDown: false }]
+    );
+    expect(calcScore(state, 'alpha', 'player')).toBe(1); // 3 - 2, Metal 0 activo aunque cubierto
+  });
+
+  test('Metal 0 bocabajo cubierta: NO reduce score', () => {
+    const state = makeState(
+      [{ card: metal0, faceDown: true }, { card: coverCard, faceDown: false }],
+      [{ card: someCard, faceDown: false }]
+    );
+    expect(calcScore(state, 'alpha', 'player')).toBe(3); // bocabajo → inactivo
+  });
+});
