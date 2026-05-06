@@ -525,7 +525,7 @@ const CARD_EFFECTS = {
 
   'Velocidad 3': {
     onPlay: [
-      { action: 'shift', target: 'self', count: 1 }
+      { action: 'shift', target: 'self', count: 1, excludeSelf: true }
     ],
     onTurnEnd: [
       { action: 'optionalShiftThenFlipSelf', target: 'self' }
@@ -1526,6 +1526,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         shiftOpts.forceLine = gameState.currentEffectLine;
       }
       if (actionDef.targetAll) shiftOpts.targetAll = true;
+      if (actionDef.excludeSelf && triggerCardName) shiftOpts.excludeCardName = triggerCardName;
       startEffect('shift', resolvedTarget, count || 1, shiftOpts);
       break;
     }
