@@ -2752,8 +2752,9 @@ function _triggerEffect(card, trigger, targetPlayer) {
     const ctx = gameState.effectContext;
     if (ctx && ctx.type !== 'animating') {
         // Diferir: no ejecutar mientras hay un efecto interactivo activo.
-        // El procesador de cola lo ejecutará cuando finishEffect libere el contexto.
-        gameState.effectQueue.push({
+        // unshift: la carta descubierta tiene prioridad sobre efectos ya encolados
+        // (ej. Odio 1: onPlay del descubierto debe resolverse antes del segundo delete).
+        gameState.effectQueue.unshift({
             effect: { action: '__deferredTrigger', card, trigger },
             targetPlayer,
             cardName: card.nombre
