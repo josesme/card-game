@@ -3177,25 +3177,58 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'deleteLowestCoveredInLine': {
-      // Odio 4 onCover: elimina la carta cubierta (no-top) de menor valor en esta línea
+      // Odio 4 onCover: elimina la carta cubierta (no-top) de menor valor en esta línea.
+      // Si hay empate, el dueño de Odio 4 elige cuál eliminar.
       const line = gameState.currentEffectLine;
       if (!line) { processAbilityEffect(); break; }
-      let lowest = null, lowestPlayer = null, lowestIdx = -1;
+
+      // Recoger todas las cartas cubiertas (no-top) de ambos lados
+      const candidates = [];
       ['player', 'ai'].forEach(p => {
         const stack = gameState.field[line][p];
-        // Solo cartas cubiertas: todas excepto la top (stack.length - 1)
         for (let i = 0; i < stack.length - 1; i++) {
-          if (!lowest || stack[i].card.valor < lowest.card.valor) {
-            lowest = stack[i]; lowestPlayer = p; lowestIdx = i;
-          }
+          candidates.push({ cardObj: stack[i], side: p, idx: i });
         }
       });
-      if (lowest) {
-        gameState.field[line][lowestPlayer].splice(lowestIdx, 1);
-        gameState[lowestPlayer].trash.push(lowest.card);
+      if (candidates.length === 0) { processAbilityEffect(); break; }
+
+      // Valor mínimo entre los candidatos
+      const minVal = candidates.reduce((m, c) => Math.min(m, c.cardObj.card.valor), Infinity);
+      const ties = candidates.filter(c => c.cardObj.card.valor === minVal);
+
+      const doElim = ({ cardObj, side, idx }) => {
+        gameState.field[line][side].splice(idx, 1);
+        gameState[side].trash.push(cardObj.card);
+        triggerUncovered(line, side);
+        _log(`${triggerCardName}: elimina ${cardObj.card.nombre} (cubierta, valor ${minVal})`);
         updateUI();
+        processAbilityEffect();
+      };
+
+      if (ties.length === 1 || targetPlayer === 'ai') {
+        // Auto-eliminar: única carta o la IA decide (elige la del oponente si puede)
+        const chosen = ties.find(c => c.side !== targetPlayer) || ties[0];
+        doElim(chosen);
+      } else {
+        // Empate: mostrar opciones al jugador vía modal
+        gameState.effectContext = { type: 'odio4TieBreak', ties, doElim, line };
+        const actions = ties.map((t, i) => ({
+          label: `${t.cardObj.card.nombre} (${t.side === 'player' ? 'tuya' : 'rival'})`,
+          id: `btn-odio4-tie-${i}`,
+          onclick: () => {
+            document.getElementById('reveal-modal')?.classList.add('hidden');
+            gameState.effectContext = null;
+            doElim(t);
+          }
+        }));
+        openRevealModal({
+          title: 'ODIO 4 — EMPATE',
+          subtitle: `Elige qué carta eliminar (valor ${minVal})`,
+          source: 'Odio 4',
+          cards: ties.map(t => t.cardObj.card),
+          actions
+        });
       }
-      processAbilityEffect();
       break;
     }
 
