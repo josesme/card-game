@@ -290,6 +290,15 @@ function initLineListeners() {
                 const ctx = gameState.effectContext;
                 gameState.effectContext = null;
                 _claridad2PlaySecond(ctx.selectedCardIndex, line, true);
+            } else if (gameState.effectContext && gameState.effectContext.type === 'deleteLineIfOver') {
+                const ctx = gameState.effectContext;
+                if (!ctx.validLines.includes(line)) {
+                    updateStatus('Elige una línea diferente con 8 o más cartas');
+                    return;
+                }
+                gameState.effectContext = null;
+                clearEffectHighlights();
+                ctx.doDelete(line);
             } else if (gameState.effectContext && gameState.effectContext.type === 'rearrange') {
                 handleFieldCardClick(line, 'player', 0); // rearrange solo usa line, target/idx irrelevantes
             } else if (gameState.effectContext && gameState.effectContext.waitingForLine) {

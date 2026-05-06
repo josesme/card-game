@@ -1836,17 +1836,46 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     }
 
     case 'deleteLineIfOver': {
-      // Delete all opponent cards in current line if their score exceeds threshold
-      const line = gameState.currentEffectLine;
+      // Metal 3: "Elimina todas las cartas de otra línea que tenga 8 o más cartas."
+      // - "otra línea" = distinta a la línea donde se jugó Metal 3
+      // - "8 o más cartas" = total de cartas en esa línea (ambos lados)
+      // - "todas las cartas" = ambos lados
+      const selfLine = gameState.currentEffectLine;
       const threshold = actionDef.threshold || 8;
-      if (line) {
-        const lineScore = gameState.field[line][resolvedTarget].reduce((sum, c) => sum + (c.faceDown ? 2 : c.card.valor), 0);
-        if (lineScore > threshold) {
-          const removed = gameState.field[line][resolvedTarget].splice(0);
-          removed.forEach(c => gameState[resolvedTarget].trash.push(c.card));
+      const validLines = LINES.filter(l => {
+        if (l === selfLine) return false;
+        const total = gameState.field[l].player.length + gameState.field[l].ai.length;
+        return total >= threshold;
+      });
+
+      if (validLines.length === 0) { processAbilityEffect(); break; }
+
+      const doDelete = (chosenLine) => {
+        ['player', 'ai'].forEach(p => {
+          const removed = gameState.field[chosenLine][p].splice(0);
+          removed.forEach(c => gameState[p].trash.push(c.card));
+        });
+        triggerUncovered(chosenLine, 'player');
+        triggerUncovered(chosenLine, 'ai');
+        _log(`${triggerCardName}: elimina todas las cartas de ${chosenLine}`);
+        processAbilityEffect();
+      };
+
+      if (targetPlayer === 'ai' || validLines.length === 1) {
+        // IA: elige la línea con más cartas del oponente
+        const best = validLines.sort((a, b) =>
+          gameState.field[b].player.length - gameState.field[a].player.length
+        )[0];
+        doDelete(best);
+      } else {
+        // Jugador elige línea
+        gameState.effectContext = { type: 'deleteLineIfOver', validLines, doDelete };
+        updateUI();
+        if (typeof highlightSelectableLines === 'function') {
+          highlightSelectableLines(selfLine, null, validLines);
         }
+        updateStatus('Metal 3: elige la línea a eliminar (≥8 cartas)');
       }
-      processAbilityEffect();
       break;
     }
 
