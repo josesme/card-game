@@ -921,8 +921,9 @@ body.in-game::before {
     border: 1px solid rgba(0,245,255,0.3);
     max-width: 860px;
     width: 94%;
-    max-height: 85vh;
-    overflow-y: auto;
+    max-height: 90dvh;
+    display: flex; flex-direction: column;
+    overflow: hidden;
     box-shadow: 0 8px 48px rgba(0,0,0,0.6);
     animation: panel-enter 0.3s ease-out;
 }
@@ -934,6 +935,7 @@ body.in-game::before {
     padding: 18px 22px 14px;
     border-bottom: 1px solid rgba(0,245,255,0.1);
     display: flex; align-items: center; gap: 12px;
+    flex-shrink: 0;
 }
 .effect-header-text { flex: 1; }
 .effect-title {
@@ -955,25 +957,22 @@ body.in-game::before {
 .effect-cards {
     padding: 18px 22px;
     display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+    overflow-y: auto; flex: 1; min-height: 0;
 }
 .effect-confirm-body {
     padding: 24px 22px; text-align: center; overflow: visible;
+    flex: 1; min-height: 0;
 }
 #command-confirm .effect-panel { overflow: visible; }
 .effect-confirm-body .confirm-text { font-size: 11px; color: #ddd; line-height: 1.6; }
 .effect-actions {
     padding: 14px 22px 18px;
     display: flex; gap: 10px; justify-content: center;
-}
-#reveal-modal .effect-panel {
-    display: flex; flex-direction: column;
-    max-width: 860px; overflow: hidden;
+    flex-shrink: 0;
 }
 #reveal-cards-container {
-    max-height: calc(100dvh - 160px);
     overflow-y: auto; flex: 1; min-height: 0;
 }
-#reveal-modal .effect-actions { flex-shrink: 0; }
 .effect-info { padding: 0 22px; text-align: center; }
 .effect-counter {
     font-size: 10px; color: #8899aa;
