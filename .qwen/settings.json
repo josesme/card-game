@@ -18,7 +18,10 @@
       "Bash(\"c:\\users\\joses\\downloads\\ffmpeg-2026-03-30-git-e54e117998-essentials_build\\bin\\ffmpeg.exe\" *)",
       "Bash(del *)",
       "Bash(ren *)",
-      "Bash(git rm *)"
+      "Bash(git rm *)",
+      "Bash(wc *)",
+      "Bash(node *)",
+      "Bash(git checkout *)"
     ]
   },
   "$version": 3
