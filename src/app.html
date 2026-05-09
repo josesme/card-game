@@ -528,6 +528,41 @@
         #stats-overlay .st-chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
         #stats-overlay .st-chip  { font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 2px; border: 1px solid; letter-spacing: .5px; }
 
+        /* ── Logros ───────────────────────────────────────────── */
+        .ach-grid { display: flex; flex-wrap: wrap; gap: 14px; }
+        .ach-cell {
+            display: flex; flex-direction: column; align-items: center; gap: 6px;
+            width: 64px; cursor: default;
+        }
+        .ach-icon {
+            width: 48px; height: 48px;
+            display: flex; align-items: center; justify-content: center;
+            background: #060e1c; border-radius: 8px;
+            border: 1px solid #1e3a5f;
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+        .ach-icon svg {
+            width: 26px; height: 26px;
+            stroke: #1e3a5f; stroke-width: 1.5; fill: none;
+            stroke-linecap: round; stroke-linejoin: round;
+            transition: stroke 0.2s;
+        }
+        .ach-cell.unlocked .ach-icon {
+            border-color: var(--ach-color, var(--ui-cyan));
+            box-shadow: 0 0 12px rgba(var(--ach-rgb, 0,245,255), 0.35);
+        }
+        .ach-cell.unlocked .ach-icon svg {
+            stroke: var(--ach-color, var(--ui-cyan));
+            filter: drop-shadow(0 0 4px rgba(var(--ach-rgb, 0,245,255), 0.6));
+        }
+        .ach-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 8px; font-weight: 600; letter-spacing: 0.5px;
+            color: #1e3a5f; text-align: center; line-height: 1.3;
+            text-transform: uppercase;
+        }
+        .ach-cell.unlocked .ach-name { color: var(--ach-color, var(--ui-cyan)); }
+
 
         /* ── CSS: vista Draft ─────────────────────────────────── */
         #draft-viewport {
@@ -1205,6 +1240,11 @@
         <div class="st-stat-row" style="padding:6px 0"><span class="st-sk">Partidas 31+ turnos</span><span class="st-sv" id="st-v-tr-3" style="font-size:13px">—</span></div>
       </div>
 
+      <div class="st-sec" style="flex:3.0">
+        <div class="st-sec-label">◈ Logros</div>
+        <div class="ach-grid" id="st-v-logros"></div>
+      </div>
+
       <div class="st-sec" style="flex:1.0">
         <div class="st-sec-label">◈ Retos diarios</div>
         <div class="st-rhythm">
@@ -1482,6 +1522,25 @@
 <script src="router.js"></script>
 <script>
 // ── Home module ─────────────────────────────────────────────────────────
+// ── Logros — iconos SVG (viewBox 0 0 24 24, stroke-width 2, fill none) ───────
+const ACHIEVEMENT_ICONS = {
+    L01: `<svg viewBox="0 0 24 24"><polygon points="12,2 15.5,8.5 23,9.5 17.5,14.5 19,22 12,18 5,22 6.5,14.5 1,9.5 8.5,8.5"/><line x1="12" y1="6" x2="12" y2="14"/><line x1="12" y1="17" x2="12" y2="18"/></svg>`,
+    L02: `<svg viewBox="0 0 24 24"><path d="M12 2L3 7v5c0 5 4 9 9 10 5-1 9-5 9-10V7z"/><polyline points="8,12 11,15 16,9"/></svg>`,
+    L03: `<svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="10" x2="10" y2="10"/><line x1="6" y1="14" x2="8" y2="14"/><polyline points="14,9 18,12 14,15"/></svg>`,
+    L04: `<svg viewBox="0 0 24 24"><path d="M12 2v5M12 17v5M4.22 4.22l3.54 3.54M16.24 16.24l3.54 3.54M2 12h5M17 12h5M4.22 19.78l3.54-3.54M16.24 7.76l3.54-3.54"/><circle cx="12" cy="12" r="3"/></svg>`,
+    L05: `<svg viewBox="0 0 24 24"><path d="M12 2l2 4h4l-3 3 1 4-4-2-4 2 1-4-3-3h4z"/><line x1="12" y1="14" x2="12" y2="22"/><line x1="8" y1="18" x2="16" y2="18"/><line x1="6" y1="22" x2="18" y2="22"/></svg>`,
+    L06: `<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-9-9"/><path d="M21 3v6h-6"/><polygon points="12,8 15.46,10 15.46,14 12,16 8.54,14 8.54,10"/></svg>`,
+    L07: `<svg viewBox="0 0 24 24"><rect x="3" y="6" width="8" height="5" rx="1"/><rect x="13" y="13" width="8" height="5" rx="1"/><path d="M11 8.5h3l-2-3M13 15.5h-3l2 3"/></svg>`,
+    L08: `<svg viewBox="0 0 24 24"><rect x="3" y="4" width="4" height="16" rx="1"/><rect x="10" y="8" width="4" height="12" rx="1"/><rect x="17" y="12" width="4" height="8" rx="1"/><polyline points="3,4 7,4 10,8 14,8 17,12 21,12"/></svg>`,
+    L09: `<svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="9" x2="22" y2="9"/><line x1="7" y1="4" x2="7" y2="9"/><line x1="7" y1="13" x2="9" y2="13"/><line x1="7" y1="17" x2="12" y2="17"/><line x1="16" y1="13" x2="12" y2="13"/><line x1="18" y1="16" x2="18" y2="18"/></svg>`,
+    L10: `<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><line x1="7" y1="12" x2="10" y2="12"/><line x1="14" y1="12" x2="17" y2="12"/><path d="M5 10V6M12 10V6M19 10V6"/></svg>`,
+    L11: `<svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="8" y2="6"/><line x1="4" y1="10" x2="8" y2="10"/><line x1="4" y1="14" x2="8" y2="14"/><line x1="4" y1="18" x2="8" y2="18"/><line x1="10" y1="6" x2="14" y2="6"/><line x1="10" y1="10" x2="14" y2="10"/><line x1="10" y1="14" x2="14" y2="14"/><polyline points="16,8 18,12 20,8"/><line x1="18" y1="12" x2="18" y2="18"/></svg>`,
+    L12: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.93" y1="4.93" x2="7.05" y2="7.05"/><line x1="16.95" y1="16.95" x2="19.07" y2="19.07"/><line x1="4.93" y1="19.07" x2="7.05" y2="16.95"/><line x1="16.95" y1="7.05" x2="19.07" y2="4.93"/></svg>`,
+    L13: `<svg viewBox="0 0 24 24"><rect x="4" y="4" width="10" height="14" rx="1"/><rect x="7" y="7" width="10" height="14" rx="1"/><line x1="10" y1="11" x2="14" y2="11"/><line x1="10" y1="14" x2="16" y2="14"/><line x1="10" y1="17" x2="13" y2="17"/><circle cx="19" cy="6" r="3"/><line x1="17.5" y1="6" x2="20.5" y2="6"/></svg>`,
+    L14: `<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="3" rx="1"/><rect x="5" y="6" width="14" height="3" rx="1"/><rect x="6" y="9" width="12" height="3" rx="1"/><path d="M12 15v7"/><path d="M9 19l3 3 3-3"/><line x1="6" y1="12" x2="18" y2="12"/></svg>`,
+    L15: `<svg viewBox="0 0 24 24"><rect x="2" y="14" width="20" height="6" rx="1"/><rect x="2" y="14" width="20" height="6" rx="1"/><path d="M4 14V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v6"/><line x1="2" y1="14" x2="22" y2="14"/><path d="M8 14V9M12 14V7M16 14V9"/><path d="M19 4l2-2M22 6l-3 1"/></svg>`,
+};
+
 const DIFFICULTY_LEVELS = [
     { id: 1, name: 'SUBRUTINA',    icon: '⬡', color: '114,46,154',  depth: 1, desc: 'IA básica. Ejecuta protocolos sin análisis profundo.' },
     { id: 2, name: 'ALGORITMO',    icon: '◈', color: '71,41,123',   depth: 2, desc: 'IA táctica. Anticipa tus jugadas inmediatas.' },
@@ -1928,7 +1987,7 @@ function renderStatsOverlay() {
     renderCombo('st-v-combo-used-player', mostUsedP, '+ Más utilizada Jugador', 'var(--st-win)');
     renderCombo('st-v-combo-used-ai',     mostUsedA, '+ Más utilizada IA',      'var(--st-loss)');
 
-    // Retos diarios
+    // Retos diarios — calculados antes de logros para que L09-L12 puedan usarlos
     var dailyWins=0, dailyLoss=0, dailyEntries=[];
     Object.keys(localStorage).forEach(function(k){
         if(!k.startsWith('compile_daily_')) return;
@@ -1940,6 +1999,40 @@ function renderStatsOverlay() {
         if(d.win){ curW++; curL=0; bestWStreak=Math.max(bestWStreak,curW); }
         else     { curL++; curW=0; bestLStreak=Math.max(bestLStreak,curL); }
     });
+
+    // Logros
+    var wins = history.filter(function(r){return r.ganador==='player';});
+    var ACHIEVEMENTS = [
+        { id:'L01', name:'Primera\nCompilación', check: function(){ return wins.length >= 1; } },
+        { id:'L02', name:'Sin\nConcesiones',     check: function(){ return wins.some(function(r){ return !r.rival_compilaciones || r.rival_compilaciones===0; }); } },
+        { id:'L03', name:'Velocidad\nde Sistema',check: function(){ return wins.some(function(r){ return r.turnos <= 10; }); } },
+        { id:'L04', name:'Proceso\nLargo',       check: function(){ return wins.some(function(r){ return r.turnos >= 30; }); } },
+        { id:'L05', name:'Singularidad',         check: function(){ return wins.some(function(r){ return r.nivel_ia === 5; }); } },
+        { id:'L06', name:'Recompi-\nlación',     check: function(){ return wins.some(function(r){ return r.recompilaciones && r.recompilaciones > 0; }); } },
+        { id:'L07', name:'Contra-\ngolpe',       check: function(){ return wins.some(function(r){ return r.contragolpes && r.contragolpes > 0; }); } },
+        { id:'L08', name:'Avalancha',            check: function(){ return wins.some(function(r){ return r.avalancha; }); } },
+        { id:'L09', name:'Primer\nAcceso',       check: function(){ return dailyEntries.length >= 1; } },
+        { id:'L10', name:'Racha\nDiaria',        check: function(){ return bestWStreak >= 3; } },
+        { id:'L11', name:'Persistencia',         check: function(){ return dailyEntries.length >= 7; } },
+        { id:'L12', name:'Dominancia',           check: function(){ return dailyWins >= 10; } },
+        { id:'L13', name:'Mano\nVacía',          check: function(){ return wins.some(function(r){ return r.mano_vacia_al_compilar; }); } },
+        { id:'L14', name:'Mazo\nVacío',          check: function(){ return history.some(function(r){ return r.mazo_vacio; }); } },
+        { id:'L15', name:'Sobrecarga',           check: function(){ return history.some(function(r){ return r.turnos >= 40; }); } },
+    ];
+    var achGrid = document.getElementById('st-v-logros');
+    if(achGrid){
+        achGrid.innerHTML = ACHIEVEMENTS.map(function(a){
+            var unlocked = a.check();
+            var icon = (typeof ACHIEVEMENT_ICONS !== 'undefined' && ACHIEVEMENT_ICONS[a.id]) || '';
+            var color = unlocked ? '0,245,255' : null;
+            return '<div class="ach-cell'+(unlocked?' unlocked':'')+'"'+(color?' style="--ach-color:#00F5FF;--ach-rgb:'+color+'"':'')+'>'+
+                '<div class="ach-icon">'+icon+'</div>'+
+                '<span class="ach-name">'+a.name+'</span>'+
+            '</div>';
+        }).join('');
+    }
+
+    // Retos diarios — UI
     var rachaEl=document.getElementById('st-v-daily-racha');
     if(rachaEl){
         if(dailyEntries.length===0){ rachaEl.textContent='—'; rachaEl.className='st-r-val'; }
