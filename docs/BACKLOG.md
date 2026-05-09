@@ -4,15 +4,6 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 
 ---
 
-## Mejora de IA — Evaluador estratégico
-
-Plan iterativo para mejorar la calidad de decisiones de ISMCTS conectando y enriqueciendo `AIEvaluator`. Cada historia es independiente y aporta valor incremental. Fuente: `docs/compile-estrategy-es.md`.
-
-### Medio valor, alto coste
-- **AI-E11 — Future potential:** Bonus a jugadas que abren combos conocidos. Penalizar jugadas que cierran líneas propias o eliminan piezas de combo propias.
-
----
-
 ## Arquitectura / Plataforma
 
 > Decisiones pendientes de validar con experiencia de juego real antes de comprometer trabajo.

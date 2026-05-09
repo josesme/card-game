@@ -18,6 +18,7 @@ class AIEvaluator {
       opportunities:       25,  // Exploitable line situations
       protocolCoverage:    20,  // Protocol cards face-up = effects active
       faceDownBalance:     15,  // Bocabajos propios vs amenaza bocabajos rival
+      futurePotential:     20,  // AI-E11: combo pieces available/missing
     };
   }
 
@@ -33,6 +34,7 @@ class AIEvaluator {
     const opportunities     = this.evaluateOpportunities(state);
     const protocolCoverage  = this.evaluateProtocolCoverage(state);
     const faceDownBalance   = this.evaluateFaceDownBalance(state);
+    const futurePotential   = this.evaluateFuturePotential(state);
 
     // AI-03: Niveles 1-2 limitan la defensa activa.
     let effectiveOpponentThreat = opponentThreat;
@@ -56,11 +58,12 @@ class AIEvaluator {
       (-effectiveOpponentThreat) * w.defensiveNeed +
       opportunities              * w.opportunities +
       protocolCoverage           * w.protocolCoverage +
-      faceDownBalance            * w.faceDownBalance;
+      faceDownBalance            * w.faceDownBalance +
+      futurePotential            * w.futurePotential;
 
     return {
       total,
-      details: { compilationThreat, lineStrength, handQuality, opponentThreat, opportunities, protocolCoverage, faceDownBalance },
+      details: { compilationThreat, lineStrength, handQuality, opponentThreat, opportunities, protocolCoverage, faceDownBalance, futurePotential },
       recommendation: this.getRecommendation(compilationThreat, lineStrength),
     };
   }
@@ -98,6 +101,7 @@ class AIEvaluator {
       w.cardAdvantage     =  10;
       w.protocolCoverage  =  10;
       w.faceDownBalance   =   5;
+      w.futurePotential   =   5; // combos irrelevantes cuando el juego está decidido
     }
     return w;
   }
@@ -490,6 +494,57 @@ class AIEvaluator {
       const playerFaceDown = playerCards.filter(c => c.faceDown).length;
       score -= playerFaceDown * 0.06;
     });
+
+    return Math.max(-1, Math.min(1, score));
+  }
+
+  // ─────────────────────────────────────────────
+  // FUTURE POTENTIAL (AI-E11)
+  // Bonus when the AI holds combo pieces that work together.
+  // Penalty when a key piece is gone (field + hand checked).
+  // Only Speed 0+3 and Gravity 0+Death 0 for now (most mechanical,
+  // highest EV combos per strategy doc).
+  // ─────────────────────────────────────────────
+
+  evaluateFuturePotential(state) {
+    const LINES = ['izquierda', 'centro', 'derecha'];
+    let score = 0;
+
+    const hand = state.ai.hand || [];
+    const handNames = new Set(hand.map(c => c.nombre));
+
+    const onField = (nombre) => LINES.some(l =>
+      (state.field[l].ai || []).some(c => !c.faceDown && c.card && c.card.nombre === nombre)
+    );
+    const inHand = (nombre) => handNames.has(nombre);
+    const available = (nombre) => onField(nombre) || inHand(nombre);
+
+    const aiProtocols = state.ai.protocols || [];
+    const hasSpeed   = aiProtocols.includes('Velocidad');
+    const hasGravity = aiProtocols.includes('Gravedad');
+    const hasDeath   = aiProtocols.includes('Muerte');
+
+    // ── Speed 0 + Speed 3 ──────────────────────────────────────
+    // Both pieces available → combo is live
+    // One piece missing → tempo lost
+    if (hasSpeed) {
+      const has0 = available('Velocidad 0');
+      const has3 = available('Velocidad 3');
+      if (has0 && has3)       score += 0.35;  // combo intact
+      else if (has3 && !has0) score -= 0.15;  // Speed 3 alone loses half its value
+      else if (has0 && !has3) score += 0.05;  // Speed 0 alone, minor upside
+    }
+
+    // ── Gravity 0 + Death 0 ────────────────────────────────────
+    // Both present → strongest Main 1 combo (strategy doc)
+    // Death 0 alone on a full board is still good; Gravity 0 alone is just a persistent card
+    if (hasGravity && hasDeath) {
+      const hasG0 = available('Gravedad 0');
+      const hasD0 = available('Muerte 0');
+      if (hasG0 && hasD0) score += 0.40;
+      else if (hasD0 && !hasG0) score += 0.10; // Death 0 still useful, missing Gravity 0 synergy
+      else if (hasG0 && !hasD0) score += 0.05; // Gravity 0 persistent value only
+    }
 
     return Math.max(-1, Math.min(1, score));
   }
