@@ -2480,7 +2480,9 @@ function hideResetConfirm() {
 }
 
 function confirmResetStats() {
-    localStorage.removeItem('compile_match_history');
+    Object.keys(localStorage)
+        .filter(k => k.startsWith('compile_'))
+        .forEach(k => localStorage.removeItem(k));
     hideResetConfirm();
     closeStatsOverlay();
 }
