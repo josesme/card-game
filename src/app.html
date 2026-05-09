@@ -1551,6 +1551,11 @@
             if (!isEnd) saveCampaignProgress(campaignId, nextId, history);
             else        clearCampaignProgress(campaignId);
 
+            // Write campaign progress percentage for victory screen animation
+            const totalNodes = Object.keys(campaign.nodes).length;
+            const pct = Math.round((history.length / totalNodes) * 1000) / 10;
+            sessionStorage.setItem('campaignProgressPct', pct);
+
             const vsSubtitle = document.getElementById('vs-subtitle');
             const vsActions  = document.getElementById('vs-actions');
             if (vsSubtitle) {

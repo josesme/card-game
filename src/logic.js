@@ -3891,7 +3891,9 @@ function showGameOver(playerWon) {
     const CHAR_MS     = 16;
     const LINE_GAP    = 600;
     const PROGRESS_MS = 2600;
-    const PROGRESS_VAL = 72.4;
+    const _storedPct   = parseFloat(sessionStorage.getItem('campaignProgressPct'));
+    const PROGRESS_VAL = (!isNaN(_storedPct) ? _storedPct : 72.4);
+    sessionStorage.removeItem('campaignProgressPct');
     const singPrefix  = '> singularidad_index: ';
 
     const termLines = [
