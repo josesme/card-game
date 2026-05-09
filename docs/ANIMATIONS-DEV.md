@@ -138,10 +138,6 @@ Parámetros ajustables:
 
 ---
 
-## Próximos pasos (Fase B)
+## Fase B — Descartada
 
-> Trabajo pendiente registrado en `docs/BACKLOG.md` — esta sección es referencia técnica de implementación.
-
-- **Vuelo mano→campo (FLIP):** capturar posición de la carta en mano antes de updateUI, crear clon, animar clon desde posición mano hasta posición campo.
-- **Delay jugador:** añadir pequeño delay antes de `executeEffect` en `finalizePlay` para que el CSS keyframe tenga al menos 1 frame antes del rebuild.
-- **Robo de carta:** animar entrada en mano desde el mazo.
+Las ideas de vuelo mano→campo, delay jugador y robo de carta fueron reemplazadas por la animación de laser para jugar/eliminar cartas. No hay trabajo pendiente en esta área.

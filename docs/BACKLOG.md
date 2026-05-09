@@ -4,16 +4,6 @@ Trabajo pendiente. Una vez completado, eliminar la entrada y distribuir la infor
 
 ---
 
-## Animaciones — Fase B
-
-Trabajo pendiente documentado en `docs/ANIMATIONS-DEV.md`. Sin síntoma bloqueante, pero con valor real de UX.
-
-- **Vuelo mano→campo** — Capturar posición de la carta en mano antes de `updateUI`, crear clon, animar desde mano hasta campo. Requiere FLIP animation.
-- **Delay jugador al jugar carta** — `finalizePlay` llama `updateUI` y luego `executeEffect` puede llamar otro `updateUI` destruyendo el elemento antes del primer frame. Solución: añadir un pequeño delay antes de `executeEffect` para el jugador (igual que el delay 400ms que ya tiene la IA antes de `endTurn`).
-- **Animación robo de carta** — Animar entrada en mano desde el mazo al robar.
-
----
-
 ## Mejora de IA — Evaluador (bajo valor, sin síntoma)
 
 Ideas evaluadas en `docs/ai-improvement-analysis.md` y aplazadas por bajo valor residual. Registradas aquí para no perderlas.
