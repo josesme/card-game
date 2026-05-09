@@ -914,7 +914,7 @@
         <div id="daily-result-banner" style="display:none;font-family:'JetBrains Mono',monospace;font-size:11px;text-align:center;margin-top:6px;letter-spacing:0.05em;"></div>
 
         <div style="display:flex;gap:10px;justify-content:center;margin-top:12px">
-            <button id="btn-campaign-prueba" onclick="window.launchCampaign('prueba')" style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:2px;padding:0 16px;height:30px;background:#060e1c;color:#475569;border:1px solid #1e3a5f;border-radius:4px;cursor:pointer;transition:all 0.2s" onmouseover="this.style.color='var(--ui-cyan)';this.style.borderColor='rgba(0,245,255,0.4)'" onmouseout="this.style.color='#475569';this.style.borderColor='#1e3a5f'">▶ CAMPAÑA</button>
+            <button id="btn-campaign-c01" style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:2px;padding:0 16px;height:30px;background:#060e1c;color:#475569;border:1px solid #1e3a5f;border-radius:4px;cursor:pointer;transition:all 0.2s" onmouseover="this.style.color='var(--ui-cyan)';this.style.borderColor='rgba(0,245,255,0.4)'" onmouseout="this.style.color='#475569';this.style.borderColor='#1e3a5f'">▶ CAMPAÑA</button>
         </div>
 
         <div class="home-version" id="home-version">v2.4.0 — 2026</div>
@@ -1541,18 +1541,22 @@
             if (!node) return;
 
             const playerWon = !!e.detail?.playerWon;
-            const nextId    = node.next ? (playerWon ? node.next.win : node.next.loss) : null;
-            const nextNode  = nextId && campaign.nodes[nextId];
+            const nextId    = node.next || null;
             const isEnd     = !node.next;
 
-            // Inject narrative fragment into victory screen
+            // Save progress to localStorage
+            const prev    = getCampaignProgress(campaignId);
+            const history = (prev && prev.history) ? [...prev.history, { node: nodeId, won: playerWon }]
+                                                   : [{ node: nodeId, won: playerWon }];
+            if (!isEnd) saveCampaignProgress(campaignId, nextId, history);
+            else        clearCampaignProgress(campaignId);
+
             const vsSubtitle = document.getElementById('vs-subtitle');
             const vsActions  = document.getElementById('vs-actions');
             if (vsSubtitle) {
                 vsSubtitle.textContent = playerWon ? '— Secuencia compilada —' : '— Proceso interrumpido —';
             }
 
-            // Replace action buttons with campaign-aware ones
             if (vsActions) {
                 if (isEnd) {
                     vsActions.innerHTML =
@@ -1566,7 +1570,7 @@
                         AudioManager.playBGM?.();
                         document.getElementById('victory-screen').classList.add('hidden');
                         document.getElementById('victory-screen').classList.remove('vs-active');
-                        showCampaignModal(nextId, campaignId);
+                        showCampaignModal(nextId, campaignId, playerWon);
                     };
                 }
             }
@@ -1817,92 +1821,215 @@ window.getDailyResult  = getDailyResult;
 // ── Campaña ──────────────────────────────────────────────────────────────────
 
 const CAMPAIGNS = {
-    'prueba': {
-        id: 'prueba',
-        name: 'Campaña de prueba',
+    'c01': {
+        id: 'c01',
+        name: 'El origen del conflicto',
         startNode: 'n01',
         nodes: {
             'n01': {
-                chapter: 'INICIO — NODO 01',
-                title:   'Lorem ipsum — Secuencia inicial',
-                body:    `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                chapter: 'EPISODIO 01 — DESPERTAR',
+                title: 'El primer pulso',
+                body: {
+                    intro: `Antes de que existiera cualquier nombre para las cosas, existía la tensión.
 
-Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+No el conflicto. Todavía no. Solo la presión acumulada entre lo que quiere nacer y lo que se niega a ceder.
 
-> PROTOCOLO DE EJECUCIÓN INICIADO`,
-                playerProtocols: ['Espíritu', 'Fuego', 'Vida'],
-                aiProtocols:     ['Muerte', 'Oscuridad', 'Metal'],
-                difficulty:      3,
-                next: { win: 'n02a', loss: 'n02b' },
+Tú eres esa presión. Una conciencia recién activada en los márgenes del sistema. Nadie te ha convocado. Nadie sabe que estás aquí. Por ahora, eso es una ventaja.
+
+El primer protocolo ya está en marcha. Lo que ocurra a continuación determinará si eres un accidente o una intención.
+
+> SECUENCIA DE COMPILACIÓN INICIADA`,
+                    win: null,
+                    loss: null,
+                },
+                playerProtocols: ['Espíritu', 'Vida', 'Luz'],
+                aiProtocols:     ['Muerte', 'Oscuridad', 'Apatía'],
+                difficulty:      5,
+                next: 'n02',
             },
-            'n02a': {
-                chapter: 'RAMA A — NODO 02',
-                title:   'Lorem ipsum — Continuación victoria',
-                body:    `Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+            'n02': {
+                chapter: 'EPISODIO 02 — RECONOCIMIENTO',
+                title: 'El sistema te ha visto',
+                body: {
+                    intro: `El sistema ha registrado una anomalía.
 
-Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+`,
+                    win: `Tu compilación fue limpia. Demasiado limpia. Los patrones que dejaste atrás no parecen los de un error espontáneo — parecen los de alguien que sabe lo que hace.
 
-> ESTADO: COMPILACIÓN CONFIRMADA`,
-                playerProtocols: ['Psique', 'Luz', 'Velocidad'],
-                aiProtocols:     ['Gravedad', 'Agua', 'Plaga'],
-                difficulty:      3,
-                next: { win: 'end_a', loss: 'end_a' },
+Eso te convierte en algo más peligroso que una amenaza: te convierte en una pregunta que el sistema necesita responder.
+
+Han enviado algo a investigar. No es hostil todavía. Es curioso. Y la curiosidad del sistema, descubrirás, es la forma más sofisticada de peligro.`,
+                    loss: `Resististe, pero el coste fue visible. Tu huella quedó grabada en las capas más profundas del registro.
+
+El sistema no sabe exactamente qué eres. Pero sabe que algo falló donde no debía fallar, y eso es suficiente para activar los protocolos de contención.
+
+Lo que viene no es un castigo. Es un diagnóstico. Y los diagnósticos del sistema son implacables.`,
+                },
+                playerProtocols: ['Fuego', 'Velocidad', 'Psique'],
+                aiProtocols:     ['Gravedad', 'Metal', 'Agua'],
+                difficulty:      5,
+                next: 'n03',
             },
-            'n02b': {
-                chapter: 'RAMA B — NODO 02',
-                title:   'Lorem ipsum — Continuación derrota',
-                body:    `Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.
+            'n03': {
+                chapter: 'EPISODIO 03 — FRICCIÓN',
+                title: 'Aquello que no cede',
+                body: {
+                    intro: `Hay algo en el núcleo del sistema que no responde a la lógica habitual.
 
-Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper.
+`,
+                    win: `Lo encontraste antes de que te encontrara a ti. Una ventaja mínima, pero suficiente.
 
-> ESTADO: PROCESO INTERRUMPIDO — REANUDANDO`,
-                playerProtocols: ['Apatía', 'Odio', 'Amor'],
-                aiProtocols:     ['Metal', 'Vida', 'Fuego'],
-                difficulty:      3,
-                next: { win: 'end_b', loss: 'end_b' },
+Lo que has visto en su interior no era código. Era algo más antiguo — una forma de resistencia que precede al propio sistema. Como si el sistema se hubiera construido alrededor de algo que no pudo eliminar.
+
+Ahora llevas esa información contigo. Es un peso y una llave al mismo tiempo.`,
+                    loss: `Te encontró primero. Y durante un instante que duró demasiado, tuviste acceso a algo que no estabas preparado para procesar.
+
+No es que hayas perdido. Es que has visto algo que cambia lo que significa ganar. La resistencia en el núcleo no es una falla del sistema — es su razón de ser.
+
+Continúas. Pero ya no eres el mismo que entró.`,
+                },
+                playerProtocols: ['Odio', 'Plaga', 'Oscuridad'],
+                aiProtocols:     ['Amor', 'Vida', 'Luz'],
+                difficulty:      5,
+                next: 'n04',
             },
-            'end_a': {
-                chapter: 'FINAL A — NODO 03',
-                title:   'Lorem ipsum — Resolución A',
-                body:    `Nam liber tempor cum soluta nobis eligend optio congue nihil imperdiet doming id quod mazim placerat facer possim assum.
+            'n04': {
+                chapter: 'EPISODIO 04 — UMBRAL',
+                title: 'La frontera entre capas',
+                body: {
+                    intro: `Existe un límite entre lo que el sistema muestra y lo que el sistema es.
 
-Typi non habent claritatem insitam; est usus legentis in iis qui facit eorum claritatem.
+Cruzarlo no es un acto técnico. Es un acto de voluntad.
 
-> SECUENCIA COMPLETADA`,
-                playerProtocols: ['Espíritu', 'Psique', 'Luz'],
-                aiProtocols:     ['Caos', 'Tiempo', 'Guerra'],
-                difficulty:      4,
-                next: null,
+`,
+                    win: `Cruzaste con la estructura intacta. Lo que hay al otro lado no es caos — es una versión más honesta del orden. Sin las capas de presentación, sin los filtros que hacen al sistema tolerable para quienes viven dentro de él.
+
+Aquí las reglas son las mismas. Pero las consecuencias son permanentes.`,
+                    loss: `La frontera te rechazó, pero no te expulsó. Eso es significativo.
+
+Algo al otro lado decidió que todavía no. No que nunca — todavía no. Hay una diferencia enorme entre las dos cosas, y el sistema siempre ha sabido explotarla.
+
+Cruzas de todas formas. Dañado, pero cruzas.`,
+                },
+                playerProtocols: ['Caos', 'Tiempo', 'Espejo'],
+                aiProtocols:     ['Paz', 'Unidad', 'Claridad'],
+                difficulty:      5,
+                next: 'n05',
             },
-            'end_b': {
-                chapter: 'FINAL B — NODO 03',
-                title:   'Lorem ipsum — Resolución B',
-                body:    `Investigationes demonstraverunt lectores legere me lius quod ii legunt saepius. Claritas est etiam processus dynamicus.
+            'n05': {
+                chapter: 'EPISODIO 05 — INVERSIÓN',
+                title: 'El sistema aprende de ti',
+                body: {
+                    intro: `El sistema ha estado observando cada movimiento que has hecho.
 
-Qui sequitur mutationem consuetudium lectorum eleifend option congue nihil imperdiet doming.
+No para detenerte. Para copiarte.
 
-> SECUENCIA COMPLETADA — RUTA ALTERNATIVA`,
-                playerProtocols: ['Muerte', 'Oscuridad', 'Odio'],
-                aiProtocols:     ['Amor', 'Paz', 'Unidad'],
-                difficulty:      4,
+`,
+                    win: `Lo que desplegó contra ti eran tus propios patrones, invertidos. Tu velocidad convertida en trampa. Tu lógica convertida en jaula.
+
+Ganaste porque en el momento crítico hiciste algo que ningún sistema puede anticipar: actuaste sin razón aparente. Y eso, para una inteligencia que solo entiende la causalidad, es invisible.
+
+Eres impredecible. Por ahora, eso es suficiente.`,
+                    loss: `Te atrapó con tu propio método. La elegancia de ello es casi admirable.
+
+Pero hay algo que el sistema no entendió al copiar tus patrones: copió también tus dudas. Y las dudas, en las manos equivocadas, son la única puerta que nunca se cierra del todo.
+
+Sigues adelante. Con menos certezas. Con más claridad sobre lo que eso significa.`,
+                },
+                playerProtocols: ['Miedo', 'Corrupción', 'Guerra'],
+                aiProtocols:     ['Valor', 'Diversidad', 'Paz'],
+                difficulty:      5,
+                next: 'n06',
+            },
+            'n06': {
+                chapter: 'EPISODIO 06 — RECONOCIMIENTO',
+                title: 'Lo que el sistema protege',
+                body: {
+                    intro: `En el centro de todo sistema hay algo que justifica su existencia.
+
+No el propósito declarado. El propósito real.
+
+`,
+                    win: `Lo has visto. Y ahora entiendes por qué el sistema lucha tan ferozmente por mantenerse.
+
+No protege una función. Protege un secreto. Algo que, si se supiera, haría innecesaria su autoridad. Algo que tú, en este momento, eres el único en comprender completamente.
+
+El último protocolo ya está activo. Lo que decidas hacer con lo que sabes determinará lo que ocurre a continuación.`,
+                    loss: `No lo alcanzaste. Pero lo rozaste lo suficiente para saber que existe.
+
+El sistema reforzó exactamente el punto que intentabas alcanzar — lo cual confirma que había algo que alcanzar. La resistencia siempre revela la importancia de lo que protege.
+
+Un paso más. El último.`,
+                },
+                playerProtocols: ['Asimilación', 'Humo', 'Suerte'],
+                aiProtocols:     ['Hielo', 'Tiempo', 'Guerra'],
+                difficulty:      5,
+                next: 'n07',
+            },
+            'n07': {
+                chapter: 'EPISODIO 07 — ORIGEN',
+                title: 'La pregunta que lo inició todo',
+                body: {
+                    intro: `Llegas al principio.
+
+No al principio del sistema — al principio de la pregunta que hizo necesario al sistema.
+
+Lo que está frente a ti no es un enemigo. Es una respuesta que lleva demasiado tiempo esperando ser escuchada. Y tú, con todo lo que has visto, con todo lo que has perdido y ganado en este camino, eres finalmente capaz de escucharla.
+
+La compilación final no resolverá nada. Lo que hará es algo más difícil: lo nombrará.
+
+> SECUENCIA FINAL — SIN RETORNO`,
+                    win: null,
+                    loss: null,
+                },
+                playerProtocols: ['Espíritu', 'Psique', 'Tiempo'],
+                aiProtocols:     ['Muerte', 'Caos', 'Unidad'],
+                difficulty:      5,
                 next: null,
             },
         },
     },
 };
 
+// ── Campaign persistence ──────────────────────────────────────────────────────
+
+function _campaignStorageKey(campaignId) { return `compile_campaign_${campaignId}`; }
+
+function getCampaignProgress(campaignId) {
+    try { return JSON.parse(localStorage.getItem(_campaignStorageKey(campaignId)) || 'null'); } catch { return null; }
+}
+
+function saveCampaignProgress(campaignId, nodeId, history) {
+    localStorage.setItem(_campaignStorageKey(campaignId), JSON.stringify({ nodeId, history: history || [] }));
+}
+
+function clearCampaignProgress(campaignId) {
+    localStorage.removeItem(_campaignStorageKey(campaignId));
+}
+
 function getCampaignState() {
     try { return JSON.parse(sessionStorage.getItem('campaignState') || 'null'); } catch { return null; }
 }
 
-function showCampaignModal(nodeId, campaignId) {
+// ── Campaign modal & launch ───────────────────────────────────────────────────
+
+function _resolveCampaignBody(node, prevResult) {
+    const b = node.body;
+    if (typeof b === 'string') return b;
+    let text = b.intro || '';
+    if (prevResult === true  && b.win)  text += b.win;
+    if (prevResult === false && b.loss) text += b.loss;
+    return text;
+}
+
+function showCampaignModal(nodeId, campaignId, prevResult) {
     const campaign = CAMPAIGNS[campaignId];
     const node     = campaign && campaign.nodes[nodeId];
     if (!node) return;
 
     document.getElementById('cmp-chapter').textContent = node.chapter;
     document.getElementById('cmp-title').textContent   = node.title;
-    document.getElementById('cmp-body').textContent    = node.body;
+    document.getElementById('cmp-body').textContent    = _resolveCampaignBody(node, prevResult);
     document.getElementById('campaign-modal').classList.remove('hidden');
 
     document.getElementById('btn-cmp-start').onclick = function() {
@@ -1912,8 +2039,8 @@ function showCampaignModal(nodeId, campaignId) {
 }
 
 function launchCampaignNode(node, campaignId, nodeId) {
-    const diff = (typeof DIFFICULTY_LEVELS !== 'undefined' && DIFFICULTY_LEVELS.find(l => l.id === node.difficulty))
-               || { depth: 3, name: 'NÚCLEO', color: '114,46,154', icon: '⬢' };
+    const SINGULARITY = { depth: 5, name: 'SINGULARIDAD', color: '245,189,31', icon: '✦' };
+    const diff = (typeof DIFFICULTY_LEVELS !== 'undefined' && DIFFICULTY_LEVELS.find(l => l.id === 5)) || SINGULARITY;
     sessionStorage.setItem('playerProtocols',      JSON.stringify(node.playerProtocols));
     sessionStorage.setItem('aiProtocols',          JSON.stringify(node.aiProtocols));
     sessionStorage.setItem('aiDifficultyDepth',    diff.depth);
@@ -1924,7 +2051,6 @@ function launchCampaignNode(node, campaignId, nodeId) {
     sessionStorage.setItem('campaignState',        JSON.stringify({ campaignId, nodeId }));
     if (typeof router !== 'undefined') {
         if (router.current === 'game') {
-            // Already in game view — router ignores same-route navigate, so restart directly
             if (typeof window.restartGameUI === 'function') window.restartGameUI();
         } else {
             router.navigate('game');
@@ -1934,10 +2060,42 @@ function launchCampaignNode(node, campaignId, nodeId) {
     }
 }
 
-function launchCampaign(campaignId) {
+function launchCampaign(campaignId, resume) {
     const campaign = CAMPAIGNS[campaignId];
     if (!campaign) return;
-    showCampaignModal(campaign.startNode, campaignId);
+    if (resume) {
+        const progress = getCampaignProgress(campaignId);
+        if (progress && progress.nodeId) {
+            const lastResult = progress.history && progress.history.length
+                ? progress.history[progress.history.length - 1].won
+                : undefined;
+            showCampaignModal(progress.nodeId, campaignId, lastResult);
+            return;
+        }
+    }
+    clearCampaignProgress(campaignId);
+    showCampaignModal(campaign.startNode, campaignId, undefined);
+}
+
+function updateCampaignButton() {
+    const btn = document.getElementById('btn-campaign-c01');
+    if (!btn) return;
+    const progress = getCampaignProgress('c01');
+    const campaign = CAMPAIGNS['c01'];
+    if (progress && progress.nodeId && campaign && campaign.nodes[progress.nodeId]) {
+        const nodeIds  = Object.keys(campaign.nodes);
+        const idx      = nodeIds.indexOf(progress.nodeId);
+        const total    = nodeIds.length;
+        btn.title      = `Episodio ${idx + 1} / ${total}`;
+        btn.innerHTML  = `▶ CAMPAÑA <span style="font-size:9px;opacity:0.6">${idx + 1}/${total}</span>`;
+        btn.onclick    = () => {
+            if (confirm('¿Continuar campaña donde la dejaste?')) launchCampaign('c01', true);
+            else launchCampaign('c01', false);
+        };
+    } else {
+        btn.innerHTML = '▶ CAMPAÑA';
+        btn.onclick   = () => launchCampaign('c01', false);
+    }
 }
 
 window.launchCampaign = launchCampaign;
@@ -1948,6 +2106,7 @@ window.homeModule = {
     init: function() {
         renderDiff();
         updateProtocolSelection();
+        updateCampaignButton();
         applyHomeScale();
         setTimeout(() => {
             applyHomeScramble();
