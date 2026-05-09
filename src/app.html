@@ -458,7 +458,7 @@
 
         #stats-overlay .st-bottom-row { flex: 6; display: flex; flex-direction: row; gap: 0; min-height: 0; }
         #stats-overlay .st-bottom-protos { flex: 0 0 60%; display: flex; flex-direction: column; padding: 16px 20px; min-height: 0; border-right: 1px solid var(--st-div); }
-        #stats-overlay .st-bottom-logros { flex: 1; display: flex; flex-direction: column; padding: 16px 20px; min-height: 0; overflow-y: auto; }
+        #stats-overlay .st-bottom-logros { flex: 1; display: flex; flex-direction: column; padding: 16px 20px; min-height: 0; overflow: hidden; }
         #stats-overlay .st-proto-boxes { display: flex; flex: 1; gap: 16px; margin-top: 14px; min-height: 0; }
         #stats-overlay .st-proto-box { flex: 1; display: flex; flex-direction: column; padding: 0 16px; min-height: 0; }
         #stats-overlay .st-proto-box + .st-proto-box { border-left: 1px solid var(--st-div); }
@@ -531,7 +531,7 @@
         #stats-overlay .st-chip  { font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 2px; border: 1px solid; letter-spacing: .5px; }
 
         /* ── Logros ───────────────────────────────────────────── */
-        .ach-grid { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 14px; }
+        .ach-grid { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 14px; align-content: flex-start; overflow: hidden; }
         .ach-cell {
             display: flex; flex-direction: column; align-items: center; gap: 8px;
             width: 80px; cursor: default;
