@@ -1556,7 +1556,12 @@ function applyHomeScale() {
 document.getElementById('home-proto-1').onclick   = () => { selectedProtocols = 1;     updateProtocolSelection(); };
 document.getElementById('home-proto-2').onclick   = () => { selectedProtocols = 2;     updateProtocolSelection(); };
 document.getElementById('home-proto-all').onclick = () => { selectedProtocols = 'all'; updateProtocolSelection(); };
-document.getElementById('home-proto-daily').onclick = () => { selectedProtocols = 'daily'; updateProtocolSelection(); };
+document.getElementById('home-proto-daily').onclick = () => {
+    selectedProtocols = 'daily';
+    selectedDifficulty = 5;
+    renderDiff();
+    updateProtocolSelection();
+};
 
 document.getElementById('btn-play').addEventListener('click', () => {
     const diff = DIFFICULTY_LEVELS.find(l => l.id === selectedDifficulty);
