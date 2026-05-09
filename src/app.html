@@ -565,6 +565,27 @@
         }
         .ach-cell.unlocked .ach-name { color: var(--ach-color, var(--ui-cyan)); }
 
+        .ach-cell { position: relative; }
+        .ach-cell::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%; transform: translateX(-50%);
+            background: #060e1c;
+            border: 1px solid rgba(0,245,255,0.3);
+            color: #94a3b8;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px; line-height: 1.5;
+            padding: 7px 10px;
+            border-radius: 6px;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s;
+            z-index: 10;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+        }
+        .ach-cell:hover::after { opacity: 1; }
 
         /* ── CSS: vista Draft ─────────────────────────────────── */
         #draft-viewport {
@@ -2003,21 +2024,21 @@ function renderStatsOverlay() {
     // Logros
     var wins = history.filter(function(r){return r.ganador==='player';});
     var ACHIEVEMENTS = [
-        { id:'L01', name:'Primera\nCompilación', check: function(){ return wins.length >= 1; } },
-        { id:'L02', name:'Sin\nConcesiones',     check: function(){ return wins.some(function(r){ return !r.rival_compilaciones || r.rival_compilaciones===0; }); } },
-        { id:'L03', name:'Velocidad\nde Sistema',check: function(){ return wins.some(function(r){ return r.turnos <= 10; }); } },
-        { id:'L04', name:'Proceso\nLargo',       check: function(){ return wins.some(function(r){ return r.turnos >= 30; }); } },
-        { id:'L05', name:'Singularidad',         check: function(){ return wins.some(function(r){ return r.nivel_ia === 5; }); } },
-        { id:'L06', name:'Recompi-\nlación',     check: function(){ return wins.some(function(r){ return r.recompilaciones && r.recompilaciones > 0; }); } },
-        { id:'L07', name:'Contra-\ngolpe',       check: function(){ return wins.some(function(r){ return r.contragolpes && r.contragolpes > 0; }); } },
-        { id:'L08', name:'Avalancha',            check: function(){ return wins.some(function(r){ return r.avalancha; }); } },
-        { id:'L09', name:'Primer\nAcceso',       check: function(){ return dailyEntries.length >= 1; } },
-        { id:'L10', name:'Racha\nDiaria',        check: function(){ return bestWStreak >= 3; } },
-        { id:'L11', name:'Persistencia',         check: function(){ return dailyEntries.length >= 7; } },
-        { id:'L12', name:'Dominancia',           check: function(){ return dailyWins >= 10; } },
-        { id:'L13', name:'Mano\nVacía',          check: function(){ return wins.some(function(r){ return r.mano_vacia_al_compilar; }); } },
-        { id:'L14', name:'Mazo\nVacío',          check: function(){ return history.some(function(r){ return r.mazo_vacio; }); } },
-        { id:'L15', name:'Sobrecarga',           check: function(){ return history.some(function(r){ return r.turnos >= 40; }); } },
+        { id:'L01', name:'Primera\nCompilación', desc:'Gana tu primera partida',                              check: function(){ return wins.length >= 1; } },
+        { id:'L02', name:'Sin\nConcesiones',     desc:'Gana sin que el rival compile ninguna línea',          check: function(){ return wins.some(function(r){ return !r.rival_compilaciones || r.rival_compilaciones===0; }); } },
+        { id:'L03', name:'Velocidad\nde Sistema',desc:'Gana una partida en 10 turnos o menos',                check: function(){ return wins.some(function(r){ return r.turnos <= 10; }); } },
+        { id:'L04', name:'Proceso\nLargo',       desc:'Gana una partida en 30 turnos o más',                  check: function(){ return wins.some(function(r){ return r.turnos >= 30; }); } },
+        { id:'L05', name:'Singularidad',         desc:'Vence a la IA en nivel 5',                             check: function(){ return wins.some(function(r){ return r.nivel_ia === 5; }); } },
+        { id:'L06', name:'Recompi-\nlación',     desc:'Compila una línea que ya habías compilado',            check: function(){ return wins.some(function(r){ return r.recompilaciones && r.recompilaciones > 0; }); } },
+        { id:'L07', name:'Contra-\ngolpe',       desc:'Compila una línea que el rival tenía compilada',       check: function(){ return wins.some(function(r){ return r.contragolpes && r.contragolpes > 0; }); } },
+        { id:'L08', name:'Avalancha',            desc:'Compila 2 líneas en turnos consecutivos',              check: function(){ return wins.some(function(r){ return r.avalancha; }); } },
+        { id:'L09', name:'Primer\nAcceso',       desc:'Completa tu primer reto diario',                       check: function(){ return dailyEntries.length >= 1; } },
+        { id:'L10', name:'Racha\nDiaria',        desc:'Gana 3 retos diarios consecutivos',                    check: function(){ return bestWStreak >= 3; } },
+        { id:'L11', name:'Persistencia',         desc:'Juega 7 retos diarios distintos',                      check: function(){ return dailyEntries.length >= 7; } },
+        { id:'L12', name:'Dominancia',           desc:'Gana 10 retos diarios en total',                       check: function(){ return dailyWins >= 10; } },
+        { id:'L13', name:'Mano\nVacía',          desc:'Gana compilando con 0 cartas en mano',                 check: function(){ return wins.some(function(r){ return r.mano_vacia_al_compilar; }); } },
+        { id:'L14', name:'Mazo\nVacío',          desc:'Actualiza con el mazo vacío (baraja el descarte)',     check: function(){ return history.some(function(r){ return r.mazo_vacio; }); } },
+        { id:'L15', name:'Sobrecarga',           desc:'Llega al turno 40 en cualquier partida',               check: function(){ return history.some(function(r){ return r.turnos >= 40; }); } },
     ];
     var achGrid = document.getElementById('st-v-logros');
     if(achGrid){
@@ -2025,7 +2046,7 @@ function renderStatsOverlay() {
             var unlocked = a.check();
             var icon = (typeof ACHIEVEMENT_ICONS !== 'undefined' && ACHIEVEMENT_ICONS[a.id]) || '';
             var color = unlocked ? '0,245,255' : null;
-            return '<div class="ach-cell'+(unlocked?' unlocked':'')+'"'+(color?' style="--ach-color:#00F5FF;--ach-rgb:'+color+'"':'')+'>'+
+            return '<div class="ach-cell'+(unlocked?' unlocked':'')+'" data-tooltip="'+a.desc+'"'+(color?' style="--ach-color:#00F5FF;--ach-rgb:'+color+'"':'')+'>'+
                 '<div class="ach-icon">'+icon+'</div>'+
                 '<span class="ach-name">'+a.name+'</span>'+
             '</div>';
