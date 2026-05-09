@@ -140,6 +140,8 @@ Parámetros ajustables:
 
 ## Próximos pasos (Fase B)
 
+> Trabajo pendiente registrado en `docs/BACKLOG.md` — esta sección es referencia técnica de implementación.
+
 - **Vuelo mano→campo (FLIP):** capturar posición de la carta en mano antes de updateUI, crear clon, animar clon desde posición mano hasta posición campo.
 - **Delay jugador:** añadir pequeño delay antes de `executeEffect` en `finalizePlay` para que el CSS keyframe tenga al menos 1 frame antes del rebuild.
 - **Robo de carta:** animar entrada en mano desde el mazo.

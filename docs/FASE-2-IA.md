@@ -333,32 +333,6 @@ Minimax debe elegir óptimo
 
 ---
 
-## 📈 Mejoras Futuras (Fase 2.5)
-
-### Mejoras Planeadas
-
-1. **Opening Book**
-   - Memorizar mejores primeras 10 jugadas
-   - Ahorra cálculo en fase temprana
-
-2. **Transposition Tables**
-   - Cachear evaluaciones de posiciones vistas
-   - Reduce duplicación de cálculo
-
-3. **Moveordering**
-   - Ordenar movimientos por probabilidad de ser buenos
-   - Mejora alpha-beta pruning
-
-4. **Iterative Deepening**
-   - Aumentar profundidad gradualmente
-   - Balance entre velocidad y calidad
-
-5. **Time Management**
-   - Usar más tiempo si está disponible
-   - Usar menos tiempo si debe ser rápido
-
----
-
 ## 🎓 Entendiendo Minimax
 
 ### Analogía Ajedrez

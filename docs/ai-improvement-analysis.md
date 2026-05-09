@@ -42,36 +42,6 @@
 
 ---
 
-## Ideas futuras (aplazadas — bajo valor residual tras sesión 2026-04-30)
-
-> Estas mejoras fueron evaluadas y descartadas para implementación inmediata. El arreglo de `_buildPlayerPool()` cubrió la parte más valiosa del punto 2; los puntos 3 y 4 tienen valor real pero no hay síntoma concreto que los justifique ahora.
-
-### A. Escenarios multi-valor para cartas desconocidas del jugador
-
-**Archivo:** `src/minimax.js:355` (`generatePlayerMoves`)  
-**Valor real:** Bajo (antes era Medio — el arreglo de `_buildPlayerPool` ya calibra bien el pool por protocolo, que era la mayor fuente de error).  
-**Coste:** Medio-Alto — requiere explorar 2 ramas por carta desconocida en vez de 1, aumentando el árbol de búsqueda. Puede requerir limitar profundidad para compensar.
-
-La idea: generar movimiento optimista (valor máximo del pool) y pesimista (valor promedio) y elegir el movimiento AI que sea mejor contra ambos. Solo aportaría en situaciones donde el jugador tiene exactamente 1 carta que cambia el resultado de una línea — cada vez menos frecuente ahora que el pool es preciso.
-
----
-
-### B. Extender quiescence search a efectos de alto impacto
-
-**Archivo:** `src/minimax.js:225` (`isHotPosition`)  
-**Valor real:** Bajo-Medio — la búsqueda corta justo antes de intercambios tácticos importantes (un eliminate que despeja 4+ puntos no se extiende, solo los compiles).  
-**Coste:** Medio — añadir condición en `isHotPosition` para detectar si hay una carta con `eliminate: highest` jugable en línea rival con `score >= 7`. Sin riesgo de romper nada, pero requiere validar que no dispara la extensión demasiado a menudo (degradaría rendimiento).
-
----
-
-### C. Subir peso `opportunities` en nivel 5
-
-**Archivo:** `src/ai-profiles.js:308` (`applyAIProfile`)  
-**Valor real:** Bajo — el nivel 5 puede ser algo pasivo en mid-game antes de estar en rango de compilar. No hay queja reportada.  
-**Coste:** Muy bajo — 1 línea. Cambiar `aggression * 35` por `(aggression + compilationPriority) / 2 * 45` en el cálculo de `opportunities`. Solo afecta perfiles con `compilationPriority >= 0.8` (niveles 3–5).
-
----
-
 ## Arquitectura actual verificada
 
 - **Profundidades por perfil:** nivel1 → 1, nivel2 → 2, nivel3 → 2, nivel4 → 3, nivel5A (Maestro) → 4, nivel5B (Gran Maestro) → 5
