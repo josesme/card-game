@@ -4190,6 +4190,7 @@ if (typeof CARDS_DATA !== 'undefined') {
 window.GLOBAL_CARDS = GLOBAL_CARDS;
 
 window.gameModule = { init: startGameFromDraft };
+window._devEndGame = (playerWon = true) => showGameOver(playerWon);
 
 // Auto-init en modo standalone (game.html).
 // En modo SPA (app.html con data-spa="true"), el router llama gameModule.init() explícitamente.
