@@ -2529,14 +2529,14 @@ function _triggerStatsScramble() {
 
 <!-- CAMPAIGN NARRATIVE MODAL — outside all views so position:fixed works from any screen -->
 <div id="campaign-modal" class="effect-overlay hidden" style="z-index:5000">
-    <div class="effect-panel" style="max-width:680px;gap:24px">
-        <div class="effect-header" style="flex-direction:column;align-items:flex-start;gap:8px">
+    <div class="effect-panel" style="max-width:780px;width:90vw;max-height:85vh;padding:40px;gap:28px;box-sizing:border-box">
+        <div style="display:flex;flex-direction:column;gap:10px">
             <div id="cmp-chapter" style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:3px;color:var(--ui-dim)">CAMPAÑA — NODO 01</div>
-            <div id="cmp-title" style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:600;color:var(--ui-cyan);line-height:1.3"></div>
+            <div id="cmp-title" style="font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:600;color:var(--ui-cyan);line-height:1.3"></div>
         </div>
-        <div id="cmp-body" style="font-family:'JetBrains Mono',monospace;font-size:14px;line-height:2;color:#cbd5e1;white-space:pre-wrap;flex:1;overflow-y:auto"></div>
-        <div class="effect-actions">
-            <button class="ui-btn" id="btn-cmp-start">INICIAR SECUENCIA</button>
+        <div id="cmp-body" style="font-family:'JetBrains Mono',monospace;font-size:16px;line-height:2;color:#cbd5e1;white-space:pre-wrap;flex:1;overflow-y:auto;min-height:0"></div>
+        <div style="display:flex;justify-content:center;padding-top:8px">
+            <button class="ui-btn" id="btn-cmp-start" style="font-size:14px;padding:0 32px;height:42px;letter-spacing:3px">INICIAR SECUENCIA</button>
         </div>
     </div>
 </div>
