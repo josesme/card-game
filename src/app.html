@@ -898,7 +898,7 @@
             </button>
         </div>
 
-        <p class="rules-label" id="rules-label">Reglas opcionales</p>
+        <p class="rules-label" id="rules-label" style="margin-top:0">Reglas opcionales</p>
         <div class="rules-grid">
             <button class="rule-btn" id="rule-control" onclick="toggleRule('control')">
                 <span class="rule-icon">△</span>
@@ -912,6 +912,10 @@
             <button id="btn-daily-play" style="display:none;">RETO DIARIO</button>
         </div>
         <div id="daily-result-banner" style="display:none;font-family:'JetBrains Mono',monospace;font-size:11px;text-align:center;margin-top:6px;letter-spacing:0.05em;"></div>
+
+        <div style="display:flex;gap:10px;justify-content:center;margin-top:12px">
+            <button id="btn-campaign-prueba" onclick="launchCampaign('prueba')" style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:2px;padding:0 16px;height:30px;background:#060e1c;color:#475569;border:1px solid #1e3a5f;border-radius:4px;cursor:pointer;transition:all 0.2s" onmouseover="this.style.color='var(--ui-cyan)';this.style.borderColor='rgba(0,245,255,0.4)'" onmouseout="this.style.color='#475569';this.style.borderColor='#1e3a5f'">▶ CAMPAÑA</button>
+        </div>
 
         <div class="home-version" id="home-version">v2.4.0 — 2026</div>
     </div>
@@ -1185,6 +1189,20 @@
     <div id="vs-actions">
         <button class="ui-btn" onclick="AudioManager.stopSounds?.(); AudioManager.playBGM?.(); router.navigate('draft')">NUEVO DRAFT</button>
         <button class="ui-btn ui-btn--purple" onclick="AudioManager.stopSounds?.(); AudioManager.playBGM?.(); router.navigate('home')">PANTALLA PRINCIPAL</button>
+    </div>
+</div>
+
+<!-- CAMPAIGN NARRATIVE MODAL -->
+<div id="campaign-modal" class="effect-overlay hidden">
+    <div class="effect-panel" style="max-width:560px;gap:20px">
+        <div class="effect-header" style="flex-direction:column;align-items:flex-start;gap:6px">
+            <div class="effect-title" id="cmp-chapter" style="font-size:10px;letter-spacing:3px;color:var(--ui-dim)">CAMPAÑA — NODO 01</div>
+            <div class="effect-subtitle" id="cmp-title" style="font-size:15px;color:var(--ui-cyan)"></div>
+        </div>
+        <div id="cmp-body" style="font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.9;color:#94a3b8;white-space:pre-wrap;flex:1;overflow-y:auto"></div>
+        <div class="effect-actions">
+            <button class="ui-btn" id="btn-cmp-start">INICIAR SECUENCIA</button>
+        </div>
     </div>
 </div>
 
@@ -1525,6 +1543,49 @@
             }
         });
 
+        // ── Campaign: inject narrative into victory screen ────────
+        document.addEventListener('compile:gameOver', (e) => {
+            const state = getCampaignState ? getCampaignState() : null;
+            if (!state) return;
+            sessionStorage.removeItem('campaignState');
+
+            const { campaignId, nodeId } = state;
+            const campaign = CAMPAIGNS[campaignId];
+            const node     = campaign && campaign.nodes[nodeId];
+            if (!node) return;
+
+            const playerWon = !!e.detail?.playerWon;
+            const nextId    = node.next ? (playerWon ? node.next.win : node.next.loss) : null;
+            const nextNode  = nextId && campaign.nodes[nextId];
+            const isEnd     = !node.next;
+
+            // Inject narrative fragment into victory screen
+            const vsSubtitle = document.getElementById('vs-subtitle');
+            const vsActions  = document.getElementById('vs-actions');
+            if (vsSubtitle) {
+                vsSubtitle.textContent = playerWon ? '— Secuencia compilada —' : '— Proceso interrumpido —';
+            }
+
+            // Replace action buttons with campaign-aware ones
+            if (vsActions) {
+                if (isEnd) {
+                    vsActions.innerHTML =
+                        `<button class="ui-btn" onclick="AudioManager.stopSounds?.();AudioManager.playBGM?.();router.navigate('home')">FIN DE CAMPAÑA</button>`;
+                } else {
+                    vsActions.innerHTML =
+                        `<button class="ui-btn" id="btn-cmp-continue">CONTINUAR CAMPAÑA</button>
+                         <button class="ui-btn ui-btn--purple" onclick="AudioManager.stopSounds?.();AudioManager.playBGM?.();router.navigate('home')">ABANDONAR</button>`;
+                    document.getElementById('btn-cmp-continue').onclick = function() {
+                        AudioManager.stopSounds?.();
+                        AudioManager.playBGM?.();
+                        document.getElementById('victory-screen').classList.add('hidden');
+                        document.getElementById('victory-screen').classList.remove('vs-active');
+                        showCampaignModal(nextId, campaignId);
+                    };
+                }
+            }
+        });
+
         // ── Trainer: export log on game over ────────────────────
         document.addEventListener('compile:gameOver', () => {
             if (!TRAINER_ENABLED || trainerLog.length === 0) return;
@@ -1766,6 +1827,124 @@ document.getElementById('btn-daily-play').addEventListener('click', launchDailyC
 // expose for logic.js to call after game ends
 window.saveDailyResult = saveDailyResult;
 window.getDailyResult  = getDailyResult;
+
+// ── Campaña ──────────────────────────────────────────────────────────────────
+
+const CAMPAIGNS = {
+    'prueba': {
+        id: 'prueba',
+        name: 'Campaña de prueba',
+        startNode: 'n01',
+        nodes: {
+            'n01': {
+                chapter: 'INICIO — NODO 01',
+                title:   'Lorem ipsum — Secuencia inicial',
+                body:    `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+
+Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+
+> PROTOCOLO DE EJECUCIÓN INICIADO`,
+                playerProtocols: ['Espíritu', 'Fuego', 'Vida'],
+                aiProtocols:     ['Muerte', 'Oscuridad', 'Metal'],
+                difficulty:      3,
+                next: { win: 'n02a', loss: 'n02b' },
+            },
+            'n02a': {
+                chapter: 'RAMA A — NODO 02',
+                title:   'Lorem ipsum — Continuación victoria',
+                body:    `Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+
+Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+
+> ESTADO: COMPILACIÓN CONFIRMADA`,
+                playerProtocols: ['Psique', 'Luz', 'Velocidad'],
+                aiProtocols:     ['Gravedad', 'Agua', 'Plaga'],
+                difficulty:      3,
+                next: { win: 'end_a', loss: 'end_a' },
+            },
+            'n02b': {
+                chapter: 'RAMA B — NODO 02',
+                title:   'Lorem ipsum — Continuación derrota',
+                body:    `Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.
+
+Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper.
+
+> ESTADO: PROCESO INTERRUMPIDO — REANUDANDO`,
+                playerProtocols: ['Apatía', 'Odio', 'Amor'],
+                aiProtocols:     ['Metal', 'Vida', 'Fuego'],
+                difficulty:      3,
+                next: { win: 'end_b', loss: 'end_b' },
+            },
+            'end_a': {
+                chapter: 'FINAL A — NODO 03',
+                title:   'Lorem ipsum — Resolución A',
+                body:    `Nam liber tempor cum soluta nobis eligend optio congue nihil imperdiet doming id quod mazim placerat facer possim assum.
+
+Typi non habent claritatem insitam; est usus legentis in iis qui facit eorum claritatem.
+
+> SECUENCIA COMPLETADA`,
+                playerProtocols: ['Espíritu', 'Psique', 'Luz'],
+                aiProtocols:     ['Caos', 'Tiempo', 'Guerra'],
+                difficulty:      4,
+                next: null,
+            },
+            'end_b': {
+                chapter: 'FINAL B — NODO 03',
+                title:   'Lorem ipsum — Resolución B',
+                body:    `Investigationes demonstraverunt lectores legere me lius quod ii legunt saepius. Claritas est etiam processus dynamicus.
+
+Qui sequitur mutationem consuetudium lectorum eleifend option congue nihil imperdiet doming.
+
+> SECUENCIA COMPLETADA — RUTA ALTERNATIVA`,
+                playerProtocols: ['Muerte', 'Oscuridad', 'Odio'],
+                aiProtocols:     ['Amor', 'Paz', 'Unidad'],
+                difficulty:      4,
+                next: null,
+            },
+        },
+    },
+};
+
+function getCampaignState() {
+    try { return JSON.parse(sessionStorage.getItem('campaignState') || 'null'); } catch { return null; }
+}
+
+function showCampaignModal(nodeId, campaignId) {
+    const campaign = CAMPAIGNS[campaignId];
+    const node     = campaign && campaign.nodes[nodeId];
+    if (!node) return;
+
+    document.getElementById('cmp-chapter').textContent = node.chapter;
+    document.getElementById('cmp-title').textContent   = node.title;
+    document.getElementById('cmp-body').textContent    = node.body;
+    document.getElementById('campaign-modal').classList.remove('hidden');
+
+    document.getElementById('btn-cmp-start').onclick = function() {
+        document.getElementById('campaign-modal').classList.add('hidden');
+        launchCampaignNode(node, campaignId, nodeId);
+    };
+}
+
+function launchCampaignNode(node, campaignId, nodeId) {
+    const diff = DIFFICULTY_LEVELS.find(l => l.id === node.difficulty) || DIFFICULTY_LEVELS[2];
+    sessionStorage.setItem('playerProtocols',      JSON.stringify(node.playerProtocols));
+    sessionStorage.setItem('aiProtocols',          JSON.stringify(node.aiProtocols));
+    sessionStorage.setItem('aiDifficultyDepth',    diff.depth);
+    sessionStorage.setItem('aiDifficultyName',     diff.name);
+    sessionStorage.setItem('aiDifficultyColor',    diff.color);
+    sessionStorage.setItem('aiDifficultyIcon',     diff.icon);
+    sessionStorage.setItem('ruleControlComponent', '0');
+    sessionStorage.setItem('campaignState', JSON.stringify({ campaignId, nodeId }));
+    router.navigate('game');
+}
+
+function launchCampaign(campaignId) {
+    const campaign = CAMPAIGNS[campaignId];
+    if (!campaign) return;
+    showCampaignModal(campaign.startNode, campaignId);
+}
+
+window.launchCampaign = launchCampaign;
 
 window.addEventListener('resize', applyHomeScale);
 
