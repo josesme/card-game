@@ -25,13 +25,13 @@ Ideas evaluadas en `docs/ai-improvement-analysis.md` y aplazadas por bajo valor 
 ## Expansión de producto — Ideas exploradas
 
 ### Alcance inmediato
-- **Registro de partidas** — Al terminar cada partida, guardar datos clave en Supabase (duración, ganador, protocolos jugados, cartas eliminadas). Base para estadísticas y reto diario. Prerequisito del reto diario.
+- **Resultado compartible reto diario** — Al terminar el reto del día, generar texto compartible estilo Wordle con emoji de resultado (victoria/derrota) y la fecha. Sin datos de protocolos para no spoilear.
+- **Logros** — Sistema de logros desbloqueables por condiciones de partida (ej: ganar sin eliminar cartas, compilar 3 veces en el mismo turno). Persistidos en localStorage.
 - **Replay de partida** — Guardar cada acción en un array durante la partida y reproducirla al terminar. Reutiliza el motor sin modificarlo.
 - **Draft con restricciones** — Modos alternativos: "solo Main 2", "mínimo 3 protocolos de expansión", "carta prohibida". Sin cambios en el motor de juego.
 - **Estadísticas de la IA** — Mostrar al terminar qué protocolos eligió la IA y por qué ganó o perdió.
 
 ### Medio plazo
-- **Reto diario** — Mismo mazo semilla para todos los jugadores ese día, resultado compartible estilo Wordle. Requiere registro de partidas como prerequisito. No necesita multijugador real.
 - **Modo campaña / progresión** — Serie de partidas contra IA de dificultad creciente con mazo que evoluciona. Añade narrativa sin cambiar las reglas.
 - **IA con personalidad** — Perfiles con nombres y estrategias reconocibles (agresivo, defensivo, caótico). Base en ai-profiles.js ya existente, añadir identidad visual y narrativa.
 - **Modo puzzle** — Estado de juego predefinido, mano concreta, ganar en X turnos. Formato ideal para tutoriales o retos.
