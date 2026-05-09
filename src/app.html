@@ -853,7 +853,7 @@
             <button id="btn-play" disabled>IR AL DRAFT</button>
             <button id="btn-daily-play" style="display:none;">RETO DIARIO</button>
         </div>
-        <div id="daily-result-banner" style="display:none;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ui-cyan);text-align:center;margin-top:6px;letter-spacing:0.05em;"></div>
+        <div id="daily-result-banner" style="display:none;font-family:'JetBrains Mono',monospace;font-size:11px;text-align:center;margin-top:6px;letter-spacing:0.05em;"></div>
 
         <div class="home-version" id="home-version">v2.4.0 — 2026</div>
     </div>
@@ -1636,6 +1636,7 @@ function updateDailyUI() {
         if (banner) {
             const icon = result.win ? '✓' : '✗';
             banner.textContent = `${icon} Ya jugaste el reto de hoy — ${result.win ? 'Victoria' : 'Derrota'}`;
+            banner.style.color = result.win ? '#FFD93D' : '#722E9A';
             banner.style.display = 'block';
         }
     } else {
