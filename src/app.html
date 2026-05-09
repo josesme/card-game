@@ -1205,13 +1205,6 @@
         <div class="st-stat-row" style="padding:6px 0"><span class="st-sk">Partidas 31+ turnos</span><span class="st-sv" id="st-v-tr-3" style="font-size:13px">—</span></div>
       </div>
 
-      <div class="st-sec" style="flex:3.6">
-        <div class="st-sec-label">◈ Combinaciones draft</div>
-        <div id="st-v-combo-win"></div>
-        <div class="st-inner-div" style="margin:14px 0"></div>
-        <div id="st-v-combo-loss"></div>
-      </div>
-
     </div>
 
     <!-- MAIN -->
@@ -1231,13 +1224,11 @@
         </div>
 
         <div class="st-top-col" style="flex:0.80">
-          <div class="st-sec-label">◈ Presencia en resultado</div>
-          <div style="display:flex;flex-direction:column;flex:1;min-height:0">
-            <div class="st-sk" style="color:var(--st-sec);margin-bottom:4px">↑ En victoria</div>
-            <div id="st-v-presence-win"></div>
+          <div class="st-sec-label">◈ Combinaciones draft</div>
+          <div style="display:flex;flex-direction:column;flex:1;min-height:0;overflow-y:auto">
+            <div id="st-v-combo-win"></div>
             <div class="st-inner-div" style="margin:6px 0"></div>
-            <div class="st-sk" style="color:var(--st-sec);margin-bottom:4px">↓ En derrota</div>
-            <div id="st-v-presence-loss"></div>
+            <div id="st-v-combo-loss"></div>
           </div>
         </div>
 
@@ -1911,21 +1902,6 @@ function renderStatsOverlay() {
     });
 
     // Presencia en resultado
-    function presenceRows(records, allWins, isLoss) {
-        if(!records.length) return '<div class="st-sk" style="color:var(--st-muted)">Sin datos</div>';
-        var counts={};
-        records.forEach(function(r){ (r.protocolos_jugador||[]).forEach(function(p){ counts[p]=(counts[p]||0)+1; }); });
-        var top=Object.entries(counts).sort(function(a,b){return b[1]-a[1];}).slice(0,3);
-        var maxC=top.length>0?top[0][1]:1;
-        return top.map(function(e){
-            var name=e[0],cnt=e[1],pct=allWins>0?Math.round(cnt/allWins*100):0;
-            return _protoRow(name,cnt,maxC,pct,false,isLoss);
-        }).join('');
-    }
-    var wRec=history.filter(function(r){return r.ganador==='player';}), lRec=history.filter(function(r){return r.ganador==='ai';});
-    $h('st-v-presence-win',  presenceRows(wRec, wRec.length, false));
-    $h('st-v-presence-loss', presenceRows(lRec, lRec.length, true));
-
     // Última partida
     if(total>0){
         var la=history[total-1], lw2=la.ganador==='player';
