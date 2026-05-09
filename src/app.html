@@ -1924,9 +1924,8 @@ function launchCampaignNode(node, campaignId, nodeId) {
     sessionStorage.setItem('campaignState',        JSON.stringify({ campaignId, nodeId }));
     if (typeof router !== 'undefined') {
         if (router.current === 'game') {
-            // Already in game view — router ignores same-route navigate, so reinit directly
-            if (typeof window.teardownGameUI === 'function') window.teardownGameUI();
-            if (typeof window.initGameUI    === 'function') window.initGameUI();
+            // Already in game view — router ignores same-route navigate, so restart directly
+            if (typeof window.restartGameUI === 'function') window.restartGameUI();
         } else {
             router.navigate('game');
         }

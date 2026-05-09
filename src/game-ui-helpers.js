@@ -848,3 +848,11 @@ window.teardownGameUI = function() {
     document.body.classList.remove('in-game');
     document.documentElement.style.zoom = '';
 };
+
+// ── restartGameUI — reinit game from within game view (campaign continue) ────
+window.restartGameUI = function() {
+    _gameUIReady = false;
+    document.body.classList.add('in-game');
+    window.initGameUI();
+    if (window.gameModule && typeof window.gameModule.init === 'function') window.gameModule.init();
+};
