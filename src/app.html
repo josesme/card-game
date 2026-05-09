@@ -1560,6 +1560,9 @@ const ACHIEVEMENT_ICONS = {
     L13: `<svg viewBox="0 0 24 24"><rect x="4" y="4" width="10" height="14" rx="1"/><rect x="7" y="7" width="10" height="14" rx="1"/><line x1="10" y1="11" x2="14" y2="11"/><line x1="10" y1="14" x2="16" y2="14"/><line x1="10" y1="17" x2="13" y2="17"/><circle cx="19" cy="6" r="3"/><line x1="17.5" y1="6" x2="20.5" y2="6"/></svg>`,
     L14: `<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="3" rx="1"/><rect x="5" y="6" width="14" height="3" rx="1"/><rect x="6" y="9" width="12" height="3" rx="1"/><path d="M12 15v7"/><path d="M9 19l3 3 3-3"/><line x1="6" y1="12" x2="18" y2="12"/></svg>`,
     L15: `<svg viewBox="0 0 24 24"><rect x="2" y="14" width="20" height="6" rx="1"/><rect x="2" y="14" width="20" height="6" rx="1"/><path d="M4 14V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v6"/><line x1="2" y1="14" x2="22" y2="14"/><path d="M8 14V9M12 14V7M16 14V9"/><path d="M19 4l2-2M22 6l-3 1"/></svg>`,
+    L16: `<svg viewBox="0 0 24 24"><rect x="2" y="3" width="4" height="4" rx="1"/><rect x="8" y="3" width="4" height="4" rx="1"/><rect x="14" y="3" width="4" height="4" rx="1"/><rect x="2" y="9" width="4" height="4" rx="1"/><rect x="8" y="9" width="4" height="4" rx="1"/><rect x="14" y="9" width="4" height="4" rx="1"/><rect x="2" y="15" width="4" height="4" rx="1"/><rect x="8" y="15" width="4" height="4" rx="1"/><rect x="14" y="15" width="4" height="4" rx="1"/><rect x="5" y="21" width="4" height="2" rx="1"/><rect x="11" y="21" width="4" height="2" rx="1"/><line x1="20" y1="3" x2="20" y2="21"/><polyline points="17,6 20,3 23,6"/></svg>`,
+    L17: `<svg viewBox="0 0 24 24"><rect x="2" y="3" width="4" height="4" rx="1"/><rect x="8" y="3" width="4" height="4" rx="1"/><rect x="14" y="3" width="4" height="4" rx="1"/><rect x="2" y="9" width="4" height="4" rx="1"/><rect x="8" y="9" width="4" height="4" rx="1"/><rect x="14" y="9" width="4" height="4" rx="1"/><rect x="2" y="15" width="4" height="4" rx="1"/><rect x="8" y="15" width="4" height="4" rx="1"/><rect x="14" y="15" width="4" height="4" rx="1"/><rect x="5" y="21" width="4" height="2" rx="1"/><rect x="11" y="21" width="4" height="2" rx="1"/><line x1="20" y1="3" x2="20" y2="21"/><polyline points="17,18 20,21 23,18"/></svg>`,
+    L19: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>`,
 };
 
 const DIFFICULTY_LEVELS = [
@@ -2039,11 +2042,18 @@ function renderStatsOverlay() {
         { id:'L13', name:'Mano\nVacía',          desc:'Gana compilando con 0 cartas en mano',                 check: function(){ return wins.some(function(r){ return r.mano_vacia_al_compilar; }); } },
         { id:'L14', name:'Mazo\nVacío',          desc:'Actualiza con el mazo vacío (baraja el descarte)',     check: function(){ return history.some(function(r){ return r.mazo_vacio; }); } },
         { id:'L15', name:'Sobrecarga',           desc:'Llega al turno 40 en cualquier partida',               check: function(){ return history.some(function(r){ return r.turnos >= 40; }); } },
+        { id:'L16', name:'Main 1',               desc:'Gana al menos una partida con cada protocolo de Main 1',check: function(){ var won=new Set(); wins.forEach(function(r){ (r.protocolos_jugador||[]).forEach(function(p){ won.add(p); }); }); return DAILY_PROTOCOLS_MAIN1.every(function(p){ return won.has(p); }); } },
+        { id:'L17', name:'Main 2',               desc:'Gana al menos una partida con cada protocolo de Main 2',check: function(){ var won=new Set(); wins.forEach(function(r){ (r.protocolos_jugador||[]).forEach(function(p){ won.add(p); }); }); return DAILY_PROTOCOLS_ALL.filter(function(p){ return !DAILY_PROTOCOLS_MAIN1.includes(p); }).every(function(p){ return won.has(p); }); } },
+        { id:'L19', name:'Sistema\nCompilado',   desc:'Todos los logros desbloqueados',                        check: function(){ return false; /* se evalúa después */ } },
     ];
     var achGrid = document.getElementById('st-v-logros');
     if(achGrid){
+        var unlockMap = {};
+        ACHIEVEMENTS.forEach(function(a){ if(a.id !== 'L19') unlockMap[a.id] = a.check(); });
+        var l19 = Object.keys(unlockMap).every(function(k){ return unlockMap[k]; });
+        unlockMap['L19'] = l19;
         achGrid.innerHTML = ACHIEVEMENTS.map(function(a){
-            var unlocked = a.check();
+            var unlocked = unlockMap[a.id];
             var icon = (typeof ACHIEVEMENT_ICONS !== 'undefined' && ACHIEVEMENT_ICONS[a.id]) || '';
             var color = unlocked ? '0,245,255' : null;
             return '<div class="ach-cell'+(unlocked?' unlocked':'')+'" data-tooltip="'+a.desc+'"'+(color?' style="--ach-color:#00F5FF;--ach-rgb:'+color+'"':'')+'>'+
