@@ -456,7 +456,9 @@
         #stats-overlay .st-top-col + .st-top-col { border-left: 1px solid var(--st-div); }
         #stats-overlay .st-top-col-body { flex: 1; display: flex; flex-direction: column; justify-content: space-around; }
 
-        #stats-overlay .st-bottom-row { flex: 6; display: flex; flex-direction: column; padding: 16px 20px; min-height: 0; }
+        #stats-overlay .st-bottom-row { flex: 6; display: flex; flex-direction: row; gap: 0; min-height: 0; }
+        #stats-overlay .st-bottom-protos { flex: 0 0 60%; display: flex; flex-direction: column; padding: 16px 20px; min-height: 0; border-right: 1px solid var(--st-div); }
+        #stats-overlay .st-bottom-logros { flex: 1; display: flex; flex-direction: column; padding: 16px 20px; min-height: 0; overflow-y: auto; }
         #stats-overlay .st-proto-boxes { display: flex; flex: 1; gap: 16px; margin-top: 14px; min-height: 0; }
         #stats-overlay .st-proto-box { flex: 1; display: flex; flex-direction: column; padding: 0 16px; min-height: 0; }
         #stats-overlay .st-proto-box + .st-proto-box { border-left: 1px solid var(--st-div); }
@@ -529,35 +531,35 @@
         #stats-overlay .st-chip  { font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 2px; border: 1px solid; letter-spacing: .5px; }
 
         /* ── Logros ───────────────────────────────────────────── */
-        .ach-grid { display: flex; flex-wrap: wrap; gap: 14px; }
+        .ach-grid { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 14px; }
         .ach-cell {
-            display: flex; flex-direction: column; align-items: center; gap: 6px;
-            width: 64px; cursor: default;
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
+            width: 80px; cursor: default;
         }
         .ach-icon {
-            width: 48px; height: 48px;
+            width: 60px; height: 60px;
             display: flex; align-items: center; justify-content: center;
-            background: #060e1c; border-radius: 8px;
+            background: #060e1c; border-radius: 10px;
             border: 1px solid #1e3a5f;
             transition: box-shadow 0.2s, border-color 0.2s;
         }
         .ach-icon svg {
-            width: 26px; height: 26px;
+            width: 34px; height: 34px;
             stroke: #1e3a5f; stroke-width: 1.5; fill: none;
             stroke-linecap: round; stroke-linejoin: round;
             transition: stroke 0.2s;
         }
         .ach-cell.unlocked .ach-icon {
             border-color: var(--ach-color, var(--ui-cyan));
-            box-shadow: 0 0 12px rgba(var(--ach-rgb, 0,245,255), 0.35);
+            box-shadow: 0 0 14px rgba(var(--ach-rgb, 0,245,255), 0.35);
         }
         .ach-cell.unlocked .ach-icon svg {
             stroke: var(--ach-color, var(--ui-cyan));
-            filter: drop-shadow(0 0 4px rgba(var(--ach-rgb, 0,245,255), 0.6));
+            filter: drop-shadow(0 0 5px rgba(var(--ach-rgb, 0,245,255), 0.6));
         }
         .ach-name {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 8px; font-weight: 600; letter-spacing: 0.5px;
+            font-size: 9px; font-weight: 600; letter-spacing: 0.5px;
             color: #1e3a5f; text-align: center; line-height: 1.3;
             text-transform: uppercase;
         }
@@ -1240,11 +1242,6 @@
         <div class="st-stat-row" style="padding:6px 0"><span class="st-sk">Partidas 31+ turnos</span><span class="st-sv" id="st-v-tr-3" style="font-size:13px">—</span></div>
       </div>
 
-      <div class="st-sec" style="flex:3.0">
-        <div class="st-sec-label">◈ Logros</div>
-        <div class="ach-grid" id="st-v-logros"></div>
-      </div>
-
       <div class="st-sec" style="flex:1.0">
         <div class="st-sec-label">◈ Retos diarios</div>
         <div class="st-rhythm">
@@ -1316,19 +1313,22 @@
       </div>
 
       <div class="st-bottom-row">
-        <div class="st-sec-label">◈ Uso de protocolos</div>
-        <div class="st-proto-boxes">
-
-          <div class="st-proto-box">
-            <div class="st-sec-label-sm" style="color:var(--st-win);text-transform:none;margin-bottom:8px">Protocolos jugador</div>
-            <div class="st-proto-rows" id="st-v-protos-player"></div>
+        <div class="st-bottom-protos">
+          <div class="st-sec-label">◈ Uso de protocolos</div>
+          <div class="st-proto-boxes">
+            <div class="st-proto-box">
+              <div class="st-sec-label-sm" style="color:var(--st-win);text-transform:none;margin-bottom:8px">Protocolos jugador</div>
+              <div class="st-proto-rows" id="st-v-protos-player"></div>
+            </div>
+            <div class="st-proto-box">
+              <div class="st-sec-label-sm" style="color:var(--st-loss);text-transform:none;margin-bottom:8px">Protocolos IA</div>
+              <div class="st-proto-rows" id="st-v-protos-ai"></div>
+            </div>
           </div>
-
-          <div class="st-proto-box">
-            <div class="st-sec-label-sm" style="color:var(--st-loss);text-transform:none;margin-bottom:8px">Protocolos IA</div>
-            <div class="st-proto-rows" id="st-v-protos-ai"></div>
-          </div>
-
+        </div>
+        <div class="st-bottom-logros">
+          <div class="st-sec-label">◈ Logros</div>
+          <div class="ach-grid" id="st-v-logros"></div>
         </div>
       </div>
 
