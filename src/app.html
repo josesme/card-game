@@ -1205,6 +1205,14 @@
         <div class="st-stat-row" style="padding:6px 0"><span class="st-sk">Partidas 31+ turnos</span><span class="st-sv" id="st-v-tr-3" style="font-size:13px">—</span></div>
       </div>
 
+      <div class="st-sec" style="flex:1.0">
+        <div class="st-sec-label">◈ Retos diarios</div>
+        <div class="st-rhythm">
+          <div class="st-r-cell"><span class="st-r-val win" id="st-v-daily-win">—</span><span class="st-r-sub">GANADOS</span></div>
+          <div class="st-r-cell"><span class="st-r-val loss" id="st-v-daily-loss">—</span><span class="st-r-sub">PERDIDOS</span></div>
+        </div>
+      </div>
+
     </div>
 
     <!-- MAIN -->
@@ -1908,6 +1916,15 @@ function renderStatsOverlay() {
     renderCombo('st-v-combo-win-ai',      bestA,  '↑ Más ganadora IA',      'var(--st-loss)');
     renderCombo('st-v-combo-loss-player', worstP, '↓ Más perdedora Jugador','var(--st-win)');
     renderCombo('st-v-combo-loss-ai',     worstA, '↓ Más perdedora IA',     'var(--st-loss)');
+
+    // Retos diarios
+    var dailyWins=0, dailyLoss=0;
+    Object.keys(localStorage).forEach(function(k){
+        if(!k.startsWith('compile_daily_')) return;
+        try { var d=JSON.parse(localStorage.getItem(k)); if(d && d.win) dailyWins++; else if(d) dailyLoss++; } catch(e){}
+    });
+    $t('st-v-daily-win',  dailyWins  > 0 ? dailyWins  : '0');
+    $t('st-v-daily-loss', dailyLoss  > 0 ? dailyLoss  : '0');
 
     // Victorias por nivel
     [1,2,3,4,5].forEach(function(lvl){
