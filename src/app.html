@@ -1210,6 +1210,7 @@
         <div class="st-rhythm">
           <div class="st-r-cell"><span class="st-r-val win" id="st-v-daily-win">—</span><span class="st-r-sub">GANADOS</span></div>
           <div class="st-r-cell"><span class="st-r-val loss" id="st-v-daily-loss">—</span><span class="st-r-sub">PERDIDOS</span></div>
+          <div class="st-r-cell"><span class="st-r-val" id="st-v-daily-racha">—</span><span class="st-r-sub">MAYOR RACHA</span></div>
         </div>
       </div>
 
@@ -1918,11 +1919,23 @@ function renderStatsOverlay() {
     renderCombo('st-v-combo-loss-ai',     worstA, '↓ Más perdedora IA',     'var(--st-loss)');
 
     // Retos diarios
-    var dailyWins=0, dailyLoss=0;
+    var dailyWins=0, dailyLoss=0, dailyEntries=[];
     Object.keys(localStorage).forEach(function(k){
         if(!k.startsWith('compile_daily_')) return;
-        try { var d=JSON.parse(localStorage.getItem(k)); if(d && d.win) dailyWins++; else if(d) dailyLoss++; } catch(e){}
+        try { var d=JSON.parse(localStorage.getItem(k)); if(d){ if(d.win) dailyWins++; else dailyLoss++; dailyEntries.push(d); } } catch(e){}
     });
+    dailyEntries.sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); });
+    var bestWStreak=0, bestLStreak=0, curW=0, curL=0;
+    dailyEntries.forEach(function(d){
+        if(d.win){ curW++; curL=0; bestWStreak=Math.max(bestWStreak,curW); }
+        else     { curL++; curW=0; bestLStreak=Math.max(bestLStreak,curL); }
+    });
+    var rachaEl=document.getElementById('st-v-daily-racha');
+    if(rachaEl){
+        if(dailyEntries.length===0){ rachaEl.textContent='—'; rachaEl.className='st-r-val'; }
+        else if(bestWStreak>=bestLStreak){ rachaEl.textContent=bestWStreak; rachaEl.className='st-r-val win'; }
+        else                            { rachaEl.textContent=bestLStreak; rachaEl.className='st-r-val loss'; }
+    }
     $t('st-v-daily-win',  dailyWins  > 0 ? dailyWins  : '0');
     $t('st-v-daily-loss', dailyLoss  > 0 ? dailyLoss  : '0');
 
