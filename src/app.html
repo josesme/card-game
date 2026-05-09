@@ -423,22 +423,7 @@
             border: 1px solid rgba(255,0,128,0.4);
         }
         #stats-overlay .st-btn-reset:hover { background: var(--ui-pink); color: var(--st-bg); }
-        #reset-confirm-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-            display: flex; align-items: center; justify-content: center;
-            z-index: 9999;
-        }
-        #reset-confirm-overlay.hidden { display: none; }
-        #reset-confirm-box {
-            background: var(--st-bg); border: 1px solid var(--ui-pink);
-            padding: 32px 40px; text-align: center;
-            font-family: 'JetBrains Mono', monospace;
-            box-shadow: 0 0 24px rgba(255,0,128,0.3);
-            display: flex; flex-direction: column; gap: 20px;
-        }
-        #reset-confirm-box p { color: var(--st-sec); font-size: 13px; letter-spacing: 1px; margin: 0; }
-        #reset-confirm-box strong { color: var(--ui-pink); }
-        #reset-confirm-box .confirm-btns { display: flex; gap: 12px; justify-content: center; }
+        #reset-confirm-overlay { z-index: 9999; }
 
         #stats-overlay .st-body { display: flex; flex: 1; min-height: 0; }
 
@@ -2526,12 +2511,20 @@ function _triggerStatsScramble() {
 }
 </script>
 
-<div id="reset-confirm-overlay" class="hidden">
-  <div id="reset-confirm-box">
-    <p>¿Reiniciar todas las estadísticas?<br><strong>Esta acción no se puede deshacer.</strong></p>
-    <div class="confirm-btns">
-      <button class="st-btn-reset" onclick="confirmResetStats()">Confirmar</button>
-      <button class="st-btn-close" onclick="hideResetConfirm()">Cancelar</button>
+<div id="reset-confirm-overlay" class="effect-overlay hidden">
+  <div class="effect-panel" style="max-width:400px">
+    <div class="effect-header">
+      <div class="effect-header-text">
+        <div class="effect-title">REINICIAR DATOS</div>
+        <div class="effect-subtitle" style="color:var(--ui-pink)">Esta acción no se puede deshacer</div>
+      </div>
+    </div>
+    <div class="effect-confirm-body">
+      <div class="confirm-text">¿Reiniciar todas las estadísticas, logros y progreso de campaña?</div>
+    </div>
+    <div class="effect-actions">
+      <button class="ui-btn ui-btn--danger" onclick="confirmResetStats()">CONFIRMAR</button>
+      <button class="ui-btn" onclick="hideResetConfirm()">CANCELAR</button>
     </div>
   </div>
 </div>
