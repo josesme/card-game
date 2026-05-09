@@ -458,7 +458,7 @@
 
         #stats-overlay .st-bottom-row { flex: 6; display: flex; flex-direction: row; gap: 0; min-height: 0; }
         #stats-overlay .st-bottom-protos { flex: 0 0 60%; display: flex; flex-direction: column; padding: 16px 20px; min-height: 0; border-right: 1px solid var(--st-div); }
-        #stats-overlay .st-bottom-logros { flex: 1; display: flex; flex-direction: column; padding: 16px 20px; min-height: 0; overflow: hidden; }
+        #stats-overlay .st-bottom-logros { flex: 1; display: flex; flex-direction: column; padding: 16px 20px; min-height: 0; overflow: visible; }
         #stats-overlay .st-proto-boxes { display: flex; flex: 1; gap: 16px; margin-top: 14px; min-height: 0; }
         #stats-overlay .st-proto-box { flex: 1; display: flex; flex-direction: column; padding: 0 16px; min-height: 0; }
         #stats-overlay .st-proto-box + .st-proto-box { border-left: 1px solid var(--st-div); }
@@ -531,7 +531,7 @@
         #stats-overlay .st-chip  { font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 2px; border: 1px solid; letter-spacing: .5px; }
 
         /* ── Logros ───────────────────────────────────────────── */
-        .ach-grid { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 14px; align-content: flex-start; overflow: hidden; }
+        .ach-grid { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 14px; align-content: flex-start; }
         .ach-cell {
             display: flex; flex-direction: column; align-items: center; gap: 8px;
             width: 80px; cursor: default;
@@ -569,7 +569,7 @@
         .ach-cell::after {
             content: attr(data-tooltip);
             position: absolute;
-            bottom: calc(100% + 8px);
+            top: calc(100% + 8px);
             left: 50%; transform: translateX(-50%);
             background: #060e1c;
             border: 1px solid rgba(0,245,255,0.3);
@@ -582,7 +582,7 @@
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.15s;
-            z-index: 10;
+            z-index: 100;
             box-shadow: 0 4px 16px rgba(0,0,0,0.6);
         }
         .ach-cell:hover::after { opacity: 1; }
@@ -2048,7 +2048,7 @@ function renderStatsOverlay() {
             var color = unlocked ? '0,245,255' : null;
             return '<div class="ach-cell'+(unlocked?' unlocked':'')+'" data-tooltip="'+a.desc+'"'+(color?' style="--ach-color:#00F5FF;--ach-rgb:'+color+'"':'')+'>'+
                 '<div class="ach-icon">'+icon+'</div>'+
-                '<span class="ach-name">'+a.name+'</span>'+
+                '<span class="ach-name">'+a.name.replace(/\n/g,'<br>')+'</span>'+
             '</div>';
         }).join('');
     }
