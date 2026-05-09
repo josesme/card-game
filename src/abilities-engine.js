@@ -2287,10 +2287,10 @@ function resolveAbilityAction(actionDef, targetPlayer) {
         }
         if (best) {
           // Revelar: solo muestra la identidad, no cambia estado
-          gameState.lastRevealedCard = { cardObj: best, line: bestLine, target: bestSide };
+          gameState.lastRevealedCard = { cardObj: best, line: bestLine, target: bestTarget };
           _log(`IA revela ${best.card.nombre} (bocabajo)`, { isAI: true });
           // Decidir acción: cambiar de línea (bocabajo) o voltear bocarriba
-          const canShift = bestSide === 'ai' && LINES.filter(l => gameState.field[l].ai.length > 0).length >= 2;
+          const canShift = bestTarget === 'ai' && LINES.filter(l => gameState.field[l].ai.length > 0).length >= 2;
           if (canShift) {
             // Mover bocabajo a línea más débil
             const destLine = LINES.find(l => l !== bestLine && gameState.field[l].ai.length < gameState.field[bestLine].ai.length);
@@ -2304,7 +2304,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
             // Voltear bocarriba (cambia estado ahora)
             best.faceDown = false;
             best._animateFlip = true;
-            if (typeof triggerFlipFaceUp === 'function') triggerFlipFaceUp(best, bestLine, bestSide);
+            if (typeof triggerFlipFaceUp === 'function') triggerFlipFaceUp(best, bestLine, bestTarget);
             _log(`IA voltea ${best.card.nombre} bocarriba`, { isAI: true });
           }
         }
