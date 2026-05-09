@@ -1225,10 +1225,18 @@
 
         <div class="st-top-col" style="flex:0.80">
           <div class="st-sec-label">◈ Combinaciones draft</div>
-          <div style="display:flex;flex-direction:column;flex:1;min-height:0;overflow-y:auto">
-            <div id="st-v-combo-win"></div>
-            <div class="st-inner-div" style="margin:6px 0"></div>
-            <div id="st-v-combo-loss"></div>
+          <div style="display:flex;flex-direction:column;flex:1;min-height:0;overflow-y:auto;gap:10px">
+            <div style="display:flex;gap:10px;flex:1;min-height:0">
+              <div style="flex:1;min-width:0" id="st-v-combo-win-player"></div>
+              <div class="st-inner-div" style="width:1px;height:auto;margin:0"></div>
+              <div style="flex:1;min-width:0" id="st-v-combo-win-ai"></div>
+            </div>
+            <div class="st-inner-div" style="margin:0"></div>
+            <div style="display:flex;gap:10px;flex:1;min-height:0">
+              <div style="flex:1;min-width:0" id="st-v-combo-loss-player"></div>
+              <div class="st-inner-div" style="width:1px;height:auto;margin:0"></div>
+              <div style="flex:1;min-width:0" id="st-v-combo-loss-ai"></div>
+            </div>
           </div>
         </div>
 
@@ -1870,27 +1878,36 @@ function renderStatsOverlay() {
     });
 
     // Combinaciones draft
-    var cmap={};
+    var cmapP={}, cmapA={};
     history.forEach(function(r){
         var ps=(r.protocolos_jugador||[]).slice().sort(), k=ps.join('|');
         if(!k) return;
-        if(!cmap[k]) cmap[k]={protos:r.protocolos_jugador,wins:0,total:0};
-        cmap[k].total++; if(r.ganador==='player') cmap[k].wins++;
+        if(!cmapP[k]) cmapP[k]={protos:r.protocolos_jugador,wins:0,total:0};
+        cmapP[k].total++; if(r.ganador==='player') cmapP[k].wins++;
+        var qs=(r.protocolos_ia||[]).slice().sort(), kq=qs.join('|');
+        if(!kq) return;
+        if(!cmapA[kq]) cmapA[kq]={protos:r.protocolos_ia,wins:0,total:0};
+        cmapA[kq].total++; if(r.ganador==='ai') cmapA[kq].wins++;
     });
-    var combos=Object.values(cmap).sort(function(a,b){return(b.wins/b.total)-(a.wins/a.total);});
-    function renderCombo(id, combo, label) {
+    var combosP=Object.values(cmapP).sort(function(a,b){return(b.wins/b.total)-(a.wins/a.total);});
+    var combosA=Object.values(cmapA).sort(function(a,b){return(b.wins/b.total)-(a.wins/a.total);});
+    function renderCombo(id, combo, label, color) {
         var el=document.getElementById(id); if(!el) return;
-        if(!combo){ el.innerHTML='<div class="st-sec-label-sm" style="margin-bottom:4px;text-transform:none">'+label+'</div><div class="st-sk" style="color:var(--st-muted)">Sin datos</div>'; return; }
+        if(!combo){ el.innerHTML='<div class="st-sec-label-sm" style="margin-bottom:6px;text-transform:none;color:'+color+'">'+label+'</div><div class="st-sk" style="color:var(--st-muted)">Sin datos</div>'; return; }
         var wr=Math.round(combo.wins/combo.total*100);
-        el.innerHTML='<div class="st-sec-label-sm" style="margin-bottom:10px;text-transform:none">'+label+'</div>'+
-            '<div class="st-chips" style="margin-top:0;margin-bottom:10px">'+(combo.protos||[]).map(_protoChip).join('')+'</div>'+
-            '<div class="st-stat-row" style="padding:8px 0"><span class="st-sk">Partidas</span><span class="st-sv">'+combo.total+'</span></div>'+
-            '<div class="st-stat-row" style="padding:8px 0;border-bottom:none"><span class="st-sk">Win rate</span><span class="st-sv">'+wr+'%</span></div>';
+        el.innerHTML='<div class="st-sec-label-sm" style="margin-bottom:6px;text-transform:none;color:'+color+'">'+label+'</div>'+
+            '<div class="st-chips" style="margin-top:0;margin-bottom:8px">'+(combo.protos||[]).map(_protoChip).join('')+'</div>'+
+            '<div class="st-stat-row" style="padding:4px 0"><span class="st-sk">Partidas</span><span class="st-sv">'+combo.total+'</span></div>'+
+            '<div class="st-stat-row" style="padding:4px 0;border-bottom:none"><span class="st-sk">Win rate</span><span class="st-sv">'+wr+'%</span></div>';
     }
-    var bestCombo  = combos.find(function(c){return c.wins>0;}) || null;
-    var worstCombo = combos.slice().reverse().find(function(c){return c.wins<c.total;}) || null;
-    renderCombo('st-v-combo-win',  bestCombo,  '↑ Más ganadora');
-    renderCombo('st-v-combo-loss', worstCombo, '↓ Más perdedora');
+    var bestP  = combosP.find(function(c){return c.wins>0;})          || null;
+    var worstP = combosP.slice().reverse().find(function(c){return c.wins<c.total;}) || null;
+    var bestA  = combosA.find(function(c){return c.wins>0;})          || null;
+    var worstA = combosA.slice().reverse().find(function(c){return c.wins<c.total;}) || null;
+    renderCombo('st-v-combo-win-player',  bestP,  '↑ Más ganadora Jugador', 'var(--st-win)');
+    renderCombo('st-v-combo-win-ai',      bestA,  '↑ Más ganadora IA',      'var(--st-loss)');
+    renderCombo('st-v-combo-loss-player', worstP, '↓ Más perdedora Jugador','var(--st-win)');
+    renderCombo('st-v-combo-loss-ai',     worstA, '↓ Más perdedora IA',     'var(--st-loss)');
 
     // Victorias por nivel
     [1,2,3,4,5].forEach(function(lvl){
