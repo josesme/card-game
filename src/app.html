@@ -1234,17 +1234,23 @@
 
         <div class="st-top-col" style="flex:0.80">
           <div class="st-sec-label">◈ Combinaciones draft</div>
-          <div style="display:flex;flex-direction:column;flex:1;min-height:0;overflow-y:auto;gap:10px">
-            <div style="display:flex;gap:10px;flex:1;min-height:0">
+          <div style="display:flex;flex-direction:column;flex:1;min-height:0;overflow-y:auto;gap:0">
+            <div style="display:flex;gap:10px;flex:1;min-height:0;padding-bottom:8px">
               <div style="flex:1;min-width:0" id="st-v-combo-win-player"></div>
               <div class="st-inner-div" style="width:1px;height:auto;margin:0"></div>
               <div style="flex:1;min-width:0" id="st-v-combo-win-ai"></div>
             </div>
             <div class="st-inner-div" style="margin:0"></div>
-            <div style="display:flex;gap:10px;flex:1;min-height:0">
+            <div style="display:flex;gap:10px;flex:1;min-height:0;padding-top:8px;padding-bottom:8px">
               <div style="flex:1;min-width:0" id="st-v-combo-loss-player"></div>
               <div class="st-inner-div" style="width:1px;height:auto;margin:0"></div>
               <div style="flex:1;min-width:0" id="st-v-combo-loss-ai"></div>
+            </div>
+            <div class="st-inner-div" style="margin:0"></div>
+            <div style="display:flex;gap:10px;flex:1;min-height:0;padding-top:8px">
+              <div style="flex:1;min-width:0" id="st-v-combo-used-player"></div>
+              <div class="st-inner-div" style="width:1px;height:auto;margin:0"></div>
+              <div style="flex:1;min-width:0" id="st-v-combo-used-ai"></div>
             </div>
           </div>
         </div>
@@ -1917,6 +1923,10 @@ function renderStatsOverlay() {
     renderCombo('st-v-combo-win-ai',      bestA,  '↑ Más ganadora IA',      'var(--st-loss)');
     renderCombo('st-v-combo-loss-player', worstP, '↓ Más perdedora Jugador','var(--st-win)');
     renderCombo('st-v-combo-loss-ai',     worstA, '↓ Más perdedora IA',     'var(--st-loss)');
+    var mostUsedP = Object.values(cmapP).sort(function(a,b){return b.total-a.total;})[0] || null;
+    var mostUsedA = Object.values(cmapA).sort(function(a,b){return b.total-a.total;})[0] || null;
+    renderCombo('st-v-combo-used-player', mostUsedP, '+ Más utilizada Jugador', 'var(--st-win)');
+    renderCombo('st-v-combo-used-ai',     mostUsedA, '+ Más utilizada IA',      'var(--st-loss)');
 
     // Retos diarios
     var dailyWins=0, dailyLoss=0, dailyEntries=[];
