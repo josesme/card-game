@@ -2512,17 +2512,13 @@ function _triggerStatsScramble() {
 </script>
 
 <div id="reset-confirm-overlay" class="effect-overlay hidden">
-  <div class="effect-panel" style="max-width:400px">
-    <div class="effect-header">
-      <div class="effect-header-text">
-        <div class="effect-title">REINICIAR DATOS</div>
-        <div class="effect-subtitle" style="color:var(--ui-pink)">Esta acción no se puede deshacer</div>
-      </div>
+  <div class="effect-panel" style="max-width:440px;gap:24px;padding:32px">
+    <div style="display:flex;flex-direction:column;gap:8px;text-align:center">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;letter-spacing:3px;color:var(--ui-pink)">REINICIAR DATOS</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#cbd5e1;line-height:1.7">¿Reiniciar todas las estadísticas,<br>logros y progreso de campaña?</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#64748b;margin-top:4px">Esta acción no se puede deshacer</div>
     </div>
-    <div class="effect-confirm-body">
-      <div class="confirm-text">¿Reiniciar todas las estadísticas, logros y progreso de campaña?</div>
-    </div>
-    <div class="effect-actions">
+    <div class="effect-actions" style="padding:0">
       <button class="ui-btn ui-btn--danger" onclick="confirmResetStats()">CONFIRMAR</button>
       <button class="ui-btn" onclick="hideResetConfirm()">CANCELAR</button>
     </div>
