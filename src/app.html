@@ -914,7 +914,7 @@
         <div id="daily-result-banner" style="display:none;font-family:'JetBrains Mono',monospace;font-size:11px;text-align:center;margin-top:6px;letter-spacing:0.05em;"></div>
 
         <div style="display:flex;gap:10px;justify-content:center;margin-top:12px">
-            <button id="btn-campaign-prueba" style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:2px;padding:0 16px;height:30px;background:#060e1c;color:#475569;border:1px solid #1e3a5f;border-radius:4px;cursor:pointer;transition:all 0.2s" onmouseover="this.style.color='var(--ui-cyan)';this.style.borderColor='rgba(0,245,255,0.4)'" onmouseout="this.style.color='#475569';this.style.borderColor='#1e3a5f'">▶ CAMPAÑA</button>
+            <button id="btn-campaign-prueba" onclick="window.launchCampaign('prueba')" style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:2px;padding:0 16px;height:30px;background:#060e1c;color:#475569;border:1px solid #1e3a5f;border-radius:4px;cursor:pointer;transition:all 0.2s" onmouseover="this.style.color='var(--ui-cyan)';this.style.borderColor='rgba(0,245,255,0.4)'" onmouseout="this.style.color='#475569';this.style.borderColor='#1e3a5f'">▶ CAMPAÑA</button>
         </div>
 
         <div class="home-version" id="home-version">v2.4.0 — 2026</div>
@@ -1189,20 +1189,6 @@
     <div id="vs-actions">
         <button class="ui-btn" onclick="AudioManager.stopSounds?.(); AudioManager.playBGM?.(); router.navigate('draft')">NUEVO DRAFT</button>
         <button class="ui-btn ui-btn--purple" onclick="AudioManager.stopSounds?.(); AudioManager.playBGM?.(); router.navigate('home')">PANTALLA PRINCIPAL</button>
-    </div>
-</div>
-
-<!-- CAMPAIGN NARRATIVE MODAL -->
-<div id="campaign-modal" class="effect-overlay hidden" style="z-index:5000">
-    <div class="effect-panel" style="max-width:560px;gap:20px">
-        <div class="effect-header" style="flex-direction:column;align-items:flex-start;gap:6px">
-            <div class="effect-title" id="cmp-chapter" style="font-size:10px;letter-spacing:3px;color:var(--ui-dim)">CAMPAÑA — NODO 01</div>
-            <div class="effect-subtitle" id="cmp-title" style="font-size:15px;color:var(--ui-cyan)"></div>
-        </div>
-        <div id="cmp-body" style="font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.9;color:#94a3b8;white-space:pre-wrap;flex:1;overflow-y:auto"></div>
-        <div class="effect-actions">
-            <button class="ui-btn" id="btn-cmp-start">INICIAR SECUENCIA</button>
-        </div>
     </div>
 </div>
 
@@ -1937,7 +1923,13 @@ function launchCampaignNode(node, campaignId, nodeId) {
     sessionStorage.setItem('ruleControlComponent', '0');
     sessionStorage.setItem('campaignState',        JSON.stringify({ campaignId, nodeId }));
     if (typeof router !== 'undefined') {
-        router.navigate('game');
+        if (router.current === 'game') {
+            // Already in game view — router ignores same-route navigate, so reinit directly
+            if (typeof window.teardownGameUI === 'function') window.teardownGameUI();
+            if (typeof window.initGameUI    === 'function') window.initGameUI();
+        } else {
+            router.navigate('game');
+        }
     } else {
         console.error('[Campaign] router no disponible');
     }
@@ -1950,8 +1942,6 @@ function launchCampaign(campaignId) {
 }
 
 window.launchCampaign = launchCampaign;
-
-document.getElementById('btn-campaign-prueba').addEventListener('click', () => launchCampaign('prueba'));
 
 window.addEventListener('resize', applyHomeScale);
 
@@ -2381,6 +2371,20 @@ function _triggerStatsScramble() {
       <button class="st-btn-close" onclick="hideResetConfirm()">Cancelar</button>
     </div>
   </div>
+</div>
+
+<!-- CAMPAIGN NARRATIVE MODAL — outside all views so position:fixed works from any screen -->
+<div id="campaign-modal" class="effect-overlay hidden" style="z-index:5000">
+    <div class="effect-panel" style="max-width:560px;gap:20px">
+        <div class="effect-header" style="flex-direction:column;align-items:flex-start;gap:6px">
+            <div class="effect-title" id="cmp-chapter" style="font-size:10px;letter-spacing:3px;color:var(--ui-dim)">CAMPAÑA — NODO 01</div>
+            <div class="effect-subtitle" id="cmp-title" style="font-size:15px;color:var(--ui-cyan)"></div>
+        </div>
+        <div id="cmp-body" style="font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.9;color:#94a3b8;white-space:pre-wrap;flex:1;overflow-y:auto"></div>
+        <div class="effect-actions">
+            <button class="ui-btn" id="btn-cmp-start">INICIAR SECUENCIA</button>
+        </div>
+    </div>
 </div>
 </body>
 </html>

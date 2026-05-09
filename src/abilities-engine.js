@@ -2600,7 +2600,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
           break;
         }
         // Primera descarta es obligatoria; el loop continúa con _discardForDrawLoop
-        gameState.effectQueue.unshift({ effect: { action: '_discardForDrawLoop', discardedSoFar: 1 }, targetPlayer });
+        gameState.effectQueue.unshift({ effect: { action: '_discardForDrawLoop', discardedSoFar: 1, cardName: gameState.currentTriggerCard }, targetPlayer });
         startEffect('discard', 'player', 1);
       } else {
         const n = Math.max(1, Math.floor(gameState.ai.hand.length / 2));
@@ -2614,6 +2614,7 @@ function resolveAbilityAction(actionDef, targetPlayer) {
     case '_discardForDrawLoop': {
       // Continúa el loop de descarte de Fuego 4
       const n = actionDef.discardedSoFar || 0;
+      const loopCardName = actionDef.cardName || triggerCardName || '';
       const handSize = gameState.player.hand.length;
       if (handSize === 0 || targetPlayer !== 'player') {
         draw(targetPlayer, n + 1);
@@ -2622,14 +2623,14 @@ function resolveAbilityAction(actionDef, targetPlayer) {
       }
       _confirmDialog('_discardForDrawLoop',
         () => {
-          gameState.effectQueue.unshift({ effect: { action: '_discardForDrawLoop', discardedSoFar: n + 1 }, targetPlayer });
+          gameState.effectQueue.unshift({ effect: { action: '_discardForDrawLoop', discardedSoFar: n + 1, cardName: loopCardName }, targetPlayer });
           startEffect('discard', 'player', 1);
         },
         () => {
           draw('player', n + 1);
           processAbilityEffect();
         },
-        { name: triggerCardName || '', n: n + 1 }
+        { name: loopCardName, n: n + 1 }
       );
       break;
     }
