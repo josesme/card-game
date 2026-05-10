@@ -3853,14 +3853,27 @@ function showGameOver(playerWon) {
     if (!screen) return;
     saveMatchRecord(playerWon);
     document.dispatchEvent(new CustomEvent('compile:gameOver', { detail: { playerWon } }));
+
+    // Campaign visual override: episodes 1-6 always defeat style, episode 7 always victory style
+    let visualWon = playerWon;
+    try {
+        const cst = JSON.parse(sessionStorage.getItem('campaignState') || 'null');
+        if (cst) {
+            const campaign = window._CAMPAIGNS && window._CAMPAIGNS[cst.campaignId];
+            const nodeIds  = campaign ? Object.keys(campaign.nodes) : [];
+            const isLast   = nodeIds.length > 0 && nodeIds[nodeIds.length - 1] === cst.nodeId;
+            visualWon = isLast;
+        }
+    } catch (e) {}
+
     if (typeof AudioManager !== 'undefined') {
         AudioManager.stopBGM?.();
-        AudioManager.playSound(playerWon ? 'victory' : 'defeat');
+        AudioManager.playSound(visualWon ? 'victory' : 'defeat');
     }
 
-    const accentColor = playerWon ? '#FFD93D' : '#722E9A';
-    const titleFirst  = playerWon ? 'Compilación completa' : 'Proceso terminado';
-    const titleFinal  = playerWon ? 'La realidad ha sido reescrita' : 'Proceso terminado';
+    const accentColor = visualWon ? '#FFD93D' : '#722E9A';
+    const titleFirst  = visualWon ? 'Compilación completa' : 'Proceso completado';
+    const titleFinal  = visualWon ? 'La realidad ha sido reescrita' : 'Proceso completado';
 
     const vsTerminal = document.getElementById('vs-terminal');
     const vsCards    = document.getElementById('vs-cards');
