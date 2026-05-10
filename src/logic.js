@@ -4096,10 +4096,19 @@ function showGameOver(playerWon) {
         }, 300);
     }, T_FLASH);
 
-    // ── Phase 6: divider + buttons ────────────────────────────────────────────
+    // ── Phase 6: divider + buttons + narrative ────────────────────────────────
     const T_DIVIDER = T_FLASH + 300 + 1300 + (titleFirst !== titleFinal ? 2000 + 1500 : 0) + 500;
     delay(() => { if (vsDivider) vsDivider.style.width = '240px'; }, T_DIVIDER);
     delay(() => { if (vsActions) vsActions.style.opacity = '1'; }, T_DIVIDER + 700);
+    delay(() => {
+        const vsNarrative = document.getElementById('vs-narrative');
+        if (vsNarrative && vsNarrative.textContent) {
+            vsNarrative.style.opacity = '0';
+            vsNarrative.style.display = 'block';
+            vsNarrative.style.transition = 'opacity 1.2s ease';
+            requestAnimationFrame(() => { vsNarrative.style.opacity = '1'; });
+        }
+    }, T_DIVIDER + 1200);
 
     // ── Phase 7: float sincronizado al aparecer el título final ───────────────
     const T_FLOAT = T_FLASH + 3700;
