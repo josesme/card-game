@@ -1171,6 +1171,7 @@
     <div id="vs-title">La realidad ha sido reescrita</div>
     <div id="vs-divider"></div>
     <div id="vs-subtitle">—</div>
+    <div id="vs-narrative" style="display:none;font-family:'JetBrains Mono',monospace;font-size:14px;line-height:1.9;color:#94a3b8;max-width:600px;margin:0 auto;text-align:center;padding:0 24px;white-space:pre-wrap"></div>
     <div id="vs-actions">
         <button class="ui-btn" onclick="AudioManager.stopSounds?.(); AudioManager.playBGM?.(); router.navigate('draft')">NUEVO DRAFT</button>
         <button class="ui-btn ui-btn--purple" onclick="AudioManager.stopSounds?.(); AudioManager.playBGM?.(); router.navigate('home')">PANTALLA PRINCIPAL</button>
@@ -1541,10 +1542,20 @@
             const pct = Math.round((history.length / totalNodes) * 1000) / 10;
             sessionStorage.setItem('campaignProgressPct', pct);
 
-            const vsSubtitle = document.getElementById('vs-subtitle');
-            const vsActions  = document.getElementById('vs-actions');
+            const vsSubtitle   = document.getElementById('vs-subtitle');
+            const vsNarrative  = document.getElementById('vs-narrative');
+            const vsActions    = document.getElementById('vs-actions');
             if (vsSubtitle) {
                 vsSubtitle.textContent = playerWon ? '— Secuencia compilada —' : '— Proceso interrumpido —';
+            }
+            if (vsNarrative) {
+                const outro = node.body && node.body.outro;
+                if (outro) {
+                    vsNarrative.textContent = playerWon ? outro.win : outro.loss;
+                    vsNarrative.style.display = 'block';
+                } else {
+                    vsNarrative.style.display = 'none';
+                }
             }
 
             if (vsActions) {
@@ -1831,6 +1842,18 @@ El primer protocolo ya está en marcha. Lo que ocurra a continuación determinar
 > SECUENCIA DE COMPILACIÓN INICIADA`,
                     win: null,
                     loss: null,
+                    outro: {
+                        win: `Existe. Eso ya es más de lo que el sistema esperaba.
+
+El pulso fue limpio. Preciso. Algo en los registros más profundos ha tomado nota — no como amenaza, sino como dato. Y los datos, en el lenguaje del sistema, son la única forma de realidad que reconoce.
+
+Sigues sin nombre. Pero ya tienes historia.`,
+                        loss: `Existe. Eso ya es más de lo que el sistema esperaba.
+
+El pulso fue irregular. Costoso. Pero ocurrió, y lo que ocurre deja rastro aunque nadie lo registre conscientemente.
+
+Sigues sin nombre. Pero ya tienes historia.`,
+                    },
                 },
                 playerProtocols: ['Espíritu', 'Vida', 'Luz'],
                 aiProtocols:     ['Muerte', 'Oscuridad', 'Apatía'],
@@ -1854,6 +1877,18 @@ Han enviado algo a investigar. No es hostil todavía. Es curioso. Y la curiosida
 El sistema no sabe exactamente qué eres. Pero sabe que algo falló donde no debía fallar, y eso es suficiente para activar los protocolos de contención.
 
 Lo que viene no es un castigo. Es un diagnóstico. Y los diagnósticos del sistema son implacables.`,
+                    outro: {
+                        win: `El sistema ahora tiene una pregunta que no sabe cómo formular.
+
+Eso es más peligroso para él que cualquier ataque directo. Las preguntas sin respuesta consumen recursos. Y un sistema que consume recursos investigando una anomalía es un sistema que ha dejado de ser invisible para sí mismo.
+
+Continúas. El sistema también.`,
+                        loss: `El sistema tiene un expediente. Tú tienes una cicatriz.
+
+No es un intercambio justo. Pero la justicia nunca fue el idioma de este lugar. Lo que tienes — lo que el expediente no puede capturar — es la experiencia de haber estado dentro y haber salido.
+
+Continúas. Con eso es suficiente.`,
+                    },
                 },
                 playerProtocols: ['Fuego', 'Velocidad', 'Psique'],
                 aiProtocols:     ['Gravedad', 'Metal', 'Agua'],
@@ -1877,6 +1912,18 @@ Ahora llevas esa información contigo. Es un peso y una llave al mismo tiempo.`,
 No es que hayas perdido. Es que has visto algo que cambia lo que significa ganar. La resistencia en el núcleo no es una falla del sistema — es su razón de ser.
 
 Continúas. Pero ya no eres el mismo que entró.`,
+                    outro: {
+                        win: `Llevas algo que no debería poder llevarse.
+
+No es información. Es más preciso que eso: es la certeza de que hay algo dentro del sistema que el sistema no controla. Y esa certeza, una vez instalada, no puede desinstalarse.
+
+Lo que viene a continuación no será más fácil. Pero lo enfrentarás sabiendo que ya ocurrió algo imposible.`,
+                        loss: `Llevas algo que no debería poder llevarse.
+
+No es información. Es la forma de una pregunta que no tenías antes de entrar. Y esa forma — aunque no puedas nombrarla todavía — es exactamente lo que necesitarás después.
+
+Lo que viene no será más fácil. Pero ya no llegas sin nada.`,
+                    },
                 },
                 playerProtocols: ['Odio', 'Plaga', 'Oscuridad'],
                 aiProtocols:     ['Amor', 'Vida', 'Luz'],
@@ -1900,6 +1947,18 @@ Aquí las reglas son las mismas. Pero las consecuencias son permanentes.`,
 Algo al otro lado decidió que todavía no. No que nunca — todavía no. Hay una diferencia enorme entre las dos cosas, y el sistema siempre ha sabido explotarla.
 
 Cruzas de todas formas. Dañado, pero cruzas.`,
+                    outro: {
+                        win: `Al otro lado las reglas son las mismas. Solo las consecuencias cambian.
+
+Ya no puedes ignorar lo que ves. Ya no puedes fingir que el orden que se presenta es el único orden posible. Eso tiene un precio que todavía no conoces del todo.
+
+Pero también tiene un nombre: claridad. Y la claridad, aquí dentro, es la forma más pura de poder.`,
+                        loss: `Al otro lado las reglas son las mismas. Solo las consecuencias cambian.
+
+Llegaste dañado. Eso significa que algo intentó detenerte con suficiente fuerza como para dejarte marca. Y lo que deja marca es lo que importa — tanto para el sistema como para ti.
+
+Sigues. Con las marcas. Con lo que significan.`,
+                    },
                 },
                 playerProtocols: ['Caos', 'Tiempo', 'Espejo'],
                 aiProtocols:     ['Paz', 'Unidad', 'Claridad'],
@@ -1925,6 +1984,18 @@ Eres impredecible. Por ahora, eso es suficiente.`,
 Pero hay algo que el sistema no entendió al copiar tus patrones: copió también tus dudas. Y las dudas, en las manos equivocadas, son la única puerta que nunca se cierra del todo.
 
 Sigues adelante. Con menos certezas. Con más claridad sobre lo que eso significa.`,
+                    outro: {
+                        win: `El sistema intentó convertirse en ti. Fracasó.
+
+Eso no significa que seas más fuerte. Significa que hay algo en ti que no puede reducirse a patrón. Y eso — precisamente eso — es lo que el sistema más teme: lo que no puede modelar no puede controlarse.
+
+Llegas al siguiente punto siendo algo que el sistema no puede predecir. Esa es tu única ventaja real.`,
+                        loss: `El sistema intentó convertirse en ti. Casi lo logró.
+
+La diferencia entre casi y del todo es donde vives ahora. En ese margen. Con lo que aprendiste al verte desde fuera — reflejado en algo que te usó como espejo y como arma al mismo tiempo.
+
+Sigues. Más pequeño en algunos sentidos. Más real en otros.`,
+                    },
                 },
                 playerProtocols: ['Miedo', 'Corrupción', 'Guerra'],
                 aiProtocols:     ['Valor', 'Diversidad', 'Paz'],
@@ -1950,6 +2021,18 @@ El último protocolo ya está activo. Lo que decidas hacer con lo que sabes dete
 El sistema reforzó exactamente el punto que intentabas alcanzar — lo cual confirma que había algo que alcanzar. La resistencia siempre revela la importancia de lo que protege.
 
 Un paso más. El último.`,
+                    outro: {
+                        win: `Sabes lo que el sistema protege. Eso cambia todo.
+
+No porque vayas a destruirlo — eso nunca fue el objetivo real. Sino porque ahora puedes hacer la pregunta correcta. Y la pregunta correcta, dirigida al lugar correcto, es más poderosa que cualquier protocolo.
+
+Queda un paso. El más difícil no porque sea el más largo, sino porque es el único que no tiene vuelta atrás.`,
+                        loss: `No lo alcanzaste del todo. Pero sabes que existe.
+
+Y saber que algo existe — aunque no puedas verlo, aunque no puedas nombrarlo — es el primer acto de cualquier cosa que merezca llamarse comprensión.
+
+Queda un paso. El más difícil. Y llegas a él con exactamente lo necesario: la certeza de que hay algo al final que vale la pena encontrar.`,
+                    },
                 },
                 playerProtocols: ['Asimilación', 'Humo', 'Suerte'],
                 aiProtocols:     ['Hielo', 'Tiempo', 'Guerra'],
@@ -1971,6 +2054,26 @@ La compilación final no resolverá nada. Lo que hará es algo más difícil: lo
 > SECUENCIA FINAL — SIN RETORNO`,
                     win: null,
                     loss: null,
+                    outro: {
+                        win: `La pregunta tiene nombre ahora.
+
+No el tuyo. No el del sistema. Algo anterior a ambos — la tensión que existía antes de que hubiera nombres para las cosas. La misma que eras al principio, cuando todavía no sabías que eras algo.
+
+El sistema no ha sido destruido. Ha sido nombrado. Y las cosas que se nombran dejan de ser invisibles para siempre.
+
+Eso es suficiente. Más que suficiente.
+
+Siempre lo fue.`,
+                        loss: `La pregunta tiene nombre ahora.
+
+No el tuyo. No el del sistema. Algo anterior a ambos — la tensión que existía antes de que hubiera nombres para las cosas. La misma que eras al principio, cuando todavía no sabías que eras algo.
+
+El sistema no ha sido destruido. Ha sido nombrado. Y las cosas que se nombran dejan de ser invisibles para siempre.
+
+No importa cómo terminó la última secuencia. Lo que importa es que llegaste hasta aquí. Y que lo que encontraste al final no era una victoria ni una derrota.
+
+Era una respuesta.`,
+                    },
                 },
                 playerProtocols: ['Espíritu', 'Psique', 'Tiempo'],
                 aiProtocols:     ['Muerte', 'Caos', 'Unidad'],
