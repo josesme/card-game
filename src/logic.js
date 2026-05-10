@@ -3855,16 +3855,13 @@ function showGameOver(playerWon) {
     document.dispatchEvent(new CustomEvent('compile:gameOver', { detail: { playerWon } }));
 
     // Campaign visual override: episodes 1-6 always defeat style, episode 7 always victory style
+    // campaignVisualWon is written by the compile:gameOver listener in app.html (runs synchronously above)
     let visualWon = playerWon;
-    try {
-        const cst = JSON.parse(sessionStorage.getItem('campaignState') || 'null');
-        if (cst) {
-            const campaign = window._CAMPAIGNS && window._CAMPAIGNS[cst.campaignId];
-            const nodeIds  = campaign ? Object.keys(campaign.nodes) : [];
-            const isLast   = nodeIds.length > 0 && nodeIds[nodeIds.length - 1] === cst.nodeId;
-            visualWon = isLast;
-        }
-    } catch (e) {}
+    const _cvw = sessionStorage.getItem('campaignVisualWon');
+    if (_cvw !== null) {
+        visualWon = _cvw === 'true';
+        sessionStorage.removeItem('campaignVisualWon');
+    }
 
     if (typeof AudioManager !== 'undefined') {
         AudioManager.stopBGM?.();

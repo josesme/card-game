@@ -1530,6 +1530,11 @@
             const nextId    = node.next || null;
             const isEnd     = !node.next;
 
+            // Signal visual override to showGameOver (reads this after dispatchEvent returns)
+            const nodeIds = Object.keys(campaign.nodes);
+            const isLast  = nodeIds[nodeIds.length - 1] === nodeId;
+            sessionStorage.setItem('campaignVisualWon', isLast ? 'true' : 'false');
+
             // Save progress to localStorage
             const prev    = getCampaignProgress(campaignId);
             const history = (prev && prev.history) ? [...prev.history, { node: nodeId, won: playerWon }]
