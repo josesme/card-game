@@ -267,21 +267,7 @@
         #btn-daily-play {
             padding: 0 20px;
             height: 36px;
-            cursor: pointer;
-            font-weight: 700;
-            font-size: 11px;
-            font-family: 'JetBrains Mono', monospace;
-            letter-spacing: 2px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background: #030712;
-            color: var(--ui-cyan);
-            border: 1px solid rgba(0,245,255,0.4);
-            box-shadow: 0 0 12px rgba(0,245,255,0.33), 0 0 2px rgba(0,245,255,0.55);
-            transition: all 0.25s;
         }
-        #btn-daily-play:hover { background: var(--ui-cyan); color: #030712; border-color: var(--ui-cyan); box-shadow: none; }
         #btn-play:disabled, #btn-campaign-c01:disabled {
             background: #060e1c;
             color: #334155;
@@ -918,7 +904,7 @@
         <div style="display:flex;gap:12px;justify-content:center;align-items:center;">
             <button id="btn-campaign-c01" disabled data-tooltip="Solo disponible en nivel Singularidad">▶ CAMPAÑA</button>
             <button id="btn-play" disabled data-tooltip="Selecciona un grupo de protocolos">IR AL DRAFT</button>
-            <button id="btn-daily-play" class="ui-btn ui-btn--purple">RETO DIARIO</button>
+            <button id="btn-daily-play" class="ui-btn ui-btn--danger">RETO DIARIO</button>
         </div>
         <div id="daily-result-banner" style="display:none;font-family:'JetBrains Mono',monospace;font-size:11px;text-align:center;margin-top:6px;letter-spacing:0.05em;"></div>
 
