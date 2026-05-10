@@ -322,7 +322,7 @@
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.2s;
-            text-transform: lowercase;
+            text-transform: none !important;
         }
         #btn-daily-play[data-tooltip]:disabled:hover::after {
             opacity: 1;
@@ -1806,7 +1806,7 @@ function updateDailyUI() {
     if (result) {
         const icon = result.win ? '✓' : '✗';
         btnD.disabled = true;
-        btnD.setAttribute('data-tooltip', `${icon} ya jugaste el reto de hoy — ${result.win ? 'victoria' : 'derrota'}`);
+        btnD.setAttribute('data-tooltip', `${icon} Ya jugaste el reto de hoy — ${result.win ? 'victoria' : 'derrota'}`);
         btnD.style.setProperty('--tooltip-color',  result.win ? '#FFD93D' : '#a855f7');
         btnD.style.setProperty('--tooltip-border', result.win ? 'rgba(255,217,61,0.4)' : 'rgba(168,85,247,0.4)');
     } else {
