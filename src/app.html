@@ -904,9 +904,6 @@
             <button class="home-protocol-btn" id="home-proto-all" style="--c: gradient;">
                 <span class="protocol-name" data-text="MAIN 1 + 2">MAIN 1 + 2</span>
             </button>
-            <button class="home-protocol-btn home-proto-daily" id="home-proto-daily" style="--c: 0, 245, 255;">
-                <span class="protocol-name" data-text="RETO DIARIO">RETO DIARIO</span>
-            </button>
         </div>
 
         <p class="rules-label" id="rules-label" style="margin-top:0">Reglas opcionales</p>
@@ -921,7 +918,7 @@
         <div style="display:flex;gap:12px;justify-content:center;align-items:center;">
             <button id="btn-campaign-c01" disabled data-tooltip="Solo disponible en nivel Singularidad">▶ CAMPAÑA</button>
             <button id="btn-play" disabled data-tooltip="Selecciona un grupo de protocolos">IR AL DRAFT</button>
-            <button id="btn-daily-play" style="display:none;">RETO DIARIO</button>
+            <button id="btn-daily-play" class="ui-btn ui-btn--purple" style="display:none;">RETO DIARIO</button>
         </div>
         <div id="daily-result-banner" style="display:none;font-family:'JetBrains Mono',monospace;font-size:11px;text-align:center;margin-top:6px;letter-spacing:0.05em;"></div>
 
@@ -1685,21 +1682,19 @@ function renderDiff() {
 }
 
 function updateProtocolSelection() {
-    ['home-proto-1', 'home-proto-2', 'home-proto-all', 'home-proto-daily'].forEach(id => {
+    ['home-proto-1', 'home-proto-2', 'home-proto-all'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.remove('active');
     });
-    const activeId = selectedProtocols === 1       ? 'home-proto-1'
-                   : selectedProtocols === 2       ? 'home-proto-2'
-                   : selectedProtocols === 'all'   ? 'home-proto-all'
-                   : selectedProtocols === 'daily' ? 'home-proto-daily' : null;
+    const activeId = selectedProtocols === 1     ? 'home-proto-1'
+                   : selectedProtocols === 2     ? 'home-proto-2'
+                   : selectedProtocols === 'all' ? 'home-proto-all' : null;
     if (activeId) document.getElementById(activeId).classList.add('active');
 
     const btnPlay = document.getElementById('btn-play');
-    const isDaily = selectedProtocols === 'daily';
     if (btnPlay) {
-        btnPlay.disabled = selectedProtocols === null || isDaily;
-        btnPlay.classList.toggle('ui-btn--pulse', selectedProtocols !== null && !isDaily);
+        btnPlay.disabled = selectedProtocols === null;
+        btnPlay.classList.toggle('ui-btn--pulse', selectedProtocols !== null);
     }
     if (typeof updateDailyUI === 'function') updateDailyUI();
 }
@@ -1709,7 +1704,7 @@ function applyHomeScramble() {
     window.scrTxt('diff-label-1', 'Nivel de compilación',   { duration: 1.0, chars: 'upperCase' });
     window.scrTxt('diff-label-2', 'Protocolos disponibles', { duration: 1.0, chars: 'upperCase' });
     window.scrTxt('rules-label',  'Reglas opcionales',      { duration: 1.0, chars: 'upperCase' });
-    document.querySelectorAll('#view-home .protocol-name, #view-home .home-proto-daily .protocol-name').forEach(el => {
+    document.querySelectorAll('#view-home .protocol-name').forEach(el => {
         const txt = el.getAttribute('data-text') || el.textContent.trim();
         if (txt) window.scrTxt(el, txt, { duration: 1.0, chars: 'upperCase' });
     });
@@ -1733,13 +1728,6 @@ function applyHomeScale() {
 document.getElementById('home-proto-1').onclick   = () => { selectedProtocols = 1;     updateProtocolSelection(); };
 document.getElementById('home-proto-2').onclick   = () => { selectedProtocols = 2;     updateProtocolSelection(); };
 document.getElementById('home-proto-all').onclick = () => { selectedProtocols = 'all'; updateProtocolSelection(); };
-document.getElementById('home-proto-daily').onclick = () => {
-    selectedProtocols = 'daily';
-    selectedDifficulty = 5;
-    renderDiff();
-    updateProtocolSelection();
-};
-
 document.getElementById('btn-play').addEventListener('click', () => {
     const diff = DIFFICULTY_LEVELS.find(l => l.id === selectedDifficulty);
     sessionStorage.setItem('aiDifficultyDepth',   diff.depth);
@@ -1800,21 +1788,12 @@ function saveDailyResult(result) {
 }
 
 function updateDailyUI() {
-    const result  = getDailyResult();
-    const banner  = document.getElementById('daily-result-banner');
-    const btnD    = document.getElementById('btn-daily-play');
-    const btnPlay = document.getElementById('btn-play');
+    const result = getDailyResult();
+    const banner = document.getElementById('daily-result-banner');
+    const btnD   = document.getElementById('btn-daily-play');
 
-    if (selectedProtocols !== 'daily') {
-        if (btnD)   btnD.style.display = 'none';
-        if (banner) banner.style.display = 'none';
-        btnPlay.style.display = '';
-        return;
-    }
-
-    btnPlay.style.display = 'none';
     if (result) {
-        if (btnD)   btnD.style.display = 'none';
+        if (btnD)   btnD.disabled = true;
         if (banner) {
             const icon = result.win ? '✓' : '✗';
             banner.textContent = `${icon} Ya jugaste el reto de hoy — ${result.win ? 'Victoria' : 'Derrota'}`;
@@ -1822,14 +1801,14 @@ function updateDailyUI() {
             banner.style.display = 'block';
         }
     } else {
-        if (btnD)   { btnD.style.display = ''; btnD.disabled = false; }
+        if (btnD)   { btnD.disabled = false; }
         if (banner) banner.style.display = 'none';
     }
 }
 
 function launchDailyChallenge() {
     const { player, ai } = _pickDailyProtocols();
-    const diff = DIFFICULTY_LEVELS.find(l => l.id === selectedDifficulty);
+    const diff = DIFFICULTY_LEVELS.find(l => l.id === 5) || DIFFICULTY_LEVELS[DIFFICULTY_LEVELS.length - 1];
     sessionStorage.setItem('playerProtocols',      JSON.stringify(player));
     sessionStorage.setItem('aiProtocols',          JSON.stringify(ai));
     sessionStorage.setItem('aiDifficultyDepth',    diff.depth);
