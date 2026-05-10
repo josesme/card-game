@@ -282,12 +282,38 @@
             transition: all 0.25s;
         }
         #btn-daily-play:hover { background: var(--ui-cyan); color: #030712; border-color: var(--ui-cyan); box-shadow: none; }
-        #btn-play:disabled {
+        #btn-play:disabled, #btn-campaign-c01:disabled {
             background: #060e1c;
             color: #334155;
             border-color: #1e3a5f;
             box-shadow: none;
             cursor: not-allowed;
+        }
+        #btn-play[data-tooltip]:disabled::after,
+        #btn-campaign-c01[data-tooltip]:disabled::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0f1a2e;
+            color: #94a3b8;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 1px;
+            white-space: nowrap;
+            padding: 5px 10px;
+            border: 1px solid #1e3a5f;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        #btn-play[data-tooltip]:disabled:hover::after,
+        #btn-campaign-c01[data-tooltip]:disabled:hover::after {
+            opacity: 1;
+        }
+        #btn-play[data-tooltip]:disabled, #btn-campaign-c01[data-tooltip]:disabled {
+            position: relative;
         }
 
         .home-version { color: var(--ui-text-muted); font-size: 8px; letter-spacing: 1px; margin-top: 16px; }
@@ -893,13 +919,13 @@
         </div>
 
         <div style="display: flex; gap: 12px; justify-content: center; align-items: center;">
-            <button id="btn-play" disabled>IR AL DRAFT</button>
+            <button id="btn-play" disabled data-tooltip="Selecciona un grupo de protocolos">IR AL DRAFT</button>
             <button id="btn-daily-play" style="display:none;">RETO DIARIO</button>
         </div>
         <div id="daily-result-banner" style="display:none;font-family:'JetBrains Mono',monospace;font-size:11px;text-align:center;margin-top:6px;letter-spacing:0.05em;"></div>
 
         <div style="display:flex;gap:10px;justify-content:center;margin-top:12px">
-            <button id="btn-campaign-c01" style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:2px;padding:0 16px;height:30px;background:#060e1c;color:#475569;border:1px solid #1e3a5f;border-radius:4px;cursor:pointer;transition:all 0.2s" onmouseover="this.style.color='var(--ui-cyan)';this.style.borderColor='rgba(0,245,255,0.4)'" onmouseout="this.style.color='#475569';this.style.borderColor='#1e3a5f'">▶ CAMPAÑA</button>
+            <button id="btn-campaign-c01" disabled data-tooltip="Solo disponible en nivel Singularidad" style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:2px;padding:0 16px;height:30px;background:#060e1c;color:#475569;border:1px solid #1e3a5f;border-radius:4px;cursor:pointer;transition:all 0.2s">▶ CAMPAÑA</button>
         </div>
 
         <div class="home-version" id="home-version">v2.4.0 — 2026</div>
@@ -1650,7 +1676,7 @@ function renderDiff() {
         if (l.id === 3) btn.id = 'diff-nucleo';
         btn.style.setProperty('--c', l.color);
         btn.innerHTML = `<span class="diff-icon">${l.icon}</span><span class="diff-name" data-text="${l.name}">${l.name}</span>`;
-        btn.onclick = () => { selectedDifficulty = l.id; renderDiff(); applyHomeScramble(); };
+        btn.onclick = () => { selectedDifficulty = l.id; renderDiff(); applyHomeScramble(); updateCampaignButton(); };
         grid.appendChild(btn);
     });
     const cur  = DIFFICULTY_LEVELS.find(l => l.id === selectedDifficulty);
@@ -2178,15 +2204,20 @@ function launchCampaign(campaignId, resume) {
 function updateCampaignButton() {
     const btn = document.getElementById('btn-campaign-c01');
     if (!btn) return;
+    const isSingularity = selectedDifficulty === 5;
+    btn.disabled = !isSingularity;
+    btn.classList.toggle('ui-btn--pulse', isSingularity);
+
+    if (!isSingularity) return;
+
     const progress = getCampaignProgress('c01');
     const campaign = CAMPAIGNS['c01'];
     if (progress && progress.nodeId && campaign && campaign.nodes[progress.nodeId]) {
-        const nodeIds  = Object.keys(campaign.nodes);
-        const idx      = nodeIds.indexOf(progress.nodeId);
-        const total    = nodeIds.length;
-        btn.title      = `Episodio ${idx + 1} / ${total}`;
-        btn.innerHTML  = `▶ CAMPAÑA <span style="font-size:9px;opacity:0.6">${idx + 1}/${total}</span>`;
-        btn.onclick    = () => { showCampaignResumeModal('c01', idx + 1, total); };
+        const nodeIds = Object.keys(campaign.nodes);
+        const idx     = nodeIds.indexOf(progress.nodeId);
+        const total   = nodeIds.length;
+        btn.innerHTML = `▶ CAMPAÑA <span style="font-size:9px;opacity:0.6">${idx + 1}/${total}</span>`;
+        btn.onclick   = () => { showCampaignResumeModal('c01', idx + 1, total); };
     } else {
         btn.innerHTML = '▶ CAMPAÑA';
         btn.onclick   = () => launchCampaign('c01', false);
