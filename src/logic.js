@@ -3119,7 +3119,7 @@ function _ensureLLMWorker() {
         _llmWorker.postMessage({
             type:    'init',
             backend: 'deepseek',
-            model:   sessionStorage.getItem('llmModel') || 'deepseek-reasoner',
+            model:   sessionStorage.getItem('llmModel') || 'deepseek-chat',
             apiKey:  deepseekKey,
         });
     } else {
