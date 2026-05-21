@@ -148,8 +148,9 @@ CONOCIMIENTO ESTRATÉGICO:
 ${STRATEGY_CONTEXT}
 
 ---
-INSTRUCCIÓN: Responde ÚNICAMENTE con el número de la jugada elegida (0, 1, 2...). Nada más. Sin explicación.
-Número:`.trim();
+INSTRUCCIÓN: Razona brevemente la mejor jugada y termina SIEMPRE con la línea exacta:
+Jugada: N
+(donde N es el número de la jugada elegida)`.trim();
 }
 
 if (typeof module !== 'undefined' && module.exports) {

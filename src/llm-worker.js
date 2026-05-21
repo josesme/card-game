@@ -137,9 +137,20 @@ async function _consultarDeepSeek(prompt, nivel) {
 // ─── Parseo de respuesta ──────────────────────────────────────────────────────
 
 function _parsearRespuesta(respuesta, jugadas) {
-    const match = respuesta.match(/\d+/);
-    if (!match) return null;
-    const idx = parseInt(match[0], 10);
-    if (idx >= 0 && idx < jugadas.length) return jugadas[idx];
+    // Buscar patrón explícito de conclusión primero (jugada N, move N, elijo N, etc.)
+    const conclusionMatch = respuesta.match(/(?:jugada|move|elijo|choose|opción|option|número|number)[^\d]*(\d+)/i);
+    if (conclusionMatch) {
+        const idx = parseInt(conclusionMatch[1], 10);
+        if (idx >= 0 && idx < jugadas.length) return jugadas[idx];
+    }
+
+    // Si no hay patrón explícito, tomar el último número del texto
+    // (el reasoning termina con la conclusión — el último número es la jugada)
+    const allMatches = [...respuesta.matchAll(/\d+/g)];
+    for (let i = allMatches.length - 1; i >= 0; i--) {
+        const idx = parseInt(allMatches[i][0], 10);
+        if (idx >= 0 && idx < jugadas.length) return jugadas[idx];
+    }
+
     return null;
 }

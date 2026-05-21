@@ -111,8 +111,7 @@ describe('construirPrompt', () => {
         const e = makeEstado();
         const jugadas = [makeJugada('Velocidad 3', 3, 'izquierda')];
         const prompt = construirPrompt(e, jugadas, calculateScore);
-        expect(prompt).toContain('número');
-        expect(prompt).toContain('Número:');
+        expect(prompt).toContain('Jugada:');
     });
 
     test('incluye reglas base (compilar, valor bocabajo)', () => {
@@ -192,10 +191,10 @@ describe('construirPrompt', () => {
         expect(prompt).toContain('Fuego 2');
     });
 
-    test('prompt termina con "Número:" para que el LLM complete', () => {
+    test('prompt termina con "Jugada: N" para que el LLM complete', () => {
         const e = makeEstado();
         const jugadas = [makeJugada('A', 1, 'izquierda')];
         const prompt = construirPrompt(e, jugadas, calculateScore);
-        expect(prompt.endsWith('Número:')).toBe(true);
+        expect(prompt).toContain('Jugada: N');
     });
 });
