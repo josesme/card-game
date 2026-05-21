@@ -1750,6 +1750,30 @@ document.getElementById('btn-play').addEventListener('click', () => {
     router.navigate('draft');
 });
 
+// ── LLM API config (solo localhost) ──────────────────────────────────────────
+// Lee .env.local y mete la clave en sessionStorage para que logic.js la use al
+// inicializar el worker. Solo se ejecuta en localhost; en producción no hay fetch.
+(async function _loadEnvLocal() {
+    const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    if (!isLocal) return;
+    try {
+        const res = await fetch('../.env.local');
+        if (!res.ok) return;
+        const text = await res.text();
+        text.split('\n').forEach(line => {
+            line = line.trim();
+            if (!line || line.startsWith('#')) return;
+            const [key, ...rest] = line.split('=');
+            const value = rest.join('=').trim();
+            if (key === 'DEEPSEEK_API_KEY' && value) sessionStorage.setItem('llmApiKey', value);
+            if (key === 'DEEPSEEK_MODEL'   && value) sessionStorage.setItem('llmModel',  value);
+        });
+        if (sessionStorage.getItem('llmApiKey')) {
+            console.log('🔑 DeepSeek API key cargada desde .env.local');
+        }
+    } catch { /* sin .env.local → Ollama */ }
+})();
+
 // ── Reto diario ──────────────────────────────────────────────────────────────
 const DAILY_PROTOCOLS_MAIN1 = [
     'Espíritu','Muerte','Fuego','Gravedad','Vida','Luz','Metal',

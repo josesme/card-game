@@ -3112,7 +3112,26 @@ function _ensureLLMWorker() {
         console.warn('⚠️ LLM Worker error, deshabilitando LLM:', e.message);
         _llmDisabled = true;
     };
-    _llmWorker.postMessage({ type: 'init', ollamaUrl: 'http://localhost:11434', model: 'qwen3:8b' });
+
+    const deepseekKey = sessionStorage.getItem('llmApiKey');
+    if (deepseekKey) {
+        console.log('🧠 LLM: usando DeepSeek API');
+        _llmWorker.postMessage({
+            type:    'init',
+            backend: 'deepseek',
+            model:   sessionStorage.getItem('llmModel') || 'deepseek-reasoner',
+            apiKey:  deepseekKey,
+        });
+    } else {
+        console.log('🧠 LLM: usando Ollama local');
+        _llmWorker.postMessage({
+            type:      'init',
+            backend:   'ollama',
+            ollamaUrl: 'http://localhost:11434',
+            model:     'qwen3:8b',
+        });
+    }
+
     return _llmWorker;
 }
 
