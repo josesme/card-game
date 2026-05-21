@@ -115,7 +115,7 @@ async function _consultarDeepSeek(prompt, nivel) {
         body: JSON.stringify({
             model:       MODEL,
             messages:    [{ role: 'user', content: prompt }],
-            max_tokens:  512,
+            max_tokens:  1024,
             temperature: temperatura,
         }),
     });
@@ -141,15 +141,20 @@ function _parsearRespuesta(respuesta, jugadas) {
     const conclusionMatch = respuesta.match(/(?:jugada|move|elijo|choose|opción|option|número|number)[^\d]*(\d+)/i);
     if (conclusionMatch) {
         const idx = parseInt(conclusionMatch[1], 10);
-        if (idx >= 0 && idx < jugadas.length) return jugadas[idx];
+        if (idx >= 0 && idx < jugadas.length) {
+            console.log(`[LLM] parseo por conclusión explícita → jugada ${idx}`);
+            return jugadas[idx];
+        }
     }
 
-    // Si no hay patrón explícito, tomar el último número del texto
-    // (el reasoning termina con la conclusión — el último número es la jugada)
+    // Fallback: último número válido del texto
     const allMatches = [...respuesta.matchAll(/\d+/g)];
     for (let i = allMatches.length - 1; i >= 0; i--) {
         const idx = parseInt(allMatches[i][0], 10);
-        if (idx >= 0 && idx < jugadas.length) return jugadas[idx];
+        if (idx >= 0 && idx < jugadas.length) {
+            console.warn(`[LLM] parseo por fallback (último número válido) → jugada ${idx}`);
+            return jugadas[idx];
+        }
     }
 
     return null;
