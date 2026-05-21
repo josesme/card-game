@@ -29,6 +29,10 @@ backup*/
 .DS_Store
 Thumbs.db
 
+# Variables de entorno y claves locales
+.env.local
+.env*.local
+
 # Archivos locales personalizados
 personal/
 my-changes/
