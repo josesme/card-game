@@ -127,7 +127,11 @@ async function _consultarDeepSeek(prompt, nivel) {
 
     const data = await res.json();
     // deepseek-reasoner devuelve reasoning_content + content; usamos content
-    return (data.choices?.[0]?.message?.content || '').trim();
+    const msg = data.choices?.[0]?.message;
+    console.log('[DeepSeek] raw response:', JSON.stringify({ content: msg?.content, reasoning: msg?.reasoning_content?.slice(0, 200) }));
+    // Algunos modelos meten el número en reasoning_content cuando content queda vacío
+    const content = (msg?.content || msg?.reasoning_content || '').trim();
+    return content;
 }
 
 // ─── Parseo de respuesta ──────────────────────────────────────────────────────
