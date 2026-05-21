@@ -47,6 +47,14 @@ CARTAS DE ALTO IMPACTO:
 - Las cartas con efectos que eliminan múltiples cartas (ej: "elimina 1 carta de cada otra línea") son más valiosas si el rival tiene cartas en varias líneas. Esperar un turno puede doblar su impacto.
 - No gastes una carta de eliminación masiva cuando el rival solo tiene cartas en 1 línea, salvo que sea urgente.
 
+OBJETIVOS DE ELIMINACIÓN — REGLAS CRÍTICAS:
+- Los efectos de eliminación tienen restricciones exactas según el texto de la carta. Léelo siempre antes de asumir qué puede eliminar.
+- "Elimina 1 carta bocabajo" → SOLO puede eliminar cartas que estén boca abajo. Una carta bocarriba NO es objetivo válido aunque tenga valor bajo.
+- "Elimina 1 carta con Valor X" → solo cartas con ese valor exacto, independientemente de orientación.
+- "Elimina todas las cartas con Valor 1 o 2" → solo cartas bocarriba con esos valores (las bocabajo no tienen valor impreso accesible).
+- El hecho de jugar una carta bocarriba NO elimina nada por sí solo. La eliminación la hace el efecto h_accion al resolverse.
+- Antes de afirmar que una jugada "elimina carta X", verifica que la carta X cumple los requisitos del efecto.
+
 PROPIEDAD DE CARTAS EN CAMPO:
 - "TUS CARTAS" = las cartas que controlas tú (la IA). Los efectos que "eliminan carta rival" NO pueden apuntar a estas.
 - "CARTAS RIVAL" = las cartas del jugador humano. Estas SÍ son objetivo de eliminaciones, volteos y efectos hostiles.
