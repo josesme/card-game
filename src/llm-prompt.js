@@ -47,6 +47,12 @@ CARTAS DE ALTO IMPACTO:
 - Las cartas con efectos que eliminan múltiples cartas (ej: "elimina 1 carta de cada otra línea") son más valiosas si el rival tiene cartas en varias líneas. Esperar un turno puede doblar su impacto.
 - No gastes una carta de eliminación masiva cuando el rival solo tiene cartas en 1 línea, salvo que sea urgente.
 
+VOLTEAR vs ELIMINAR — SON EFECTOS DISTINTOS:
+- "Voltear" una carta cambia su orientación (bocarriba↔bocabajo). NO la elimina del campo. Sigue existiendo.
+- Voltear una carta bocarriba→bocabajo le hace perder su efecto y valor impreso (pasa a valer 2).
+- Voltear una carta bocabajo→bocarriba la activa (recupera valor y efectos).
+- "Eliminar" saca la carta del campo permanentemente. Son efectos distintos — nunca confundas uno con otro.
+
 OBJETIVOS DE ELIMINACIÓN — REGLAS CRÍTICAS:
 - Los efectos de eliminación tienen restricciones exactas según el texto de la carta. Léelo siempre antes de asumir qué puede eliminar.
 - "Elimina 1 carta bocabajo" → SOLO puede eliminar cartas que estén boca abajo. Una carta bocarriba NO es objetivo válido aunque tenga valor bajo.
