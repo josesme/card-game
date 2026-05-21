@@ -148,9 +148,9 @@ CONOCIMIENTO ESTRATÉGICO:
 ${STRATEGY_CONTEXT}
 
 ---
-INSTRUCCIÓN: Razona brevemente la mejor jugada y termina SIEMPRE con la línea exacta:
+INSTRUCCIÓN: En máximo 3 líneas, identifica la mejor jugada y su motivo. Termina SIEMPRE con:
 Jugada: N
-(donde N es el número de la jugada elegida)`.trim();
+(N = número de la jugada elegida. Sin texto después.)`.trim();
 }
 
 if (typeof module !== 'undefined' && module.exports) {
