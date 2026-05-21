@@ -38,6 +38,15 @@ GESTIÓN DE MANO Y REFRESH:
 - Hacer jugadas mediocres para vaciar la mano suele ser peor que un refresh anticipado con 1-2 cartas.
 - Las cartas 5 reducen en 1 los turnos antes de tener que refrescar. Si tienes pocas cartas y consideras refrescar pronto, un 5 simplifica la decisión.
 
+VALOR DE CARTAS Y COMPILACIÓN:
+- Una carta bocarriba con valor 0 NO contribuye a compilar (suma 0 puntos). No la menciones como ventaja para compilar.
+- Una carta bocabajo vale siempre 2, independientemente de su valor impreso.
+- Para compilar necesitas ≥10 pts en tu lado Y más que el rival. Suma siempre los puntos reales antes de afirmar que una jugada "acerca a compilar".
+
+CARTAS DE ALTO IMPACTO:
+- Las cartas con efectos que eliminan múltiples cartas (ej: "elimina 1 carta de cada otra línea") son más valiosas si el rival tiene cartas en varias líneas. Esperar un turno puede doblar su impacto.
+- No gastes una carta de eliminación masiva cuando el rival solo tiene cartas en 1 línea, salvo que sea urgente.
+
 PROPIEDAD DE CARTAS EN CAMPO:
 - "TUS CARTAS" = las cartas que controlas tú (la IA). Los efectos que "eliminan carta rival" NO pueden apuntar a estas.
 - "CARTAS RIVAL" = las cartas del jugador humano. Estas SÍ son objetivo de eliminaciones, volteos y efectos hostiles.
