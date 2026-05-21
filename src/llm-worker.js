@@ -137,10 +137,11 @@ async function _consultarDeepSeek(prompt, nivel) {
 // ─── Parseo de respuesta ──────────────────────────────────────────────────────
 
 function _parsearRespuesta(respuesta, jugadas) {
-    // Buscar patrón explícito de conclusión primero (jugada N, move N, elijo N, etc.)
-    const conclusionMatch = respuesta.match(/(?:jugada|move|elijo|choose|opción|option|número|number)[^\d]*(\d+)/i);
-    if (conclusionMatch) {
-        const idx = parseInt(conclusionMatch[1], 10);
+    // Buscar la ÚLTIMA ocurrencia de "Jugada: N" — es la conclusión del modelo
+    const allConclusions = [...respuesta.matchAll(/jugada\s*:\s*(\d+)/gi)];
+    if (allConclusions.length > 0) {
+        const last = allConclusions[allConclusions.length - 1];
+        const idx = parseInt(last[1], 10);
         if (idx >= 0 && idx < jugadas.length) {
             console.log(`[LLM] parseo por conclusión explícita → jugada ${idx}`);
             return jugadas[idx];
