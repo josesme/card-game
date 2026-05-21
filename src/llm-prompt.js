@@ -38,6 +38,11 @@ GESTIÓN DE MANO Y REFRESH:
 - Hacer jugadas mediocres para vaciar la mano suele ser peor que un refresh anticipado con 1-2 cartas.
 - Las cartas 5 reducen en 1 los turnos antes de tener que refrescar. Si tienes pocas cartas y consideras refrescar pronto, un 5 simplifica la decisión.
 
+PROPIEDAD DE CARTAS EN CAMPO:
+- "TUS CARTAS" = las cartas que controlas tú (la IA). Los efectos que "eliminan carta rival" NO pueden apuntar a estas.
+- "CARTAS RIVAL" = las cartas del jugador humano. Estas SÍ son objetivo de eliminaciones, volteos y efectos hostiles.
+- Nunca uses un efecto de eliminación contra tus propias cartas salvo que el texto diga explícitamente "carta propia".
+
 CARTAS BOCA ABAJO:
 - Son herramientas válidas pero no la base de una estrategia competitiva. Son más flexibles (cualquier línea) pero el texto de las cartas face-up es importante.
 - No juegues boca abajo sin un plan: cubrirte para activar efectos, stall, forzar un compile del rival, o proteger cartas valiosas.
@@ -70,7 +75,7 @@ function _serializarCampo(field, calcularPuntos) {
         const plPts   = calcularPuntos(l, 'player');
         const aiCartas = (field[l].ai     || []).map(_serializarCarta).join(', ') || '—';
         const plCartas = (field[l].player || []).map(_serializarCarta).join(', ') || '—';
-        return `  ${nombres[l]}: IA ${aiPts}pts [${aiCartas}] | Rival ${plPts}pts [${plCartas}]`;
+        return `  ${nombres[l]}: TUS CARTAS ${aiPts}pts [${aiCartas}] | CARTAS RIVAL ${plPts}pts [${plCartas}]`;
     }).join('\n');
 }
 
