@@ -115,7 +115,7 @@ async function _consultarDeepSeek(prompt, nivel) {
         body: JSON.stringify({
             model:       MODEL,
             messages:    [{ role: 'user', content: prompt }],
-            max_tokens:  256,
+            max_tokens:  512,
             temperature: temperatura,
         }),
     });
