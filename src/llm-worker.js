@@ -74,11 +74,11 @@ async function _consultarOllama(prompt, nivel) {
         model:    MODEL,
         messages: [{ role: 'user', content: prompt }],
         stream:   false,
-        think:    false,
+        think:    true,
         options: {
             temperature: temperatura,
             top_p:       0.9,
-            num_predict: 4,
+            num_predict: 512,
         },
     });
 

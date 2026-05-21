@@ -3093,7 +3093,7 @@ if (btnStopDiscard) btnStopDiscard.onclick = () => {
 const USE_ISMCTS = true;
 
 // LLM: tiempo máximo de espera (ms) antes de caer a ai-brain
-const LLM_TIMEOUT_MS = 4000;
+const LLM_TIMEOUT_MS = 15000;
 
 // LLM worker singleton (solo en localhost)
 let _llmWorker     = null;
