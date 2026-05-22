@@ -85,13 +85,13 @@ function _serializarCarta(obj, isTop) {
     if (obj.faceDown) return `${tag}[?:2pts]`;
     const c = obj.card;
     // Los efectos inicio/fin solo están activos si la carta está descubierta
-    const efectos = isTop ? [
+    if (!isTop) return `${tag}${c.nombre}(${c.valor})`;
+    const efectos = [
         c.h_inicio ? `INICIO:${c.h_inicio}` : '',
         c.h_final  ? `FIN:${c.h_final}`     : '',
-    ].filter(Boolean).join(', ') : '';
-    return efectos
-        ? `${tag}${c.nombre}(${c.valor})[${efectos}]`
-        : `${tag}${c.nombre}(${c.valor})`;
+    ].filter(Boolean).join(', ');
+    const efectosTxt = efectos || 'sin efectos inicio/fin';
+    return `${tag}${c.nombre}(${c.valor})[${efectosTxt}]`;
 }
 
 function _serializarCampo(field, calcularPuntos) {
