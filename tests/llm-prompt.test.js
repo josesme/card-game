@@ -156,14 +156,13 @@ describe('construirPrompt', () => {
         expect(prompt).toContain('INICIO:Roba 1 carta y elimina 1 carta');
     });
 
-    test('carta en campo sin efectos no añade corchetes de efecto', () => {
+    test('carta descubierta sin efectos muestra "sin efectos inicio/fin"', () => {
         const e = makeEstado();
         const cartaSinEfecto = makeCard('Muerte 5', 5, 'Muerte');
         e.field.izquierda.ai.push({ card: cartaSinEfecto, faceDown: false });
         const jugadas = [makeJugada('A', 1, 'centro')];
         const prompt = construirPrompt(e, jugadas, calculateScore);
-        expect(prompt).toContain('Muerte 5(5)');
-        expect(prompt).not.toContain('Muerte 5(5)[');
+        expect(prompt).toContain('Muerte 5(5)[sin efectos inicio/fin]');
     });
 
     test('el prompt incluye explicación de efectos permanentes en reglas', () => {
