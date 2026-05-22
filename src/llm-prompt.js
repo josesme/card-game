@@ -53,6 +53,11 @@ VOLTEAR vs ELIMINAR — SON EFECTOS DISTINTOS:
 - Voltear una carta bocabajo→bocarriba la activa (recupera valor y efectos).
 - "Eliminar" saca la carta del campo permanentemente. Son efectos distintos — nunca confundas uno con otro.
 
+CARTAS CUBIERTAS — REGLAS CRÍTICAS:
+- En cada línea solo la carta superior (descubierta) puede ser objetivo de eliminaciones, volteos o cualquier efecto. Las cartas debajo de ella están cubiertas y son intocables salvo que el efecto diga explícitamente "todas las cartas de la línea".
+- Una carta cubierta NO tiene efectos activos. Sus efectos de inicio/fin de turno están cancelados mientras esté cubierta. No la menciones como amenaza permanente si está cubierta.
+- Para saber si una carta es la descubierta: es la última de la pila (la que está encima de todas).
+
 OBJETIVOS DE ELIMINACIÓN — REGLAS CRÍTICAS:
 - Los efectos de eliminación tienen restricciones exactas según el texto de la carta. Léelo siempre antes de asumir qué puede eliminar.
 - "Elimina 1 carta bocabajo" → SOLO puede eliminar cartas que estén boca abajo. Una carta bocarriba NO es objetivo válido aunque tenga valor bajo.
@@ -75,17 +80,18 @@ CARTAS BOCA ABAJO:
 
 // ─── Serialización del estado ─────────────────────────────────────────────────
 
-function _serializarCarta(obj) {
-    if (obj.faceDown) return '[?:2pts]';
+function _serializarCarta(obj, isTop) {
+    const tag = isTop ? '[DESCUBIERTA]' : '[cubierta]';
+    if (obj.faceDown) return `${tag}[?:2pts]`;
     const c = obj.card;
-    const efectos = [
+    // Los efectos inicio/fin solo están activos si la carta está descubierta
+    const efectos = isTop ? [
         c.h_inicio ? `INICIO:${c.h_inicio}` : '',
         c.h_final  ? `FIN:${c.h_final}`     : '',
-    ].filter(Boolean).join(', ');
-    // h_accion solo aparece cuando se juega, no en campo — no se incluye aquí
+    ].filter(Boolean).join(', ') : '';
     return efectos
-        ? `${c.nombre}(${c.valor})[${efectos}]`
-        : `${c.nombre}(${c.valor})`;
+        ? `${tag}${c.nombre}(${c.valor})[${efectos}]`
+        : `${tag}${c.nombre}(${c.valor})`;
 }
 
 function _serializarCampo(field, calcularPuntos) {
@@ -96,8 +102,10 @@ function _serializarCampo(field, calcularPuntos) {
         if (compiladoPor) return `  ${nombres[l]}: COMPILADA por ${compiladoPor === 'ai' ? 'IA' : 'Jugador'}`;
         const aiPts   = calcularPuntos(l, 'ai');
         const plPts   = calcularPuntos(l, 'player');
-        const aiCartas = (field[l].ai     || []).map(_serializarCarta).join(', ') || '—';
-        const plCartas = (field[l].player || []).map(_serializarCarta).join(', ') || '—';
+        const aiStack  = field[l].ai     || [];
+        const plStack  = field[l].player || [];
+        const aiCartas = aiStack.length ? aiStack.map((c, i) => _serializarCarta(c, i === aiStack.length - 1)).join(', ') : '—';
+        const plCartas = plStack.length ? plStack.map((c, i) => _serializarCarta(c, i === plStack.length - 1)).join(', ') : '—';
         return `  ${nombres[l]}: TUS CARTAS ${aiPts}pts [${aiCartas}] | CARTAS RIVAL ${plPts}pts [${plCartas}]`;
     }).join('\n');
 }
